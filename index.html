@@ -55,6 +55,8 @@ main{max-width:640px;margin:0 auto;padding:1rem 1rem calc(5.5rem + env(safe-area
 @media (max-width:440px){.topbar .brand small{display:none}}
 .prof b{display:block;font-size:1.1rem}
 .prof span{display:block;font-size:.85rem;color:var(--ink-2);overflow-wrap:anywhere}
+.sheet .box .adv{margin-top:.6rem;color:var(--ink-2);font-size:.85rem}
+.sheet .box .adv summary{cursor:pointer}
 .sheet .box .group{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);margin:.7rem 0 .1rem}
 .books.shelf li{background:var(--panel)}
 #v-goals h1{margin-bottom:.1rem}
@@ -1274,7 +1276,18 @@ function connectSheet() {
   const close = () => wrap.remove();
   const msg = el('p', { class: 'hint' });
   const field = (label, name, attrs) => el('label', { text: label }, [el('input', { name, ...attrs })]);
-  let form;
+  let form, creating = false;
+  const nameField = el('label', { text: 'Seu nome', class: 'hidden' }, [el('input', { name: 'name', maxlength: '40', autocomplete: 'given-name' })]);
+  const submitBtn = el('button', { type: 'submit', class: 'primary', text: 'Entrar' });
+  const switchBtn = el('button', { type: 'button', text: 'Não tenho conta: criar uma', onclick: () => {
+    creating = !creating;
+    nameField.classList.toggle('hidden', !creating);
+    form.querySelector('h3').textContent = creating ? 'Criar conta' : 'Entrar na sua conta';
+    submitBtn.textContent = creating ? 'Criar conta' : 'Entrar';
+    switchBtn.textContent = creating ? 'Já tenho conta: entrar' : 'Não tenho conta: criar uma';
+    form.querySelector('input[name=password]').setAttribute('autocomplete', creating ? 'new-password' : 'current-password');
+    msg.textContent = '';
+  } });
   if (connected()) {
     form = el('div', { class: 'form' }, [
       el('h3', { text: 'Sincronização' }),
@@ -1289,27 +1302,31 @@ function connectSheet() {
     ]);
   } else {
     form = el('form', { class: 'form' }, [
-      el('h3', { text: 'Conectar à bear-api' }),
-      el('p', { class: 'hint', text: 'Com a mesma conta em cada aparelho, os dados ficam iguais em todos.' }),
-      field('Endereço da API', 'api', { value: apiCfg.api || DEFAULT_API, inputmode: 'url', required: '' }),
+      el('h3', { text: 'Entrar na sua conta' }),
+      el('p', { class: 'hint', text: 'Entre com a mesma conta em cada aparelho para ver os mesmos dados.' }),
+      nameField,
       field('E-mail', 'email', { type: 'email', value: apiCfg.email || '', autocomplete: 'email', required: '' }),
-      field('Senha', 'password', { type: 'password', autocomplete: 'current-password', minlength: '8', required: '' }),
+      field('Senha (8 ou mais caracteres)', 'password', { type: 'password', autocomplete: 'current-password', minlength: '8', required: '' }),
       msg,
-      el('button', { type: 'submit', class: 'primary', text: 'Entrar' }),
-      el('button', { type: 'button', text: 'Criar conta com estes dados', onclick: () => go(true) }),
+      submitBtn,
+      switchBtn,
       el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }),
+      // Servidor: escondido; só para quem precisar trocar.
+      el('details', { class: 'adv' }, [el('summary', { text: 'Avançado' }), field('Servidor', 'api', { value: apiCfg.api || DEFAULT_API, inputmode: 'url', required: '' })]),
     ]);
-    form.addEventListener('submit', (e) => { e.preventDefault(); go(false); });
+    form.addEventListener('submit', (e) => { e.preventDefault(); go(creating); });
   }
   async function go(register) {
     const f = new FormData(form);
     const api = String(f.get('api') || '').trim().replace(/\/+$/, ''), email = String(f.get('email') || '').trim(), password = String(f.get('password') || '');
     if (!/^https:\/\//.test(api) && !/^http:\/\/(localhost|127\.0\.0\.1)/.test(api)) { msg.textContent = 'O endereço precisa começar com https://'; return; }
     if (!email || password.length < 8) { msg.textContent = 'Preencha e-mail e senha (8 ou mais caracteres).'; return; }
+    const newName = String(f.get('name') || '').trim().slice(0, 40);
+    if (register && !newName) { msg.textContent = 'Diga como o Bear deve te chamar.'; return; }
     msg.textContent = 'Conectando… (a primeira vez pode levar até 1 minuto)';
     try {
       if (register) {
-        const r = await fetch(api + '/api/v1/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Bia', email, password }) });
+        const r = await fetch(api + '/api/v1/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName, email, password }) });
         if (r.status === 409) { msg.textContent = 'Esse e-mail já tem conta. Use “Entrar”.'; return; }
         if (r.status !== 201) { msg.textContent = 'Não consegui criar a conta.'; return; }
       }
@@ -1317,6 +1334,7 @@ function connectSheet() {
       const d = await r.json().catch(() => null);
       if (r.status !== 200 || !d || !d.token) { msg.textContent = r.status === 401 ? 'E-mail ou senha incorretos.' : r.status === 429 ? 'Muitas tentativas. Espere 1 minuto.' : 'Não consegui entrar.'; return; }
       apiCfg = { api, email, token: d.token }; saveCfg();
+      if (register) { NAME = newName; try { localStorage.setItem('bear.profile', JSON.stringify({ name: newName })); } catch {} db.profile = { ...(db.profile || {}), name: newName }; save(); }
       syncMeta.version = syncMeta.version || 0; saveMeta();
       close(); toast('Conectado'); paintAvatar(); pull();
     } catch { msg.textContent = 'Sem conexão com a API. Confira o endereço e a internet.'; }
