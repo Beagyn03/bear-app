@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>B.E.A.R — Nuvem</title>
+<style>
+:root{color-scheme:light;--bg:#f6ece1;--panel:#fff9f3;--hero:#f0dfcb;--line:#e5d2be;--ink:#4b3326;--ink-2:#8c6e5a;--caramel:#d9ae84;--caramel-deep:#b9824f;--on:#3b2416;--ok:#7d8450;--err:#b4614a;box-sizing:border-box}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:1rem 1rem 3rem}
+h1{font-size:1.4rem;margin:.5rem 0 .25rem}
+p{margin:.3rem 0}
+.hint{color:var(--ink-2);font-size:.9rem}
+.panel{background:var(--panel);border:1.5px solid var(--line);border-radius:18px;padding:1rem;margin:1rem 0}
+h2{font-size:1.05rem;margin:0 0 .6rem}
+label{display:grid;gap:.25rem;font-size:.9rem;color:var(--ink-2);margin-bottom:.6rem}
+input{font:inherit;width:100%;padding:.6rem .75rem;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+button{font:inherit;font-weight:800;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);padding:.65rem 1rem;cursor:pointer;width:100%;margin-top:.4rem}
+button.primary{background:var(--caramel);border-color:var(--caramel);color:var(--on);box-shadow:0 4px 0 var(--caramel-deep)}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:.5rem}.row button{flex:1}
+.msg{font-weight:700;margin-top:.6rem;white-space:pre-line}.msg.ok{color:var(--ok)}.msg.err{color:var(--err)}
+.hidden{display:none!important}
+.box{background:var(--hero);border-radius:12px;padding:.6rem .8rem;font-size:.92rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>B.E.A.R na nuvem</h1>
+  <p class="hint">Envia seus dados para a bear-api ou traz da bear-api para este aparelho.</p>
+
+  <section class="panel" id="login">
+    <h2>1. Entrar</h2>
+    <label>Endereço da API <input id="api" value="https://bear-api-hkuf.onrender.com" inputmode="url"></label>
+    <label>E-mail <input id="email" type="email" autocomplete="email"></label>
+    <label>Senha <input id="pass" type="password" autocomplete="current-password" minlength="8"></label>
+    <label id="name-wrap" class="hidden">Seu nome <input id="name" maxlength="120"></label>
+    <button class="primary" id="btn-login">Entrar</button>
+    <button id="btn-register">Ainda não tenho conta: criar</button>
+    <p class="msg" id="login-msg"></p>
+  </section>
+
+  <section class="panel hidden" id="cloud">
+    <h2>2. Seus dados</h2>
+    <div class="box" id="status">Verificando…</div>
+
+    <h2 style="margin-top:1rem">Enviar para a nuvem</h2>
+    <p class="hint" id="local-info"></p>
+    <button class="primary" id="btn-up-local">Enviar os dados deste aparelho</button>
+    <label style="margin-top:.8rem">Ou escolha um backup (JSON exportado do app) <input type="file" id="file" accept="application/json,.json"></label>
+    <button id="btn-up-file" disabled>Enviar o backup escolhido</button>
+
+    <h2 style="margin-top:1rem">Trazer da nuvem</h2>
+    <button id="btn-down">Trazer para este aparelho</button>
+    <button id="btn-save">Baixar como arquivo (backup)</button>
+
+    <button id="btn-logout" style="margin-top:1.2rem">Sair</button>
+    <p class="msg" id="cloud-msg"></p>
+  </section>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const CFG = 'bear.api', LOCAL = 'bear.v1';
+  let cfg = {}; try { cfg = JSON.parse(localStorage.getItem(CFG) || '{}') || {}; } catch {}
+  let remote = null, fileData = null;
+
+  const msg = (el, text, ok) => { el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err'); };
+  const base = () => $('#api').value.trim().replace(/\/+$/, '');
+  const fmtDate = (iso) => new Date(iso).toLocaleString('pt-BR');
+  const summary = (d) => {
+    const goals = (d && d.goals) || [];
+    const books = goals.reduce((a, g) => a + ((g.books || []).length), 0);
+    const logs = goals.reduce((a, g) => a + ((g.logs || []).length), 0);
+    return `${goals.length} meta(s), ${books} livro(s), ${logs} leitura(s) registrada(s)`;
+  };
+  const valid = (d) => d && typeof d === 'object' && Array.isArray(d.goals);
+
+  async function call(method, path, body, headers = {}) {
+    const res = await fetch(base() + path, {
+      method,
+      headers: { 'Content-Type': 'application/json', ...(cfg.token ? { Authorization: 'Bearer ' + cfg.token } : {}), ...headers },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    let data = null; try { data = await res.json(); } catch {}
+    return { status: res.status, data };
+  }
+  const slow = (btn, on) => { btn.disabled = on; if (on) { btn.dataset.t = btn.textContent; btn.textContent = 'Aguarde… (a API pode levar até 1 min para acordar)'; } else if (btn.dataset.t) btn.textContent = btn.dataset.t; };
+
+  // ---------- login ----------
+  if (cfg.api) $('#api').value = cfg.api;
+  if (cfg.email) $('#email').value = cfg.email;
+
+  async function login() {
+    const b = $('#btn-login'); slow(b, true);
+    try {
+      const r = await fetch(base() + '/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: $('#email').value.trim(), password: $('#pass').value }) });
+      const d = await r.json().catch(() => null);
+      if (r.status !== 200 || !d || !d.token) return msg($('#login-msg'), r.status === 401 ? 'E-mail ou senha incorretos.' : r.status === 429 ? 'Muitas tentativas. Espere 1 minuto.' : 'Não consegui entrar. Confira o endereço da API.', false);
+      cfg = { api: base(), email: $('#email').value.trim(), token: d.token };
+      localStorage.setItem(CFG, JSON.stringify(cfg));
+      $('#pass').value = '';
+      openCloud();
+    } catch { msg($('#login-msg'), 'Sem conexão com a API. Confira o endereço e a internet.', false); }
+    finally { slow(b, false); }
+  }
+  $('#btn-login').addEventListener('click', login);
+
+  $('#btn-register').addEventListener('click', async () => {
+    const wrap = $('#name-wrap');
+    if (wrap.classList.contains('hidden')) { wrap.classList.remove('hidden'); $('#btn-register').textContent = 'Criar conta'; $('#name').focus(); return; }
+    const b = $('#btn-register'); slow(b, true);
+    try {
+      const r = await fetch(base() + '/api/v1/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('#name').value.trim() || 'Bia', email: $('#email').value.trim(), password: $('#pass').value }) });
+      if (r.status === 201) { msg($('#login-msg'), 'Conta criada. Entrando…', true); await login(); }
+      else if (r.status === 409) msg($('#login-msg'), 'Esse e-mail já tem conta. Use “Entrar”.', false);
+      else if (r.status === 400) msg($('#login-msg'), 'Confira o e-mail e use uma senha com 8 ou mais caracteres.', false);
+      else msg($('#login-msg'), 'Não consegui criar a conta.', false);
+    } catch { msg($('#login-msg'), 'Sem conexão com a API.', false); }
+    finally { slow(b, false); }
+  });
+
+  // ---------- nuvem ----------
+  function localData() { try { const d = JSON.parse(localStorage.getItem(LOCAL) || 'null'); return valid(d) ? d : null; } catch { return null; } }
+
+  async function refresh() {
+    $('#status').textContent = 'Verificando… (a API pode levar até 1 min para acordar)';
+    try {
+      const r = await call('GET', '/v1/state');
+      if (r.status === 401) { cfg.token = null; localStorage.setItem(CFG, JSON.stringify(cfg)); return showLogin('Sua sessão expirou. Entre de novo.'); }
+      if (r.status === 404) { remote = null; $('#status').textContent = 'A nuvem ainda está vazia.'; }
+      else if (r.status === 200) { remote = r.data; $('#status').textContent = `Na nuvem: ${summary(remote.data)}.\nÚltima gravação: ${fmtDate(remote.updatedAt)}.`; }
+      else $('#status').textContent = 'Não consegui ler a nuvem agora.';
+    } catch { $('#status').textContent = 'Sem conexão com a API.'; }
+    const local = localData();
+    $('#local-info').textContent = local ? `Neste aparelho: ${summary(local)}.` : 'Este aparelho não tem dados do app (abra esta página no mesmo navegador onde você usa o app, ou escolha um backup).';
+    $('#btn-up-local').disabled = !local;
+    $('#btn-down').disabled = !remote;
+    $('#btn-save').disabled = !remote;
+  }
+
+  async function upload(data, btn) {
+    if (!valid(data)) return msg($('#cloud-msg'), 'Esses dados não parecem um backup do B.E.A.R.', false);
+    if (remote && !confirm(`A nuvem já tem dados (${summary(remote.data)}).\n\nSubstituir pelo que você está enviando (${summary(data)})?`)) return;
+    slow(btn, true);
+    try {
+      const r = await call('PUT', '/v1/state', { data }, remote ? { 'If-Match': String(remote.version) } : {});
+      if (r.status === 200) { msg($('#cloud-msg'), 'Enviado para a nuvem.', true); await refresh(); }
+      else if (r.status === 409) { msg($('#cloud-msg'), 'A nuvem mudou enquanto isso. Atualizei as informações: confira e envie de novo.', false); await refresh(); }
+      else if (r.status === 413) msg($('#cloud-msg'), 'Arquivo grande demais.', false);
+      else if (r.status === 401) showLogin('Sua sessão expirou. Entre de novo.');
+      else msg($('#cloud-msg'), 'Não consegui enviar.', false);
+    } catch { msg($('#cloud-msg'), 'Sem conexão com a API.', false); }
+    finally { slow(btn, false); }
+  }
+  $('#btn-up-local').addEventListener('click', (e) => upload(localData(), e.currentTarget));
+  $('#file').addEventListener('change', async (e) => {
+    fileData = null; $('#btn-up-file').disabled = true;
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    try { const d = JSON.parse(await f.text()); if (!valid(d)) throw 0; fileData = d; $('#btn-up-file').disabled = false; msg($('#cloud-msg'), `Backup lido: ${summary(d)}.`, true); }
+    catch { msg($('#cloud-msg'), 'Esse arquivo não é um backup do B.E.A.R.', false); }
+  });
+  $('#btn-up-file').addEventListener('click', (e) => upload(fileData, e.currentTarget));
+
+  $('#btn-down').addEventListener('click', () => {
+    if (!remote) return;
+    const local = localData();
+    if (local && !confirm(`Substituir os dados deste aparelho (${summary(local)}) pelos da nuvem (${summary(remote.data)})?`)) return;
+    try { localStorage.setItem(LOCAL, JSON.stringify(remote.data)); msg($('#cloud-msg'), 'Pronto. Abra o app para ver os dados da nuvem.', true); refresh(); }
+    catch { msg($('#cloud-msg'), 'Não consegui gravar neste aparelho.', false); }
+  });
+  $('#btn-save').addEventListener('click', () => {
+    if (!remote) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(remote.data, null, 2)], { type: 'application/json' }));
+    a.download = `bear-nuvem-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.append(a); a.click(); a.remove();
+  });
+
+  function showLogin(text) { $('#cloud').classList.add('hidden'); $('#login').classList.remove('hidden'); if (text) msg($('#login-msg'), text, false); }
+  function openCloud() { $('#login').classList.add('hidden'); $('#cloud').classList.remove('hidden'); $('#cloud-msg').textContent = ''; refresh(); }
+  $('#btn-logout').addEventListener('click', () => { cfg.token = null; localStorage.setItem(CFG, JSON.stringify(cfg)); showLogin(''); });
+
+  if (cfg.token) openCloud();
+})();
+</script>
+</body>
+</html>
