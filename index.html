@@ -55,6 +55,51 @@ main{max-width:640px;margin:0 auto;padding:1rem 1rem calc(5.5rem + env(safe-area
 @media (max-width:440px){.topbar .brand small{display:none}}
 .prof b{display:block;font-size:1.1rem}
 .prof span{display:block;font-size:.85rem;color:var(--ink-2);overflow-wrap:anywhere}
+.gate{position:fixed;inset:0;z-index:60;background:var(--bg);overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:calc(1.5rem + env(safe-area-inset-top,0px)) 1rem calc(1.5rem + env(safe-area-inset-bottom,0px))}
+.gate .box{width:100%;max-width:420px;background:var(--panel);border:1.5px solid var(--line);border-radius:22px;padding:1.2rem}
+.gate .box h3{margin:.6rem 0 .2rem;font-size:1.15rem}
+.gate .box > .form > button{width:100%}
+.gate .adv{margin-top:.8rem;color:var(--ink-2);font-size:.85rem}
+.gate-brand{display:grid;justify-items:center;text-align:center}
+.gate-brand img{width:140px;height:140px}
+.gate-name{font-weight:900;font-size:1.6rem;letter-spacing:.12em}
+.gate-sub{color:var(--ink-2);font-size:.85rem;letter-spacing:.2em;text-transform:uppercase}
+.fmt{display:flex;gap:.35rem;flex-wrap:wrap;margin:.2rem 0 .3rem}
+.fmt button{padding:.35rem .8rem;border-radius:999px;font-size:.85rem;text-align:center}
+.fmt button.on{background:var(--caramel);border-color:var(--caramel);color:var(--on-pastel)}
+.ygoal{margin-top:.8rem}
+.ygoal .bar{margin:.35rem 0}
+.ygoal .row-h{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.ygoal .ok{color:var(--moss)}.ygoal .late{color:var(--rust)}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:.25rem;background:var(--hero);border-radius:14px;padding:.25rem;margin:.2rem 0 .6rem}
+.seg button{border:none;background:none;border-radius:11px;padding:.45rem .2rem;font-size:.78rem;font-weight:800;color:var(--ink-2);line-height:1.2}
+.seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(75,51,38,.15)}
+.add-book{width:100%;margin-bottom:.6rem}
+.srch{display:grid;grid-template-columns:1fr auto;gap:.5rem}
+.results{display:grid;gap:.4rem;max-height:52vh;overflow:auto}
+.results .result{display:grid;grid-template-columns:44px 1fr;gap:.6rem;align-items:center;text-align:left;padding:.45rem;border-radius:12px}
+.results .result img,.results .result .cover{width:44px;height:66px;object-fit:cover;border-radius:3px;box-shadow:1px 2px 4px rgba(0,0,0,.25)}
+.results .result b{display:block;font-size:.92rem;line-height:1.25}
+.results .result span{display:block;font-size:.78rem;color:var(--ink-2);font-weight:500}
+.shelf-head{display:flex;justify-content:space-between;align-items:baseline;margin:.2rem 0 .5rem}
+/* Estante de madeira */
+.estante{--wood:#a8774a;--wood-d:#7c5230;--wood-l:#c9996a;display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));padding:.7rem .5rem 0;border-radius:14px;
+  background:linear-gradient(90deg,var(--wood-d),var(--wood) 4%,var(--wood) 96%,var(--wood-d));box-shadow:inset 0 0 0 6px var(--wood-d),0 6px 14px rgba(75,51,38,.18)}
+.estante .empty{grid-column:1/-1;color:#fff8ee;padding:1rem;text-align:center}
+.estante .slot{position:relative;border:none;background:linear-gradient(#5e3d22,#6e4828);padding:.55rem .35rem 16px;margin:0;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;border-radius:0;min-height:150px}
+.estante .slot.fill{cursor:default}
+.estante .slot::after{content:"";position:absolute;left:-1px;right:-1px;bottom:0;height:14px;background:linear-gradient(var(--wood-l),var(--wood) 40%,var(--wood-d));box-shadow:0 3px 4px rgba(0,0,0,.25)}
+.estante .cover{width:100%;max-width:74px;aspect-ratio:2/3;object-fit:cover;border-radius:3px 5px 5px 3px;box-shadow:2px 3px 6px rgba(0,0,0,.35),inset 3px 0 0 rgba(0,0,0,.12);transition:transform .15s}
+.estante .slot:hover .cover,.estante .slot:focus-visible .cover{transform:translateY(-4px)}
+.cover.blank{display:flex;flex-direction:column;justify-content:center;gap:.25rem;padding:.4rem;text-align:center;background:linear-gradient(90deg,hsl(var(--hue) 35% 38%) 0 8%,hsl(var(--hue) 40% 52%) 8%);color:#fff8ee;overflow:hidden}
+.cover.blank .bt{font-weight:900;font-size:.62rem;line-height:1.15;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.cover.blank .ba{font-size:.5rem;opacity:.85}
+.estante .paws{position:absolute;top:.3rem;right:.3rem;background:var(--panel);color:var(--ink);font-size:.6rem;font-weight:900;border-radius:999px;padding:0 .3rem;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.book-card .bc-top{display:grid;grid-template-columns:96px 1fr;gap:.8rem;align-items:start;margin-bottom:.4rem}
+.book-card .bc-cover{width:96px;aspect-ratio:2/3;object-fit:cover;border-radius:4px 6px 6px 4px;box-shadow:2px 3px 8px rgba(0,0,0,.3)}
+.book-card h3{margin:0 0 .2rem;font-size:1.05rem}
+.book-card p{margin:.1rem 0}
+@media (prefers-reduced-motion:reduce){.estante .cover{transition:none}}
 .sheet .box .adv{margin-top:.6rem;color:var(--ink-2);font-size:.85rem}
 .sheet .box .adv summary{cursor:pointer}
 .sheet .box .group{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);margin:.7rem 0 .1rem}
@@ -324,10 +369,12 @@ label{display:grid;gap:.25rem;font-size:.9rem;color:var(--ink-2)}
       <ol class="books" id="books"></ol>
       <div id="pre-wrap" class="hidden"><h2 style="margin-top:1rem">Lidos antes do desafio</h2><ol class="books" id="pre-books"></ol></div>
       <form id="f-book" class="inline">
+        <button class="wide" type="button" id="find-book">Buscar livro (preenche sozinho)</button>
         <input class="wide" name="title" placeholder="Título" required maxlength="200">
         <input name="author" placeholder="Autor (opcional)" maxlength="120">
         <input name="pages" type="number" min="1" placeholder="Páginas" required inputmode="numeric">
         <input class="wide" name="initial" type="number" min="0" placeholder="Já lidas antes da meta (opcional)" inputmode="numeric">
+        <select class="wide" name="format" aria-label="Formato"><option value="FISICO">Físico</option><option value="EBOOK">E-book</option><option value="AUDIO">Audiobook</option></select>
         <button class="wide" type="submit">Adicionar à TBR</button>
       </form>
     </div>
@@ -572,6 +619,7 @@ function quickLog(g, b, raw) {
   if (fin) { current = g; rateForm(b); }
 }
 let shelfF = 'todos';
+let tocaSec = 'LIDO'; // seção da Toca: LIDO | LENDO | QUERO | ABANDONEI
 function renderHome(today) {
   const g = primaryGoal(today), p = g && pace(g, today), m = p && mascot(p);
   // Hoje: o que ler (urso + páginas do dia) e onde registrar (livro atual), num bloco só.
@@ -589,13 +637,22 @@ function renderHome(today) {
     }
     if (b) {
       const read = pagesOf(g, b), pct = Math.round(read / b.totalPages * 100), fill = el('i'); fill.style.width = `${pct}%`;
-      const inp = el('input', { type: 'number', min: '0', inputmode: 'numeric', placeholder: 'Página', 'aria-label': 'Estou na página' });
+      const pctMode = byPct(b);
+      const inp = pctMode
+        ? el('input', { type: 'number', min: '0', max: '100', step: '0.1', inputmode: 'decimal', placeholder: `% (${fmtLabel(b.format)})`, 'aria-label': 'Estou em quantos por cento' })
+        : el('input', { type: 'number', min: '0', inputmode: 'numeric', placeholder: 'Página', 'aria-label': 'Estou na página' });
       const form = el('form', {}, [inp, el('button', { class: 'primary', type: 'submit', text: 'Registrar' })]);
-      form.addEventListener('submit', (e) => { e.preventDefault(); quickLog(g, b, inp.value); });
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!pctMode) return quickLog(g, b, inp.value);
+        const v = Number(String(inp.value).replace(',', '.'));
+        if (!inp.value || !(v >= 0 && v <= 100)) return toast('Use uma porcentagem de 0 a 100');
+        quickLog(g, b, String(Math.round(v / 100 * b.totalPages)));
+      });
       parts.push(el('div', { class: 'k', text: 'Lendo agora' }), el('div', { class: 'now' }, [
         b.cover ? el('img', { class: 'cv', src: b.cover, alt: '' }) : el('span', { class: 'cv', text: b.title.charAt(0) }),
         el('div', {}, [el('div', { class: 't', text: b.title }), ...(b.author ? [el('div', { class: 's', text: b.author })] : []),
-          el('div', { class: 'bar' }, [fill]), el('div', { class: 's', text: `Página ${read} de ${b.totalPages} · ${pct}%` }), form]),
+          el('div', { class: 'bar' }, [fill]), el('div', { class: 's', text: pctMode ? `${pct}% · ${fmtLabel(b.format)}` : `Página ${read} de ${b.totalPages} · ${pct}%` }), form]),
       ]));
     } else parts.push(el('p', { class: 'hint', text: 'Nenhum livro em leitura. Abra a meta e escolha o próximo da TBR.' }));
     parts.push(el('button', { class: 'link', type: 'button', text: `Abrir ${g.name} ›`, onclick: () => open(g) }));
@@ -611,12 +668,19 @@ function renderHome(today) {
       ...(connected() ? [] : [el('button', { class: 'link', type: 'button', text: 'Já uso em outro aparelho: entrar na conta ›', onclick: connectSheet })]),
     ]));
   }
-  // Estante (todas as metas)
-  const all = db.goals.flatMap(x => x.books.filter(k => k.status === 'CONCLUIDO').map(k => ({ g: x, b: k, d: bookDates(x, k) })))
-    .sort((a, c) => (c.d[1] || '').localeCompare(a.d[1] || ''));
+  // Toca do urso = biblioteca. Livros das metas entram sozinhos (espelho); os avulsos são da biblioteca.
+  libSync();
+  const lib = db.library;
+  const asItem = (e) => ({ e, b: e, d: [e.startedAt || null, e.finishedAt || null] });
+  const all = lib.filter(e => e.status === 'LIDO').map(asItem).sort((a, c) => (c.d[1] || '').localeCompare(a.d[1] || ''));
   const sh = $('#home-shelf'); sh.replaceChildren();
-  if (!all.length) sh.append(el('div', { class: 'panel' }, [el('p', { class: 'hint', text: 'Ainda vazia. Quando terminar um livro, ele vem morar aqui.' })]));
-  if (all.length) {
+  const SECS = [['LIDO', 'Lidos'], ['LENDO', 'Lendo'], ['QUERO', 'Quero ler'], ['ABANDONEI', 'Abandonei']];
+  const segs = el('div', { class: 'seg', role: 'tablist', 'aria-label': 'Seções da biblioteca' }, SECS.map(([id, t]) =>
+    el('button', { type: 'button', role: 'tab', class: id === tocaSec ? 'on' : '', 'aria-selected': String(id === tocaSec),
+      text: `${t} ${lib.filter(e => e.status === id).length}`, onclick: () => { tocaSec = id; renderHome(todayISO()); } })));
+  sh.append(segs, el('button', { type: 'button', class: 'primary add-book', text: '+ Adicionar livro', onclick: () => searchSheet({ onPick: addToLibrary }) }));
+  let list;
+  if (tocaSec === 'LIDO') {
     const ym = today.slice(0, 7);
     const F = [
       ['todos', 'Todos', () => true],
@@ -625,29 +689,293 @@ function renderHome(today) {
       ['ressaca', 'Ressaca', x => x.b.review && x.b.review.ressaca],
       ['sem', 'Sem ficha', x => !x.b.review],
     ];
-    const cur = F.find(f => f[0] === shelfF) || F[0], list = all.filter(cur[2]);
-    const chips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Filtrar livros lidos' }, F.map(([id, t, fn]) =>
-      el('button', { type: 'button', class: id === cur[0] ? 'on' : '', 'aria-pressed': String(id === cur[0]), text: `${t} (${all.filter(fn).length})`, onclick: () => { shelfF = id; renderHome(todayISO()); } })));
-    const ol = el('ol', { class: 'books' });
-    if (!list.length) ol.append(el('li', { text: 'Nenhum livro com esse filtro.' }));
-    for (const { g: x, b: k, d } of list) ol.append(el('li', {}, [
-      k.cover ? el('img', { class: 'thumb', src: k.cover, alt: '' }) : el('span', { class: 'n', text: '✓' }),
-      el('div', {}, [el('div', { class: 't', text: k.title }), ...(k.author ? [el('div', { class: 's', text: k.author })] : []), el('div', { class: 's', text: whenText(d[0], d[1]) }), ...(k.review ? [reviewLine(k.review)] : [])]),
-      el('div', { class: 'a' }, [el('button', { class: 'small', text: k.review ? 'Editar' : 'Avaliar', onclick: () => { current = x; rateForm(k); } })]),
-    ]));
-    ol.classList.add('shelf'); sh.append(chips, ol);
+    const cur = F.find(f => f[0] === shelfF) || F[0];
+    list = all.filter(cur[2]);
+    if (all.length) sh.append(el('div', { class: 'chips', role: 'group', 'aria-label': 'Filtrar livros lidos' }, F.map(([id, t, fn]) =>
+      el('button', { type: 'button', class: id === cur[0] ? 'on' : '', 'aria-pressed': String(id === cur[0]), text: `${t} (${all.filter(fn).length})`, onclick: () => { shelfF = id; renderHome(todayISO()); } }))));
+  } else {
+    // Mais recentes primeiro (no mesmo dia, o último adicionado vem antes).
+    list = lib.filter(e => e.status === tocaSec).map(asItem).reverse().sort((a, c) => (c.e.addedAt || '').localeCompare(a.e.addedAt || ''));
   }
+  const EMPTY = { LIDO: 'Ainda vazia. Quando terminar um livro, ele vem morar aqui.', LENDO: 'Nenhum livro em leitura agora.', QUERO: 'Sua lista de “quero ler” está vazia. Toque em “Adicionar livro”.', ABANDONEI: 'Nenhum livro abandonado. Que bom!' };
+  // Estante: capas de pé em prateleiras de madeira; toque abre a ficha do livro.
+  const shelf = el('div', { class: 'estante', role: 'list', 'aria-label': SECS.find(x => x[0] === tocaSec)[1] });
+  if (!list.length) shelf.append(el('p', { class: 'hint empty', text: all.length && tocaSec === 'LIDO' ? 'Nenhum livro com esse filtro.' : EMPTY[tocaSec] }));
+  for (const { e: k } of list) {
+    const face = k.cover
+      ? el('img', { class: 'cover', src: k.cover, alt: '', loading: 'lazy' })
+      : el('div', { class: 'cover blank', style: `--hue:${hueOf(k.title)}` }, [el('span', { class: 'bt', text: k.title }), ...(k.author ? [el('span', { class: 'ba', text: k.author })] : [])]);
+    const badge = k.review && k.review.paws ? el('span', { class: 'paws', text: `${String(k.review.paws).replace('.', ',')} 🐾` })
+      : (k.link && tocaSec !== 'LIDO' ? el('span', { class: 'paws', text: 'meta' }) : null);
+    shelf.append(el('button', { type: 'button', class: 'slot', role: 'listitem', 'aria-label': `${k.title}${k.author ? ', de ' + k.author : ''}`, onclick: () => libCard(k) }, [face, ...(badge ? [badge] : [])]));
+  }
+  sh.append(shelf);
+  // Completa a última prateleira com espaços vazios, para a madeira ir de ponta a ponta.
+  requestAnimationFrame(() => {
+    const cols = getComputedStyle(shelf).gridTemplateColumns.split(' ').filter(Boolean).length || 4;
+    const n = list.length, fill = n ? (cols - (n % cols)) % cols : cols;
+    for (let i = 0; i < fill; i++) shelf.append(el('div', { class: 'slot fill', 'aria-hidden': 'true' }));
+  });
   // Números do ano
   const y = today.slice(0, 4);
   const booksY = all.filter(x => (x.d[1] || '').startsWith(y)).length;
   const pagesY = db.goals.reduce((a, x) => a + x.logs.filter(l => l.date.startsWith(y)).reduce((s, l) => s + l.pages, 0), 0);
   const rated = all.filter(x => x.b.review && x.b.review.paws);
   const avg = rated.length ? (rated.reduce((s, x) => s + x.b.review.paws, 0) / rated.length).toFixed(1).replace('.', ',') : '–';
+  // Meta do ano: livros lidos no ano contra o alvo; o esperado até hoje é proporcional aos dias do ano.
+  const target = Number((db.yearGoals || {})[y]) || 0;
+  let yg;
+  if (target) {
+    const start = `${y}-01-01`, end = `${y}-12-31`;
+    const frac = Math.min(1, (between(start, today) + 1) / (between(start, end) + 1));
+    const expected = Math.floor(target * frac), diff = booksY - expected, left = Math.max(0, target - booksY);
+    const monthsLeft = Math.max(1, 12 - Number(today.slice(5, 7)) + 1);
+    const pctY = Math.min(100, Math.round(booksY / target * 100)), fill = el('i'); fill.style.width = `${pctY}%`;
+    const statusTxt = booksY >= target ? 'Meta batida!' : diff >= 0 ? `No ritmo (${diff > 0 ? '+' + diff + ' adiantada' : 'em dia'})` : `${-diff} ${-diff === 1 ? 'livro' : 'livros'} atrás do ritmo`;
+    yg = el('div', { class: 'ygoal' }, [
+      el('div', { class: 'row-h' }, [el('b', { text: `Meta do ano: ${booksY} de ${target}` }), el('button', { class: 'link', type: 'button', text: 'Mudar', onclick: () => setYearGoal(y) })]),
+      el('div', { class: 'bar' }, [fill]),
+      el('p', { class: `hint ${diff >= 0 ? 'ok' : 'late'}`, text: booksY >= target ? statusTxt : `${statusTxt} · faltam ${left}, cerca de ${Math.ceil(left / monthsLeft)} por mês` }),
+    ]);
+  } else {
+    yg = el('div', { class: 'ygoal' }, [el('button', { type: 'button', text: `Definir meta de livros para ${y}`, onclick: () => setYearGoal(y) })]);
+  }
+  // Formatos lidos no ano (só aparece se houver mais de um)
+  const byF = {}; for (const x of all.filter(x => (x.d[1] || '').startsWith(y))) { const k = fmtLabel(x.e.format); byF[k] = (byF[k] || 0) + 1; }
+  const fLine = Object.keys(byF).length > 1 ? el('p', { class: 'hint', text: Object.entries(byF).map(([k, n]) => `${n} ${k.toLowerCase()}`).join(' · ') }) : null;
   const st = $('#home-stats'); st.replaceChildren(el('div', { class: 'panel' }, [el('h2', { text: `Seu ${y}` }), el('div', { class: 'stats' }, [
     el('div', {}, [el('b', { text: String(booksY) }), el('span', { text: booksY === 1 ? 'livro lido' : 'livros lidos' })]),
     el('div', {}, [el('b', { text: pagesY.toLocaleString('pt-BR') }), el('span', { text: 'páginas' })]),
     el('div', {}, [el('b', { text: avg }), el('span', { text: 'média de patas' })]),
-  ])]));
+  ]), yg, ...(fLine ? [fLine] : [])]));
+}
+function setYearGoal(y) {
+  const cur = (db.yearGoals || {})[y] || '';
+  const v = prompt(`Quantos livros você quer ler em ${y}? (0 para tirar a meta)`, String(cur));
+  if (v === null) return;
+  const n = Math.round(Number(v));
+  if (!(n >= 0) || n > 1000) return toast('Use um número de 0 a 1000');
+  db.yearGoals = { ...(db.yearGoals || {}) };
+  if (n) db.yearGoals[y] = n; else delete db.yearGoals[y];
+  save(); renderHome(todayISO()); toast(n ? `Meta de ${n} livros em ${y}` : 'Meta do ano removida');
+}
+// ============ biblioteca ============
+// Formato: físico registra por página; e-book e audiobook por % (página = % do total).
+const FORMATS = [['FISICO', 'Físico'], ['EBOOK', 'E-book'], ['AUDIO', 'Audiobook']];
+const fmtLabel = (f) => (FORMATS.find(x => x[0] === f) || FORMATS[0])[1];
+const byPct = (b) => b && (b.format === 'EBOOK' || b.format === 'AUDIO');
+function formatChips(obj, onChange) {
+  const box = el('div', { class: 'fmt', role: 'group', 'aria-label': 'Formato' });
+  const draw = () => box.replaceChildren(...FORMATS.map(([id, t]) => el('button', { type: 'button', class: (obj.format || 'FISICO') === id ? 'on' : '', 'aria-pressed': String((obj.format || 'FISICO') === id), text: t,
+    onclick: () => { if (id === 'FISICO') delete obj.format; else obj.format = id; draw(); if (onChange) onChange(); } })));
+  draw(); return box;
+}
+const LIB_LABEL = { QUERO: 'Quero ler', LENDO: 'Lendo', LIDO: 'Lido', ABANDONEI: 'Abandonei' };
+// Espelha os livros das metas na biblioteca (a meta manda nesses; avulsos ficam como estão).
+function libSync() {
+  if (!Array.isArray(db.library)) db.library = [];
+  const before = JSON.stringify(db.library);
+  const seen = new Set();
+  const map = { CONCLUIDO: 'LIDO', LENDO: 'LENDO', PAUSADO: 'LENDO', NAO_INICIADO: 'QUERO' };
+  for (const g of db.goals) for (const b of g.books) {
+    seen.add(g.id + ':' + b.id);
+    let e = db.library.find(x => x.link && x.link.goalId === g.id && x.link.bookId === b.id);
+    if (!e) { e = { id: uid(), addedAt: todayISO(), link: { goalId: g.id, bookId: b.id } }; db.library.push(e); }
+    const [ds, de] = bookDates(g, b);
+    Object.assign(e, { title: b.title, author: b.author || null, totalPages: b.totalPages, status: b.before ? 'LIDO' : (map[b.status] || 'QUERO') });
+    for (const [k, v] of [['cover', b.cover], ['review', b.review], ['format', b.format], ['startedAt', ds], ['finishedAt', e.status === 'LIDO' ? de : null]]) { if (v) e[k] = v; else delete e[k]; }
+  }
+  db.library = db.library.filter(x => !x.link || seen.has(x.link.goalId + ':' + x.link.bookId));
+  if (JSON.stringify(db.library) !== before) save();
+}
+function addToLibrary(item) {
+  sheet(`Onde guardar “${item.title}”?`, [
+    ['Quero ler', () => put('QUERO')],
+    ['Estou lendo', () => put('LENDO')],
+    ['Já li', () => put('LIDO')],
+  ]);
+  function put(status) {
+    const e = { id: uid(), title: item.title, author: item.author || null, totalPages: item.totalPages || null, status, addedAt: todayISO() };
+    if (item.cover) e.cover = item.cover;
+    if (item.isbn) e.isbn = item.isbn;
+    if (status === 'LENDO') e.startedAt = todayISO();
+    if (status === 'LIDO') e.finishedAt = todayISO();
+    db.library.push(e); save(); tocaSec = status; renderHome(todayISO());
+    toast(`“${e.title}” está em ${LIB_LABEL[status]}`);
+    if (status === 'LIDO') rateForm(e, { logs: [] }, () => renderHome(todayISO()));
+  }
+}
+function setLibStatus(e, st) {
+  e.status = st;
+  if (st === 'LENDO' && !e.startedAt) e.startedAt = todayISO();
+  if (st === 'LIDO') { e.finishedAt = e.finishedAt || todayISO(); if (!e.startedAt) e.startedAt = e.finishedAt; }
+  if (st !== 'LIDO') delete e.finishedAt;
+  save(); tocaSec = st; renderHome(todayISO()); toast(`Movido para ${LIB_LABEL[st]}`);
+  if (st === 'LIDO') rateForm(e, { logs: [] }, () => renderHome(todayISO()));
+}
+function putInGoal(e) {
+  if (!db.goals.length) return toast('Crie uma meta primeiro, na aba Metas');
+  sheet('Colocar em qual meta?', db.goals.map(g => [g.name, () => {
+    let pages = Number(e.totalPages) || 0;
+    if (!pages) { pages = Number(prompt(`Quantas páginas tem “${e.title}”?`, '')) || 0; if (!pages) return toast('Informe o número de páginas'); }
+    const b = { id: uid(), title: e.title, author: e.author || null, totalPages: pages, initialPage: 0, order: g.books.length + 1, status: 'NAO_INICIADO' };
+    if (e.cover) b.cover = e.cover;
+    if (e.format) b.format = e.format;
+    g.books.push(b);
+    e.link = { goalId: g.id, bookId: b.id }; // a partir daqui a meta manda neste livro
+    save(); renderHome(todayISO()); toast(`Entrou na meta “${g.name}”`);
+  }]));
+}
+function libCard(e) {
+  const close = () => wrap.remove();
+  const g = e.link && db.goals.find(x => x.id === e.link.goalId);
+  const gb = g && g.books.find(b => b.id === e.link.bookId);
+  const btn = (t, fn, cls) => el('button', { type: 'button', class: cls || '', text: t, onclick: () => { close(); fn(); } });
+  const dates = whenText(e.startedAt || null, e.finishedAt || null);
+  const acts = [];
+  if (g && gb) {
+    acts.push(el('p', { class: 'hint', text: `Este livro está na meta “${g.name}”: o andamento é registrado por lá.` }));
+    acts.push(btn(`Abrir a meta “${g.name}”`, () => open(g), 'primary'));
+    if (e.status === 'LIDO') acts.push(btn(e.review ? 'Editar avaliação' : 'Avaliar este livro', () => { current = g; rateForm(gb); }));
+  } else {
+    if (e.status === 'LIDO' || e.status === 'ABANDONEI') acts.push(btn(e.review ? 'Editar avaliação' : 'Avaliar este livro', () => rateForm(e, { logs: [] }, () => renderHome(todayISO())), 'primary'));
+    acts.push(el('div', { class: 'group', text: 'Formato' }), formatChips(e, () => { save(); renderHome(todayISO()); }));
+    acts.push(el('div', { class: 'group', text: 'Mover para' }));
+    for (const st of ['QUERO', 'LENDO', 'LIDO', 'ABANDONEI']) if (st !== e.status) acts.push(btn(LIB_LABEL[st], () => setLibStatus(e, st)));
+    if (e.status !== 'LIDO' && e.status !== 'ABANDONEI') acts.push(btn('Colocar numa meta (com prazo)', () => putInGoal(e)));
+    acts.push(btn('Remover da biblioteca', () => { if (confirm(`Remover “${e.title}” da biblioteca?`)) { db.library = db.library.filter(x => x !== e); save(); renderHome(todayISO()); } }, 'danger'));
+  }
+  const box = el('div', { class: 'box book-card' }, [
+    el('div', { class: 'bc-top' }, [
+      e.cover ? el('img', { class: 'bc-cover', src: e.cover, alt: '' }) : el('div', { class: 'bc-cover cover blank', style: `--hue:${hueOf(e.title)}` }, [el('span', { class: 'bt', text: e.title })]),
+      el('div', {}, [
+        el('h3', { text: e.title }),
+        ...(e.author ? [el('p', { class: 'hint', text: e.author })] : []),
+        el('p', { class: 'hint', text: [e.totalPages ? `${e.totalPages} páginas` : null, fmtLabel(e.format), LIB_LABEL[e.status]].filter(Boolean).join(' · ') }),
+        el('p', { class: 'hint', text: dates }),
+      ]),
+    ]),
+    ...(e.review ? [reviewLine(e.review)] : []),
+    ...acts,
+    el('button', { type: 'button', class: 'cancel', text: 'Fechar', onclick: close }),
+  ]);
+  const wrap = el('div', { class: 'sheet', onclick: (ev) => { if (ev.target === wrap) close(); } }, [box]);
+  document.body.append(wrap);
+}
+// ---------- busca de livros (Google Livros, com Open Library de reserva) ----------
+async function searchBooks(t) {
+  const isbn = t.replace(/[-\s]/g, '');
+  const isIsbn = /^(\d{9}[\dXx]|\d{13})$/.test(isbn);
+  const out = [];
+  try {
+    const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(isIsbn ? 'isbn:' + isbn : t)}&maxResults=15&printType=books`);
+    const d = await r.json();
+    for (const v of (d.items || [])) {
+      const i = v.volumeInfo || {};
+      const img = i.imageLinks && (i.imageLinks.thumbnail || i.imageLinks.smallThumbnail);
+      out.push({
+        title: [i.title, i.subtitle].filter(Boolean).join(': ').slice(0, 200),
+        author: (i.authors || []).join(', ').slice(0, 120) || null,
+        pages: i.pageCount || null, year: String(i.publishedDate || '').slice(0, 4),
+        coverUrl: img ? img.replace(/^http:/, 'https:').replace('&edge=curl', '') : null,
+        isbn: ((i.industryIdentifiers || []).find(x => x.type === 'ISBN_13') || {}).identifier || null,
+      });
+    }
+  } catch {}
+  if (!out.length) {
+    try {
+      const r = await fetch(`https://openlibrary.org/search.json?${isIsbn ? 'isbn=' + isbn : 'q=' + encodeURIComponent(t)}&limit=15&fields=title,author_name,number_of_pages_median,first_publish_year,cover_i,isbn`);
+      const d = await r.json();
+      for (const x of (d.docs || [])) out.push({
+        title: String(x.title || '').slice(0, 200), author: (x.author_name || []).join(', ').slice(0, 120) || null,
+        pages: x.number_of_pages_median || null, year: x.first_publish_year ? String(x.first_publish_year) : '',
+        coverUrl: x.cover_i ? `https://covers.openlibrary.org/b/id/${x.cover_i}-M.jpg` : null, isbn: (x.isbn || [])[0] || null,
+      });
+    } catch {}
+  }
+  return out.filter(x => x.title);
+}
+// Tenta guardar a capa dentro do app (funciona sem internet e nos downloads); se o site não deixar, guarda o link.
+function toDataCover(url) {
+  return new Promise((res) => {
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    const t = setTimeout(() => res(url), 6000);
+    img.onload = () => {
+      clearTimeout(t);
+      try {
+        const W = 160, H = 240, c = document.createElement('canvas'); c.width = W; c.height = H;
+        const r = Math.max(W / img.width, H / img.height), w = img.width * r, h = img.height * r;
+        c.getContext('2d').drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+        res(c.toDataURL('image/jpeg', 0.82));
+      } catch { res(url); }
+    };
+    img.onerror = () => { clearTimeout(t); res(url); };
+    img.src = url;
+  });
+}
+function searchSheet(opts) {
+  const close = () => wrap.remove();
+  const q = el('input', { type: 'search', name: 'q', placeholder: 'Título, autor ou ISBN', autocomplete: 'off', enterkeyhint: 'search' });
+  const msg = el('p', { class: 'hint' }), res = el('div', { class: 'results' });
+  const form = el('form', { class: 'form' }, [
+    el('h3', { text: opts.title || 'Adicionar livro' }),
+    el('div', { class: 'srch' }, [q, el('button', { type: 'submit', class: 'primary', text: 'Buscar' })]),
+    msg, res,
+    el('button', { type: 'button', text: 'Não achei: cadastrar à mão', onclick: () => { close(); manualBookSheet(opts.onPick); } }),
+    el('button', { type: 'button', class: 'cancel', text: 'Fechar', onclick: close }),
+  ]);
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const t = q.value.trim(); if (t.length < 2) return;
+    msg.textContent = 'Buscando…'; res.replaceChildren();
+    const items = await searchBooks(t);
+    msg.textContent = items.length ? 'Toque no livro certo:' : 'Nada encontrado. Tente outro termo, o ISBN, ou cadastre à mão.';
+    for (const it of items) res.append(el('button', { type: 'button', class: 'result', onclick: async () => {
+      msg.textContent = 'Preparando a capa…';
+      const cover = it.coverUrl ? await toDataCover(it.coverUrl) : null;
+      close(); opts.onPick({ title: it.title, author: it.author, totalPages: it.pages, cover, isbn: it.isbn });
+    } }, [
+      it.coverUrl ? el('img', { src: it.coverUrl, alt: '', loading: 'lazy' }) : el('div', { class: 'cover blank', style: `--hue:${hueOf(it.title)}` }),
+      el('div', {}, [el('b', { text: it.title }), el('span', { text: [it.author, it.year].filter(Boolean).join(' · ') }), el('span', { text: it.pages ? `${it.pages} páginas` : 'páginas não informadas' })]),
+    ]));
+  });
+  const wrap = el('div', { class: 'sheet', onclick: (ev) => { if (ev.target === wrap) close(); } }, [el('div', { class: 'box tall' }, [form])]);
+  document.body.append(wrap); q.focus();
+}
+function manualBookSheet(onPick) {
+  const close = () => wrap.remove();
+  const f = (l, n, a) => el('label', { text: l }, [el('input', { name: n, ...a })]);
+  const form = el('form', { class: 'form' }, [
+    el('h3', { text: 'Cadastrar livro' }),
+    f('Título', 'title', { required: '', maxlength: '200' }), f('Autor (opcional)', 'author', { maxlength: '120' }), f('Páginas', 'pages', { type: 'number', min: '1', inputmode: 'numeric' }),
+    el('button', { type: 'submit', class: 'primary', text: 'Continuar' }), el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }),
+  ]);
+  form.addEventListener('submit', (ev) => { ev.preventDefault(); const d = new FormData(form); close();
+    onPick({ title: String(d.get('title')).trim(), author: String(d.get('author') || '').trim() || null, totalPages: Number(d.get('pages')) || null }); });
+  const wrap = el('div', { class: 'sheet', onclick: (ev) => { if (ev.target === wrap) close(); } }, [el('div', { class: 'box' }, [form])]);
+  document.body.append(wrap); form.querySelector('input').focus();
+}
+// Cor estável por título para livros sem capa (tons de marrom/caramelo da paleta).
+function hueOf(t) { let h = 0; for (const c of String(t)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return 15 + (h % 30); }
+// Ficha do livro da estante
+function bookCard(x, k, d) {
+  const close = () => wrap.remove();
+  const box = el('div', { class: 'box book-card' }, [
+    el('div', { class: 'bc-top' }, [
+      k.cover ? el('img', { class: 'bc-cover', src: k.cover, alt: '' }) : el('div', { class: 'bc-cover cover blank', style: `--hue:${hueOf(k.title)}` }, [el('span', { class: 'bt', text: k.title })]),
+      el('div', {}, [
+        el('h3', { text: k.title }),
+        ...(k.author ? [el('p', { class: 'hint', text: k.author })] : []),
+        el('p', { class: 'hint', text: `${k.totalPages} páginas · ${whenText(d[0], d[1])}` }),
+        el('p', { class: 'hint', text: `Meta: ${x.name}` }),
+      ]),
+    ]),
+    ...(k.review ? [reviewLine(k.review)] : [el('p', { class: 'hint', text: 'Ainda sem avaliação.' })]),
+    el('button', { type: 'button', class: 'primary', text: k.review ? 'Editar avaliação' : 'Avaliar este livro', onclick: () => { close(); current = x; rateForm(k); } }),
+    el('button', { type: 'button', class: 'cancel', text: 'Fechar', onclick: close }),
+  ]);
+  const wrap = el('div', { class: 'sheet', onclick: (e) => { if (e.target === wrap) close(); } }, [box]);
+  document.body.append(wrap);
 }
 const goalForm = (on) => { $('#goal-form').classList.toggle('hidden', !on); $('#new-goal').classList.toggle('hidden', on); if (on) $('#f-goal').elements.name.focus(); };
 $('#new-goal').addEventListener('click', () => goalForm(true));
@@ -849,7 +1177,7 @@ function paw(f) {
 }
 const pawFill = (r, i) => Math.max(0, Math.min(1, r - (i - 1)));
 const paws = (r) => el('span', { class: 'paws', role: 'img', 'aria-label': `${fmtR(r)} de 5` }, [1,2,3,4,5].map(i => paw(pawFill(r, i))));
-function rateForm(b) {
+function rateForm(b, g, after) {
   const r = Object.assign({ paws: 0, mel: [], frase: '', ressaca: null }, b.review || {});
   r.mel = [...r.mel];
   const close = () => wrap.remove();
@@ -869,7 +1197,7 @@ function rateForm(b) {
   const drawYn = () => yn.replaceChildren(...[['Sim', true], ['Não', false]].map(([t, v]) => el('button', { type: 'button', class: r.ressaca === v ? 'on' : '', text: t, 'aria-pressed': String(r.ressaca === v),
     onclick: () => { r.ressaca = r.ressaca === v ? null : v; drawYn(); } })));
   const frase = el('input', { name: 'frase', maxlength: '140', placeholder: 'Ex.: me destruiu e eu agradeço', value: r.frase });
-  const [ds, de] = bookDates(current, b);
+  const [ds, de] = bookDates(g || current, b);
   const dStart = el('input', { type: 'date', name: 'ini', value: ds || '' }), dEnd = el('input', { type: 'date', name: 'fim', value: de || '' });
   const form = el('form', { class: 'form' }, [
     el('h3', { text: `Ficha do urso: ${b.title}` }),
@@ -887,7 +1215,7 @@ function rateForm(b) {
     if (b.before) { if (dStart.value) b.readFrom = dStart.value; if (dEnd.value) b.readTo = dEnd.value; }
     else { if (dStart.value) b.startedAt = dStart.value; else delete b.startedAt; if (dEnd.value) b.finishedAt = dEnd.value; }
     if (!r.paws && !r.mel.length && !r.frase && r.ressaca === null) delete b.review; else b.review = r;
-    save(); close(); render(); toast('Ficha salva');
+    save(); close(); if (after) after(); else render(); toast('Ficha salva');
     if (!$('#v-goals').classList.contains('hidden')) renderGoals();
   });
   drawPaws(); drawYn();
@@ -938,6 +1266,7 @@ function bookForm(b, mode) {
   const g = current, replacing = mode === 'replace', readLogs = pagesOf(g, b) - (b.initialPage || 0);
   const close = () => wrap.remove();
   const field = (label, name, attrs) => el('label', { text: label }, [el('input', { name, ...attrs })]);
+  const fmtObj = { format: replacing ? undefined : b.format }, fmtBox = formatChips(fmtObj);
   const form = el('form', { class: 'form' }, [
     el('h3', { text: replacing ? `Substituir “${b.title}”` : 'Editar livro' }),
     field('Título', 'title', { required: '', maxlength: '200', value: replacing ? '' : b.title }),
@@ -946,6 +1275,7 @@ function bookForm(b, mode) {
       field('Total de páginas', 'pages', { type: 'number', min: '1', required: '', inputmode: 'numeric', value: replacing ? '' : String(b.totalPages) }),
       field('Já lidas antes da meta', 'initial', { type: 'number', min: '0', inputmode: 'numeric', value: replacing ? '' : String(b.initialPage || 0) }),
     ]),
+    el('div', { class: 'lbl', text: 'Formato' }), fmtBox,
     ...(replacing && readLogs > 0 ? [el('p', { class: 'hint', text: `As ${readLogs} páginas registradas em “${b.title}” saem do desafio junto com ele.` })] : []),
     el('button', { type: 'submit', class: 'primary', text: replacing ? 'Substituir' : 'Salvar' }),
     el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }),
@@ -958,12 +1288,14 @@ function bookForm(b, mode) {
     if (initialPage >= totalPages) return toast('Páginas já lidas precisam ser menores que o total');
     if (replacing) {
       const nb = { id: uid(), title, author, totalPages, initialPage, order: b.order, status: b.status === 'LENDO' ? 'LENDO' : 'NAO_INICIADO' };
+      if (fmtObj.format) nb.format = fmtObj.format;
       g.books = g.books.map(x => x.id === b.id ? nb : x);
       g.logs = g.logs.filter(l => l.bookId !== b.id);
       toast(`“${title}” entrou no lugar de “${b.title}”`);
     } else {
       if (initialPage + readLogs > totalPages) return toast(`Você já registrou ${initialPage + readLogs} páginas nesse livro. O total precisa ser pelo menos isso.`);
       Object.assign(b, { title, author, totalPages, initialPage });
+      if (fmtObj.format) b.format = fmtObj.format; else delete b.format;
       if (pagesOf(g, b) >= b.totalPages && b.status !== 'CONCLUIDO') { b.status = 'CONCLUIDO'; b.finishedAt = todayISO(); }
       toast('Livro atualizado');
     }
@@ -986,9 +1318,22 @@ $('#f-book').addEventListener('submit', (e) => {
   e.preventDefault(); const f = new FormData(e.target), g = current;
   const totalPages = Number(f.get('pages')), initialPage = Number(f.get('initial') || 0);
   if (initialPage >= totalPages) return toast('Páginas já lidas precisam ser menores que o total');
-  g.books.push({ id: uid(), title: f.get('title').trim(), author: (f.get('author')||'').trim() || null, totalPages, initialPage, order: g.books.length + 1, status: 'NAO_INICIADO' });
+  const nb = { id: uid(), title: f.get('title').trim(), author: (f.get('author')||'').trim() || null, totalPages, initialPage, order: g.books.length + 1, status: 'NAO_INICIADO' };
+  if (pendingCover && pendingCover.title === nb.title) nb.cover = pendingCover.cover;
+  if (f.get('format') && f.get('format') !== 'FISICO') nb.format = f.get('format');
+  pendingCover = null;
+  g.books.push(nb);
   save(); e.target.reset(); render();
 });
+// Busca preenche título/autor/páginas do formulário; a capa vai junto se o título não for trocado.
+let pendingCover = null;
+$('#find-book').addEventListener('click', () => searchSheet({ title: 'Buscar livro para a meta', onPick: (it) => {
+  const f = $('#f-book').elements;
+  f.title.value = it.title; f.author.value = it.author || ''; if (it.totalPages) f.pages.value = it.totalPages;
+  pendingCover = it.cover ? { title: it.title, cover: it.cover } : null;
+  if (!it.totalPages) f.pages.focus();
+  toast(it.totalPages ? 'Confira e toque em “Adicionar à TBR”' : 'Informe o número de páginas');
+} }));
 // Mostra a página atual do livro escolhido como dica no campo.
 // Registro por página ou por % (Kindle): a % é convertida em página pelo total do livro.
 let logUnit = 'page';
@@ -1009,7 +1354,7 @@ function pagePlaceholder() {
     ? `antes: ${(pagesOf(current, b) / b.totalPages * 100).toFixed(0)}%`
     : `antes: ${pagesOf(current, b)} de ${b.totalPages}`;
 }
-$('#log-book').addEventListener('change', pagePlaceholder);
+$('#log-book').addEventListener('change', () => { const b = current && current.books.find(x => x.id === $('#log-book').value); setUnit(byPct(b) ? 'pct' : 'page'); });
 
 // Registro pela página em que a leitora está: a diferença vira a leitura do dia.
 // Página menor que a atual corrige leituras anteriores (desfaz das mais recentes para trás).
@@ -1040,7 +1385,8 @@ $('#f-log').addEventListener('submit', (e) => {
   if (b.status === 'CONCLUIDO' && !b.review) rateForm(b);
 });
 // ============ Stories: calendário do mês em 1080x1920 ============
-const loadImg = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+// Capas com link externo só entram na imagem se o site permitir (CORS); senão o download quebraria.
+const loadImg = (src) => new Promise((res) => { const i = new Image(); if (/^https?:/.test(src)) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
 function rrect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x+r, y); c.arcTo(x+w, y, x+w, y+h, r); c.arcTo(x+w, y+h, x, y+h, r); c.arcTo(x, y+h, x, y, r); c.arcTo(x, y, x+w, y, r); c.closePath(); }
 function wrapLines(c, text, maxW, maxLines) {
   const words = String(text).split(/\s+/), lines = []; let cur = '';
@@ -1175,7 +1521,7 @@ function setHTab(t) {
   htab = t;
   try { localStorage.setItem('bear.htab', t); } catch {}
   $('#home-h1').textContent = { hoje: 'Hoje', metas: 'Suas metas', toca: 'Toca do urso' }[t];
-  $('#home-sub').textContent = { hoje: new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }), metas: 'Seus planos de leitura com prazo.', toca: 'Onde ficam guardados os livros que você já leu.' }[t];
+  $('#home-sub').textContent = { hoje: new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }), metas: 'Seus planos de leitura com prazo.', toca: 'Sua biblioteca: o que você leu, está lendo e quer ler.' }[t];
   for (const [k, sels] of Object.entries(HTABS)) for (const s of sels) { const n = document.querySelector(s); if (n) n.hidden = k !== t; }
   document.querySelectorAll('#htabs button').forEach(b => { const on = b.dataset.hgo === t; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
   window.scrollTo(0, 0);
@@ -1213,7 +1559,7 @@ async function apiCall(method, path, body, headers = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
   let data = null; try { data = await res.json(); } catch {}
-  if (res.status === 401) { apiCfg.token = null; saveCfg(); setSync('Entre de novo'); }
+  if (res.status === 401) { apiCfg.token = null; saveCfg(); setSync(''); if (!document.getElementById('auth-gate')) connectSheet(true); }
   return { status: res.status, data };
 }
 
@@ -1262,7 +1608,13 @@ async function pull() {
   setSync('Sincronizando…');
   try {
     const r = await apiCall('GET', '/v1/state');
-    if (r.status === 404) { if (db.goals.length) await push(); else setSync('Sincronizado'); return; }
+    if (r.status === 404) {
+      // Conta sem nada na nuvem. Dados locais sem dono conhecido (instalação antiga) só sobem se a pessoa confirmar.
+      if (db.goals.length && !localOwnerKnown && !confirm('Este aparelho já tem metas salvas. Levar essas metas para a sua conta?\n\nOK: levar.\nCancelar: começar do zero.')) resetLocal();
+      localOwnerKnown = true;
+      if (db.goals.length) await push(); else { syncMeta = { version: 0, dirty: false }; saveMeta(); setSync('Sincronizado'); }
+      return;
+    }
     if (r.status !== 200 || !r.data) { if (r.status !== 401) setSync('Sem sincronizar'); return; }
     const remote = r.data;
     if (remote.version === syncMeta.version) { if (syncMeta.dirty) await push(); else setSync('Sincronizado'); return; }
@@ -1282,7 +1634,8 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('online', () => { if (syncMeta.dirty) push(); else pull(); });
 
 // ---------- tela Conectar à bear-api ----------
-function connectSheet() {
+function connectSheet(gate) {
+  gate = gate === true;
   const close = () => wrap.remove();
   const msg = el('p', { class: 'hint' });
   const field = (label, name, attrs) => el('label', { text: label }, [el('input', { name, ...attrs })]);
@@ -1312,15 +1665,16 @@ function connectSheet() {
     ]);
   } else {
     form = el('form', { class: 'form' }, [
+      ...(gate ? [el('div', { class: 'gate-brand' }, [bearImg('bear_reading_chair', 'B.E.A.R'), el('div', { class: 'gate-name', text: 'B.E.A.R' }), el('div', { class: 'gate-sub', text: 'Be A Reader' })])] : []),
       el('h3', { text: 'Entrar na sua conta' }),
-      el('p', { class: 'hint', text: 'Entre com a mesma conta em cada aparelho para ver os mesmos dados.' }),
+      el('p', { class: 'hint', text: gate ? 'Sua estante, suas metas e seu ritmo de leitura, com o Bear acompanhando cada página.' : 'Entre com a mesma conta em cada aparelho para ver os mesmos dados.' }),
       nameField,
       field('E-mail', 'email', { type: 'email', value: apiCfg.email || '', autocomplete: 'email', required: '' }),
       field('Senha (8 ou mais caracteres)', 'password', { type: 'password', autocomplete: 'current-password', minlength: '8', required: '' }),
       msg,
       submitBtn,
       switchBtn,
-      el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }),
+      ...(gate ? [] : [el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close })]),
       // Servidor: escondido; só para quem precisar trocar.
       el('details', { class: 'adv' }, [el('summary', { text: 'Avançado' }), field('Servidor', 'api', { value: apiCfg.api || DEFAULT_API, inputmode: 'url', required: '' })]),
     ]);
@@ -1343,6 +1697,9 @@ function connectSheet() {
       const r = await fetch(api + '/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
       const d = await r.json().catch(() => null);
       if (r.status !== 200 || !d || !d.token) { msg.textContent = r.status === 401 ? 'E-mail ou senha incorretos.' : r.status === 429 ? 'Muitas tentativas. Espere 1 minuto.' : 'Não consegui entrar.'; return; }
+      let owner = null; try { owner = localStorage.getItem('bear.owner'); } catch {}
+      if (owner && owner.toLowerCase() !== email.toLowerCase()) resetLocal(); // aparelho usado por outra conta
+      try { localStorage.setItem('bear.owner', email); } catch {}
       apiCfg = { api, email, token: d.token }; saveCfg();
       // Ao entrar, usa o primeiro nome da conta se este aparelho ainda não tem nome definido.
       const accName = String((d.user && d.user.name) || '').trim().split(/\s+/)[0];
@@ -1352,7 +1709,9 @@ function connectSheet() {
       close(); toast('Conectado'); paintAvatar(); pull();
     } catch { msg.textContent = 'Sem conexão com a API. Confira o endereço e a internet.'; }
   }
-  const wrap = el('div', { class: 'sheet', onclick: (e) => { if (e.target === wrap) close(); } }, [el('div', { class: 'box' }, [form])]);
+  const wrap = gate
+    ? el('div', { class: 'gate', id: 'auth-gate' }, [el('div', { class: 'box' }, [form])])
+    : el('div', { class: 'sheet', onclick: (e) => { if (e.target === wrap) close(); } }, [el('div', { class: 'box' }, [form])]);
   document.body.append(wrap);
 }
 
@@ -1406,20 +1765,26 @@ function editName() {
   if (!$('#v-goal').classList.contains('hidden') && current) render(); else renderGoals();
 }
 async function logout() {
-  if (!confirm('Sair da conta neste aparelho? A sincronização para aqui; nos outros aparelhos continua normal.')) return;
+  if (!confirm('Sair da conta? Seus dados continuam salvos na nuvem e voltam quando você entrar de novo.')) return;
   if (syncMeta.dirty && connected()) { try { await push(); } catch {} } // envia o que faltava antes de sair
-  const wipe = confirm('Apagar também os dados do B.E.A.R deste aparelho?\n\nOK: apagar (use em aparelho emprestado; os dados continuam na nuvem).\nCancelar: manter os dados aqui.');
   apiCfg.token = null; saveCfg();
-  syncMeta = { version: 0, dirty: true }; saveMeta();
-  if (wipe) {
-    try { ['bear.v1', 'bear.lastSync', 'bear.profile'].forEach(k => localStorage.removeItem(k)); } catch {}
-    location.reload(); return;
-  }
-  setSync(''); paintAvatar(); toast('Você saiu da conta');
+  resetLocal();
+  try { ['bear.lastSync', 'bear.profile', 'bear.owner'].forEach(k => localStorage.removeItem(k)); } catch {}
+  location.reload();
 }
+// Apaga os dados do B.E.A.R deste aparelho (não mexe na nuvem).
+function resetLocal() {
+  applyingRemote = true; db = { goals: [] }; save(); applyingRemote = false;
+  syncMeta = { version: 0, dirty: false }; saveMeta();
+  NAME = 'leitora'; current = null;
+  try { renderGoals(); paintAvatar(); } catch {}
+}
+// Dono dos dados locais: instalações antigas (antes do login obrigatório) não têm.
+var localOwnerKnown = false; try { localOwnerKnown = !!localStorage.getItem('bear.owner'); } catch {}
 paintAvatar();
 
-if (connected()) setTimeout(pull, 300);
+// Login obrigatório: sem conta, o app mostra só a tela de entrada.
+if (connected()) setTimeout(pull, 300); else connectSheet(true);
 
 renderGoals();
 setHTab(htab);
