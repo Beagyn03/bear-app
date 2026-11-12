@@ -1065,6 +1065,23 @@ html[data-theme] .me-photo{background:none!important;border:none!important;paddi
 .rate-dates .lbl{font-size:.75rem!important;font-weight:800;color:var(--ink-2)}
 .paw-lbl{align-self:center;line-height:1}
 .rate-nota .rate-paws{align-items:center}
+.bk-img.blank{background:linear-gradient(160deg,hsl(var(--hue),34%,48%),hsl(var(--hue),32%,34%))!important}
+.shelf-row .bk.front{z-index:20!important;transform:translateY(-6px) scale(1.04);transition:transform .15s}
+.shelf-row .bk{transition:transform .15s}
+
+/* menu do perfil */
+.ach-compact h2 + .hint{display:none}
+.menu-row{display:grid;grid-template-columns:44px 1fr auto;gap:.7rem;align-items:center;width:100%;text-align:left;padding:.55rem .8rem!important;border-radius:14px;margin-top:.45rem}
+.menu-ic{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.menu-row b{display:block;font-size:.98rem}
+.menu-row span{display:block;color:var(--ink-2);font-size:.78rem;font-weight:600}
+.menu-row i{font-style:normal;color:var(--ink-2);font-weight:900;font-size:1.2rem}
+.room-view{grid-template-rows:auto 1fr auto!important}
+/* proporção da toca também em navegadores antigos */
+@supports not (aspect-ratio: 1 / 1) { .room{height:0!important;padding-bottom:133.86%!important} .room-stage .room{width:100%!important} }
+/* tema claro: estante menos contrastada */
+html[data-theme="light"] .bookcase.cave .shelf{filter:saturate(.78) brightness(1.12) drop-shadow(0 6px 8px rgba(75,51,38,.18))!important}
+html[data-theme="light"] .plq-body{filter:brightness(1.06)}
 </style>
 </head>
 <body>
@@ -1741,6 +1758,7 @@ function sortBooks(list, sort) {
   return [...list].reverse().sort(c); // empate: o último adicionado primeiro
 }
 // Livro de frente, com lombada, páginas e sombra
+function overlap(a, b) { const r1 = a.getBoundingClientRect(), r2 = b.getBoundingClientRect(); return r1.left < r2.right - 4 && r2.left < r1.right - 4; }
 function bookEl(e) {
   const g = e.link && db.goals.find(x => x.id === e.link.goalId), gb = g && g.books.find(b => b.id === e.link.bookId);
   const total = gb ? gb.totalPages : Number(e.totalPages) || 0, now = gb ? pagesOf(g, gb) : libProgress(e);
@@ -1763,7 +1781,13 @@ function bookEl(e) {
   }
   kids.push(el('span', { class: 'bk-t', text: e.title }));
   return el('button', { type: 'button', class: 'bk', role: 'listitem', title: e.title,
-    'aria-label': `${e.title}${e.author ? ', de ' + e.author : ''}${e.status === 'LENDO' && total ? `, ${Math.round(now / total * 100)}%` : ''}`, onclick: () => libCard(e) }, kids);
+    'aria-label': `${e.title}${e.author ? ', de ' + e.author : ''}${e.status === 'LENDO' && total ? `, ${Math.round(now / total * 100)}%` : ''}`, onclick: (ev) => {
+      const me = ev.currentTarget, row = me.parentElement;
+      // numa fileira com capas sobrepostas, o primeiro toque só traz o livro para frente
+      const covered = row && row.children.length > 1 && !me.classList.contains('front') && [...row.querySelectorAll('.bk')].some(o => o !== me && overlap(o, me));
+      if (covered) { row.querySelectorAll('.bk.front').forEach(o => o.classList.remove('front')); me.classList.add('front'); return; }
+      libCard(e);
+    } }, kids);
 }
 function renderShelves(sh) {
   sh.replaceChildren();
@@ -2388,21 +2412,32 @@ function achPanel() {
   const st = achState(), got = st.filter(a => a.done).length;
   // Cantinho das conquistas: os enfeites ganhos expostos numa prateleira só
   const won = st.filter(a => a.done).sort((a, b) => (b.rare ? 1 : 0) - (a.rare ? 1 : 0));
-  const toca = el('div', { class: 'toca-box' }, [roomScene(roomData(), { mini: true }),
-    el('button', { type: 'button', class: 'primary toca-btn', text: roomItems().length ? 'Decorar minha toca' : 'Decorar minha toca ✨', onclick: roomEditor })]);
   const cantinho = el('div', { class: 'cantinho' }, [
     el('div', { class: 'cantinho-shelf' }, won.length
       ? won.map(a => { const d = decoEl(a.reward); d.classList.add('trophy'); if (a.rare) d.classList.add('rare'); d.title = `${a.rn} · ${a.name}`; return d; })
       : [el('span', { class: 'cantinho-empty', text: 'Seus enfeites aparecem aqui conforme você ganha conquistas.' })]),
   ]);
   return el('div', { class: 'panel ach ach-compact' }, [
-    el('div', { class: 'card-h' }, [el('h2', { text: 'Minha toca' }), el('span', { class: 'hint', text: `${got} de ${st.length} conquistas` })]),
-    toca,
-    el('button', { type: 'button', class: 'ach-open', onclick: achSheet }, [el('b', { text: 'Ver conquistas' }), el('span', { text: `${got} de ${st.length} ›` })]),
-    el('button', { type: 'button', class: 'ach-open', onclick: () => setHTab('cal') }, [el('b', { text: '📊 Meus números' }), el('span', { text: 'paginômetro, gêneros, recordes ›' })]),
+    el('div', { class: 'card-h' }, [el('h2', { text: 'Seu cantinho' }), el('span', { class: 'hint', text: `${got} de ${st.length} conquistas` })]),
+    menuRow(DECO_IMG.lareira, 'Minha toca', roomData().slots && Object.keys(roomData().slots).length ? 'decorada com suas conquistas' : 'decore com suas conquistas', roomView),
+    menuRow(DECO_IMG.trofeu, 'Conquistas', `${got} de ${st.length}`, achSheet),
+    menuRow(DECO_IMG.mel, 'Meus números', 'paginômetro, gêneros e recordes', () => setHTab('cal')),
   ]);
 }
 // Lista completa de conquistas (abre como tela própria)
+function menuRow(img, title, sub, fn) {
+  return el('button', { type: 'button', class: 'menu-row', onclick: fn }, [el('img', { src: img || '', alt: '', class: 'menu-ic' }), el('div', {}, [el('b', { text: title }), el('span', { text: sub })]), el('i', { text: '›', 'aria-hidden': 'true' })]);
+}
+// Minha toca em tela própria
+function roomView() {
+  const close = () => wrap.remove();
+  const wrap = el('div', { class: 'room-editor room-view', role: 'dialog', 'aria-label': 'Minha toca' }, [
+    el('div', { class: 'room-top' }, [el('b', { text: 'Minha toca' }), el('button', { type: 'button', class: 'small', text: 'Fechar', onclick: close })]),
+    el('div', { class: 'room-stage' }, [roomScene(roomData())]),
+    el('button', { type: 'button', class: 'primary', text: 'Decorar', onclick: () => { close(); roomEditor(); } }),
+  ]);
+  document.body.append(wrap);
+}
 function achSheet() {
   const st = achState(), got = st.filter(a => a.done).length;
   const won = st.filter(a => a.done).sort((a, b) => (b.rare ? 1 : 0) - (a.rare ? 1 : 0));
@@ -3202,11 +3237,17 @@ function searchSheet(opts) {
     el('button', { type: 'button', text: 'Não achei: cadastrar à mão', onclick: () => { close(); manualBookSheet(opts.onPick); } }),
     el('button', { type: 'button', class: 'cancel', text: 'Fechar', onclick: close }),
   ]);
+  let seq = 0, typeT = null;
+  // busca enquanto digita (espera uma pausa curta para não buscar a cada letra)
+  q.addEventListener('input', () => { clearTimeout(typeT); const t = q.value.trim(); if (t.length < 3) { if (!t) { res.replaceChildren(); msg.textContent = ''; } return; } typeT = setTimeout(() => form.requestSubmit(), 450); });
   form.addEventListener('submit', async (ev) => {
-    ev.preventDefault();
+    ev.preventDefault(); clearTimeout(typeT);
     const t = q.value.trim(); if (t.length < 2) return;
-    msg.textContent = 'Buscando…'; res.replaceChildren();
+    const my = ++seq;
+    msg.textContent = 'Buscando…';
     const items = await searchBooks(t);
+    if (my !== seq) return; // chegou um resultado antigo depois de um novo: ignora
+    res.replaceChildren();
     msg.textContent = items.length ? 'Toque no livro certo:' : (navigator.onLine === false ? 'Sem internet agora. Tente de novo quando conectar.' : 'Nada encontrado nas bases de livros. Tente só o título, o título com o autor, ou cadastre à mão.');
     for (const it of items) res.append(el('button', { type: 'button', class: 'result', onclick: async () => {
       msg.textContent = 'Preparando a capa…';
@@ -3234,7 +3275,7 @@ function manualBookSheet(onPick) {
   document.body.append(wrap); form.querySelector('input').focus();
 }
 // Cor estável por título para livros sem capa (tons de marrom/caramelo da paleta).
-function hueOf(t) { let h = 0; for (const c of String(t)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return 15 + (h % 30); }
+function hueOf(t) { let h = 0; for (const c of String(t)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return 22 + (h % 13); }
 // Ficha do livro da estante
 function bookCard(x, k, d) {
   const close = () => wrap.remove();
@@ -4000,14 +4041,12 @@ function connectSheet(gate) {
       submitBtn,
       switchBtn,
       ...(gate ? [] : [el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close })]),
-      // Servidor: escondido; só para quem precisar trocar.
-      el('details', { class: 'adv' }, [el('summary', { text: 'Avançado' }), field('Servidor', 'api', { value: apiCfg.api || DEFAULT_API, inputmode: 'url', required: '' })]),
     ]);
     form.addEventListener('submit', (e) => { e.preventDefault(); go(creating); });
   }
   async function go(register) {
     const f = new FormData(form);
-    const api = String(f.get('api') || '').trim().replace(/\/+$/, ''), email = String(f.get('email') || '').trim(), password = String(f.get('password') || '');
+    const api = String(apiCfg.api || DEFAULT_API).trim().replace(/\/+$/, ''), email = String(f.get('email') || '').trim(), password = String(f.get('password') || '');
     if (!/^https:\/\//.test(api) && !/^http:\/\/(localhost|127\.0\.0\.1)/.test(api)) { msg.textContent = 'O endereço precisa começar com https://'; return; }
     if (!email || password.length < 8) { msg.textContent = 'Preencha e-mail e senha (8 ou mais caracteres).'; return; }
     const newName = String(f.get('name') || '').trim().slice(0, 40);
