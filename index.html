@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.10.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.10.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -8053,6 +8053,30 @@ setTimeout(restoreNav, 600);
     finally { const v = $('#shelflist'); if (v && !v.hidden && S.listRedraw) S.listRedraw(); else drawAll(); ind.textContent = 'Atualizado'; setTimeout(() => { ind.classList.remove('show'); busy = false; }, 700); }
   });
 }
+// ---------- 3.10.3: livro que entra sem capa busca capa, páginas e ISBN no catálogo ----------
+async function fillFromCatalog(e) {
+  if (!e || (e.cover && e.totalPages && e.isbn)) return false;
+  const k = normT(e.title), sur = normT(String(e.author || '').split(',')[0]).split(' ').pop() || '';
+  let list = []; try { list = await searchBooks(`${e.title} ${String(e.author || '').split(',')[0]}`.trim()); } catch { return false; }
+  const all = (list || []).flatMap((m) => [m, ...(m.editions || [])]);
+  const same = (it) => normT(it.title) === k && (!sur || normT(it.author || '').includes(sur));
+  const hit = all.find((it) => same(it) && it.coverUrl) || all.find(same) || all.find((it) => normT(it.title).startsWith(k) && it.coverUrl);
+  if (!hit) return false; let ch = false;
+  if (!e.cover && hit.coverUrl) { e.cover = hit.coverUrl; ch = true; }
+  if (!e.totalPages && hit.pages) { e.totalPages = hit.pages; ch = true; }
+  if (!e.isbn && hit.isbn) { e.isbn = hit.isbn; ch = true; }
+  if (!e.author && hit.author) { e.author = hit.author; ch = true; }
+  if (ch) { save(); refresh(); const v = $('#shelflist'); if (v && !v.hidden && S.listRedraw) S.listRedraw(); }
+  return ch;
+}
+{ const _add = addToLibrary; addToLibrary = function (item, intoCase, direct, opt) {
+  const before = new Set(lib().map((x) => x.id)); const r = _add(item, intoCase, direct, opt);
+  const later = () => { const e = lib().find((x) => !before.has(x.id)); if (e && !e.cover) fillFromCatalog(e); };
+  setTimeout(later, 300); setTimeout(later, 4000); // escolha pela janela demora um pouco
+  return r;
+}; }
+// livros que já estão na estante sem capa: tenta uma vez por livro, poucos por vez
+setTimeout(async () => { const L = lib().filter((e) => !e.cover && !e.coverTried).slice(0, 6); for (const e of L) { e.coverTried = 1; await fillFromCatalog(e); } if (L.length) save(); }, 8000);
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
