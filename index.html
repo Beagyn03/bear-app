@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '4.2.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.2.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -8499,6 +8499,7 @@ TR.addEventListener('click', (ev) => {
 .cm-fold > summary::after{content:'›';color:var(--ink-2);transition:transform .15s}.cm-fold[open] > summary::after{transform:rotate(90deg)}
 .cm-fold > .cm-in{padding:0 .7rem .7rem}
 .cm-fold .v3-sh{display:none}
+#lista .tr-bk{width:64px}#lista .tr-bk .cv{width:64px!important;height:96px!important}#lista .tr-row{margin-bottom:.4rem}
 `; TR.append(st); }
 const DI = {
   stats: '<path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="6" rx=".5"/><rect x="10.5" y="7" width="3" height="10" rx=".5"/><rect x="15.5" y="13" width="3" height="4" rx=".5"/>',
@@ -8566,7 +8567,7 @@ S.esF = S.esF || 'ALL';
 // --- Comunidade: Novidades primeiro; Em alta e Placar recolhidos numa linha ---
 function sectionNodes(sh) { const out = [sh]; let n = sh.nextElementSibling; while (n && !n.classList.contains('v3-sh') && !n.classList.contains('cm-fold')) { out.push(n); n = n.nextElementSibling; } return out; }
 function foldCommunity(box) {
-  if (box.querySelector('.cm-fold')) return;
+  if (box.querySelector('.cm-done')) return; box.insertAdjacentHTML('beforeend', '<i class="cm-done" hidden></i>');
   box.querySelectorAll('.v3-invs > *').forEach((n) => { if (/duelo/i.test(n.textContent || '')) n.remove(); }); const inv = box.querySelector('.v3-invs'); if (inv && !inv.children.length) inv.remove();
   const find = (re) => [...box.querySelectorAll('.v3-sh')].find((sh) => re.test((sh.querySelector('b') || sh).textContent.trim()));
   const top = box.querySelector('.v3-invs') || box.querySelector('.v3-ears');
@@ -8574,10 +8575,10 @@ function foldCommunity(box) {
   const fold = (sh, title, small) => { if (!sh) return null; const nodes = sectionNodes(sh); const d = document.createElement('details'); d.className = 'cm-fold'; d.innerHTML = `<summary>${title}${small ? `<small>${small}</small>` : ''}</summary><div class="cm-in"></div>`; nodes[0].before(d); nodes.forEach((n) => d.querySelector('.cm-in').append(n)); return d; };
   const trSh = find(/^Em alta/); const trHost = box.querySelector('#tr-host');
   const pl = find(/^Placar/); const myRow = box.querySelector('.v3-board .me, .v3-rank .me');
-  const fT = fold(trSh, 'Em alta', ''); if (fT && trHost && !fT.contains(trHost)) fT.querySelector('.cm-in').append(trHost);
+  const fT = null; if (trSh && top) { const ns = sectionNodes(trSh); if (trHost && !ns.includes(trHost)) ns.push(trHost); top.after(...ns); }
   if (pl) sectionNodes(pl).forEach((n) => n.remove()); const fP = null;
   if (false) { const me = [...fP.querySelectorAll('*')].find((x) => x.children.length === 0 && x.textContent.trim() === 'Você'); let row = me; for (let i = 0; i < 4 && row && !/^\s*\d+/.test(row.innerText || ''); i++) row = row.parentElement; const m = row && (row.innerText || '').match(/^\s*(\d+)/); if (m) fP.querySelector('summary').insertAdjacentHTML('beforeend', `<small>você em ${m[1]}º</small>`); }
-  if (nov && top) { const ns = sectionNodes(nov); top.after(...ns); }
+  if (nov) { const ns = sectionNodes(nov); const anchorEl = trHost || top; if (anchorEl) anchorEl.after(...ns); }
   const order = [fT, fP].filter(Boolean); if (order.length && nov) { let after = sectionNodes(nov).pop(); order.forEach((f) => { after.after(f); after = f; }); }
 }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
