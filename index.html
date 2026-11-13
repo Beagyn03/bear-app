@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.6.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.7.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7666,6 +7666,55 @@ setTimeout(() => { if (T().bio && !T().bioSynced && connected() && socialProfile
     if (r.status >= 300) { ev.currentTarget.disabled = false; return toast('Não consegui desfazer agora'); }
     SOC.fr.friends = SOC.fr.friends.filter((x) => x.id !== f.id); v.hidden = true; toast(`Você e ${String(f.displayName).split(' ')[0]} não são mais amigos`); refresh(); syncSocial3(true);
   });
+}; }
+// ---------- 3.7: Em alta na Comunidade ----------
+{ const st = document.createElement('style'); st.textContent = `
+.tr-tabs{display:flex;gap:.3rem;overflow-x:auto;scrollbar-width:none;margin:0 0 .5rem}.tr-tabs::-webkit-scrollbar{display:none}
+.tr-tabs button{flex:none;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:999px;padding:.32rem .75rem;font-weight:800;font-size:.74rem}
+.tr-tabs button.on{background:var(--acc);border-color:transparent;color:var(--on-acc,#fff)}
+.tr-row{display:flex;gap:.6rem;overflow-x:auto;padding:.1rem .1rem .6rem;scrollbar-width:none;margin-bottom:.6rem}.tr-row::-webkit-scrollbar{display:none}
+.tr-bk{flex:none;width:82px;border:0;background:none;padding:0;display:grid;gap:.2rem;text-align:left;color:var(--ink)}
+.tr-bk .cv{width:82px;height:123px;border-radius:3px 7px 7px 3px;box-shadow:2px 5px 12px rgba(40,20,5,.22)}
+.tr-bk b{font-size:.68rem;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tr-bk small{font-size:.62rem;font-weight:800;color:var(--acc)}
+.tr-empty{font-size:.76rem;color:var(--ink-2);margin:0 0 1rem}
+`; TR.append(st); }
+S.trTab = S.trTab || 'friends';
+function loadTrends(force) {
+  if (!connected() || !socialProfile) return;
+  if (!force && S.trends && Date.now() - S.trends.at < 5 * 60000) return;
+  if (S.trBusy) return; S.trBusy = true;
+  sapi('GET', '/v1/trends').then((r) => { if (r.status === 200 && r.data) { S.trends = { ...r.data, at: Date.now() }; if (S.tab === 'comunidade') paintTrends(); } }).catch(() => {}).finally(() => { S.trBusy = false; });
+}
+function trendsHTML() {
+  const d = S.trends; if (!d) return '<p class="tr-empty">Carregando o que está em alta…</p>';
+  const tabs = [['friends', 'Entre amigos'], ['topRated', 'Bem avaliados'], ['app', 'No app'], ['marked', 'Mais marcados']];
+  const list = d[S.trTab] || [];
+  const cap = (x) => S.trTab === 'friends' ? (x.who && x.who.length ? (x.n > 2 ? `${String(x.who[0]).split(' ')[0]} e mais ${x.n - 1}` : x.who.map((w) => String(w).split(' ')[0]).join(' e ')) : plural(x.n, 'amigo', 'amigos'))
+    : S.trTab === 'topRated' ? `${pawTxt(x.avg)} · ${x.n}` : S.trTab === 'app' ? plural(x.n, 'leitor', 'leitores') : plural(x.n, 'marcador', 'marcadores');
+  const empty = { friends: 'Nenhum amigo começou um livro nesta semana.', topRated: 'Ainda não há livros com duas avaliações ou mais neste mês.', app: 'Ninguém começou um livro nesta semana ainda.', marked: 'Nenhum marcador nesta semana.' }[S.trTab];
+  return `<div class="tr-tabs">${tabs.map(([k, n]) => `<button type="button" data-tr="${k}" class="${S.trTab === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+    ${list.length ? `<div class="tr-row">${list.map((x, i) => `<button type="button" class="tr-bk" data-i="${i}">${cvh(x.title, x.cover, '')}<b>${esc(x.title)}</b><small>${esc(cap(x))}</small></button>`).join('')}</div>` : `<p class="tr-empty">${empty}</p>`}`;
+}
+function paintTrends() {
+  const box = $('#lista'), host = box.querySelector('#tr-host'); if (!host) return;
+  host.innerHTML = trendsHTML(); paintCv(host);
+  $$('[data-tr]', host).forEach((b) => b.addEventListener('click', () => { S.trTab = b.dataset.tr; paintTrends(); }));
+  $$('.tr-bk', host).forEach((b) => b.addEventListener('click', () => {
+    const x = (S.trends[S.trTab] || [])[Number(b.dataset.i)]; if (!x) return;
+    const mine = lib().find((e) => normT(e.title) === x.key);
+    if (mine) return openBookPage(mine, 'comunidade');
+    openBookPage({ id: 'cat:' + x.key, title: x.title, author: x.author || null, cover: x.cover || null, totalPages: null, isbn: null, status: null, _preview: true, _item: { title: x.title, author: x.author || null, coverUrl: x.cover || null } }, 'comunidade');
+  }));
+}
+{ const _dt = drawTab; drawTab = function () {
+  _dt(); const box = $('#lista');
+  if (S.tab === 'comunidade' && !box.querySelector('#tr-host')) {
+    const at = box.querySelector('.v3-invs') || box.querySelector('.v3-ears');
+    const html = '<div class="v3-sh"><b>Em alta</b></div><div id="tr-host"></div>';
+    if (at) at.insertAdjacentHTML('afterend', html); else box.querySelector('.v3-cols')?.insertAdjacentHTML('beforebegin', html);
+    paintTrends(); loadTrends();
+  }
 }; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
