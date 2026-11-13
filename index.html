@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '4.0.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.1.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -1759,10 +1759,10 @@ function caseForm(cur) {
   const close = () => wrap.remove();
   const inp = el('input', { name: 'name', maxlength: '40', value: cur ? cur.name : '', placeholder: 'Ex.: Favoritos, Fantasia, Clube do livro' });
   const form = el('form', { class: 'form' }, [
-    el('h3', { text: cur ? 'Renomear estante' : 'Nova estante' }),
+    el('h3', { text: cur ? 'Renomear coleção' : 'Nova coleção' }),
     ...(cur ? [] : [el('p', { class: 'hint', text: 'Uma estante sua para separar livros do jeito que quiser. Depois, abra um livro e use “Colocar em uma estante”.' })]),
     el('label', { text: 'Nome' }, [inp]),
-    el('button', { type: 'submit', class: 'primary', text: cur ? 'Salvar' : 'Criar estante' }),
+    el('button', { type: 'submit', class: 'primary', text: cur ? 'Salvar' : 'Criar coleção' }),
     el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }),
   ]);
   form.addEventListener('submit', (ev) => {
@@ -2086,7 +2086,7 @@ function renderYearCard(today) {
       return el('div', { class: 'panel card' }, [cardHead(`Leituras ${y}`, ['Estante ›', () => { if (Toca) Toca.library(); }]), chips, carousel(lidos, 'Quando terminar um livro, ele aparece aqui.')]);
     }
     let title, list, empty;
-    if (id.startsWith('case:')) { const c = (db.shelves || []).find(x => 'case:' + x.id === id); title = c.name; list = lib.filter(e => c.bookIds.includes(e.id)); empty = 'Estante vazia.'; }
+    if (id.startsWith('case:')) { const c = (db.shelves || []).find(x => 'case:' + x.id === id); title = c.name; list = lib.filter(e => c.bookIds.includes(e.id)); empty = 'Coleção vazia.'; }
     else { title = { FAV: 'Prateleira do coração', QUERO: 'Quero ler', LIDO: 'Lidos', ABANDONEI: 'Abandonei' }[id]; list = lib.filter(e => inShelf(e, id));
       empty = { FAV: 'Dê nota 5 a um livro e ele vem morar aqui.', QUERO: 'Sua TBR aparece aqui.', LIDO: 'Seus lidos aparecem aqui.', ABANDONEI: 'Nenhum abandonado.' }[id]; }
     list = sortBooks(list, (db.prefs && db.prefs.bookSort) || 'recent');
@@ -4371,7 +4371,7 @@ function drawLib() {
   hot(r, 'Trocar o enfeite do pedestal direito', 552, 270, 614, 332, () => pickPrizes('Trocar enfeite', 'Escolha qual prêmio fica neste pedestal.', 'pedestals', 0, 1), false).style.zIndex = 26;
   hot(r, 'Abandonados', 145, 828, 287, 960, () => openAbandoned(), true, 'bottom:-4%');
   const prev = el('button', 'arrow sm', '', '‹'), next = el('button', 'arrow sm', '', '›');
-  prev.type = next.type = 'button'; prev.setAttribute('aria-label', 'Estante anterior'); next.setAttribute('aria-label', S.estante === all.length - 1 ? 'Nova estante' : 'Próxima estante');
+  prev.type = next.type = 'button'; prev.setAttribute('aria-label', 'Estante anterior'); next.setAttribute('aria-label', S.estante === all.length - 1 ? 'Nova coleção' : 'Próxima estante');
   prev.addEventListener('click', () => { S.estante = (S.estante + all.length - 1) % all.length; drawLib(); applyRug(); });
   next.addEventListener('click', () => { if (S.estante === all.length - 1) return newEstante(); S.estante++; drawLib(); applyRug(); });
   bar.append(prev, nm, next);
@@ -4437,7 +4437,7 @@ function openCases() {
     const extras = [...activeGoals().map((g) => ['d:' + g.id, `Meta · ${g.name}`, goalQueue(g)]), ['pa', 'Pausados', sortList(lib().filter((e) => e.status === 'HIBERNANDO'), 'recentes')], ['ab', 'Abandonados', sortList(lib().filter((e) => e.status === 'ABANDONEI'), 'recentes')]].filter((x) => x[2].length);
     v.querySelector('.sl-body').innerHTML = `
       <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Estantes</b><span>${plural(lib().length, 'livro', 'livros')}</span></div>
-      <div class="cs-bar"><button type="button" id="cs-add" class="pri">+ Adicionar livro</button><button type="button" id="cs-new">+ Nova estante</button><button type="button" id="cs-find" aria-label="Procurar um livro nas suas estantes">${IC('procurar', 'ico-b')}Procurar</button></div>
+      <div class="cs-bar"><button type="button" id="cs-add" class="pri">+ Adicionar livro</button><button type="button" id="cs-new">+ Nova coleção</button><button type="button" id="cs-find" aria-label="Procurar um livro nas suas estantes">${IC('procurar', 'ico-b')}Procurar</button></div>
       ${all.map((E, ei) => { const pool = poolOf(E), open = S.casesOpen.has(E.id), shs = E.cfg.shelves.slice(0, 4);
         return `<section class="cs-card" data-ei="${ei}">
           <header><button type="button" class="cs-name" data-a="toggle" aria-expanded="${open}"><b>${esc(E.nome)}</b><small>${plural(pool.length, 'livro', 'livros')} · ${plural(shs.length, 'prateleira', 'prateleiras')}</small></button>
@@ -4530,7 +4530,7 @@ function editEstante() {
   let nome = E.nome.slice(0, 18), sort = E.cfg.sort || 'recentes';
   ed.querySelector('.ed-body').innerHTML = `
     <h3>Configurar estante</h3>
-    <label class="fl">Nome da estante<input id="es-name" maxlength="18" value="${esc(nome)}" ${main ? 'disabled' : ''}><small id="es-count">${main ? 'A estante principal não muda de nome' : nome.length + '/18'}</small></label>
+    <label class="fl">Nome da coleção<input id="es-name" maxlength="18" value="${esc(nome)}" ${main ? 'disabled' : ''}><small id="es-count">${main ? 'A estante principal não muda de nome' : nome.length + '/18'}</small></label>
     <label class="fl">Ordem dos livros em todas as prateleiras<select id="es-sort">${Object.entries(SORTS).filter(([k]) => k !== 'manual').map(([k, n]) => `<option value="${k}" ${sort === k ? 'selected' : ''}>${n}</option>`).join('')}</select><small>Cada prateleira ainda pode ter a sua própria ordem.</small></label>
     <div class="fl">Prateleiras<div class="es-shelves">${E.cfg.shelves.map((s, i) => `<span>${i + 1}. ${esc(s.name)}</span>`).join('')}</div><small>Toque na plaquinha de cada prateleira para editar, mover ou remover.</small></div>
     <div class="row">${E.cfg.shelves.length < 4 ? '<button type="button" id="es-add">+ Adicionar prateleira</button>' : ''}<button type="button" id="es-books">+ Adicionar livros</button>${main ? '' : '<button type="button" id="es-del" class="danger">Excluir estante</button>'}</div>
@@ -4562,10 +4562,10 @@ function editEstante() {
 // última estante + ›: criar uma estante nova
 function newEstante() {
   const ed = $('#editor'); ed.classList.toggle('compact', true);
-  ed.querySelector('.ed-body').innerHTML = `<h3>+ Nova estante</h3>
-    <label class="fl">Nome da estante<input id="ne-name" maxlength="18" placeholder="Ex.: Clube do livro"><small id="ne-count">0/18</small></label>
+  ed.querySelector('.ed-body').innerHTML = `<h3>+ Nova coleção</h3>
+    <label class="fl">Nome da coleção<input id="ne-name" maxlength="18" placeholder="Ex.: Clube do livro"><small id="ne-count">0/18</small></label>
     <div class="fl"><small>Ela começa com Favoritos, Lendo, Quero ler e Lidos. Depois, use “+ Adicionar livros” para escolher o que entra.</small></div>
-    <div class="row end"><button type="button" id="ne-cancel">Cancelar</button><button type="button" id="ne-save" class="pri">Criar estante</button></div>`;
+    <div class="row end"><button type="button" id="ne-cancel">Cancelar</button><button type="button" id="ne-save" class="pri">Criar coleção</button></div>`;
   const inp = $('#ne-name', ed); inp.addEventListener('input', () => { $('#ne-count', ed).textContent = `${inp.value.length}/18`; });
   $('#ne-cancel', ed).addEventListener('click', closeEd);
   $('#ne-save', ed).addEventListener('click', () => {
@@ -6229,7 +6229,7 @@ function shelfBooks(key) {
   else list = lib().filter((e) => e.status === key);
   return sortList(list, sortKey(key));
 }
-const shelfName = (key) => (key === 'FAV' ? 'Prateleira do coração' : key.startsWith('sh:') ? ((db.shelves || []).find((x) => x.id === key.slice(3)) || {}).name || 'Estante' : (ST_SECTIONS.find((x) => x[0] === key) || [0, key])[1]);
+const shelfName = (key) => (key === 'FAV' ? 'Prateleira do coração' : key.startsWith('sh:') ? ((db.shelves || []).find((x) => x.id === key.slice(3)) || {}).name || 'Coleção' : (ST_SECTIONS.find((x) => x[0] === key) || [0, key])[1]);
 function shelfRowHTML(key, empty) {
   const list = shelfBooks(key);
   if (!list.length && !empty) return '';
@@ -6239,10 +6239,10 @@ function shelfRowHTML(key, empty) {
 function drawEstante(box) {
   const total = lib().length, mine = db.shelves || [];
   box.innerHTML = `<header class="v3-top"><h1>Estante</h1><div class="v3-acts"><button type="button" class="v3-bell" id="es-find" aria-label="Procurar na estante">${IC('procurar', 'ico-g')}</button></div></header>
-    <div class="es-actions"><button type="button" class="es-add" id="es-add">+ Adicionar livro</button><button type="button" class="es-new" id="es-new">+ Nova estante</button></div>
+    <div class="es-actions"><button type="button" class="es-add" id="es-add">+ Adicionar livro</button><button type="button" class="es-new" id="es-new">+ Nova coleção</button></div>
     <div class="es-chips">${ST_SECTIONS.map(([k, n]) => `<button type="button" data-open="${k}"><b>${lib().filter((e) => e.status === k).length}</b><small>${n}</small></button>`).join('')}</div>
     ${shelfRowHTML('LENDO', 'Nenhum livro em leitura agora.')}${shelfRowHTML('QUERO', 'Sua lista de desejos aparece aqui.')}${shelfRowHTML('LIDO', 'Os livros que você terminar aparecem aqui.')}${shelfRowHTML('FAV')}
-    ${mine.length ? `<div class="es-sub">Suas estantes</div>${mine.map((s) => shelfRowHTML('sh:' + s.id, 'Estante vazia. Toque em ••• para adicionar livros.')).join('')}` : ''}
+    ${mine.length ? `<div class="es-sub">Coleções</div>${mine.map((s) => shelfRowHTML('sh:' + s.id, 'Coleção vazia. Toque em ••• para adicionar livros.')).join('')}` : ''}
     ${shelfRowHTML('HIBERNANDO')}${shelfRowHTML('ABANDONEI')}
     <p class="es-foot">${plural(total, 'livro', 'livros')} na sua estante</p>`;
   paintCv(box);
@@ -6312,7 +6312,7 @@ function drawLot(key) {
 }
 function shelfNameForm(s) {
   const ed = $('#editor'); ed.classList.add('compact');
-  ed.querySelector('.ed-body').innerHTML = `<h3>${s ? 'Renomear estante' : 'Nova estante'}</h3><input id="sn-n" maxlength="40" placeholder="Ex.: Clube do livro, Fantasia, Para reler" value="${esc(s ? s.name : '')}">
+  ed.querySelector('.ed-body').innerHTML = `<h3>${s ? 'Renomear coleção' : 'Nova coleção'}</h3><input id="sn-n" maxlength="40" placeholder="Ex.: Clube do livro, Fantasia, Para reler" value="${esc(s ? s.name : '')}">
     <div class="row end"><button type="button" id="sn-c">Cancelar</button><button type="button" class="pri" id="sn-s">${s ? 'Salvar' : 'Criar'}</button></div>`;
   ed.hidden = false; $('#sn-n', ed).focus();
   $('#sn-c', ed).addEventListener('click', closeEd);
@@ -6374,7 +6374,7 @@ async function changeEdition(e) {
 }
 function moveToShelf(e) {
   const mine = db.shelves || [];
-  if (!mine.length) return sheetList('Suas estantes', [{ label: 'Criar uma estante', fn: () => shelfNameForm() }]);
+  if (!mine.length) return sheetList('Coleções', [{ label: 'Criar uma estante', fn: () => shelfNameForm() }]);
   sheetList(`Estantes de “${esc(e.title)}”`, mine.map((s) => ({ label: esc(s.name), on: (s.bookIds || []).includes(e.id), fn: () => { s.bookIds = (s.bookIds || []).includes(e.id) ? s.bookIds.filter((x) => x !== e.id) : [...(s.bookIds || []), e.id]; save(); refresh(); toast((s.bookIds || []).includes(e.id) ? `Adicionado a ${s.name}` : `Removido de ${s.name}`); } })), 'Fechar');
 }
 statusMenu = function (e) {
@@ -6393,7 +6393,7 @@ bookMenu = function (e) {
     ['curtir', rv ? 'Editar avaliação' : 'Avaliar', '', () => rateForm(e, { logs: [] }, () => renderHome(todayISO()))],
     ['numeros', 'Ver histórico de leitura', '', () => openBookPage(e, 'grafico')],
     0,
-    ['estantes', 'Estantes', '', () => moveToShelf(e)],
+    ['estantes', 'Coleções', '', () => moveToShelf(e)],
     ['editar', 'Corrigir total de páginas', e.totalPages ? ` · ${e.totalPages}` : '', () => fixPages(e)],
     ['procurar', 'Trocar edição', '', () => changeEdition(e)],
     ['hoje', 'Ver página do livro', '', () => openBookPage(e)],
@@ -7477,7 +7477,7 @@ function youSectionsHTML() {
     <section class="v3c yo-ach"><div class="v3-sh" style="margin:0 0 .5rem"><b>Conquistas · ${won.length} de ${st.length}</b><button type="button" class="v3-link" id="yo-achs">Todas ›</button></div>
       ${show.length ? `<div class="v3-shelf">${show.map((a) => `<span class="v3-trophy${a.rare ? ' rare' : ''}" title="${esc(a.name)}"><img src="${DECO_IMG[a.reward]}" alt="${esc(a.name)}"></span>`).join('')}</div>` : ''}${nx ? achRow(nx) : ''}</section>
     ${revs.length ? `<div class="v3-sh"><b>Mais bem avaliados</b><button type="button" class="v3-link" id="yo-revs">Todas as avaliações ›</button></div><div class="v3-heart">${revs.map((e) => `<button type="button" class="v3-hb yo-top" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'pf-cv')}<span class="yo-pw">${pawTxt(reviewOfLib(e).paws)}</span></button>`).join('')}</div>` : ''}
-    ${shelves.length ? `<div class="v3-sh"><b>Minhas estantes</b><button type="button" class="v3-link" id="yo-es">Todas ›</button></div><div class="yo-shelves">${shelves.slice(0, 4).map((s) => { const bk = (s.bookIds || []).map((id) => L.find((e) => e.id === id)).filter(Boolean); return `<button type="button" class="yo-shelf" data-sh="${esc(s.id)}"><b>${esc(s.name)}</b><small>${plural(bk.length, 'livro', 'livros')}</small><span class="yo-mini">${bk.slice(0, 6).map((e) => cvh(e.title, e.cover, '')).join('')}</span></button>`; }).join('')}</div>` : ''}`;
+    ${shelves.length ? `<div class="v3-sh"><b>Coleções</b><button type="button" class="v3-link" id="yo-es">Todas ›</button></div><div class="yo-shelves">${shelves.slice(0, 4).map((s) => { const bk = (s.bookIds || []).map((id) => L.find((e) => e.id === id)).filter(Boolean); return `<button type="button" class="yo-shelf" data-sh="${esc(s.id)}"><b>${esc(s.name)}</b><small>${plural(bk.length, 'livro', 'livros')}</small><span class="yo-mini">${bk.slice(0, 6).map((e) => cvh(e.title, e.cover, '')).join('')}</span></button>`; }).join('')}</div>` : ''}`;
 }
 { const _dt = drawTab; drawTab = function () {
   _dt(); const box = $('#lista');
@@ -8285,7 +8285,7 @@ $('#g-bell').addEventListener('click', () => { openNotif(); S.notifN = 0; setTim
 { const _tb = drawTabbar; drawTabbar = function () { _tb(); $$('#tabbar button').forEach((b) => { const k = b.dataset.tab; if (!ICO[k]) return; const old = b.querySelector('img, .tb-av, .tb-ic'); if (old) old.outerHTML = SVG(ICO[k]); const sm = b.querySelector('small'); if (sm && k === 'inicio') sm.textContent = 'Início'; }); paintCommDot(); }; }
 // --- Início: só o que pede ação ---
 function trimInicio(box) {
-  const drop = /^(Mais bem avaliados|Prateleira do coração|Minhas estantes|Seu \d{4})/;
+  const drop = /^(Mais bem avaliados|Prateleira do coração|Coleções|Seu \d{4})/;
   let meta = null; const st4 = box.querySelector('.v3-stats4'); if (st4) { const t = st4.innerText.replace(/\s+/g, ' '); const m = t.match(/Livros \d{4} (\d+) meta (\d+)/); if (m) meta = { n: +m[1], goal: +m[2] }; }
   box.querySelectorAll('.yo-nums, .yo-ach').forEach((n) => n.remove());
   [...box.querySelectorAll('.v3-sh')].forEach((sh) => { const t = (sh.querySelector('b') || sh).textContent.trim(); if (drop.test(t)) { const nx = sh.nextElementSibling; if (nx && !nx.classList.contains('v3-sh')) nx.remove(); sh.remove(); } });
@@ -8331,6 +8331,146 @@ paintMsgBadge = function () { const b = $('#g-msg'); if (!b) return; let u = b.q
 .ptr.show{opacity:1;transform:translate(-50%,0)!important}
 `; TR.append(st); }
 { const _gt = goTab; goTab = function (tab, fromBar) { chatMode(false); $('#shelflist').classList.toggle('on-buscar', tab === 'buscar'); return _gt(tab, fromBar); }; }
+// ---------- 4.1 (entrega 2): menuzinho do livro, pergunta da leitura dupla, Estante com "Todos" e Coleções ----------
+{ const st = document.createElement('style'); st.textContent = `
+.bq{position:fixed;z-index:60;width:248px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.28);overflow:hidden;animation:bqin .12s ease-out}
+@keyframes bqin{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+.bq-h{display:flex;gap:.6rem;align-items:center;padding:.6rem .7rem}
+.bq-h .cv{width:30px;height:45px;border-radius:2px 5px 5px 2px;flex:none}
+.bq-h b{display:block;font-size:.84rem;color:var(--ink);line-height:1.2}.bq-h small{display:block;font-size:.7rem;color:var(--ink-2);margin-top:.1rem}
+.bq button{display:flex;align-items:center;gap:.55rem;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);text-align:left;font:inherit;font-size:.86rem;padding:.6rem .75rem}
+.bq button svg{width:18px;height:18px;flex:none;color:var(--ink-2)}
+.bq button.main{background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc);font-weight:800}.bq button.main svg{color:var(--acc)}
+.bq button .r{margin-left:auto;color:var(--ink-2)}
+.bq .fx{border-top:1.5px solid var(--line)}.bq .fx button{font-size:.8rem;color:var(--ink-2);padding:.5rem .75rem;border-top:0}
+.bq .fx button svg{width:16px;height:16px}
+.dd{display:grid;gap:.5rem}.dd h3{margin:0;font-size:1.05rem;color:var(--ink)}.dd p{margin:0 0 .3rem;font-size:.86rem;color:var(--ink-2)}
+.dd button.op{display:grid;gap:.1rem;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.7rem .85rem;color:var(--ink);font:inherit}
+.dd button.op b{font-size:.9rem}.dd button.op small{font-size:.76rem;color:var(--ink-2)}
+.dd button.op.main{border-color:var(--acc)}.dd button.op.main b{color:var(--acc)}
+.dd .cn{border:0;background:none;color:var(--ink-2);font-weight:700;padding:.5rem}
+.es-pct{position:absolute;top:4px;left:4px;font-style:normal;font-size:.6rem;font-weight:900;padding:.05rem .35rem;border-radius:999px;background:var(--acc);color:var(--on-acc,#fff)}
+.es-bk{position:relative}
+.es-search{display:flex;align-items:center;gap:.5rem;width:100%;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font:inherit;font-size:.86rem;padding:0 .8rem;margin:.1rem 0 .7rem}
+.es-search svg{width:18px;height:18px}
+.es-lid{font-size:.7rem;color:var(--ink-2);font-weight:700;margin-left:.3rem}
+`; TR.append(st); }
+const BI = {
+  plus: '<path d="M12 5v14M5 12h14"/>', play: '<path d="M7 4.5v15l12-7.5z"/>', check: '<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.4 4.8-5"/>',
+  pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>', flag: '<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>', pause: '<path d="M9 5v14M15 5v14"/>',
+  paw: '<circle cx="7" cy="9" r="1.8"/><circle cx="11" cy="6" r="1.8"/><circle cx="15" cy="7" r="1.8"/><circle cx="18" cy="11" r="1.8"/><path d="M8.5 17.5c0-2.8 2-4.8 4.2-4.8s4 2 4 4.3c0 1.6-1.2 2.5-2.7 2.5-1 0-1.4-.5-2.1-.5s-1.2.5-2 .5c-1 0-1.4-.8-1.4-2z"/>',
+  redo: '<path d="M4 12a8 8 0 0 1 14-5.3L20 9"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 0 1-14 5.3L4 15"/><path d="M4 20v-5h5"/>',
+  off: '<path d="M6 4h12v16l-6-4-6 4z"/><path d="m4 4 16 16"/>', book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 21H20"/>',
+  folder: '<path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/>',
+  send: '<path d="M21 3 10 14"/><path d="m21 3-7 18-4-7-7-4z"/>', chat: '<path d="M20.5 11.5a8 8 0 0 1-11.8 7.1L3.5 20l1.4-4.6A8 8 0 1 1 20.5 11.5z"/>', x: '<path d="m6 6 12 12M18 6 6 18"/>',
+};
+const bsv = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${BI[k]}</svg>`;
+function bqClose() { TR.querySelectorAll('.bq').forEach((n) => n.remove()); }
+document.addEventListener('scroll', bqClose, true);
+TR.addEventListener('pointerdown', (ev) => { if (!ev.target.closest('.bq')) bqClose(); }, true);
+function libItem(b) { return { title: b.title, author: b.author || null, cover: b.cover || null, coverUrl: b.cover || null, totalPages: b.totalPages || null, isbn: b.isbn || null }; }
+function addAs(b, st) { const before = new Set(lib().map((x) => x.id)); addToLibrary(libItem(b), null, st); return lib().find((x) => !before.has(x.id)) || lib().find((x) => normT(x.title) === normT(b.title)); }
+// começar a ler: se já há livro em andamento, pergunta como fica
+function startReading(e, b) {
+  const others = lib().filter((x) => x.status === 'LENDO' && (!e || x.id !== e.id)).sort((x, y) => String(y.updatedAt || y.startedAt || '').localeCompare(String(x.updatedAt || x.startedAt || '')));
+  const go = (pauseOther) => { if (pauseOther) setLibStatus(pauseOther, 'HIBERNANDO'); if (e) setLibStatus(e, 'LENDO'); else addAs(b, 'LENDO'); refresh(); };
+  if (!others.length) return go(null);
+  const cur = others[0], pg = libProgress(cur);
+  const ed = $('#editor'); ed.classList.add('compact');
+  ed.querySelector('.ed-body').innerHTML = `<div class="dd"><h3>Você já está lendo ${esc(cur.title)}</h3><p>Como fica com ${esc((e || b).title)}?</p>
+    <button type="button" class="op main" id="dd-both"><b>Ler os dois ao mesmo tempo</b><small>${esc(cur.title)} continua em andamento</small></button>
+    <button type="button" class="op" id="dd-swap"><b>Trocar de livro</b><small>${esc(cur.title)} vai para Pausados${pg ? `, na pág. ${pg}` : ''}</small></button>
+    <button type="button" class="cn" id="dd-x">Cancelar</button></div>`;
+  $('#dd-both', ed).addEventListener('click', () => { closeEd(); go(null); });
+  $('#dd-swap', ed).addEventListener('click', () => { closeEd(); go(cur); });
+  $('#dd-x', ed).addEventListener('click', closeEd);
+  ed.hidden = false;
+}
+function bookQuickMenu(anchor, b) {
+  bqClose(); const e = b.e || lib().find((x) => normT(x.title) === normT(b.title)) || null, st = e ? e.status : null;
+  const pct = e && e.totalPages ? Math.round((libProgress(e) / e.totalPages) * 100) : 0;
+  const sub = !e ? 'fora da sua estante' : st === 'LENDO' ? `pág. ${libProgress(e)}${e.totalPages ? ` de ${e.totalPages}` : ''}` : st === 'LIDO' ? `lido${e.finishedAt ? ' em ' + String(e.finishedAt).slice(0, 4) : ''}${(reviewOfLib(e) || {}).paws ? ' · ' + pawTxt(reviewOfLib(e).paws) : ''}` : (LIB_LABEL[st] || '').toLowerCase();
+  const reload = () => { const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw(); refresh(); };
+  const acts = !e ? [['plus', 'Quero ler', () => { addAs(b, 'QUERO'); toast('Na sua fila'); reload(); }], ['play', 'Começar a ler', () => startReading(null, b)], ['check', 'Já li', () => { const n = addAs(b, 'LIDO'); if (n) rateForm(n, { logs: [] }, () => renderHome(todayISO())); reload(); }]]
+    : st === 'QUERO' ? [['play', 'Começar a ler', () => startReading(e)], ['check', 'Já li', () => setLibStatus(e, 'LIDO')], ['off', 'Tirar da fila', () => removeFromLib(e)]]
+    : st === 'LENDO' ? [['pen', 'Atualizar página', () => updateSheet(e)], ['flag', 'Terminei', () => setLibStatus(e, 'LIDO')], ['pause', 'Pausar ou abandonar', 'sub']]
+    : st === 'LIDO' ? [['paw', 'Minha avaliação', () => rateForm(e, { logs: [] }, () => renderHome(todayISO()))], ['redo', 'Ler de novo', () => startReread(e)]]
+    : st === 'HIBERNANDO' ? [['play', 'Retomar leitura', () => startReading(e)], ['x', 'Abandonar', () => setLibStatus(e, 'ABANDONEI')]]
+    : [['play', 'Tentar de novo', () => startReading(e)], ['plus', 'Voltar para a fila', () => setLibStatus(e, 'QUERO')]];
+  const fixed = [['book', 'Ver livro', () => (e ? openBookPage(e) : openAnyBook(b.title, b.author, b.cover))],
+    ['folder', 'Coleções', () => moveToShelf(e || addAs(b, 'QUERO'))],
+    ['send', 'Indicar a um amigo', () => recommendToFriend(e || b)],
+    ['chat', 'Conversar sobre', () => { const fr = SOC.fr.friends || []; if (!fr.length) return toast('Adicione amigos para conversar'); sheet(`Conversar sobre “${(e || b).title}” com…`, fr.map((f) => [f.displayName, () => openChat(f.handle, { book: (e || b).title })])); }]];
+  const m = document.createElement('div'); m.className = 'bq'; m.setAttribute('role', 'menu');
+  const paint = (mode) => {
+    m.innerHTML = `<div class="bq-h">${cvh((e || b).title, (e || b).cover, '')}<div><b>${esc((e || b).title)}</b><small>${esc(sub)}</small></div></div>`
+      + (mode === 'sub' ? `<button type="button" data-k="p">${bsv('pause')}Pausar</button><button type="button" data-k="a">${bsv('x')}Abandonar</button><button type="button" data-k="back">‹ Voltar</button>`
+        : acts.map((a, i) => `<button type="button" data-a="${i}" class="${i === 0 ? 'main' : ''}">${bsv(a[0])}${a[1]}${a[2] === 'sub' ? '<span class="r">›</span>' : ''}</button>`).join('') + `<div class="fx">${fixed.map((f, i) => `<button type="button" data-f="${i}">${bsv(f[0])}${f[1]}</button>`).join('')}</div>`);
+    paintCv(m);
+    m.querySelectorAll('[data-a]').forEach((x) => x.addEventListener('click', () => { const a = acts[+x.dataset.a]; if (a[2] === 'sub') return paint('sub'); bqClose(); a[2](); }));
+    m.querySelectorAll('[data-f]').forEach((x) => x.addEventListener('click', () => { bqClose(); fixed[+x.dataset.f][2](); }));
+    m.querySelector('[data-k="p"]')?.addEventListener('click', () => { bqClose(); setLibStatus(e, 'HIBERNANDO'); reload(); });
+    m.querySelector('[data-k="a"]')?.addEventListener('click', () => { bqClose(); setLibStatus(e, 'ABANDONEI'); reload(); });
+    m.querySelector('[data-k="back"]')?.addEventListener('click', () => paint('main'));
+  };
+  paint('main'); TR.append(m);
+  const r = anchor.getBoundingClientRect(), W = innerWidth, H = innerHeight, mh = m.offsetHeight, mw = m.offsetWidth;
+  let left = Math.min(Math.max(8, r.left), W - mw - 8), top = r.bottom + 6;
+  if (top + mh > H - 70) top = Math.max(60, r.top - mh - 6);
+  m.style.left = left + 'px'; m.style.top = top + 'px';
+}
+function removeFromLib(e) {
+  if (e.link) return toast(`“${e.title}” faz parte de uma meta com prazo. Tire o livro da meta para remover.`);
+  if (!confirm(`Tirar “${e.title}” da sua estante?`)) return;
+  db.library = db.library.filter((x) => x !== e); (db.shelves || []).forEach((s) => { s.bookIds = (s.bookIds || []).filter((i) => i !== e.id); });
+  if (T().nextId === e.id) T().nextId = null; if (T().currentId === e.id) T().currentId = null;
+  save(); refresh(); const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw(); toast(`“${e.title}” saiu da estante`);
+}
+// toque numa capa (fora da página do livro) abre o menuzinho
+TR.addEventListener('click', (ev) => {
+  if (ev.target.closest('#editor, .bq, .bp-tabs, .es-more')) return;
+  const n = ev.target.closest('.es-bk, .v3-hb, .cs-bk, .tr-bk, .fd-post .nv-cv, .rc-it .cv, .fr-read, .fl-bk'); if (!n) return;
+  let b = null;
+  if (n.dataset.id) { const e = byId(n.dataset.id); if (e) b = { e, title: e.title, author: e.author, cover: e.cover }; }
+  else if (n.dataset.book) b = { title: n.dataset.book, author: n.dataset.author || null };
+  else if (n.classList.contains('tr-bk')) { const x = ((S.trends || {})[S.trTab] || [])[+n.dataset.i]; if (x) b = { title: x.title, author: x.author, cover: x.cover }; }
+  else if (n.classList.contains('nv-cv')) { const t = n.closest('.fd-post').querySelector('header p b'); if (t) b = { title: t.textContent }; }
+  else if (n.closest('.rc-it')) { const x = S.recs.find((y) => y.id === n.closest('.rc-it').dataset.rc); if (x) b = { title: x.title, author: x.author, cover: x.cover }; }
+  if (!b) return;
+  ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+  bookQuickMenu(n, b);
+}, true);
+// --- Estante: "Todos" no lugar de "Lendo", progresso na capa, procura visível, coleções com quantos lidos ---
+{ const _de = drawEstante; drawEstante = function (box) {
+  _de(box);
+  box.querySelector('.es-chips [data-open="LENDO"]')?.remove();
+  const lendo = box.querySelector('.es-t[data-open="LENDO"]'); lendo && lendo.closest('.es-sec').remove();
+  const all = lib().slice().sort((a, b) => (a.status === 'LENDO' ? 0 : 1) - (b.status === 'LENDO' ? 0 : 1) || String(b.updatedAt || b.addedAt || '').localeCompare(String(a.updatedAt || a.addedAt || '')));
+  const pctOf = (e) => (e.totalPages ? Math.round((libProgress(e) / e.totalPages) * 100) : 0);
+  const todos = `<section class="es-sec"><div class="es-h"><span class="es-t"><b>Todos</b><span>${all.length}</span></span></div>${all.length ? `<div class="es-row">${all.slice(0, 20).map((e) => `<button type="button" class="es-bk" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'es-cv')}${e.status === 'LENDO' ? `<i class="es-p" style="--p:${pctOf(e)}%"></i><i class="es-pct">${pctOf(e)}%</i>` : ''}</button>`).join('')}</div>` : '<p class="es-empty">Adicione o primeiro livro pelo Buscar.</p>'}</section>`;
+  const first = box.querySelector('.es-sec'); if (first) first.insertAdjacentHTML('beforebegin', todos); else box.insertAdjacentHTML('beforeend', todos);
+  box.querySelector('.es-actions')?.insertAdjacentHTML('afterend', `<button type="button" class="es-search" id="es-search2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m20 20-4.6-4.6"/></svg>Procurar na estante</button>`);
+  $('#es-search2', box)?.addEventListener('click', () => openLibSearch({ label: 'Estante', fn: () => { $('#shelflist').hidden = true; } }));
+  $$('.es-t[data-open^="sh:"]', box).forEach((t) => { const s = (db.shelves || []).find((x) => x.id === t.dataset.open.slice(3)); if (!s) return; const ids = s.bookIds || []; const lidos = ids.map(byId).filter((x) => x && x.status === 'LIDO').length; t.insertAdjacentHTML('beforeend', `<span class="es-lid">· ${lidos} ${lidos === 1 ? 'lido' : 'lidos'}</span>`); });
+  paintCv(box);
+}; }
+// ---------- 4.1.1: Estante mais enxuta — trechos e histórico lado a lado, em uma linha ----------
+{ const st = document.createElement('style'); st.textContent = `
+.es-minis{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin:0 0 .8rem}
+.es-minis .v3-row{min-height:0!important;padding:.55rem .65rem!important;margin:0!important;gap:.45rem!important;border-radius:12px!important;display:flex!important;align-items:center}
+.es-minis .v3-row img,.es-minis .v3-row .ico-a{width:22px!important;height:22px!important;flex:none}
+.es-minis .v3-row span{min-width:0}.es-minis .v3-row b{font-size:.8rem!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.es-minis .v3-row small{display:none!important}
+.es-minis .v3-row > :last-child:not(span){display:none}
+`; TR.append(st); }
+{ const _dt = drawTab; drawTab = function () {
+  _dt(); if (S.tab !== 'estante') return; const box = $('#lista'), q = box.querySelector('#es-quotes'), h = box.querySelector('#es-hist');
+  if (!q || !h || q.parentElement.classList.contains('es-minis')) return;
+  const n = lib().reduce((a, e) => a + (e.quotes || []).length, 0);
+  const w = document.createElement('div'); w.className = 'es-minis'; q.before(w); w.append(q, h); [q, h].forEach((x) => [...x.childNodes].forEach((c) => { if (c.nodeType === 3 && c.textContent.trim() === '›') c.remove(); }));
+  const qb = q.querySelector('b'); if (qb) qb.textContent = `Meus trechos · ${n}`;
+  const hb = h.querySelector('b'); if (hb) hb.textContent = 'Montar histórico';
+}; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
