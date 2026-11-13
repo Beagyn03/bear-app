@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.5.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.5.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7211,8 +7211,6 @@ async function shareYear() {
   if (S.tab === 'comunidade') box.querySelector('#v3-search')?.remove();
   if (S.tab === 'perfil') {
     box.querySelector('.lx-stats.v3-stats')?.remove();
-    ['#pf-priv', '#pf-cfg', '#pf-install'].forEach((id) => box.querySelector(id)?.remove());
-    [...box.querySelectorAll('.pf-group')].filter((g) => /^App$/i.test(g.textContent.trim())).forEach((g) => g.remove());
   }
   if (S.tab === 'estante') {
     const at = box.querySelector('.es-chips');
@@ -7463,7 +7461,7 @@ function youHeaderHTML() {
   return `<header class="yo-top"><button type="button" class="av v3-av yo-av${fr ? ' framed' : ''}" id="yo-photo" aria-label="Trocar foto" style="${h.ph ? `background-image:${cssUrl(h.ph)};` : ''}${fr ? `--frame:${fr[2]}` : ''}">${h.ph ? '' : esc(initial(h.name))}</button>
     <div class="yo-id"><b>${esc(h.name)}</b><small>${socialProfile && socialProfile.handle ? '@' + esc(socialProfile.handle) : 'sem @usuário ainda'}</small><p class="yo-bio">${esc(youBio())}</p></div>
     <div class="v3-acts"><button type="button" class="v3-bell" id="v3-bell" aria-label="Notificações">${MN('notificacoes', 'ico-g')}${n ? `<u>${n > 9 ? '9+' : n}</u>` : ''}</button><button type="button" class="v3-bell" id="yo-cfg" aria-label="Conta e ajustes">${IC('config', 'ico-g')}</button></div></header>
-    <div class="yo-nums"><button type="button" data-go="lidos"><b>${L.filter((e) => e.status === 'LIDO').length}</b><small>lidos</small></button><button type="button" data-go="amigos"><b>${(SOC.fr.friends || []).length}</b><small>amigos</small></button><button type="button" data-go="conq"><b>${won}</b><small>conquistas</small></button><button type="button" data-go="trechos"><b>${L.reduce((a, e) => a + (e.quotes || []).length, 0)}</b><small>trechos</small></button></div>`;
+    <div class="yo-nums"><button type="button" data-go="lidos"><b>${L.filter((e) => e.status === 'LIDO').length}</b><small>${L.filter((e) => e.status === 'LIDO').length === 1 ? 'lido' : 'lidos'}</small></button><button type="button" data-go="amigos"><b>${(SOC.fr.friends || []).length}</b><small>${(SOC.fr.friends || []).length === 1 ? 'amigo' : 'amigos'}</small></button><button type="button" data-go="conq"><b>${won}</b><small>${won === 1 ? 'conquista' : 'conquistas'}</small></button><button type="button" data-go="trechos"><b>${L.reduce((a, e) => a + (e.quotes || []).length, 0)}</b><small>${L.reduce((a, e) => a + (e.quotes || []).length, 0) === 1 ? 'trecho' : 'trechos'}</small></button></div>`;
 }
 function youSectionsHTML() {
   const L = lib(), R = reading(), nextId = T().nextId;
@@ -7499,6 +7497,8 @@ function youSectionsHTML() {
   }
   if (S.tab === 'perfil') {
     const h1 = box.querySelector('.v3-top h1'); if (h1) h1.textContent = 'Conta e ajustes';
+    box.querySelector('#v3-cfg')?.remove(); // a engrenagem já trouxe até aqui
+    const top = box.querySelector('.v3-top'); if (top && !box.querySelector('#yo-back')) { top.insertAdjacentHTML('afterbegin', '<button type="button" class="sl-back" id="yo-back">‹ Você</button>'); $('#yo-back', box).addEventListener('click', () => goTab('inicio')); }
     box.querySelectorAll('.lx-card').forEach((c) => { if (/Conquistas|Minhas avaliações/.test(c.textContent)) c.remove(); });
   }
 }; }
