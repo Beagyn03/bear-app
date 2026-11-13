@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.3.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.4.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -2705,24 +2705,43 @@ function libSync() {
   db.library = db.library.filter(x => !x.link || seen.has(x.link.goalId + ':' + x.link.bookId));
   if (JSON.stringify(db.library) !== before) save();
 }
-function addToLibrary(item, intoCase, direct) {
-  if (direct) return put(direct);
-  sheet(`Onde guardar “${item.title}”?`, [
-    ['Quero ler', () => put('QUERO')],
-    ['Estou lendo', () => put('LENDO')],
-    ['Já li', () => put('LIDO')],
+// formato e aparelho de leitura
+const DEVICES = [['FISICO', null, 'Livro físico'], ['EBOOK', 'Kindle', 'Kindle'], ['EBOOK', 'Kobo', 'Kobo ou outro e-reader'], ['EBOOK', 'Celular', 'Celular ou tablet'], ['AUDIO', null, 'Audiobook']];
+const fmtTxt = (e) => (e && e.format === 'AUDIO' ? 'Audiobook' : e && e.format === 'EBOOK' ? (e.device || 'E-book') : 'Físico');
+function askFormat(cb, title) { sheet(title || 'Como você vai ler?', DEVICES.map(([f, d, n]) => [n, () => cb({ format: f, device: d })])); }
+function setFormat(e, f) { if (f.format === 'FISICO') { delete e.format; delete e.device; } else { e.format = f.format; if (f.device) e.device = f.device; else delete e.device; } }
+// "Já li": quando terminou (livros antigos não contam no ano de hoje)
+function askWhen(title, cb) {
+  const Y = Number(todayISO().slice(0, 4));
+  sheet(`Quando você terminou “${title}”?`, [
+    ['Agora há pouco', () => cb('now')], [`Neste ano (${Y})`, () => cb({ y: Y })], [`Em ${Y - 1}`, () => cb({ y: Y - 1 })],
+    ['Em outro ano…', () => { const v = prompt('Em que ano você terminou? (ex.: 2019)', String(Y - 2)); if (v === null) return; const y = Number(String(v).trim()); if (y >= 1900 && y <= Y) cb({ y }); else toast('Digite um ano entre 1900 e ' + Y); }],
+    ['Não lembro', () => cb('unknown')],
   ]);
-  function put(status) {
+}
+function whenDate(w) { const t = todayISO(); if (!w || w === 'now') return t; if (w === 'unknown') return null; if (w.d) return w.d > t ? t : w.d; const d = `${w.y}-06-30`; return d > t ? t : d; }
+function addToLibrary(item, intoCase, direct, opt) {
+  if (direct) return put(direct, opt || {});
+  sheet(`Onde guardar “${item.title}”?`, [
+    ['Quero ler', () => put('QUERO', {})],
+    ['Estou lendo', () => askFormat((f) => put('LENDO', { fmt: f }))],
+    ['Já li', () => askWhen(item.title, (w) => put('LIDO', { when: w }))],
+  ]);
+  function put(status, o) {
     const e = { id: uid(), title: item.title, author: item.author || null, totalPages: item.totalPages || null, status, addedAt: todayISO() };
     if (item.cover) e.cover = item.cover;
     if (item.isbn) e.isbn = item.isbn;
+    if (o.fmt) setFormat(e, o.fmt);
     if (status === 'LENDO') e.startedAt = todayISO();
-    if (status === 'LIDO') e.finishedAt = todayISO();
+    if (status === 'LIDO') { const d = whenDate(o.when); if (d) { e.finishedAt = d; if (o.when && o.when !== 'now' && !o.when.d) e.dateApprox = 'year'; } else e.noDate = true; }
+    if (o.paws) e.review = { paws: o.paws };
     db.library.push(e);
     if (intoCase) intoCase.bookIds.push(e.id);
+    if (o.quiet) return e;
     save(); renderHome(todayISO()); setTimeout(() => ensureGenres(2), 500);
-    toast(`“${e.title}” está em ${LIB_LABEL[status]}`);
-    if (status === 'LIDO') rateForm(e, { logs: [] }, () => renderHome(todayISO()));
+    toast(status === 'LIDO' && o.when && o.when !== 'now' ? `“${e.title}” entrou nos lidos${e.finishedAt ? ' de ' + e.finishedAt.slice(0, 4) : ''}` : `“${e.title}” está em ${LIB_LABEL[status]}`);
+    if (status === 'LIDO' && (!o.when || o.when === 'now')) rateForm(e, { logs: [] }, () => renderHome(todayISO()));
+    return e;
   }
 }
 function setLibStatus(e, st) {
@@ -4769,9 +4788,10 @@ function openCatalog() {
     v.querySelector('.ct-list').innerHTML = `${busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '<p class="sl-empty">Procure qualquer livro para ver a sinopse e adicionar à sua estante.</p>' : !res.length ? '<p class="sl-empty">Nada encontrado. Tente outro título ou o ISBN.</p>'
         : res.map((it, i) => { const mine = inLib(it); return `<article class="ct-it">${cvh(it.title, it.coverUrl, 'ct-cv')}<div class="ct-tx"><b>${esc(it.title)}</b><small>${esc(it.author || '')}</small>
           <div class="ct-chips">${it.pages ? `<span>${it.pages} pág.</span>` : ''}${it.year ? `<span>${esc(it.year)}</span>` : ''}${/^pt/i.test(it.lang || '') ? '<span>Português</span>' : it.lang ? `<span>${esc(LANGS[it.lang] || it.lang)}</span>` : ''}</div>
-          <div class="ct-acts"><button type="button" class="ct-info" data-i="${i}">Sobre</button>${mine ? `<button type="button" class="ct-mine" data-id="${esc(mine.id)}">Na estante · ${esc(LIB_LABEL[mine.status] || '')}</button>${canReadNow(mine) ? `<button type="button" class="ct-add ct-now" data-id="${esc(mine.id)}">Ler agora</button>` : ''}` : `<button type="button" class="ct-add" data-i="${i}">+ Adicionar</button>`}</div></div></article>`; }).join('')}`;
+          <div class="ct-acts">${it.editions && it.editions.length ? `<button type="button" class="ct-eds" data-i="${i}">+${it.editions.length} ${it.editions.length === 1 ? 'edição' : 'edições'}</button>` : ''}<button type="button" class="ct-info" data-i="${i}">Sobre</button>${mine ? `<button type="button" class="ct-mine" data-id="${esc(mine.id)}">Na estante · ${esc(LIB_LABEL[mine.status] || '')}</button>${canReadNow(mine) ? `<button type="button" class="ct-add ct-now" data-id="${esc(mine.id)}">Ler agora</button>` : ''}` : `<button type="button" class="ct-add" data-i="${i}">+ Adicionar</button>`}</div></div></article>`; }).join('')}`;
     paintCv(v);
     $$('.ct-info', v).forEach((b) => b.addEventListener('click', () => openBookPage(asBook(res[Number(b.dataset.i)]))));
+    $$('.ct-eds', v).forEach((b) => b.addEventListener('click', () => { const k = Number(b.dataset.i), it = res[k]; const eds = it.editions || []; it.editions = []; res.splice(k + 1, 0, ...eds); drawList(); }));
     $$('.ct-it .ct-cv', v).forEach((c, i) => c.addEventListener('click', () => { const it = res[i], mine = inLib(it); openBookPage(mine || asBook(it)); }));
     $$('.ct-mine', v).forEach((b) => b.addEventListener('click', () => openBook(b.dataset.id)));
     $$('.ct-now', v).forEach((b) => b.addEventListener('click', () => { const e = byId(b.dataset.id); if (e && readNow(e)) drawList(); }));
@@ -4877,7 +4897,7 @@ function openBookPage(e, tab = 'sobre') {
     }
     v.querySelector('.sl-body').innerHTML = `
       <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b></b>${e._preview ? '<span></span>' : '<button type="button" class="es-dots" data-a="menu" aria-label="Opções do livro">•••</button>'}</div>
-      <header class="bp-hero">${cvh(e.title, e.cover, 'bp-cv')}<div class="bp-ht"><h2>${esc(e.title)}</h2><small>${esc(e.author || '')}</small><div class="bp-chips">${e.status ? `<span class="bp-chip">${esc(LIB_LABEL[e.status] || '')}</span>` : '<span class="bp-chip">Catálogo</span>'}${info.total ? `<span class="bp-chip">${info.total} pág.</span>` : ''}${r.paws ? `<span class="bp-chip gold">${pawTxt(r.paws)}</span>` : ''}</div></div></header>
+      <header class="bp-hero">${cvh(e.title, e.cover, 'bp-cv')}<div class="bp-ht"><h2>${esc(e.title)}</h2><small>${esc(e.author || '')}</small><div class="bp-chips">${e.status ? `<span class="bp-chip">${esc(LIB_LABEL[e.status] || '')}</span>` : '<span class="bp-chip">Catálogo</span>'}${e.status && e.format ? `<span class="bp-chip">${esc(fmtTxt(e))}</span>` : ''}${e.status === 'LIDO' && e.dateApprox && e.finishedAt ? `<span class="bp-chip">lido em ${e.finishedAt.slice(0, 4)}</span>` : ''}${e.status === 'LIDO' && e.noDate ? '<span class="bp-chip">lido · sem data</span>' : ''}${info.total ? `<span class="bp-chip">${info.total} pág.</span>` : ''}${r.paws ? `<span class="bp-chip gold">${pawTxt(r.paws)}</span>` : ''}</div></div></header>
       <nav class="bp-tabs">${tabs.map(([k, n]) => `<button type="button" data-t="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}</nav>
       ${body}`;
     paintCv(v);
@@ -7216,6 +7236,184 @@ async function shareYear() {
     if (T().nextId === e.id) T().nextId = null; if (T().currentId === e.id) T().currentId = null;
     save(); $('#shelflist').hidden = true; refresh(); toast(`“${e.title}” saiu da estante`);
   });
+}; }
+// ---------- 3.4: catálogo em português, edições, sinopse em PT, formato, histórico e importação ----------
+{ const st = document.createElement('style'); st.textContent = `
+.ct-eds{border:1px dashed var(--line)!important;color:var(--ink-2)!important}
+.hs-intro{display:grid;gap:.5rem;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:.8rem;margin-bottom:.7rem}
+.hs-intro p{margin:0;font-size:.82rem;color:var(--ink-2);line-height:1.4}
+.hs-intro b{color:var(--ink)}
+.hs-imp{height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-weight:800;font-size:.82rem}
+.hs-count{font-size:.76rem;font-weight:800;color:var(--acc);text-align:center;margin:.2rem 0 .5rem}
+.hs-yrs{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.35rem}
+.hs-yrs button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:.28rem .6rem;font-weight:800;font-size:.72rem}
+.hs-yrs button.pri{background:var(--acc);color:var(--on-acc,#fff);border:0}
+`; TR.append(st); }
+
+// ----- busca: português primeiro, edições agrupadas, sem resultados que não têm nada a ver -----
+const EN_W = /\b(the|of|and|novel|edition|with|for|from|book|special)\b/, ES_W = /\b(el|los|las|del|una|edicion|novela|y)\b/, PT_W = /\b(o|os|as|do|da|dos|das|um|uma|com|sem|para|nao|edicao|coracao)\b/;
+function langOf(it) {
+  const l = String(it.lang || '').toLowerCase(); if (l) return l === 'por' || l.startsWith('pt') ? 'pt' : l.slice(0, 2);
+  const isbn = String(it.isbn || '').replace(/\D/g, ''); if (/^(97865|97885|978972|978989)/.test(isbn)) return 'pt';
+  const t = ' ' + normT(it.title) + ' '; if (PT_W.test(t)) return 'pt'; if (ES_W.test(t)) return 'es'; if (EN_W.test(t)) return 'en'; return '';
+}
+function rankBooks(list, q) {
+  const nq = normT(q), words = nq.split(' ').filter((x) => x.length > 2);
+  const base = (it) => normT(String(it.title || '').split(/[:(–]| - /)[0]), fa = (it) => normT(String(it.author || '').split(',')[0]);
+  const dom = new Map(); for (const it of list) { const b = base(it), m = dom.get(b) || new Map(); m.set(fa(it), (m.get(fa(it)) || 0) + 1); dom.set(b, m); }
+  const rel = (it) => { const nt = normT(it.title), na = normT(it.author || ''); return !words.length || words.some((x) => nt.includes(x) || na.includes(x)); };
+  let pool = list.filter(rel); if (!pool.length) pool = list;
+  const score = (it, idx) => {
+    const nt = normT(it.title), b = base(it), lang = langOf(it); let s = -idx * 0.4;
+    if (!it.lang && lang) it.lang = lang;
+    if (b === nq || nt === nq) s += 60; else if (nt.startsWith(nq)) s += 45; else if (words.length && words.every((x) => nt.includes(x))) s += 25;
+    if (nq.length > 3 && normT(it.author || '').includes(nq)) s += 40;
+    s += lang === 'pt' ? 30 : lang === 'en' ? -6 : lang ? -18 : 0;
+    if (it.coverUrl) s += 8; if (it.pages) s += 5; if (it.isbn) s += 3;
+    if (/\b(edition|edicion|svensk|utgava|box|kit|study guide|resumo|analise|sparknotes)\b/.test(nt)) s -= 15;
+    const m = dom.get(b); if (m && m.size > 1) { const top = [...m.entries()].sort((x, y) => y[1] - x[1])[0][0]; if (fa(it) !== top && !normT(it.author || '').includes(nq)) s -= 20; }
+    return s;
+  };
+  const sorted = pool.map((it, i) => [it, score(it, i)]).sort((x, y) => y[1] - x[1]).map((x) => x[0]);
+  const out = [], groups = new Map();
+  for (const it of sorted) { const k = base(it) + '|' + fa(it), main = groups.get(k); if (main) { (main.editions = main.editions || []).push(it); continue; } it.editions = []; groups.set(k, it); out.push(it); }
+  return out.slice(0, 25);
+}
+{ const _sb = searchBooks; searchBooks = async function (t) {
+  const q = String(t || '').trim(), isIsbn = /^(\d{9}[\dXx]|\d{13})$/.test(q.replace(/[-\s.]/g, ''));
+  if (isIsbn) return _sb(q);
+  const [a, g] = await Promise.all([_sb(q).catch(() => []), q.length >= 3 ? getJSON(`https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=20&langRestrict=pt&q=${encodeURIComponent(q)}`, 9000).then(fromGoogle).catch(() => []) : []]);
+  const seen = new Set(), all = [];
+  for (const it of [...g, ...a]) { if (!it || !it.title) continue; const k = it.isbn || normT(it.title) + '|' + normT(String(it.author || '').split(',')[0]); if (seen.has(k)) continue; seen.add(k); all.push(it); }
+  return rankBooks(all, q);
+}; }
+
+// ----- sinopse: se veio em inglês, tenta a edição em português -----
+const looksEN = (t) => { const w = normT(t).split(' '); const n = (arr) => w.filter((x) => arr.includes(x)).length; return n(['the', 'and', 'of', 'to', 'is', 'in', 'her', 'his', 'with', 'that']) > Math.max(3, n(['de', 'que', 'e', 'o', 'a', 'do', 'da', 'com', 'para', 'uma', 'um', 'nao']) * 1.5); };
+{ const _fm = fetchBookMeta; fetchBookMeta = async function (e) {
+  const m = await _fm(e);
+  if (m && m.desc && !m.ptTried && looksEN(m.desc)) {
+    m.ptTried = true;
+    try {
+      const q = `intitle:${e.title}${e.author ? `+inauthor:${String(e.author).split(',')[0]}` : ''}`;
+      const d = await getJSON(`https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=6&langRestrict=pt&q=${encodeURIComponent(q)}`, 8000);
+      const v = ((d && d.items) || []).map((x) => x.volumeInfo || {}).find((i) => i.description && /^pt/i.test(i.language || '') && !looksEN(i.description));
+      if (v) { m.desc = stripHtml(v.description).slice(0, 3000); m.src = 'Google Livros (português)'; m.lang = 'pt'; }
+    } catch {}
+    if (lib().includes(e)) { e.meta = m; save(); }
+  }
+  return m;
+}; }
+
+// ----- formato na leitura atual, na página do livro, no menu e no ano -----
+{ const _nc = nowCardC; nowCardC = function () { const R = reading(), h = _nc(); return R && R.e.format ? h.replace("'Lendo agora'", '').replace('>Lendo agora<', `>Lendo agora · ${esc(fmtTxt(R.e))}<`) : h; }; }
+{ const _bm = bookMenu; bookMenu = function (e) {
+  _bm(e); const cur = lib().find((x) => x.id === e.id); const ed = $('#editor'), list = ed.querySelector('.bm-list'); if (!cur || !list) return;
+  list.insertAdjacentHTML('afterbegin', `<button type="button" class="bm-it" id="bm-fmt">${IC('editar', 'ico-m')}<span>Formato<small> · ${esc(fmtTxt(cur))}</small></span>›</button>`);
+  $('#bm-fmt', ed).addEventListener('click', () => { closeEd(); askFormat((f) => { setFormat(cur, f); save(); refresh(); toast(`Formato: ${fmtTxt(cur)}`); }, `Como você lê “${cur.title}”?`); });
+}; }
+{ const _yd = yearDetail; yearDetail = function () { const d = _yd(); const m = new Map(); d.lidos.forEach((e) => m.set(fmtTxt(e), (m.get(fmtTxt(e)) || 0) + 1)); d.formatos = [...m.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(' · '); return d; }; }
+{ const _yc = yearCardHTML; yearCardHTML = function () { const h = _yc(); if (!h) return h; const d = yearDetail(); return d.formatos ? h.replace('</ul>', `<li><span>Formatos</span><b>${esc(d.formatos)}</b></li></ul>`) : h; }; }
+
+// ----- montar o histórico: livros lidos antes do app, rápido -----
+function openHistory() {
+  const v = $('#shelflist'), Y = Number(todayISO().slice(0, 4)); let q = '', res = null, busy = false, token = 0, added = 0, pick = -1, tm = 0;
+  const inLib = (it) => lib().find((e) => (it.isbn && e.isbn === it.isbn) || normT(e.title) === normT(it.title));
+  const add = (it, w) => {
+    const e = addToLibrary({ ...it, totalPages: it.pages || null, cover: it.coverUrl || null }, null, 'LIDO', { when: w, quiet: true });
+    if (it._meta && !e.meta) e.meta = it._meta; save(); added++; pick = -1; toast(`“${it.title}” entrou nos lidos${e.finishedAt ? ' de ' + e.finishedAt.slice(0, 4) : ''}`); drawList();
+  };
+  const drawList = () => {
+    const box = v.querySelector('.hs-list'); if (!box) return;
+    box.innerHTML = (added ? `<p class="hs-count">${plural(added, 'livro adicionado', 'livros adicionados')} nesta sessão</p>` : '') + (busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '' : !res.length ? '<p class="sl-empty">Nada encontrado. Tente o título com outras palavras ou o ISBN.</p>'
+      : res.map((it, i) => { const mine = inLib(it); return `<article class="ct-it">${cvh(it.title, it.coverUrl, 'ct-cv')}<div class="ct-tx"><b>${esc(it.title)}</b><small>${esc(it.author || '')}</small>
+        <div class="ct-chips">${it.year ? `<span>${esc(it.year)}</span>` : ''}${it.lang ? `<span>${esc(LANGS[it.lang] || it.lang)}</span>` : ''}</div>
+        ${mine ? `<div class="ct-acts"><button type="button" class="ct-mine">Na estante · ${esc(LIB_LABEL[mine.status] || '')}</button></div>`
+          : pick === i ? `<div class="hs-yrs">${[Y, Y - 1, Y - 2, Y - 3, Y - 4].map((y) => `<button type="button" data-y="${y}">${y}</button>`).join('')}<button type="button" data-y="other">Outro ano</button><button type="button" data-y="unknown">Não lembro</button></div>`
+          : `<div class="ct-acts"><button type="button" class="ct-add hs-read" data-i="${i}">Já li</button></div>`}</div></article>`; }).join(''));
+    paintCv(v);
+    $$('.hs-read', v).forEach((b) => b.addEventListener('click', () => { pick = Number(b.dataset.i); drawList(); }));
+    $$('.hs-yrs button', v).forEach((b) => b.addEventListener('click', () => {
+      const it = res[pick], y = b.dataset.y; if (!it) return;
+      if (y === 'unknown') return add(it, 'unknown');
+      if (y === 'other') { const t = prompt('Em que ano você terminou? (ex.: 2015)', String(Y - 5)); if (t === null) return; const n = Number(String(t).trim()); if (n >= 1900 && n <= Y) add(it, { y: n }); else toast('Digite um ano entre 1900 e ' + Y); return; }
+      add(it, { y: Number(y) });
+    }));
+  };
+  const run = async () => {
+    q = $('#hs-q', v).value.trim(); pick = -1; if (q.length < 3) { res = null; busy = false; token++; return drawList(); }
+    const my = ++token; busy = true; drawList(); let out = []; try { out = await searchBooks(q); } catch {} if (my !== token) return; busy = false; res = out; drawList();
+  };
+  const draw = () => {
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Montar meu histórico</b><span></span></div>
+      <div class="hs-intro"><p><b>Os livros que você leu antes do app.</b> Busque, toque em “Já li” e escolha o ano. Eles entram nos lidos sem contar na meta deste ano.</p>
+      <button type="button" class="hs-imp" id="hs-imp">Importar arquivo CSV (Goodreads ou planilha)</button>
+      <p>No Goodreads: My Books › Import and export › Export library. Planilha: colunas título, autor e, se quiser, ano, nota e status.</p></div>
+      <input type="search" id="hs-q" class="fs-input" placeholder="Título, autor ou ISBN" autocomplete="off" value="${esc(q)}"><div class="hs-list ct-list" style="margin-top:.6rem"></div>`;
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; refresh(); });
+    $('#hs-q', v).addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(run, 450); });
+    $('#hs-imp', v).addEventListener('click', importCSV);
+    drawList();
+  };
+  S.listRedraw = draw; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0; setTimeout(() => $('#hs-q', v)?.focus(), 60);
+}
+
+// ----- importar CSV: Goodreads ou planilha simples -----
+function parseCSV(txt) {
+  txt = txt.replace(/^\uFEFF/, ''); const first = txt.split(/\r?\n/)[0] || '', d = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ';' : ',';
+  const rows = []; let row = [], f = '', qt = false;
+  for (let i = 0; i < txt.length; i++) {
+    const c = txt[i];
+    if (qt) { if (c === '"') { if (txt[i + 1] === '"') { f += '"'; i++; } else qt = false; } else f += c; }
+    else if (c === '"') qt = true; else if (c === d) { row.push(f); f = ''; } else if (c === '\n' || c === '\r') { if (c === '\r' && txt[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; } else f += c;
+  }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  return rows.filter((r) => r.some((x) => String(x).trim()));
+}
+function importCSV() {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.csv,text/csv';
+  inp.addEventListener('change', async () => {
+    const file = inp.files && inp.files[0]; if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return toast('Arquivo grande demais (máx. 5 MB)');
+    let rows; try { rows = parseCSV(await file.text()); } catch { return toast('Não consegui ler esse arquivo'); }
+    if (rows.length < 2) return toast('O arquivo está vazio');
+    const H = rows[0].map((h) => normT(h)), col = (...names) => H.findIndex((h) => names.includes(h));
+    const cT = col('title', 'titulo', 'livro'), cA = col('author', 'autor', 'autora'), cI = col('isbn13') >= 0 ? col('isbn13') : col('isbn'), cR = col('my rating', 'nota', 'patas', 'avaliacao'),
+      cD = col('date read', 'data', 'lido em', 'ano', 'data de leitura'), cS = col('exclusive shelf', 'status', 'estante'), cP = col('number of pages', 'paginas', 'pages'),
+      cB = col('binding', 'formato'), cX = col('bookshelves', 'estantes', 'tags');
+    if (cT < 0) return toast('Não encontrei a coluna de título');
+    const Y = Number(todayISO().slice(0, 4)), shelfOf = new Map((db.shelves || []).map((x) => [normT(x.name), x]));
+    let n = 0, skip = 0; const fresh = [];
+    for (const r of rows.slice(1, 3001)) {
+      const title = String(r[cT] || '').trim().slice(0, 200); if (!title) continue;
+      const author = cA >= 0 ? String(r[cA] || '').trim().slice(0, 120) : '', isbn = cI >= 0 ? String(r[cI] || '').replace(/\D/g, '') : '';
+      if (lib().some((e) => (isbn && e.isbn === isbn) || (normT(e.title) === normT(title) && normT(String(e.author || '').split(',')[0]) === normT(author.split(',')[0])))) { skip++; continue; }
+      const sh = cS >= 0 ? normT(r[cS]) : '', status = /currently|lendo|reading/.test(sh) ? 'LENDO' : /to read|quero|wish/.test(sh) ? 'QUERO' : /abandon|did not finish|dnf/.test(sh) ? 'ABANDONEI' : 'LIDO';
+      const raw = cD >= 0 ? String(r[cD] || '').trim() : '', dm = raw.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/) || raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/), ym = raw.match(/\b(19\d\d|20\d\d)\b/);
+      let when = 'unknown';
+      if (dm) { const [y, mo, da] = dm[1].length === 4 ? [dm[1], dm[2], dm[3]] : [dm[3], dm[2], dm[1]]; when = { d: `${y}-${String(mo).padStart(2, '0')}-${String(da).padStart(2, '0')}` }; } else if (ym && Number(ym[1]) <= Y) when = { y: Number(ym[1]) };
+      const paws = cR >= 0 ? Math.max(0, Math.min(5, Math.round(Number(String(r[cR]).replace(',', '.')) * 2) / 2)) : 0;
+      const pages = cP >= 0 ? Number(String(r[cP]).replace(/\D/g, '')) || null : null, bind = cB >= 0 ? normT(r[cB]) : '';
+      const e = addToLibrary({ title, author: author || null, totalPages: pages, isbn: isbn || null }, null, status, { when: status === 'LIDO' ? when : null, quiet: true, paws: status === 'LIDO' && paws ? paws : 0,
+        fmt: /kindle/.test(bind) ? { format: 'EBOOK', device: 'Kindle' } : /kobo/.test(bind) ? { format: 'EBOOK', device: 'Kobo' } : /ebook|e book|nook|digital/.test(bind) ? { format: 'EBOOK' } : /audio|audible/.test(bind) ? { format: 'AUDIO' } : null });
+      if (status === 'LENDO') e.startedAt = todayISO();
+      if (cX >= 0) for (const name of String(r[cX] || '').split(/[,;]/).map((x) => x.trim()).filter((x) => x && !/^(read|to-read|currently-reading|lidos?|quero ler|lendo)$/i.test(x)).slice(0, 5)) {
+        let s = shelfOf.get(normT(name)); if (!s) { db.shelves = db.shelves || []; s = { id: uid(), name: name.slice(0, 40), bookIds: [] }; db.shelves.push(s); shelfOf.set(normT(name), s); } s.bookIds.push(e.id);
+      }
+      n++; if (isbn) fresh.push(e);
+    }
+    save(); refresh(); toast(`${plural(n, 'livro importado', 'livros importados')}${skip ? ` · ${skip} já estavam na estante` : ''}`); S.listRedraw && S.listRedraw();
+    // capas pelo ISBN (Open Library), aos poucos
+    let i = 0; const next = () => { const e = fresh[i++]; if (!e) { save(); refresh(); return; } const u = `https://covers.openlibrary.org/b/isbn/${e.isbn}-M.jpg?default=false`, im = new Image(); im.onload = () => { if (im.naturalWidth > 20) e.cover = u; next(); }; im.onerror = next; im.src = u; };
+    for (let k = 0; k < 3; k++) next();
+  });
+  inp.click();
+}
+
+// ----- entradas novas: catálogo (edições) e Estante (histórico) -----
+{ const _dt = drawTab; drawTab = function () {
+  _dt(); const box = $('#lista');
+  if (S.tab === 'estante' && !box.querySelector('#es-hist')) { const at = box.querySelector('#es-quotes') || box.querySelector('.es-chips'); at && at.insertAdjacentHTML('afterend', `<button type="button" class="v3-row" id="es-hist">${MN('estantes', 'ico-a')}<span><b>Montar meu histórico</b><small>Livros que você leu antes do app, por ano · importar do Goodreads</small></span>›</button>`); $('#es-hist', box)?.addEventListener('click', openHistory); }
 }; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
