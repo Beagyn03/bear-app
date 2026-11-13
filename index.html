@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.5.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.6.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -4768,11 +4768,13 @@ function openCatalog() {
   const asBook = (it) => ({ id: 'cat:' + (it.isbn || normT(it.title)), title: it.title, author: it.author || null, cover: it.coverUrl || null, totalPages: it.pages || null, isbn: it.isbn || null, status: null, _preview: true, _item: it, ...(it._meta ? { meta: it._meta } : {}) });
   const draw = () => {
     v.querySelector('.sl-body').innerHTML = `
-      <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Catálogo</b><span></span></div>
+      <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Buscar</b><span></span></div>
+      <div class="v3-seg ct-mode"><button type="button" data-m="livros" class="on">Livros</button><button type="button" data-m="leitores">Leitores</button></div>
       <form class="ct-form"><input type="search" id="ct-q" class="fs-input" placeholder="Título, autor ou ISBN" value="${esc(q)}" autocomplete="off" enterkeyhint="search" aria-label="Buscar no catálogo"><button type="submit" class="ct-go">${IC('procurar', 'ico-b')}Buscar</button></form>
       <div class="ct-list"></div>`;
     drawList();
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    v.querySelector('.ct-mode [data-m="leitores"]').addEventListener('click', () => openPeopleSearch());
     const run = async (now) => {
       const val = $('#ct-q', v).value.trim(); if (val === q && res && !now) return; q = S.catQ = val;
       if (q.length < 3) { if (now) toast('Digite pelo menos 3 letras'); token++; busy = false; res = S.catRes = null; return drawList(); }
@@ -4887,10 +4889,10 @@ function openBookPage(e, tab = 'sobre') {
         ${bookMarkersHTML(e)}
         `;
     } else if (tab === 'comunidade') {
-      const same = (SOC.feed || []).filter((p) => !p.mine && normT(p.title) === normT(e.title));
-      body = `<section class="bp-card">${same.length ? same.map((p) => { const rev = isReview(p), who = (p.user && p.user.displayName) || 'Alguém', h = (p.user && p.user.handle) || '';
-          return `<div class="bf"><span class="av sm" data-avh="${esc(h)}" style="background:${friendColor(h)}">${esc(initial(who))}</span><div><p><b>${esc(who)}</b> ${rev ? `avaliou com ${pawTxt(p.paws || 0)}` : p.kind === 'STARTED' ? 'começou a ler' : p.kind === 'FINISHED' ? 'terminou' : `está em ${Number(p.pct) || 0}%`}</p>${rev && p.text && !p.spoiler ? `<q>${esc(p.text)}</q>` : ''}<small>${esc(relTime(p.updatedAt))}</small></div></div>`; }).join('')
-          : '<p class="bp-load">Nenhum amigo leu ou está lendo este livro ainda.</p>'}
+      const same = (SOC.feed || []).filter((p) => !p.mine && normT(p.title) === normT(e.title) && !isReview(p));
+      body = `${bookNetHTML(e)}<section class="bp-card">${same.length ? same.map((p) => { const rev = isReview(p), who = (p.user && p.user.displayName) || 'Alguém', h = (p.user && p.user.handle) || '';
+          return `<div class="bf"><span class="av sm" data-avh="${esc(h)}" style="background:${friendColor(h)}">${esc(initial(who))}</span><div><p><b>${esc(who)}</b> ${rev ? `avaliou com ${pawTxt(p.paws || 0)}` : p.kind === 'STARTED' ? 'começou a ler' : p.kind === 'FINISHED' ? 'terminou' : `está em ${Number(p.pct) || 0}%`}</p>${rev && p.text && !p.spoiler && iReadT(e.title) ? `<q>${esc(p.text)}</q>` : ''}<small>${esc(relTime(p.updatedAt))}</small></div></div>`; }).join('')
+          : '<p class="bp-load">Nenhum amigo começou este livro recentemente.</p>'}
         ${e.status === 'LENDO' || e.status === 'QUERO' ? '<button type="button" class="bp-btn pri" data-a="buddy">Convidar alguém para ler junto</button>' : ''}</section>`;
     } else {
       body = `<section class="bp-card bp-soon">${IC('comentar', 'ico-a')}<b>Avaliações e atualizações de outros leitores</b><small>Em breve: aqui vão aparecer as resenhas, as notas e o andamento de quem também está lendo este livro.</small></section>`;
@@ -5043,13 +5045,13 @@ function openNovidades(focus, host) {
     if (p.type === 'achievement' || p.type === 'buddy_done') return extraPostHTML(p);
     const rev = isReview(p), who = p.mine ? 'Você' : (p.user && p.user.displayName) || 'Alguém', handle = (p.user && p.user.handle) || '';
     const verb = rev ? 'avaliou' : p.kind === 'STARTED' ? 'começou a ler' : p.kind === 'FINISHED' ? 'terminou' : 'avançou em';
-    const th = threads[p.id];
+    const th = threads[p.id], hid = rev && p.text && !seen.has(p.id) && (p.spoiler || (!p.mine && !iReadT(p.title)));
     return `<article class="fd-post${focus === p.id ? ' focus' : ''}" data-id="${esc(p.id)}">
       <header><span class="av sm" data-avh="${esc(handle || '')}" style="background:${friendColor(handle)}">${esc(initial(who === 'Você' ? NAME : who))}</span><div><p><button type="button" class="fd-who" data-h="${esc(handle)}">${esc(who)}</button> ${verb} <b>${esc(p.title)}</b>${rev ? stars(p.paws) : p.kind === 'FINISHED' ? ' 🎉' : ''}</p><small>${tab === 'descobrir' && handle ? '@' + esc(handle) + ' · ' : ''}${esc(relTime(p.updatedAt))}</small></div>${cvh(p.title, p.cover, 'nv-cv')}</header>
       ${!rev && p.kind === 'PROGRESS' && p.pct != null ? `<i class="mt-bar"><i style="width:${Math.max(0, Math.min(100, Number(p.pct) || 0))}%"></i></i><small>${Number(p.pct) || 0}%${p.pages ? ` · pág. ${Number(p.pages)}` : ''}</small>` : ''}
-      ${rev && p.text ? (p.spoiler && !seen.has(p.id) ? `<button type="button" class="fd-sp">${IC('spoiler', 'ico-b')}Contém spoiler · toque para ver</button>` : `<p class="pt-txt">${esc(p.text)}</p>`) : ''}
+      ${rev && p.text ? (hid ? `<button type="button" class="fd-sp">${IC('spoiler', 'ico-b')}${p.spoiler ? 'Contém spoiler' : 'Você ainda não leu este livro'} · toque para ver</button>` : `<p class="pt-txt">${esc(p.text)}</p>`) : ''}
       ${rev ? `<div class="nv-acts"><button type="button" class="fd-like${p.liked ? ' on' : ''}" aria-pressed="${!!p.liked}" aria-label="Curtir">${IC('curtir', 'ico-b')}${p.likes || 0}</button><button type="button" class="fd-com" aria-label="Comentários">${IC('comentar', 'ico-b')}${p.comments || 0}</button></div>` : ''}
-      ${rev && open.has(p.id) ? `<div class="fd-coms">${th ? th.map((c) => `<div class="nt-it pt-com" data-c="${esc(c.id)}"><span class="av sm" data-avh="${esc((c.user && c.user.handle) || '')}" style="background:${friendColor(c.user && c.user.handle)}">${esc(initial(c.user && c.user.displayName))}</span><div><p><b>${esc((c.user && c.user.displayName) || '')}</b> ${esc(c.text)}</p><small>${esc(relTime(c.createdAt))}${c.canDelete ? ' · <button type="button" class="fd-del">apagar</button>' : ''}</small></div></div>`).join('') : '<small>Carregando…</small>'}<div class="pt-reply"><input maxlength="500" placeholder="Comentar…" aria-label="Comentar"><button type="button" class="pri fd-send">Enviar</button></div></div>` : ''}
+      ${rev && open.has(p.id) && hid ? '<small class="fd-first">Os comentários aparecem quando você abrir a avaliação.</small>' : ''}${rev && open.has(p.id) && !hid ? `<div class="fd-coms">${th ? th.map((c) => `<div class="nt-it pt-com" data-c="${esc(c.id)}"><span class="av sm" data-avh="${esc((c.user && c.user.handle) || '')}" style="background:${friendColor(c.user && c.user.handle)}">${esc(initial(c.user && c.user.displayName))}</span><div><p><b>${esc((c.user && c.user.displayName) || '')}</b> ${esc(c.text)}</p><small>${esc(relTime(c.createdAt))}${c.canDelete ? ' · <button type="button" class="fd-del">apagar</button>' : ''}</small></div></div>`).join('') : '<small>Carregando…</small>'}<div class="pt-reply"><input maxlength="500" placeholder="Comentar…" aria-label="Comentar"><button type="button" class="pri fd-send">Enviar</button></div></div>` : ''}
     </article>`;
   }
   function draw() {
@@ -7557,6 +7559,100 @@ friendPage = async function (handle) {
     const r = await sapi('POST', '/v1/duels', { handle: d.handle, weekStart: isoMonday() }); toast(r.status === 201 ? `Desafio enviado para ${String(d.displayName).split(' ')[0]}` : 'Não consegui enviar o desafio'); if (r.status === 201) syncSocial3(true);
   });
 };
+// ---------- 3.6: avaliações da rede por livro, regra única de spoiler, frase do perfil e busca de leitores ----------
+{ const st = document.createElement('style'); st.textContent = `
+.bn-head{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.4rem}.bn-head b{font-size:1.4rem;color:var(--acc)}.bn-head small{font-size:.76rem;color:var(--ink-2);font-weight:700}
+.bn-sub{font-size:.68rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin:.7rem 0 .35rem}
+.bn-it{display:grid;grid-template-columns:auto 1fr;gap:.55rem;padding:.5rem 0;border-top:1px solid var(--line)}
+.bn-it .av{width:30px;height:30px;font-size:.78rem;color:#fff}
+.bn-it p{margin:0;font-size:.84rem;color:var(--ink)}.bn-it small{font-size:.7rem;color:var(--ink-2)}
+.bn-tx{margin:.2rem 0 0!important;white-space:pre-line;line-height:1.45}
+.yo-bio{cursor:pointer}
+.ps-it{display:grid;grid-template-columns:auto 1fr auto;gap:.6rem;align-items:center;text-align:left;width:100%;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.6rem .7rem;margin-bottom:.45rem;color:var(--ink)}
+.ps-it .av{width:40px;height:40px;color:#fff;font-weight:900}.ps-it b{display:block;font-size:.9rem}.ps-it small{display:block;font-size:.72rem;color:var(--ink-2)}
+.ps-it em{font-style:normal;font-size:.7rem;font-weight:800;color:var(--acc)}
+.ct-mode{margin:-.2rem 0 .6rem}
+`; TR.append(st); }
+
+// já li este livro? (base da regra de spoiler)
+function iReadT(t) { const k = normT(t); return lib().some((e) => e.status === 'LIDO' && normT(e.title) === k); }
+
+// ----- avaliações da rede na aba Amigos do livro (amigos + públicas, com média) -----
+S.bookNet = S.bookNet || {};
+function bookNetHTML(e) {
+  if (!connected() || !socialProfile) return '';
+  const key = normT(e.title).slice(0, 200), c = S.bookNet[key];
+  if (!c) { S.bookNet[key] = { loading: true }; sapi('GET', `/v1/books/reviews?key=${encodeURIComponent(key)}`).then((r) => { S.bookNet[key] = r.status === 200 && r.data ? r.data : { err: true }; if (!$('#shelflist').hidden && S.listRedraw) S.listRedraw(); }).catch(() => { S.bookNet[key] = { err: true }; }); return '<section class="bp-card"><p class="bp-load">Carregando as avaliações da sua rede…</p></section>'; }
+  if (c.loading) return '<section class="bp-card"><p class="bp-load">Carregando as avaliações da sua rede…</p></section>';
+  if (c.err) return '';
+  const lido = iReadT(e.title), open = S.bnOpen || (S.bnOpen = new Set());
+  const item = (x) => { const hide = x.text && !open.has(x.id) && (x.spoiler || !lido) ? (x.spoiler ? 'Contém spoiler' : 'Você ainda não leu este livro') : '';
+    return `<div class="bn-it"><span class="av sm" data-avh="${esc(x.user.handle)}" style="background:${friendColor(x.user.handle)}">${esc(initial(x.user.displayName))}</span><div>
+      <p><button type="button" class="fd-who bn-who" data-h="${esc(x.user.handle)}">${esc(x.user.displayName)}</button>${x.paws ? ` · ${pawTxt(x.paws)}` : ''}</p>
+      ${x.text ? (hide ? `<button type="button" class="fd-sp bn-see" data-id="${esc(x.id)}">${IC('spoiler', 'ico-b')}${hide} · toque para ver</button>` : `<p class="bn-tx">${esc(x.text)}</p>`) : ''}
+      <small>${esc(relTime(x.updatedAt))}</small></div></div>`; };
+  const others = (c.friends || []).length + (c.public || []).length;
+  return `<section class="bp-card"><div class="bn-head">${c.avg != null ? `<b>${pawTxt(c.avg)}</b><small>média de ${plural(c.count, 'avaliação', 'avaliações')}</small>` : '<small>Ninguém da sua rede avaliou este livro ainda.</small>'}</div>
+    ${(c.friends || []).length ? `<div class="bn-sub">Amigos</div>${c.friends.map(item).join('')}` : ''}
+    ${(c.public || []).length ? `<div class="bn-sub">Outros leitores</div>${c.public.map(item).join('')}` : ''}
+    ${!others && c.mine ? '<p class="bp-load" style="padding:.4rem 0 0">Só você avaliou por enquanto.</p>' : ''}</section>`;
+}
+function bindBookNet(v) {
+  $$('.bn-see', v).forEach((b) => b.addEventListener('click', () => { (S.bnOpen || (S.bnOpen = new Set())).add(b.dataset.id); S.listRedraw && S.listRedraw(); }));
+  $$('.bn-who', v).forEach((b) => b.addEventListener('click', () => friendPage(b.dataset.h)));
+  paintAvatars();
+}
+
+// ----- frase do perfil (compartilhada) -----
+async function editBio() {
+  const cur = T().bio || '', v = prompt('Sua frase de leitora ou leitor (até 160 letras). Deixe em branco para o app montar sozinho.', cur);
+  if (v === null) return; const bio = String(v).trim().slice(0, 160);
+  T().bio = bio; save(); refresh();
+  if (connected() && socialProfile) { const r = await sapi('PUT', '/v1/me/bio', { bio }); if (r.status !== 200) toast('Frase salva só neste aparelho por enquanto'); else toast(bio ? 'Frase atualizada' : 'Frase automática de volta'); }
+}
+{ const _yb = youBio; youBio = function () { return (T().bio || '').trim() || _yb(); }; }
+
+// ----- buscar leitores -----
+function openPeopleSearch() {
+  const v = $('#shelflist'); let q = '', res = null, busy = false, token = 0, tm = 0;
+  const drawList = () => {
+    const box = v.querySelector('.ps-list'); if (!box) return;
+    box.innerHTML = busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '<p class="sl-empty">Digite o @ ou o nome. Pelo nome, só aparece quem deixou o perfil aberto.</p>' : !res.length ? '<p class="sl-empty">Ninguém encontrado.</p>'
+      : res.map((x) => `<button type="button" class="ps-it" data-h="${esc(x.handle)}"><span class="av" data-avh="${esc(x.handle)}" style="background:${friendColor(x.handle)}">${esc(initial(x.displayName))}</span><span><b>${esc(x.displayName)}</b><small>@${esc(x.handle)}${x.bio ? ' · ' + esc(x.bio) : ''}</small></span>${x.isFriend ? '<em>amigos</em>' : '›'}</button>`).join('');
+    $$('.ps-it', v).forEach((b) => b.addEventListener('click', () => friendPage(b.dataset.h)));
+    paintAvatars();
+  };
+  const run = async () => {
+    q = $('#ps-q', v).value.trim(); if (q.replace(/^@/, '').length < 2) { res = null; token++; busy = false; return drawList(); }
+    if (!connected() || !socialProfile) { res = []; return drawList(); }
+    const my = ++token; busy = true; drawList(); let out = []; try { const r = await sapi('GET', `/v1/users/search?q=${encodeURIComponent(q.slice(0, 40))}`); out = r.status === 200 && r.data ? r.data.items || [] : []; } catch {}
+    if (my !== token) return; busy = false; res = out; drawList();
+  };
+  const draw = () => {
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Buscar</b><span></span></div>
+      <div class="v3-seg ct-mode"><button type="button" data-m="livros">Livros</button><button type="button" data-m="leitores" class="on">Leitores</button></div>
+      <input type="search" id="ps-q" class="fs-input" placeholder="@usuário ou nome" autocomplete="off" autocapitalize="none" value="${esc(q)}"><div class="ps-list" style="margin-top:.6rem"></div>`;
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    $('.ct-mode [data-m="livros"]', v).addEventListener('click', () => openCatalog());
+    $('#ps-q', v).addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(run, 400); });
+    drawList();
+  };
+  S.listRedraw = draw; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0; setTimeout(() => $('#ps-q', v)?.focus(), 60);
+}
+
+// ----- ganchos -----
+{ const _dt = drawTab; drawTab = function () {
+  _dt(); const box = $('#lista');
+  if (S.tab === 'inicio') { const b = box.querySelector('.yo-bio'); if (b) { b.title = 'Toque para editar a frase'; b.addEventListener('click', editBio); } }
+}; }
+{ const _fp = friendPage; friendPage = async function (handle) {
+  await _fp(handle); const v = $('#shelflist');
+  try { const r = await sapi('GET', `/v1/users/${encodeURIComponent(handle)}/bio`); const bio = r.status === 200 && r.data && r.data.bio; const id = v.querySelector('.yo-id'); if (bio && id && !id.querySelector('.yo-bio')) id.insertAdjacentHTML('beforeend', `<p class="yo-bio">${esc(bio)}</p>`); } catch {}
+}; }
+// na aba Amigos do livro: rede primeiro; atividades antigas sem texto de avaliação de quem não leu
+{ const _ob = openBookPage; openBookPage = function (e, tab) { const r = _ob(e, tab); const v = $('#shelflist'); bindBookNet(v); const rd = S.listRedraw; if (rd && !rd._bn) { S.listRedraw = function () { rd(); bindBookNet(v); }; S.listRedraw._bn = true; } return r; }; }
+// sobe a frase guardada no aparelho para a API uma vez (quem editou antes da API ter o campo)
+setTimeout(() => { if (T().bio && !T().bioSynced && connected() && socialProfile) sapi('PUT', '/v1/me/bio', { bio: T().bio }).then((r) => { if (r.status === 200) { T().bioSynced = true; save(); } }).catch(() => {}); }, 4000);
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
