@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '4.2.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.2.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -8489,7 +8489,9 @@ TR.addEventListener('click', (ev) => {
 .esg-chips button.on{background:var(--acc);border-color:transparent;color:var(--on-acc,#fff)}
 .esg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem .6rem}
 .esg .es-bk{width:100%;display:grid;gap:.25rem;text-align:left;border:0;background:none;padding:0}
-.esg .es-bk .cv{width:100%!important;height:auto!important;aspect-ratio:2/3;border-radius:3px 7px 7px 3px}
+.esg .es-bk .cv,.esg .es-bk .es-cv{width:100%!important;max-width:none!important;height:auto!important;aspect-ratio:2/3;border-radius:3px 7px 7px 3px}
+.esg .es-bk{min-width:0}
+#lista .es-actions{display:block}#lista .es-actions .es-add{width:100%}
 .esg .es-bk small{font-size:.66rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .esg-empty{font-size:.84rem;color:var(--ink-2);text-align:center;padding:1.5rem 0}
 .cm-fold{border:1px solid var(--line);background:var(--panel);border-radius:14px;margin:0 0 .6rem;overflow:hidden}
@@ -8554,7 +8556,7 @@ S.esF = S.esF || 'ALL';
   const pctOf = (e) => (e.totalPages ? Math.round((libProgress(e) / e.totalPages) * 100) : 0);
   const lab = (e) => (e.status === 'LENDO' ? 'lendo' : e.status === 'LIDO' ? `lido${e.finishedAt ? ' ' + String(e.finishedAt).slice(0, 4) : ''}` : (LIB_LABEL[e.status] || '').toLowerCase());
   box.insertAdjacentHTML('beforeend', `<div class="esg-chips">${F.filter(([k]) => k === 'ALL' || cnt(k)).map(([k, n]) => `<button type="button" data-f="${k}" class="${S.esF === k ? 'on' : ''}">${n} · ${cnt(k)}</button>`).join('')}</div>
-    ${list.length ? `<div class="esg">${list.map((e) => `<button type="button" class="es-bk" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'es-cv')}${e.status === 'LENDO' ? `<i class="es-p" style="--p:${pctOf(e)}%"></i><i class="es-pct">${pctOf(e)}%</i>` : ''}<small>${esc(lab(e))}</small></button>`).join('')}</div>` : '<p class="esg-empty">Nenhum livro aqui ainda. Toque em “+ Adicionar livro”.</p>'}`);
+    ${list.length ? `<div class="esg">${list.map((e) => `<button type="button" class="es-bk" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'es-cv')}${e.status === 'LENDO' ? `<i class="es-pct">${pctOf(e)}%</i>` : ''}<small>${esc(lab(e))}${e.status === 'LENDO' ? ` · ${pctOf(e)}%` : ''}</small></button>`).join('')}</div>` : '<p class="esg-empty">Nenhum livro aqui ainda. Toque em “+ Adicionar livro”.</p>'}`);
   $$('.esg-chips [data-f]', box).forEach((b) => b.addEventListener('click', () => { S.esF = b.dataset.f; drawEstante(box); }));
   paintCv(box);
 }; }
@@ -8574,7 +8576,8 @@ function foldCommunity(box) {
   const trSh = find(/^Em alta/); const trHost = box.querySelector('#tr-host');
   const pl = find(/^Placar/); const myRow = box.querySelector('.v3-board .me, .v3-rank .me');
   const fT = fold(trSh, 'Em alta', ''); if (fT && trHost && !fT.contains(trHost)) fT.querySelector('.cm-in').append(trHost);
-  const fP = fold(pl, 'Placar da semana', myRow ? (myRow.innerText.match(/^\s*(\d+)/) || [0, ''])[1] + 'º lugar' : '');
+  const fP = fold(pl, 'Placar da semana', '');
+  if (fP) { const me = [...fP.querySelectorAll('*')].find((x) => x.children.length === 0 && x.textContent.trim() === 'Você'); let row = me; for (let i = 0; i < 4 && row && !/^\s*\d+/.test(row.innerText || ''); i++) row = row.parentElement; const m = row && (row.innerText || '').match(/^\s*(\d+)/); if (m) fP.querySelector('summary').insertAdjacentHTML('beforeend', `<small>você em ${m[1]}º</small>`); }
   if (nov && top) { const ns = sectionNodes(nov); top.after(...ns); }
   const order = [fT, fP].filter(Boolean); if (order.length && nov) { let after = sectionNodes(nov).pop(); order.forEach((f) => { after.after(f); after = f; }); }
 }
