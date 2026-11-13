@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.11.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.0.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7950,7 +7950,7 @@ function paintRecs() {
   h3.insertAdjacentHTML('afterend', `<div class="nt-list">${list.map((x) => `<div class="nt-it nt-go" data-rcn="${esc(x.id)}" role="button" tabindex="0"><span class="av sm" data-avh="${esc(x.from.handle)}" style="background:${friendColor(x.from.handle)}">${esc(initial(x.from.displayName))}</span><div><p><b>${esc(x.from.displayName)}</b> indicou <b>${esc(x.title)}</b>${x.note ? `: “${esc(x.note)}”` : ''}</p><small>${esc(relTime(x.createdAt))}</small></div><span></span></div>`).join('')}</div>`);
   $$('[data-rcn]', ed).forEach((n) => n.addEventListener('click', () => { const x = S.recs.find((y) => y.id === n.dataset.rcn); closeEd(); if (x) openAnyBook(x.title, x.author, x.cover); }));
   list.filter((x) => x.status === 'NEW').forEach((x) => setRecStatus(x, 'SEEN')); paintAvatars(); setTimeout(paintRecBadge, 50); }; }
-{ const _pd = paintCommDot; paintCommDot = function () { _pd(); const b = $('#tabbar button[data-tab="comunidade"]'); if (b && S.tab !== 'comunidade' && recNew() && !b.querySelector('.tb-dot')) b.insertAdjacentHTML('beforeend', '<i class="tb-dot" aria-label="Novidades"></i>'); }; }
+
 { const _ss = syncSocial3; syncSocial3 = async function (force) { const r = await _ss(force); loadRecs(); return r; }; }
 setTimeout(loadRecs, 3000);
 try { fetch('https://bear-api-hkuf.onrender.com/health', { cache: 'no-store' }).catch(() => {}); } catch {}
@@ -8219,6 +8219,93 @@ function deleteAccountSheet() {
 { const _da = drawAjustes; drawAjustes = function (box) { _da(box); if (!connected()) return; const out = box.querySelector('#aj-out'); if (!out) return;
   out.insertAdjacentHTML('afterend', '<div class="aj-card" style="margin-top:.8rem"><button type="button" class="aj-row danger" id="aj-del"><span><b>Excluir conta</b><small>Apaga a conta e todos os dados dela, para sempre</small></span>›</button></div>');
   $('#aj-del', box).addEventListener('click', deleteAccountSheet); }; }
+// ---------- 4.0 (entrega 1): topo fixo, barra com ícones de traço, Início só com ações, Perfil pela foto ----------
+const SVG = (d) => `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICO = {
+  inicio: '<path d="M3.5 11 12 3.8l8.5 7.2"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/>',
+  estante: '<rect x="3.5" y="4" width="4" height="16" rx="1"/><rect x="9" y="4" width="4" height="16" rx="1"/><path d="m15 5.2 3.6-.9 3 15.2-3.6.9z"/>',
+  comunidade: '<circle cx="9" cy="8" r="3.4"/><path d="M2.8 20c0-3.5 2.8-6.2 6.2-6.2s6.2 2.7 6.2 6.2"/><path d="M15.5 4.8a3.4 3.4 0 0 1 0 6.5"/><path d="M17.6 14.1c2.2.6 3.6 2.9 3.6 5.9"/>',
+  progresso: '<path d="M4 20h16"/><path d="m4.5 15.5 5-5 3.8 3.8L20 7.6"/><path d="M15.5 7.6H20v4.5"/>',
+  buscar: '<circle cx="10.8" cy="10.8" r="6.3"/><path d="m20 20-4.6-4.6"/>',
+  msg: '<path d="M20.5 11.5a8 8 0 0 1-11.8 7.1L3.5 20l1.4-4.6A8 8 0 1 1 20.5 11.5z"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.6 2H4.4z"/><path d="M10 21a2.1 2.1 0 0 0 4 0"/>',
+};
+{ const st = document.createElement('style'); st.textContent = `
+.gtop{position:fixed;left:0;right:0;top:0;z-index:35;display:flex;align-items:center;gap:.6rem;padding:calc(env(safe-area-inset-top,0px) + .45rem) .8rem .45rem;background:var(--bg);border-bottom:1px solid var(--line)}
+.gtop .g-av{width:34px;height:34px;border-radius:50%;border:0;padding:0;flex:none;background:var(--acc);color:var(--on-acc,#fff);font-weight:900;background-size:cover;background-position:center}
+.gtop .g-t{flex:1;min-width:0;font-weight:900;font-size:1.05rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gtop .g-b{position:relative;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);display:grid;place-items:center;padding:0}
+.gtop .g-b svg{width:21px;height:21px}
+.gtop .g-b u{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:9px;background:#d9443a;color:#fff;font-size:.62rem;font-weight:900;text-decoration:none;display:grid;place-items:center;padding:0 .25rem}
+.gtop-sp{height:calc(env(safe-area-inset-top,0px) + 3.3rem)}
+.shelflist{top:calc(env(safe-area-inset-top,0px) + 3.2rem)!important}
+#lista .yo-top,#lista .v3-top .v3-bell,#lista .ms-btn,#lista #yo-cfg{display:none!important}
+#tabbar button svg{width:26px;height:26px;color:var(--ink-2)}
+#tabbar button.on svg{color:var(--acc);stroke-width:2.3}
+#tabbar button.on small{color:var(--acc)}
+.ini-meta{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:.7rem .85rem;margin:.2rem 0 1rem;color:var(--ink)}
+.ini-meta b{font-size:.86rem}.ini-meta small{float:right;font-size:.74rem;color:var(--ink-2);font-weight:700}
+.ini-meta i{display:block;height:6px;border-radius:3px;background:var(--line);margin-top:.45rem;overflow:hidden}.ini-meta i i{height:100%;margin:0;background:var(--acc);border-radius:3px}
+.me-acts{display:flex;gap:.4rem;margin:-.2rem 0 .8rem}.me-acts button{flex:1;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:800;font-size:.82rem}
+.mine-page .fr-unf,.mine-page .fr-acts{display:none!important}
+`; TR.append(st); }
+// --- topo fixo ---
+const TAB_T = { inicio: 'Início', estante: 'Estante', comunidade: 'Comunidade', progresso: 'Progresso', buscar: 'Buscar', perfil: 'Ajustes' };
+const gtop = document.createElement('header'); gtop.className = 'gtop';
+gtop.innerHTML = `<button type="button" class="g-av" id="g-av" aria-label="Seu perfil"></button><b class="g-t" id="g-t"></b>
+  <button type="button" class="g-b ms-btn" id="g-msg" aria-label="Mensagens">${SVG(ICO.msg)}</button><button type="button" class="g-b" id="g-bell" aria-label="Notificações">${SVG(ICO.bell)}</button>`;
+TR.append(gtop);
+S.notifN = S.notifN || 0;
+function paintGtop() {
+  const h = drawHud(), av = $('#g-av');
+  av.style.backgroundImage = h.ph ? cssUrl(h.ph) : ''; av.textContent = h.ph ? '' : initial(h.name);
+  $('#g-t').textContent = S.tab === 'perfil' ? 'Ajustes' : TAB_T[S.tab] || '';
+  const old = $('#lista #v3-bell u'); if (old) S.notifN = Number(String(old.textContent).replace('+', '')) || 0; else if ($('#lista #v3-bell')) S.notifN = 0;
+  const bell = $('#g-bell'); let u = bell.querySelector('u'); const n = S.notifN + (typeof recNew === 'function' ? recNew() : 0); if (!n) u && u.remove(); else { if (!u) { u = document.createElement('u'); bell.append(u); } u.textContent = n > 9 ? '9+' : n; }
+  paintMsgBadge();
+}
+$('#g-av').addEventListener('click', openMyProfile);
+$('#g-msg').addEventListener('click', () => (connected() && socialProfile ? openThreads() : needAccount()));
+$('#g-bell').addEventListener('click', () => { openNotif(); S.notifN = 0; setTimeout(paintGtop, 50); });
+// --- barra de baixo: ícones de traço, "Início" no lugar da foto ---
+{ const _tb = drawTabbar; drawTabbar = function () { _tb(); $$('#tabbar button').forEach((b) => { const k = b.dataset.tab; if (!ICO[k]) return; const old = b.querySelector('img, .tb-av, .tb-ic'); if (old) old.outerHTML = SVG(ICO[k]); const sm = b.querySelector('small'); if (sm && k === 'inicio') sm.textContent = 'Início'; }); paintCommDot(); }; }
+// --- Início: só o que pede ação ---
+function trimInicio(box) {
+  const drop = /^(Mais bem avaliados|Prateleira do coração|Minhas estantes|Seu \d{4})/;
+  let meta = null; const st4 = box.querySelector('.v3-stats4'); if (st4) { const t = st4.innerText.replace(/\s+/g, ' '); const m = t.match(/Livros \d{4} (\d+) meta (\d+)/); if (m) meta = { n: +m[1], goal: +m[2] }; }
+  box.querySelectorAll('.yo-nums, .yo-ach').forEach((n) => n.remove());
+  [...box.querySelectorAll('.v3-sh')].forEach((sh) => { const t = (sh.querySelector('b') || sh).textContent.trim(); if (drop.test(t)) { const nx = sh.nextElementSibling; if (nx && !nx.classList.contains('v3-sh')) nx.remove(); sh.remove(); } });
+  const now = box.querySelector('.v3-now');
+  if (now && !box.querySelector('#rc-host')) now.insertAdjacentHTML('afterend', '<div id="rc-host"></div>');
+  if (meta && !box.querySelector('.ini-meta')) { const pct = meta.goal ? Math.min(100, Math.round((meta.n / meta.goal) * 100)) : 0; const host = box.querySelector('.v3-colA') || box; host.insertAdjacentHTML('beforeend', `<button type="button" class="ini-meta" id="ini-meta"><b>Meta de ${new Date().getFullYear()}</b><small>${meta.n} de ${meta.goal} livros</small><i><i style="width:${pct}%"></i></i></button>`); $('#ini-meta', box).addEventListener('click', () => goTab('progresso')); }
+  paintRecs();
+}
+{ const _dt = drawTab; drawTab = function () {
+  _dt(); const box = $('#lista');
+  if (S.tab === 'inicio') trimInicio(box);
+  if (S.tab === 'comunidade') box.querySelector('#rc-host')?.remove(); // indicações agora moram no Início
+  if (!box.querySelector('.gtop-sp')) box.insertAdjacentHTML('afterbegin', '<div class="gtop-sp"></div>');
+  const back = box.querySelector('#yo-back, #aj-back'); if (back) back.textContent = '‹ Voltar';
+  paintGtop();
+}; }
+// --- Perfil: a sua página como os amigos veem, com Editar perfil e Ajustes ---
+async function openMyProfile() {
+  if (!connected() || !socialProfile) return goTab('perfil');
+  await friendPage(socialProfile.handle); const v = $('#shelflist'); if (v.hidden) return;
+  v.classList.add('mine-page'); S.navView = { t: 'me', a: [] };
+  const acts = v.querySelector('.fr-acts'), html = '<div class="me-acts"><button type="button" id="me-edit">Editar perfil</button><button type="button" id="me-cfg">Ajustes</button></div>';
+  if (acts) acts.insertAdjacentHTML('afterend', html); else v.querySelector('.sl-body').insertAdjacentHTML('afterbegin', html);
+  const top = v.querySelector('.sl-top b'); if (top) top.textContent = 'Seu perfil';
+  $('#me-cfg', v).addEventListener('click', () => { v.hidden = true; goTab('perfil'); });
+  $('#me-edit', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [
+    { label: myPhoto() ? 'Trocar foto' : 'Adicionar foto', fn: pickPhoto }, { label: 'Nome', fn: editName }, { label: 'Frase do perfil', fn: editBio },
+    { label: '@usuário e privacidade', fn: socialSettingsSheet }, { label: 'Moldura e selo', fn: flairSheet }]));
+}
+{ const _fp = friendPage; friendPage = async function (h) { $('#shelflist').classList.remove('mine-page'); return _fp(h); }; }
+{ const _rn = restoreNav; restoreNav = function () { let n = null; try { n = JSON.parse(sessionStorage.getItem('bear.nav') || 'null'); } catch {} if (n && n.view && n.view.t === 'me' && Date.now() - (n.at || 0) < 30 * 60000) { if (n.tab) goTab(n.tab); setTimeout(openMyProfile, 150); return; } _rn(); }; }
+// --- bolinha da Comunidade: só novidades dos amigos (indicação e mensagem já têm número no topo) ---
+paintRecBadge = function () { const n = recNew(); const bell = $('#g-bell'); if (!bell) return; const base = S.notifN || 0; let u = bell.querySelector('u'); const t = base + n; if (!t) { u && u.remove(); return; } if (!u) { u = document.createElement('u'); bell.append(u); } u.textContent = t > 9 ? '9+' : t; };
+paintMsgBadge = function () { const b = $('#g-msg'); if (!b) return; let u = b.querySelector('u'); if (!S.msg.unread) { u && u.remove(); return; } if (!u) { u = document.createElement('u'); b.append(u); } u.textContent = S.msg.unread > 9 ? '9+' : S.msg.unread; };
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
