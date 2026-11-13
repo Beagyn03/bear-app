@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.4.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.4.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7251,7 +7251,7 @@ async function shareYear() {
 `; TR.append(st); }
 
 // ----- busca: português primeiro, edições agrupadas, sem resultados que não têm nada a ver -----
-const EN_W = /\b(the|of|and|novel|edition|with|for|from|book|special)\b/, ES_W = /\b(el|los|las|del|una|edicion|novela|y)\b/, PT_W = /\b(o|os|as|do|da|dos|das|um|uma|com|sem|para|nao|edicao|coracao)\b/;
+const EN_W = /\b(the|of|and|novel|edition|with|for|from|book|special)\b/, ES_W = /\b(el|la|los|las|del|una|edicion|novela|y)\b/, PT_W = /\b(o|os|as|do|da|dos|das|um|uma|com|sem|para|nao|edicao|coracao)\b/;
 function langOf(it) {
   const l = String(it.lang || '').toLowerCase(); if (l) return l === 'por' || l.startsWith('pt') ? 'pt' : l.slice(0, 2);
   const isbn = String(it.isbn || '').replace(/\D/g, ''); if (/^(97865|97885|978972|978989)/.test(isbn)) return 'pt';
@@ -7259,7 +7259,7 @@ function langOf(it) {
 }
 function rankBooks(list, q) {
   const nq = normT(q), words = nq.split(' ').filter((x) => x.length > 2);
-  const base = (it) => normT(String(it.title || '').split(/[:(–]| - /)[0]), fa = (it) => normT(String(it.author || '').split(',')[0]);
+  const base = (it) => normT(String(it.title || '').split(/[:(–]| - /)[0]).replace(/ (by|de)$/, ''), fa = (it) => normT(String(it.author || '').split(',')[0]).split(' ').pop() || '';
   const dom = new Map(); for (const it of list) { const b = base(it), m = dom.get(b) || new Map(); m.set(fa(it), (m.get(fa(it)) || 0) + 1); dom.set(b, m); }
   const rel = (it) => { const nt = normT(it.title), na = normT(it.author || ''); return !words.length || words.some((x) => nt.includes(x) || na.includes(x)); };
   let pool = list.filter(rel); if (!pool.length) pool = list;
@@ -7277,7 +7277,9 @@ function rankBooks(list, q) {
   const sorted = pool.map((it, i) => [it, score(it, i)]).sort((x, y) => y[1] - x[1]).map((x) => x[0]);
   const out = [], groups = new Map();
   for (const it of sorted) { const k = base(it) + '|' + fa(it), main = groups.get(k); if (main) { (main.editions = main.editions || []).push(it); continue; } it.editions = []; groups.set(k, it); out.push(it); }
-  return out.slice(0, 25);
+  // a linha principal de cada livro é a edição mais completa (português, com capa e páginas)
+  const full = (x) => (langOf(x) === 'pt' ? 10 : 0) + (x.coverUrl ? 6 : 0) + (x.pages ? 3 : 0) + (x.isbn ? 1 : 0);
+  return out.slice(0, 25).map((m) => { const all = [m, ...(m.editions || [])].sort((x, y) => full(y) - full(x)); const top = all[0]; top.editions = all.slice(1); if (top !== m) m.editions = []; return top; });
 }
 { const _sb = searchBooks; searchBooks = async function (t) {
   const q = String(t || '').trim(), isIsbn = /^(\d{9}[\dXx]|\d{13})$/.test(q.replace(/[-\s.]/g, ''));
