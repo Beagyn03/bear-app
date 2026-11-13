@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.8.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.9.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7873,6 +7873,85 @@ function achSheet(a) {
     ${a.done ? `<small>Você ganhou: ${esc(a.rn || '')}</small>` : `<i class="v3-bar"><i style="width:${pct}%"></i></i><small>${a.cur.toLocaleString('pt-BR')} de ${a.goal.toLocaleString('pt-BR')}</small>`}</div>`;
   $('#ac-x', ed).addEventListener('click', closeEd); ed.hidden = false;
 }
+// ---------- 3.9: indicar leitura a um amigo (envio, recebimento, sino e Comunidade) ----------
+{ const st = document.createElement('style'); st.textContent = `
+.rc-list{display:grid;gap:.5rem;margin-bottom:1rem}
+.rc-it{display:grid;grid-template-columns:auto 1fr;gap:.7rem;border:1px solid color-mix(in srgb,var(--acc) 35%,var(--line));background:color-mix(in srgb,var(--acc) 8%,var(--panel));border-radius:16px;padding:.65rem;position:relative}
+.rc-it .cv{width:52px;height:78px;border-radius:3px 6px 6px 3px;cursor:pointer}
+.rc-it p{margin:0;font-size:.82rem;color:var(--ink)}.rc-it q{display:block;font-style:italic;font-size:.8rem;color:var(--ink-2);margin:.15rem 0}
+.rc-it small{font-size:.68rem;color:var(--ink-2)}
+.rc-bt{display:flex;gap:.35rem;margin-top:.35rem}.rc-bt button{height:32px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:800;font-size:.74rem;padding:0 .7rem}
+.rc-bt .pri{background:var(--acc);border:0;color:var(--on-acc,#fff)}
+.rc-x{position:absolute;top:.35rem;right:.45rem;border:0;background:none;color:var(--ink-2);font-size:1.1rem}
+`; TR.append(st); }
+S.recs = S.recs || [];
+const smallOk = (u) => (u && (/^https:\/\//.test(u) || (/^data:image\/(jpeg|png|webp);base64,/.test(u) && u.length < 60000)) ? u : null);
+async function sendRecommendation(book, f) {
+  const note = prompt(`Quer deixar um recado para ${String(f.displayName).split(' ')[0]} sobre “${book.title}”? (opcional)`, '');
+  if (note === null) return;
+  const r = await sapi('POST', '/v1/recommendations', { handle: f.handle, title: String(book.title).slice(0, 200), author: book.author ? String(book.author).slice(0, 120) : null, cover: smallOk(book.cover), note: note.trim().slice(0, 280) || null });
+  toast(r.status === 201 ? `Indicação enviada para ${String(f.displayName).split(' ')[0]}` : r.status === 404 ? 'Vocês precisam ser amigos para indicar' : 'Não consegui enviar a indicação agora');
+}
+function recommendToFriend(book) { // a partir de um livro: escolher o amigo
+  if (needAccount()) return; const fr = SOC.fr.friends || [];
+  if (!fr.length) return toast('Adicione amigos para indicar livros');
+  sheet(`Indicar “${book.title}” para…`, fr.map((f) => [f.displayName, () => sendRecommendation(book, f)]));
+}
+function recommendBookTo(f) { // a partir de um amigo: escolher o livro
+  const L = lib().slice().sort((a, b) => ((reviewOfLib(b) || {}).paws || 0) - ((reviewOfLib(a) || {}).paws || 0) || (a.status === 'LIDO' ? -1 : 1));
+  if (!L.length) return toast('Sua estante ainda está vazia');
+  sheet(`Indicar um livro para ${String(f.displayName).split(' ')[0]}`, L.slice(0, 15).map((e) => [`${e.title}${(reviewOfLib(e) || {}).paws ? ' · ' + pawTxt(reviewOfLib(e).paws) : ''}`, () => sendRecommendation(e, f)]));
+}
+async function loadRecs() {
+  if (!connected() || !socialProfile) return;
+  try { const r = await sapi('GET', '/v1/recommendations'); if (r.status === 200 && r.data) { S.recs = r.data.items || []; paintRecBadge(); if (S.tab === 'comunidade' && $('#rc-host')) paintRecs(); } } catch {}
+}
+const recNew = () => S.recs.filter((x) => x.status === 'NEW').length;
+function paintRecBadge() {
+  const n = recNew(); $$('#v3-bell').forEach((b) => { if (!n) return; let u = b.querySelector('u'); const base = u ? Number(u.dataset.base || u.textContent) || 0 : 0; if (!u) { u = document.createElement('u'); b.append(u); } u.dataset.base = base; const t = base + n; u.textContent = t > 9 ? '9+' : t; });
+  paintCommDot();
+}
+async function setRecStatus(x, status) { x.status = status; try { await sapi('POST', `/v1/recommendations/${encodeURIComponent(x.id)}/status`, { status }); } catch {} }
+function recsHTML() {
+  const list = S.recs.filter((x) => x.status !== 'SAVED'); if (!list.length) return '';
+  return `<div class="v3-sh"><b>Indicações para você</b></div><div class="rc-list">${list.slice(0, 6).map((x) => { const mine = lib().find((e) => normT(e.title) === normT(x.title));
+    return `<article class="rc-it" data-rc="${esc(x.id)}">${cvh(x.title, x.cover, '')}<div><p><b>${esc(String(x.from.displayName).split(' ')[0])}</b> indicou <b>${esc(x.title)}</b></p>${x.note ? `<q>${esc(x.note)}</q>` : ''}<small>${esc(relTime(x.createdAt))}${x.author ? ' · ' + esc(x.author) : ''}</small>
+      <div class="rc-bt">${mine ? `<button type="button" data-rcv>Na estante · ${esc((LIB_LABEL[mine.status] || '').toLowerCase())}</button>` : '<button type="button" class="pri" data-rcq>Quero ler</button>'}<button type="button" data-rcv>Ver livro</button></div></div><button type="button" class="rc-x" data-rcx aria-label="Dispensar">×</button></article>`; }).join('')}</div>`;
+}
+function paintRecs() {
+  const host = $('#rc-host'); if (!host) return; host.innerHTML = recsHTML(); paintCv(host);
+  $$('.rc-it', host).forEach((a) => { const x = S.recs.find((y) => y.id === a.dataset.rc); if (!x) return;
+    a.querySelector('[data-rcq]')?.addEventListener('click', () => { addToLibrary({ title: x.title, author: x.author, cover: x.cover, totalPages: null }, null, 'QUERO'); setRecStatus(x, 'SAVED'); paintRecs(); });
+    a.querySelectorAll('[data-rcv], .cv').forEach((b) => b.addEventListener('click', () => { if (x.status === 'NEW') setRecStatus(x, 'SEEN'); openAnyBook(x.title, x.author, x.cover); }));
+    a.querySelector('[data-rcx]').addEventListener('click', () => { setRecStatus(x, 'DISMISSED'); S.recs = S.recs.filter((y) => y !== x); paintRecs(); paintRecBadge(); });
+  });
+}
+// pontos de entrada
+{ const _fm = friendMenu; friendMenu = function (f, anchor, after) { _fm(f, anchor, after); const pop = TR.querySelector('.pop'); if (!pop) return;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'pop-it'; b.innerHTML = '<span>Indicar um livro</span>'; b.addEventListener('click', (ev) => { ev.stopPropagation(); closePop(); recommendBookTo(f); });
+  const ref = [...pop.querySelectorAll('.pop-it')][2]; ref ? ref.after(b) : pop.prepend(b); }; }
+{ const _fp = friendPage; friendPage = async function (handle) {
+  await _fp(handle); const v = $('#shelflist'), f = (SOC.fr.friends || []).find((x) => x.handle === handle), more = v.querySelector('.fr-more');
+  if (!f || !more || more.dataset.rc) return; more.dataset.rc = 1;
+  const nb = more.cloneNode(true); more.replaceWith(nb);
+  nb.addEventListener('click', (ev) => popMenu(ev.currentTarget, [{ label: 'Indicar um livro', fn: () => recommendBookTo(f) }, 0, { label: 'Desfazer amizade', danger: true, fn: () => friendUnfriend(f, () => { v.hidden = true; }) }]));
+}; }
+{ const _bm = bookMenu; bookMenu = function (e) { _bm(e); const ed = $('#editor'), list = ed.querySelector('.bm-list'); if (!list) return;
+  list.insertAdjacentHTML('beforeend', `<button type="button" class="bm-it" id="bm-rec">${IC('comentar', 'ico-m')}<span>Indicar a um amigo<small></small></span>›</button>`);
+  $('#bm-rec', ed).addEventListener('click', () => { closeEd(); recommendToFriend(e); }); }; }
+// Comunidade e sino
+{ const _dt = drawTab; drawTab = function () { _dt(); const box = $('#lista');
+  if (S.tab === 'comunidade' && !box.querySelector('#rc-host')) { const at = box.querySelector('.v3-invs') || box.querySelector('.v3-ears'); if (at) at.insertAdjacentHTML('afterend', '<div id="rc-host"></div>'); paintRecs(); }
+  if (!S.recsAt || Date.now() - S.recsAt > 120000) { S.recsAt = Date.now(); loadRecs(); }
+  paintRecBadge(); }; }
+{ const _on = openNotif; openNotif = function () { _on(); const ed = $('#editor'), list = S.recs.filter((x) => x.status === 'NEW' || x.status === 'SEEN').slice(0, 8); if (!list.length) return;
+  const h3 = ed.querySelector('.ed-body h3'); if (!h3) return;
+  h3.insertAdjacentHTML('afterend', `<div class="nt-list">${list.map((x) => `<div class="nt-it nt-go" data-rcn="${esc(x.id)}" role="button" tabindex="0"><span class="av sm" data-avh="${esc(x.from.handle)}" style="background:${friendColor(x.from.handle)}">${esc(initial(x.from.displayName))}</span><div><p><b>${esc(x.from.displayName)}</b> indicou <b>${esc(x.title)}</b>${x.note ? `: “${esc(x.note)}”` : ''}</p><small>${esc(relTime(x.createdAt))}</small></div><span></span></div>`).join('')}</div>`);
+  $$('[data-rcn]', ed).forEach((n) => n.addEventListener('click', () => { const x = S.recs.find((y) => y.id === n.dataset.rcn); closeEd(); if (x) openAnyBook(x.title, x.author, x.cover); }));
+  list.filter((x) => x.status === 'NEW').forEach((x) => setRecStatus(x, 'SEEN')); paintAvatars(); setTimeout(paintRecBadge, 50); }; }
+{ const _pd = paintCommDot; paintCommDot = function () { _pd(); const b = $('#tabbar button[data-tab="comunidade"]'); if (b && S.tab !== 'comunidade' && recNew() && !b.querySelector('.tb-dot')) b.insertAdjacentHTML('beforeend', '<i class="tb-dot" aria-label="Novidades"></i>'); }; }
+{ const _ss = syncSocial3; syncSocial3 = async function (force) { const r = await _ss(force); loadRecs(); return r; }; }
+setTimeout(loadRecs, 3000);
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
