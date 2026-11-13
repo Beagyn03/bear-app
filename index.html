@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.4.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.4.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7263,15 +7263,17 @@ function rankBooks(list, q) {
   const dom = new Map(); for (const it of list) { const b = base(it), m = dom.get(b) || new Map(); m.set(fa(it), (m.get(fa(it)) || 0) + 1); dom.set(b, m); }
   const rel = (it) => { const nt = normT(it.title), na = normT(it.author || ''); return !words.length || words.some((x) => nt.includes(x) || na.includes(x)); };
   let pool = list.filter(rel); if (!pool.length) pool = list;
+  for (const it of list) if (!it.lang) { const l = langOf(it); if (l) it.lang = l; }
+  const exact = pool.some((it) => base(it) === nq || normT(it.title) === nq);
   const score = (it, idx) => {
     const nt = normT(it.title), b = base(it), lang = langOf(it); let s = -idx * 0.4;
     if (!it.lang && lang) it.lang = lang;
     if (b === nq || nt === nq) s += 60; else if (nt.startsWith(nq)) s += 45; else if (words.length && words.every((x) => nt.includes(x))) s += 25;
-    if (nq.length > 3 && normT(it.author || '').includes(nq)) s += 40;
+    if (!exact && nq.length > 3 && normT(it.author || '').includes(nq)) s += 40; // busca por autor (quando não há título igual)
     s += lang === 'pt' ? 30 : lang === 'en' ? -6 : lang ? -18 : 0;
     if (it.coverUrl) s += 8; if (it.pages) s += 5; if (it.isbn) s += 3;
     if (/\b(edition|edicion|svensk|utgava|box|kit|study guide|resumo|analise|sparknotes)\b/.test(nt)) s -= 15;
-    const m = dom.get(b); if (m && m.size > 1) { const top = [...m.entries()].sort((x, y) => y[1] - x[1])[0][0]; if (fa(it) !== top && !normT(it.author || '').includes(nq)) s -= 20; }
+    const m = dom.get(b); if (m && m.size > 1) { const ord = [...m.entries()].sort((x, y) => y[1] - x[1]); if (ord[0][1] > ord[1][1] && fa(it) !== ord[0][0] && !normT(it.author || '').includes(nq)) s -= 20; } // só pune quando um autor é claramente o da obra
     return s;
   };
   const sorted = pool.map((it, i) => [it, score(it, i)]).sort((x, y) => y[1] - x[1]).map((x) => x[0]);
@@ -7289,13 +7291,13 @@ function rankBooks(list, q) {
   for (const it of [...g, ...a]) { if (!it || !it.title) continue; const k = it.isbn || normT(it.title) + '|' + normT(String(it.author || '').split(',')[0]); if (seen.has(k)) continue; seen.add(k); all.push(it); }
   const ranked = rankBooks(all, q);
   // capa que falta nos primeiros resultados: tenta pelo ISBN (Open Library e Google), sem segurar a busca mais de 1,8 s
-  const imgOk = (u) => new Promise((ok) => { const im = new Image(); const t = setTimeout(() => ok(false), 1500); im.onload = () => { clearTimeout(t); ok(im.naturalWidth > 20); }; im.onerror = () => { clearTimeout(t); ok(false); }; im.src = u; });
+  const imgOk = (u) => new Promise((ok) => { const im = new Image(); const t = setTimeout(() => ok(false), 1000); im.onload = () => { clearTimeout(t); ok(im.naturalWidth > 20); }; im.onerror = () => { clearTimeout(t); ok(false); }; im.src = u; });
   const fill = async (it) => {
     const isbn = String(it.isbn || '').replace(/\D/g, ''); if (it.coverUrl || isbn.length < 10) return;
     const ol = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg?default=false`; if (await imgOk(ol)) { it.coverUrl = ol; return; }
     try { const d = await getJSON(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`, 1500); const im = d && d.items && d.items[0] && d.items[0].volumeInfo && d.items[0].volumeInfo.imageLinks; const u = im && httpsUrl(im.thumbnail || im.smallThumbnail); if (u) it.coverUrl = u; } catch {}
   };
-  await Promise.race([Promise.all(ranked.slice(0, 6).flatMap((m) => [m, ...(m.editions || [])].filter((x) => !x.coverUrl).slice(0, 2)).map(fill)), new Promise((r) => setTimeout(r, 1800))]);
+  await Promise.race([Promise.all(ranked.slice(0, 6).flatMap((m) => [m, ...(m.editions || [])].filter((x) => !x.coverUrl).slice(0, 2)).map(fill)), new Promise((r) => setTimeout(r, 1200))]);
   return ranked.map((m) => { if (!m.coverUrl) { const alt = (m.editions || []).find((x) => x.coverUrl && langOf(x) === langOf(m)); if (alt) { const i = m.editions.indexOf(alt); m.editions.splice(i, 1, m); alt.editions = m.editions; m.editions = []; return alt; } } return m; });
 }; }
 
