@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '4.0.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.0.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -8247,7 +8247,7 @@ const ICO = {
 .ini-meta b{font-size:.86rem}.ini-meta small{float:right;font-size:.74rem;color:var(--ink-2);font-weight:700}
 .ini-meta i{display:block;height:6px;border-radius:3px;background:var(--line);margin-top:.45rem;overflow:hidden}.ini-meta i i{height:100%;margin:0;background:var(--acc);border-radius:3px}
 .me-acts{display:flex;gap:.4rem;margin:-.2rem 0 .8rem}.me-acts button{flex:1;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:800;font-size:.82rem}
-.mine-page .fr-unf,.mine-page .fr-acts{display:none!important}
+.mine-page .fr-unf,.mine-page .fr-acts,.mine-page .fr-common{display:none!important}
 `; TR.append(st); }
 // --- topo fixo ---
 const TAB_T = { inicio: 'Início', estante: 'Estante', comunidade: 'Comunidade', progresso: 'Progresso', buscar: 'Buscar', perfil: 'Ajustes' };
@@ -8294,7 +8294,8 @@ async function openMyProfile() {
   await friendPage(socialProfile.handle); const v = $('#shelflist'); if (v.hidden) return;
   v.classList.add('mine-page'); S.navView = { t: 'me', a: [] };
   const acts = v.querySelector('.fr-acts'), html = '<div class="me-acts"><button type="button" id="me-edit">Editar perfil</button><button type="button" id="me-cfg">Ajustes</button></div>';
-  if (acts) acts.insertAdjacentHTML('afterend', html); else v.querySelector('.sl-body').insertAdjacentHTML('afterbegin', html);
+  const nums = v.querySelector('.yo-nums'); if (nums) nums.insertAdjacentHTML('beforebegin', html); else if (acts) acts.insertAdjacentHTML('afterend', html); else v.querySelector('.sl-top')?.insertAdjacentHTML('afterend', html);
+  $('#g-t').textContent = 'Seu perfil';
   const top = v.querySelector('.sl-top b'); if (top) top.textContent = 'Seu perfil';
   $('#me-cfg', v).addEventListener('click', () => { v.hidden = true; goTab('perfil'); });
   $('#me-edit', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [
@@ -8306,6 +8307,16 @@ async function openMyProfile() {
 // --- bolinha da Comunidade: só novidades dos amigos (indicação e mensagem já têm número no topo) ---
 paintRecBadge = function () { const n = recNew(); const bell = $('#g-bell'); if (!bell) return; const base = S.notifN || 0; let u = bell.querySelector('u'); const t = base + n; if (!t) { u && u.remove(); return; } if (!u) { u = document.createElement('u'); bell.append(u); } u.textContent = t > 9 ? '9+' : t; };
 paintMsgBadge = function () { const b = $('#g-msg'); if (!b) return; let u = b.querySelector('u'); if (!S.msg.unread) { u && u.remove(); return; } if (!u) { u = document.createElement('u'); b.append(u); } u.textContent = S.msg.unread > 9 ? '9+' : S.msg.unread; };
+// ---------- 4.0.1: ajustes da entrega 1 (títulos repetidos, Buscar sem voltar, etiqueta de atualizar escondida) ----------
+{ const st = document.createElement('style'); st.textContent = `
+#lista .v3-brand{display:none!important}
+#lista .v3-top h1{display:none!important}
+#lista .v3-top:not(:has(button:not(.v3-bell):not(.ms-btn):not(#yo-cfg))){display:none!important}
+.on-buscar .sl-body:has(> .ct-mode) > .sl-top{display:none!important}
+.ptr{top:calc(env(safe-area-inset-top,0px) + 3.7rem)!important;opacity:0;transform:translate(-50%,-.6rem)!important;transition:opacity .15s,transform .15s}
+.ptr.show{opacity:1;transform:translate(-50%,0)!important}
+`; TR.append(st); }
+{ const _gt = goTab; goTab = function (tab, fromBar) { $('#shelflist').classList.toggle('on-buscar', tab === 'buscar'); return _gt(tab, fromBar); }; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
