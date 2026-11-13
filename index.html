@@ -1291,7 +1291,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
         <input name="author" placeholder="Autor (opcional)" maxlength="120">
         <input name="pages" type="number" min="1" placeholder="Páginas" required inputmode="numeric">
         <input class="wide" name="initial" type="number" min="0" placeholder="Já lidas antes da meta (opcional)" inputmode="numeric">
-        <select class="wide" name="format" aria-label="Formato"><option value="FISICO">Físico</option><option value="EBOOK">E-book</option><option value="AUDIO">Audiobook</option></select>
+        <select class="wide" name="format" aria-label="Formato"><option value="FISICO">Físico</option><option value="EBOOK">E-book</option><option value="AUDIO">Audiolivro</option></select>
         <button class="wide" type="submit">Adicionar à TBR</button>
       </form>
       <h3 class="adj-h">Outras opções</h3>
@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '4.1.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.2.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -2678,7 +2678,7 @@ function renderMe() {
 }
 // ============ biblioteca ============
 // Formato: físico registra por página; e-book e audiobook por % (página = % do total).
-const FORMATS = [['FISICO', 'Físico'], ['EBOOK', 'E-book'], ['AUDIO', 'Audiobook']];
+const FORMATS = [['FISICO', 'Físico'], ['EBOOK', 'E-book'], ['AUDIO', 'Audiolivro']];
 const fmtLabel = (f) => (FORMATS.find(x => x[0] === f) || FORMATS[0])[1];
 const byPct = (b) => b && (b.format === 'EBOOK' || b.format === 'AUDIO');
 function formatChips(obj, onChange) {
@@ -2706,8 +2706,8 @@ function libSync() {
   if (JSON.stringify(db.library) !== before) save();
 }
 // formato e aparelho de leitura
-const DEVICES = [['FISICO', null, 'Livro físico'], ['EBOOK', 'Kindle', 'Kindle'], ['EBOOK', 'Kobo', 'Kobo ou outro e-reader'], ['EBOOK', 'Celular', 'Celular ou tablet'], ['AUDIO', null, 'Audiobook']];
-const fmtTxt = (e) => (e && e.format === 'AUDIO' ? 'Audiobook' : e && e.format === 'EBOOK' ? (e.device || 'E-book') : 'Físico');
+const DEVICES = [['FISICO', null, 'Livro físico'], ['EBOOK', null, 'E-book'], ['AUDIO', null, 'Audiolivro']];
+const fmtTxt = (e) => (e && e.format === 'AUDIO' ? 'Audiolivro' : e && e.format === 'EBOOK' ? 'E-book' : 'Físico');
 function askFormat(cb, title) { sheet(title || 'Como você vai ler?', DEVICES.map(([f, d, n]) => [n, () => cb({ format: f, device: d })])); }
 function setFormat(e, f) { if (f.format === 'FISICO') { delete e.format; delete e.device; } else { e.format = f.format; if (f.device) e.device = f.device; else delete e.device; } }
 // "Já li": quando terminou (livros antigos não contam no ano de hoje)
@@ -8333,17 +8333,17 @@ paintMsgBadge = function () { const b = $('#g-msg'); if (!b) return; let u = b.q
 { const _gt = goTab; goTab = function (tab, fromBar) { chatMode(false); $('#shelflist').classList.toggle('on-buscar', tab === 'buscar'); return _gt(tab, fromBar); }; }
 // ---------- 4.1 (entrega 2): menuzinho do livro, pergunta da leitura dupla, Estante com "Todos" e Coleções ----------
 { const st = document.createElement('style'); st.textContent = `
-.bq{position:fixed;z-index:60;width:248px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.28);overflow:hidden;animation:bqin .12s ease-out}
+.bkm{position:fixed;z-index:60;width:248px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.28);overflow:hidden;animation:bqin .12s ease-out}
 @keyframes bqin{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
-.bq-h{display:flex;gap:.6rem;align-items:center;padding:.6rem .7rem}
-.bq-h .cv{width:30px;height:45px;border-radius:2px 5px 5px 2px;flex:none}
-.bq-h b{display:block;font-size:.84rem;color:var(--ink);line-height:1.2}.bq-h small{display:block;font-size:.7rem;color:var(--ink-2);margin-top:.1rem}
-.bq button{display:flex;align-items:center;gap:.55rem;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);text-align:left;font:inherit;font-size:.86rem;padding:.6rem .75rem}
-.bq button svg{width:18px;height:18px;flex:none;color:var(--ink-2)}
-.bq button.main{background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc);font-weight:800}.bq button.main svg{color:var(--acc)}
-.bq button .r{margin-left:auto;color:var(--ink-2)}
-.bq .fx{border-top:1.5px solid var(--line)}.bq .fx button{font-size:.8rem;color:var(--ink-2);padding:.5rem .75rem;border-top:0}
-.bq .fx button svg{width:16px;height:16px}
+.bkm-h{display:flex;gap:.6rem;align-items:center;padding:.6rem .7rem}
+.bkm-h .cv{width:30px;height:45px;border-radius:2px 5px 5px 2px;flex:none}
+.bkm-h b{display:block;font-size:.84rem;color:var(--ink);line-height:1.2}.bkm-h small{display:block;font-size:.7rem;color:var(--ink-2);margin-top:.1rem}
+.bkm button{display:flex;align-items:center;gap:.55rem;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);text-align:left;font:inherit;font-size:.86rem;padding:.6rem .75rem}
+.bkm button svg{width:18px;height:18px;flex:none;color:var(--ink-2)}
+.bkm button.main{background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc);font-weight:800}.bkm button.main svg{color:var(--acc)}
+.bkm button .r{margin-left:auto;color:var(--ink-2)}
+.bkm .fx{border-top:1.5px solid var(--line)}.bkm .fx button{font-size:.8rem;color:var(--ink-2);padding:.5rem .75rem;border-top:0}
+.bkm .fx button svg{width:16px;height:16px}
 .dd{display:grid;gap:.5rem}.dd h3{margin:0;font-size:1.05rem;color:var(--ink)}.dd p{margin:0 0 .3rem;font-size:.86rem;color:var(--ink-2)}
 .dd button.op{display:grid;gap:.1rem;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.7rem .85rem;color:var(--ink);font:inherit}
 .dd button.op b{font-size:.9rem}.dd button.op small{font-size:.76rem;color:var(--ink-2)}
@@ -8365,9 +8365,9 @@ const BI = {
   send: '<path d="M21 3 10 14"/><path d="m21 3-7 18-4-7-7-4z"/>', chat: '<path d="M20.5 11.5a8 8 0 0 1-11.8 7.1L3.5 20l1.4-4.6A8 8 0 1 1 20.5 11.5z"/>', x: '<path d="m6 6 12 12M18 6 6 18"/>',
 };
 const bsv = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${BI[k]}</svg>`;
-function bqClose() { TR.querySelectorAll('.bq').forEach((n) => n.remove()); }
+function bqClose() { TR.querySelectorAll('.bkm').forEach((n) => n.remove()); }
 document.addEventListener('scroll', bqClose, true);
-TR.addEventListener('pointerdown', (ev) => { if (!ev.target.closest('.bq')) bqClose(); }, true);
+TR.addEventListener('pointerdown', (ev) => { if (!ev.target.closest('.bkm')) bqClose(); }, true);
 function libItem(b) { return { title: b.title, author: b.author || null, cover: b.cover || null, coverUrl: b.cover || null, totalPages: b.totalPages || null, isbn: b.isbn || null }; }
 function addAs(b, st) { const before = new Set(lib().map((x) => x.id)); addToLibrary(libItem(b), null, st); return lib().find((x) => !before.has(x.id)) || lib().find((x) => normT(x.title) === normT(b.title)); }
 // começar a ler: se já há livro em andamento, pergunta como fica
@@ -8401,9 +8401,9 @@ function bookQuickMenu(anchor, b) {
     ['folder', 'Coleções', () => moveToShelf(e || addAs(b, 'QUERO'))],
     ['send', 'Indicar a um amigo', () => recommendToFriend(e || b)],
     ['chat', 'Conversar sobre', () => { const fr = SOC.fr.friends || []; if (!fr.length) return toast('Adicione amigos para conversar'); sheet(`Conversar sobre “${(e || b).title}” com…`, fr.map((f) => [f.displayName, () => openChat(f.handle, { book: (e || b).title })])); }]];
-  const m = document.createElement('div'); m.className = 'bq'; m.setAttribute('role', 'menu');
+  const m = document.createElement('div'); m.className = 'bkm'; m.setAttribute('role', 'menu');
   const paint = (mode) => {
-    m.innerHTML = `<div class="bq-h">${cvh((e || b).title, (e || b).cover, '')}<div><b>${esc((e || b).title)}</b><small>${esc(sub)}</small></div></div>`
+    m.innerHTML = `<div class="bkm-h">${cvh((e || b).title, (e || b).cover, '')}<div><b>${esc((e || b).title)}</b><small>${esc(sub)}</small></div></div>`
       + (mode === 'sub' ? `<button type="button" data-k="p">${bsv('pause')}Pausar</button><button type="button" data-k="a">${bsv('x')}Abandonar</button><button type="button" data-k="back">‹ Voltar</button>`
         : acts.map((a, i) => `<button type="button" data-a="${i}" class="${i === 0 ? 'main' : ''}">${bsv(a[0])}${a[1]}${a[2] === 'sub' ? '<span class="r">›</span>' : ''}</button>`).join('') + `<div class="fx">${fixed.map((f, i) => `<button type="button" data-f="${i}">${bsv(f[0])}${f[1]}</button>`).join('')}</div>`);
     paintCv(m);
@@ -8428,7 +8428,7 @@ function removeFromLib(e) {
 }
 // toque numa capa (fora da página do livro) abre o menuzinho
 TR.addEventListener('click', (ev) => {
-  if (ev.target.closest('#editor, .bq, .bp-tabs, .es-more')) return;
+  if (ev.target.closest('#editor, .bkm, .bp-tabs, .es-more')) return;
   const n = ev.target.closest('.es-bk, .v3-hb, .cs-bk, .tr-bk, .fd-post .nv-cv, .rc-it .cv, .fr-read, .fl-bk'); if (!n) return;
   let b = null;
   if (n.dataset.id) { const e = byId(n.dataset.id); if (e) b = { e, title: e.title, author: e.author, cover: e.cover }; }
@@ -8471,6 +8471,113 @@ TR.addEventListener('click', (ev) => {
   const qb = q.querySelector('b'); if (qb) qb.textContent = `Meus trechos · ${n}`;
   const hb = h.querySelector('b'); if (hb) hb.textContent = 'Montar histórico';
 }; }
+// ---------- 4.2: 4 abas + menu lateral; Estatísticas; Estante só com procura, filtros e capas; Comunidade com Novidades primeiro ----------
+{ const st = document.createElement('style'); st.textContent = `
+#tabbar button[data-tab="progresso"]{display:none!important}
+.drw-bg{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.35);animation:dfade .15s}
+@keyframes dfade{from{opacity:0}to{opacity:1}}
+.drw{position:fixed;top:0;bottom:0;left:0;z-index:71;width:min(300px,84vw);background:var(--bg);border-right:1px solid var(--line);overflow:auto;padding:calc(env(safe-area-inset-top,0px) + .8rem) 0 calc(env(safe-area-inset-bottom,0px) + 1rem);animation:dslide .18s ease-out}
+@keyframes dslide{from{transform:translateX(-100%)}to{transform:none}}
+.drw-me{display:flex;gap:.7rem;align-items:center;width:100%;border:0;background:none;text-align:left;padding:.4rem 1rem 1rem;border-bottom:1px solid var(--line);color:var(--ink)}
+.drw-me .av{width:48px;height:48px;border-radius:50%;background:var(--acc);color:var(--on-acc,#fff);display:grid;place-items:center;font-weight:900;font-size:1.1rem;background-size:cover;background-position:center;flex:none}
+.drw-me b{display:block;font-size:1rem}.drw-me small{display:block;font-size:.76rem;color:var(--acc);font-weight:800;margin-top:.1rem}
+.drw-g{font-size:.64rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);padding:1rem 1rem .3rem}
+.drw-it{display:flex;align-items:center;gap:.75rem;width:100%;border:0;background:none;color:var(--ink);text-align:left;font:inherit;font-size:.92rem;padding:.62rem 1rem}
+.drw-it svg{width:20px;height:20px;color:var(--ink-2);flex:none}.drw-it small{margin-left:auto;font-size:.72rem;color:var(--ink-2);font-weight:700}
+.esg-chips{display:flex;gap:.35rem;overflow-x:auto;scrollbar-width:none;margin:0 0 .8rem}.esg-chips::-webkit-scrollbar{display:none}
+.esg-chips button{flex:none;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:999px;padding:.38rem .8rem;font-weight:800;font-size:.76rem}
+.esg-chips button.on{background:var(--acc);border-color:transparent;color:var(--on-acc,#fff)}
+.esg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem .6rem}
+.esg .es-bk{width:100%;display:grid;gap:.25rem;text-align:left;border:0;background:none;padding:0}
+.esg .es-bk .cv{width:100%!important;height:auto!important;aspect-ratio:2/3;border-radius:3px 7px 7px 3px}
+.esg .es-bk small{font-size:.66rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.esg-empty{font-size:.84rem;color:var(--ink-2);text-align:center;padding:1.5rem 0}
+.cm-fold{border:1px solid var(--line);background:var(--panel);border-radius:14px;margin:0 0 .6rem;overflow:hidden}
+.cm-fold > summary{list-style:none;display:flex;align-items:center;gap:.5rem;padding:.7rem .85rem;font-weight:900;font-size:.9rem;color:var(--ink);cursor:pointer}
+.cm-fold > summary::-webkit-details-marker{display:none}
+.cm-fold > summary small{margin-left:auto;font-size:.74rem;color:var(--ink-2);font-weight:700}
+.cm-fold > summary::after{content:'›';color:var(--ink-2);transition:transform .15s}.cm-fold[open] > summary::after{transform:rotate(90deg)}
+.cm-fold > .cm-in{padding:0 .7rem .7rem}
+.cm-fold .v3-sh{display:none}
+`; TR.append(st); }
+const DI = {
+  stats: '<path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="6" rx=".5"/><rect x="10.5" y="7" width="3" height="10" rx=".5"/><rect x="15.5" y="13" width="3" height="4" rx=".5"/>',
+  award: '<circle cx="12" cy="9" r="5.5"/><path d="m9 13.8-1.5 6.7 4.5-2.5 4.5 2.5-1.5-6.7"/>', target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/>',
+  quote: '<path d="M7 7h4v4c0 3-1.5 5-4 6"/><path d="M14 7h4v4c0 3-1.5 5-4 6"/>', folder: BI.folder, hist: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M12 8v4l3 2"/>',
+  users: ICO.comunidade, plus: '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c0-3.5 2.9-6.3 6.5-6.3 1.5 0 2.9.5 4 1.3"/><path d="M18 14v6M15 17h6"/>', cfg: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
+};
+const dsv = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${DI[k]}</svg>`;
+// --- menu lateral ---
+function closeDrawer() { TR.querySelectorAll('.drw, .drw-bg').forEach((n) => n.remove()); }
+function openDrawer() {
+  closeDrawer(); const h = drawHud(), prof = socialProfile, nQ = lib().reduce((a, e) => a + (e.quotes || []).length, 0), nC = (db.shelves || []).length, nF = ((SOC.fr || {}).friends || []).length;
+  const bg = document.createElement('div'); bg.className = 'drw-bg'; bg.addEventListener('click', closeDrawer);
+  const d = document.createElement('nav'); d.className = 'drw'; d.setAttribute('aria-label', 'Menu');
+  const it = (id, ic, t, small) => `<button type="button" class="drw-it" data-go="${id}">${dsv(ic)}${t}${small ? `<small>${small}</small>` : ''}</button>`;
+  d.innerHTML = `<button type="button" class="drw-me" data-go="me"><span class="av" style="${h.ph ? `background-image:${cssUrl(h.ph)}` : ''}">${h.ph ? '' : esc(initial(h.name))}</span><span><b>${esc(h.name)}</b><small>${prof ? 'Ver meu perfil ›' : 'Ajustes da conta ›'}</small></span></button>
+    <div class="drw-g">Minha leitura</div>${it('stats', 'stats', 'Estatísticas')}${it('quotes', 'quote', 'Meus trechos', nQ || '')}${it('cols', 'folder', 'Coleções', nC || '')}${it('hist', 'hist', 'Montar histórico')}
+    <div class="drw-g">Conquistas e metas</div>${it('ach', 'award', 'Conquistas')}${it('goals', 'target', 'Metas com prazo')}
+    <div class="drw-g">Pessoas</div>${it('friends', 'users', 'Amigos', nF || '')}${it('people', 'plus', 'Encontrar leitores')}
+    <div class="drw-g">App</div>${it('cfg', 'cfg', 'Ajustes')}`;
+  const go = { me: () => openMyProfile(), stats: () => goTab('progresso'), quotes: () => openAllQuotes(), cols: () => openCollections(), hist: () => openHistory(), ach: () => openAchList(), goals: () => screen('desafios'), friends: () => openFriendsV3(), people: () => openPeopleSearch(), cfg: () => goTab('perfil') };
+  d.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { closeDrawer(); go[b.dataset.go](); }));
+  TR.append(bg, d);
+}
+{ const old = $('#g-av'), nb = old.cloneNode(true); old.replaceWith(nb); nb.setAttribute('aria-label', 'Menu'); nb.addEventListener('click', openDrawer); }
+// --- Coleções: tela própria (saiu da Estante) ---
+function openCollections() {
+  const v = $('#shelflist');
+  const draw = () => {
+    const mine = db.shelves || [];
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Coleções</b><span></span></div>
+      <button type="button" class="fl-add" id="col-new">+ Nova coleção</button>
+      ${mine.length ? mine.map((s) => shelfRowHTML('sh:' + s.id, 'Coleção vazia. Toque em ••• para adicionar livros.')).join('') : '<p class="sl-empty">Crie coleções para agrupar livros do seu jeito: clube do livro, favoritos do ano, para dar de presente…</p>'}`;
+    paintCv(v);
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    $('#col-new', v).addEventListener('click', () => shelfNameForm());
+    $$('[data-open]', v).forEach((b) => b.addEventListener('click', () => openShelfV3(b.dataset.open)));
+    $$('[data-menu]', v).forEach((b) => b.addEventListener('click', () => shelfMenu(b.dataset.menu, null, b)));
+    $$('.es-t[data-open^="sh:"]', v).forEach((t) => { const s = (db.shelves || []).find((x) => x.id === t.dataset.open.slice(3)); if (!s) return; const lidos = (s.bookIds || []).map(byId).filter((x) => x && x.status === 'LIDO').length; t.insertAdjacentHTML('beforeend', `<span class="es-lid">· ${lidos} ${lidos === 1 ? 'lido' : 'lidos'}</span>`); });
+  };
+  S.listRedraw = draw; S.navView = { t: 'cols', a: [] }; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0;
+}
+// --- Estante: procura, filtros em linha e grade de capas ---
+S.esF = S.esF || 'ALL';
+{ const _de = drawEstante; drawEstante = function (box) {
+  _de(box);
+  [...box.children].forEach((c) => { if (!c.matches('.v3-top, .es-actions, .es-search, .gtop-sp')) c.remove(); });
+  box.querySelector('#es-new')?.remove();
+  const F = [['ALL', 'Todos'], ['QUERO', 'Quero ler'], ['LIDO', 'Lidos'], ['HIBERNANDO', 'Pausados'], ['ABANDONEI', 'Abandonados']];
+  const cnt = (k) => (k === 'ALL' ? lib().length : lib().filter((e) => e.status === k).length);
+  const list = lib().filter((e) => S.esF === 'ALL' || e.status === S.esF)
+    .sort((a, b) => (a.status === 'LENDO' ? 0 : 1) - (b.status === 'LENDO' ? 0 : 1) || String(b.finishedAt || b.updatedAt || b.addedAt || '').localeCompare(String(a.finishedAt || a.updatedAt || a.addedAt || '')));
+  const pctOf = (e) => (e.totalPages ? Math.round((libProgress(e) / e.totalPages) * 100) : 0);
+  const lab = (e) => (e.status === 'LENDO' ? 'lendo' : e.status === 'LIDO' ? `lido${e.finishedAt ? ' ' + String(e.finishedAt).slice(0, 4) : ''}` : (LIB_LABEL[e.status] || '').toLowerCase());
+  box.insertAdjacentHTML('beforeend', `<div class="esg-chips">${F.filter(([k]) => k === 'ALL' || cnt(k)).map(([k, n]) => `<button type="button" data-f="${k}" class="${S.esF === k ? 'on' : ''}">${n} · ${cnt(k)}</button>`).join('')}</div>
+    ${list.length ? `<div class="esg">${list.map((e) => `<button type="button" class="es-bk" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'es-cv')}${e.status === 'LENDO' ? `<i class="es-p" style="--p:${pctOf(e)}%"></i><i class="es-pct">${pctOf(e)}%</i>` : ''}<small>${esc(lab(e))}</small></button>`).join('')}</div>` : '<p class="esg-empty">Nenhum livro aqui ainda. Toque em “+ Adicionar livro”.</p>'}`);
+  $$('.esg-chips [data-f]', box).forEach((b) => b.addEventListener('click', () => { S.esF = b.dataset.f; drawEstante(box); }));
+  paintCv(box);
+}; }
+{ const _dt = drawTab; drawTab = function () { _dt(); const box = $('#lista');
+  if (S.tab === 'estante') box.querySelector('.es-minis')?.remove();
+  if (S.tab === 'progresso') { $('#g-t').textContent = 'Estatísticas'; [...box.querySelectorAll('.v3-sh')].forEach((sh) => { const t = (sh.querySelector('b') || sh).textContent.trim(); if (/^(Metas com prazo|Próximas conquistas)/.test(t)) { const sec = sh.closest('section'); if (sec && sec !== box) sec.remove(); else { let n = sh.nextElementSibling; while (n && !n.classList.contains('v3-sh')) { const x = n; n = n.nextElementSibling; x.remove(); } sh.remove(); } } }); }
+  if (S.tab === 'comunidade') foldCommunity(box);
+}; }
+// --- Comunidade: Novidades primeiro; Em alta e Placar recolhidos numa linha ---
+function sectionNodes(sh) { const out = [sh]; let n = sh.nextElementSibling; while (n && !n.classList.contains('v3-sh') && !n.classList.contains('cm-fold')) { out.push(n); n = n.nextElementSibling; } return out; }
+function foldCommunity(box) {
+  if (box.querySelector('.cm-fold')) return;
+  const find = (re) => [...box.querySelectorAll('.v3-sh')].find((sh) => re.test((sh.querySelector('b') || sh).textContent.trim()));
+  const top = box.querySelector('.v3-invs') || box.querySelector('.v3-ears');
+  const nov = find(/^Novidades/);
+  const fold = (sh, title, small) => { if (!sh) return null; const nodes = sectionNodes(sh); const d = document.createElement('details'); d.className = 'cm-fold'; d.innerHTML = `<summary>${title}${small ? `<small>${small}</small>` : ''}</summary><div class="cm-in"></div>`; nodes[0].before(d); nodes.forEach((n) => d.querySelector('.cm-in').append(n)); return d; };
+  const trSh = find(/^Em alta/); const trHost = box.querySelector('#tr-host');
+  const pl = find(/^Placar/); const myRow = box.querySelector('.v3-board .me, .v3-rank .me');
+  const fT = fold(trSh, 'Em alta', ''); if (fT && trHost && !fT.contains(trHost)) fT.querySelector('.cm-in').append(trHost);
+  const fP = fold(pl, 'Placar da semana', myRow ? (myRow.innerText.match(/^\s*(\d+)/) || [0, ''])[1] + 'º lugar' : '');
+  if (nov && top) { const ns = sectionNodes(nov); top.after(...ns); }
+  const order = [fT, fP].filter(Boolean); if (order.length && nov) { let after = sectionNodes(nov).pop(); order.forEach((f) => { after.after(f); after = f; }); }
+}
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
