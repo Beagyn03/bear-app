@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.7.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.7.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -4860,7 +4860,7 @@ function openBookPage(e, tab = 'sobre') {
     const info = readingInfo(e), r = reviewOfLib(e) || {}, m = e.meta || null, pct = info.total ? Math.min(100, Math.round(info.now / info.total * 100)) : 0;
     const days = e.startedAt ? Math.max(1, between(e.startedAt, e.finishedAt || todayISO()) + 1) : 0, ser = bookSeries(e);
     const foc = (db.focus || []).filter((f) => f.libId === e.id), focMin = foc.reduce((a, f) => a + (f.minutes || 0), 0);
-    const tabs = e._preview ? [['sobre', 'Sobre'], ['comunidade', 'Amigos']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['trechos', `Trechos${(e.quotes || []).length ? ' · ' + e.quotes.length : ''}`], ['comunidade', 'Amigos']];
+    const tabs = e._preview ? [['sobre', 'Sobre'], ['comunidade', 'Amigos'], ['trechos', 'Marcadores']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['trechos', `Trechos${(e.quotes || []).length ? ' · ' + e.quotes.length : ''}`], ['comunidade', 'Amigos']];
     let body = '';
     if (tab === 'sobre') {
       const rows = [['Páginas', info.total || e.totalPages], ['Gênero', e.genre || (m && m.cat)], ['Publicação', m && m.pub], ['Publicado em', m && m.date && (m.date.length >= 10 ? fmt(m.date) : m.date)], ['Idioma', m && m.lang && (LANGS[m.lang] || m.lang)], ['ISBN', e.isbn]].filter((x) => x[1]);
@@ -4881,6 +4881,8 @@ function openBookPage(e, tab = 'sobre') {
     } else if (tab === 'grafico') {
       body = ser.length ? `<section class="bp-card">${chartSvg(ser, info.total)}<small class="bp-small">Páginas acumuladas em cada dia em que você registrou leitura.</small></section>`
         : '<section class="bp-card"><p class="bp-load">Ainda não há leituras registradas deste livro.</p></section>';
+    } else if (tab === 'trechos' && e._preview) {
+      body = bookMarkersHTML(e) || '<section class="bp-card"><p class="bp-load">Entre na conta para ver os marcadores dos amigos neste livro.</p></section>';
     } else if (tab === 'trechos') {
       const qs = [...(e.quotes || [])].map((q, i) => ({ ...q, i })).sort((a, b) => (a.p || 99999) - (b.p || 99999));
       body = `${e.note ? `<section class="bp-card"><div class="bp-row"><span>Anotação</span><button type="button" class="bp-link" data-a="note">Editar</button></div><p class="bq-note">${esc(e.note)}</p></section>` : ''}
@@ -7598,8 +7600,8 @@ function bookNetHTML(e) {
     ${!others && c.mine ? '<p class="bp-load" style="padding:.4rem 0 0">Só você avaliou por enquanto.</p>' : ''}</section>`;
 }
 function bindBookNet(v) {
-  $$('.bn-see', v).forEach((b) => b.addEventListener('click', () => { (S.bnOpen || (S.bnOpen = new Set())).add(b.dataset.id); S.listRedraw && S.listRedraw(); }));
-  $$('.bn-who', v).forEach((b) => b.addEventListener('click', () => friendPage(b.dataset.h)));
+  $$('.bn-see:not([data-on])', v).forEach((b) => { b.dataset.on = 1; b.addEventListener('click', () => { (S.bnOpen || (S.bnOpen = new Set())).add(b.dataset.id); const it = b.closest('.bn-it'); if (it) { const p = document.createElement('p'); p.className = 'bn-tx'; const net = Object.values(S.bookNet).find((n) => n && [...(n.friends || []), ...(n.public || [])].some((x) => x.id === b.dataset.id)); const x = net && [...(net.friends || []), ...(net.public || [])].find((y) => y.id === b.dataset.id); p.textContent = x ? x.text : ''; b.replaceWith(p); } }); });
+  $$('.bn-who:not([data-on])', v).forEach((b) => { b.dataset.on = 1; b.addEventListener('click', () => friendPage(b.dataset.h)); });
   paintAvatars();
 }
 
@@ -7728,6 +7730,48 @@ TR.addEventListener('click', (ev) => {
   const sb = ev.target.closest('.st-ov .st-book'); if (sb) { const t = sb.querySelector('b'); if (t) { closeStories(); openAnyBook(t.textContent); } }
 });
 { const st = document.createElement('style'); st.textContent = '.fd-post .nv-cv,.st-book,.fr-read{cursor:pointer}'; TR.append(st); }
+// ---------- 3.7.2: página do livro pelo catálogo completa (dados, média da rede, marcadores, mais do autor) ----------
+{ const st = document.createElement('style'); st.textContent = '.au-row .es-bk small{font-size:.62rem;color:var(--ink-2);font-weight:700}'; TR.append(st); }
+// completa um livro aberto só pelo título (Novidades, Em alta, amigo): páginas, ISBN, capa e editora
+function enrichPreview(e) {
+  if (!e || !e._preview || e._enriched) return; e._enriched = true;
+  const k = normT(e.title), sur = normT(String(e.author || '').split(',')[0]).split(' ').pop() || '';
+  searchBooks(`${e.title} ${String(e.author || '').split(',')[0]}`.trim()).then((list) => {
+    const all = (list || []).flatMap((m) => [m, ...(m.editions || [])]);
+    const hit = all.find((it) => normT(it.title) === k && (!sur || normT(it.author || '').includes(sur))) || all.find((it) => normT(it.title).startsWith(k));
+    if (!hit) return;
+    if (!e.totalPages && hit.pages) e.totalPages = hit.pages; if (!e.isbn && hit.isbn) e.isbn = hit.isbn; if (!e.cover && hit.coverUrl) e.cover = hit.coverUrl;
+    if (!e.author && hit.author) e.author = hit.author; if (!e.meta && hit._meta) e.meta = hit._meta;
+    e._item = { ...(e._item || {}), title: e.title, author: e.author, coverUrl: e.cover, pages: e.totalPages, isbn: e.isbn, _meta: e.meta || null };
+    if (!$('#shelflist').hidden && S.listRedraw) S.listRedraw();
+  }).catch(() => {});
+}
+// mais livros do mesmo autor (na aba Sobre de qualquer livro)
+S.byAuthor = S.byAuthor || {};
+function authorStripHTML(e) {
+  const au = String(e.author || '').split(',')[0].trim(); if (!au) return '';
+  const k = normT(au), c = S.byAuthor[k];
+  if (!c) { S.byAuthor[k] = { loading: true }; searchBooks(au).then((list) => { const sur = k.split(' ').pop(); S.byAuthor[k] = { items: (list || []).filter((it) => normT(it.author || '').includes(sur)) }; if (!$('#shelflist').hidden && S.listRedraw) S.listRedraw(); }).catch(() => { S.byAuthor[k] = { items: [] }; }); return ''; }
+  if (c.loading) return '';
+  const items = (c.items || []).filter((it) => normT(it.title) !== normT(e.title) && !normT(it.title).startsWith(normT(e.title) + ' ')).slice(0, 12);
+  if (!items.length) return '';
+  const st = (it) => { const m = lib().find((x) => normT(x.title) === normT(it.title)); return m ? (LIB_LABEL[m.status] || '').toLowerCase() : ''; };
+  return `<div class="v3-sh" style="margin-top:1rem"><b>Mais de ${esc(au)}</b></div><div class="es-row au-row">${items.map((it) => `<button type="button" class="es-bk" data-book="${esc(it.title)}" data-author="${esc(it.author || '')}">${cvh(it.title, it.coverUrl, 'es-cv')}<small>${esc(st(it) || it.year || '')}</small></button>`).join('')}</div>`;
+}
+function decorateBookPage(v) {
+  const tabOn = (v.querySelector('.bp-tabs button.on') || {}).textContent || '', title = (v.querySelector('.bp-ht h2') || {}).textContent || '', author = (v.querySelector('.bp-ht small') || {}).textContent || '';
+  if (!title) return;
+  const net = S.bookNet[normT(title).slice(0, 200)], chips = v.querySelector('.bp-chips');
+  if (chips && net && net.avg != null && !chips.querySelector('.bp-net')) chips.insertAdjacentHTML('beforeend', `<span class="bp-chip gold bp-net">rede ${pawTxt(net.avg)} · ${net.count}</span>`);
+  if (net === undefined && connected() && socialProfile) bookNetHTML({ title }); // busca a média já no topo
+  if (/^Sobre/.test(tabOn) && !v.querySelector('.au-row')) { const sec = v.querySelector('.sl-body'); const h = authorStripHTML({ title, author }); if (h) { sec.insertAdjacentHTML('beforeend', h); paintCv(v); } }
+}
+{ const v0 = $('#shelflist'); let busy = false; new MutationObserver(() => { if (busy || v0.hidden || !v0.querySelector('.bp-tabs')) return; busy = true; try { bindBookNet(v0); decorateBookPage(v0); } finally { busy = false; } }).observe(v0, { childList: true, subtree: true }); }
+{ const _ob = openBookPage; openBookPage = function (e, tab) {
+  const r = _ob(e, tab); const v = $('#shelflist'); enrichPreview(e); decorateBookPage(v);
+  const rd = S.listRedraw; if (rd && !rd._dec) { S.listRedraw = function () { rd(); decorateBookPage(v); }; S.listRedraw._dec = true; S.listRedraw._bn = rd._bn; }
+  return r;
+}; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
