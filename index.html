@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.10.5', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.11.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -8038,7 +8038,7 @@ function restoreNav() {
     run && setTimeout(run, 120);
   } catch (err) { console.warn('restoreNav', err); }
 }
-setTimeout(restoreNav, 600);
+setTimeout(() => restoreNav(), 600);
 // --- puxar para atualizar dentro do app ---
 { let y0 = null, dy = 0, busy = false; const ind = document.createElement('div'); ind.className = 'ptr'; TR.append(ind);
   const scroller = () => { const v = $('#shelflist'); if (v && !v.hidden) return v; let el = $('#lista'); while (el && el !== TR && el.nodeType === 1) { const o = getComputedStyle(el).overflowY; if ((o === 'auto' || o === 'scroll') && el.scrollHeight > el.clientHeight) return el; el = el.parentElement; } return document.scrollingElement; };
@@ -8077,6 +8077,142 @@ async function fillFromCatalog(e) {
 }; }
 // livros que já estão na estante sem capa: tenta uma vez por livro, poucos por vez
 setTimeout(async () => { const L = lib().filter((e) => !e.cover && !e.coverTried).slice(0, 6); for (const e of L) { e.coverTried = 1; await fillFromCatalog(e); } if (L.length) save(); }, 8000);
+// ---------- 3.11: mensagens entre amigos e excluir conta ----------
+{ const st = document.createElement('style'); st.textContent = `
+.ms-btn{position:relative}
+.th-row{display:grid;grid-template-columns:auto 1fr auto;gap:.65rem;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.6rem .7rem;margin-bottom:.45rem;color:var(--ink)}
+.th-row .av{width:44px;height:44px;color:#fff;font-weight:900}.th-row b{display:block;font-size:.9rem}.th-row small{display:block;font-size:.76rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.th-row.un b,.th-row.un small{color:var(--ink);font-weight:800}
+.th-meta{display:grid;justify-items:end;gap:.2rem;font-size:.66rem;color:var(--ink-2)}.th-dot{min-width:18px;height:18px;border-radius:9px;background:var(--acc);color:var(--on-acc,#fff);font-size:.62rem;font-weight:900;display:grid;place-items:center;padding:0 .3rem}
+.cht{display:flex;flex-direction:column;gap:.35rem;padding:.4rem 0 6.5rem}
+.cht-day{align-self:center;font-size:.64rem;font-weight:800;color:var(--ink-2);margin:.5rem 0 .2rem}
+.bub{max-width:80%;padding:.5rem .7rem;border-radius:16px;font-size:.88rem;line-height:1.4;white-space:pre-wrap;word-break:break-word}
+.bub.me{align-self:flex-end;background:var(--acc);color:var(--on-acc,#fff);border-bottom-right-radius:5px}
+.bub.ot{align-self:flex-start;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-bottom-left-radius:5px}
+.bub small{display:block;font-size:.62rem;opacity:.7;margin-top:.2rem;text-align:right}
+.bub i{display:block;font-style:normal;font-size:.66rem;font-weight:800;opacity:.85;margin-bottom:.15rem}
+.bub .bub-sp{border:1px dashed currentColor;background:none;color:inherit;border-radius:10px;padding:.3rem .5rem;font-weight:800;font-size:.76rem}
+.cht-in{position:fixed;left:0;right:0;bottom:calc(3.9rem + env(safe-area-inset-bottom,0px));z-index:36;background:var(--bg);border-top:1px solid var(--line);padding:.5rem .7rem;display:grid;gap:.35rem}
+.cht-in .row{display:flex;gap:.45rem;align-items:flex-end}
+.cht-in textarea{flex:1;resize:none;min-height:42px;max-height:120px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:.6rem .75rem;font:inherit;font-size:.9rem}
+.cht-in button.send{height:42px;border-radius:12px;border:0;background:var(--acc);color:var(--on-acc,#fff);font-weight:900;padding:0 .9rem}
+.cht-bk{display:flex;align-items:center;gap:.4rem;font-size:.72rem;font-weight:800;color:var(--acc)}.cht-bk button{border:0;background:none;color:var(--ink-2);font-size:1rem}
+.cht-note{font-size:.72rem;color:var(--ink-2);text-align:center;margin:.3rem 0}
+.aj-row.danger b{color:#c0392b}
+.dl-box{display:grid;gap:.55rem}.dl-box p{margin:0;font-size:.86rem;color:var(--ink-2);line-height:1.45}.dl-box ul{margin:0;padding-left:1.1rem;font-size:.82rem;color:var(--ink-2)}
+.dl-box input{height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:0 .8rem;font:inherit;font-weight:800;letter-spacing:.06em}
+.dl-box .danger{height:46px;border-radius:12px;border:0;background:#c0392b;color:#fff;font-weight:900}.dl-box .danger:disabled{opacity:.4}
+.dl-box .soft{height:42px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:800}
+`; TR.append(st); }
+S.msg = S.msg || { unread: 0, threads: null };
+async function loadThreads() {
+  if (!connected() || !socialProfile) return null;
+  try { const r = await sapi('GET', '/v1/messages/threads'); if (r.status === 200 && r.data) { S.msg.threads = r.data.items || []; S.msg.unread = r.data.unread || 0; paintMsgBadge(); return S.msg.threads; } } catch {}
+  return null;
+}
+function paintMsgBadge() {
+  $$('.ms-btn').forEach((b) => { let u = b.querySelector('u'); if (!S.msg.unread) { u && u.remove(); return; } if (!u) { u = document.createElement('u'); b.append(u); } u.textContent = S.msg.unread > 9 ? '9+' : S.msg.unread; });
+  const t = $('#tabbar button[data-tab="comunidade"]'); if (t && S.tab !== 'comunidade' && S.msg.unread && !t.querySelector('.tb-dot')) t.insertAdjacentHTML('beforeend', '<i class="tb-dot" aria-label="Novidades"></i>');
+}
+const dayLabel = (iso) => { const d = new Date(iso), t = new Date(); const y = new Date(t); y.setDate(t.getDate() - 1); const same = (a, b) => a.toDateString() === b.toDateString(); return same(d, t) ? 'Hoje' : same(d, y) ? 'Ontem' : d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }); };
+const hm = (iso) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+function openThreads() {
+  if (needAccount()) return; const v = $('#shelflist');
+  const draw = () => {
+    const th = S.msg.threads, fr = SOC.fr.friends || [];
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Mensagens</b><span></span></div>
+      <button type="button" class="fl-add" id="th-new">+ Nova mensagem</button>
+      ${th == null ? '<p class="sl-empty">Carregando…</p>' : th.length ? th.map((x) => `<button type="button" class="th-row${x.unread ? ' un' : ''}" data-h="${esc(x.with.handle)}"><span class="av" data-avh="${esc(x.with.handle)}" style="background:${friendColor(x.with.handle)}">${esc(initial(x.with.displayName))}</span><span><b>${esc(x.with.displayName)}</b><small>${x.mine ? 'Você: ' : ''}${x.bookTitle ? '📖 ' : ''}${esc(x.last)}</small></span><span class="th-meta">${esc(relTime(x.at))}${x.unread ? `<span class="th-dot">${x.unread}</span>` : ''}</span></button>`).join('')
+        : `<p class="sl-empty">${fr.length ? 'Nenhuma conversa ainda. Toque em “Nova mensagem” e escolha um amigo.' : 'Mensagens são só entre amigos. Adicione amigos para conversar.'}</p>`}`;
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    $('#th-new', v).addEventListener('click', () => { if (!fr.length) return openPeopleSearch(); sheet('Conversar com…', fr.map((f) => [f.displayName, () => openChat(f.handle)])); });
+    $$('.th-row', v).forEach((b) => b.addEventListener('click', () => openChat(b.dataset.h)));
+    paintAvatars();
+  };
+  S.listRedraw = draw; S.navView = { t: 'threads', a: [] }; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0;
+  loadThreads().then(() => { if (!v.hidden && S.listRedraw === draw) draw(); });
+}
+function openChat(handle, opt) {
+  if (needAccount()) return; const v = $('#shelflist'); let data = null, book = (opt && opt.book) || null, poll = 0, sending = false;
+  const friend = (SOC.fr.friends || []).find((f) => f.handle === handle);
+  const open = S.chOpen || (S.chOpen = new Set());
+  const bubble = (m) => { const hide = !m.mine && m.bookTitle && !iReadT(m.bookTitle) && !open.has(m.id);
+    return `<div class="bub ${m.mine ? 'me' : 'ot'}">${m.bookTitle ? `<i>📖 ${esc(m.bookTitle)}</i>` : ''}${hide ? `<button type="button" class="bub-sp" data-sp="${esc(m.id)}">Você ainda não leu este livro · toque para ver</button>` : esc(m.body)}<small>${hm(m.at)}</small></div>`; };
+  const list = () => { if (!data) return '<p class="sl-empty">Carregando…</p>'; if (!data.items.length) return '<p class="cht-note">Comece a conversa. Mensagens sobre um livro que a outra pessoa não terminou ficam escondidas até ela tocar.</p>';
+    let last = ''; return data.items.map((m) => { const d = dayLabel(m.at), head = d !== last ? `<div class="cht-day">${d}</div>` : ''; last = d; return head + bubble(m); }).join(''); };
+  const name = () => (data && data.with.displayName) || (friend && friend.displayName) || '@' + handle;
+  const draw = (keepDraft) => {
+    const draft = keepDraft ? ($('#cht-t', v) || {}).value || '' : '';
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b class="cht-who" data-h="${esc(handle)}" style="cursor:pointer">${esc(name())}</b><span></span></div>
+      <div class="cht">${list()}</div>
+      ${friend ? `<div class="cht-in">${book ? `<div class="cht-bk">📖 Sobre ${esc(book)}<button type="button" id="cht-nb" aria-label="Tirar o livro">×</button></div>` : ''}<div class="row"><textarea id="cht-t" rows="1" maxlength="1000" placeholder="Escreva uma mensagem"></textarea><button type="button" class="send" id="cht-s">Enviar</button></div></div>`
+        : '<p class="cht-note">Vocês não são mais amigos. A conversa fica só para leitura.</p>'}`;
+    v.querySelector('.sl-back').addEventListener('click', close);
+    $('.cht-who', v).addEventListener('click', () => { close(); friendPage(handle); });
+    $$('[data-sp]', v).forEach((b) => b.addEventListener('click', () => { open.add(b.dataset.sp); draw(true); }));
+    const t = $('#cht-t', v); if (t) { t.value = draft; t.addEventListener('input', () => { t.style.height = 'auto'; t.style.height = Math.min(120, t.scrollHeight) + 'px'; }); }
+    $('#cht-nb', v)?.addEventListener('click', () => { book = null; draw(true); });
+    $('#cht-s', v)?.addEventListener('click', send);
+    paintAvatars(); requestAnimationFrame(() => { v.scrollTop = v.scrollHeight; });
+  };
+  async function load() { try { const r = await sapi('GET', `/v1/messages/with/${encodeURIComponent(handle)}`); if (r.status === 200 && r.data) { const n = (data && data.items.length) || 0; data = r.data; if (!v.hidden && S.listRedraw === draw && (n !== data.items.length || n === 0)) draw(true); loadThreads(); } } catch {} }
+  async function send() {
+    const t = $('#cht-t', v); const body = (t.value || '').trim(); if (!body || sending) return; sending = true; $('#cht-s', v).disabled = true;
+    const r = await sapi('POST', '/v1/messages', { handle, body, bookTitle: book ? String(book).slice(0, 200) : null });
+    sending = false;
+    if (r.status === 201) { data = data || { with: { handle, displayName: name() }, items: [] }; data.items.push({ id: r.data.id, body, bookTitle: book, mine: true, at: r.data.at }); book = null; t.value = ''; draw(false); }
+    else { $('#cht-s', v).disabled = false; toast(r.status === 404 ? 'Vocês precisam ser amigos para conversar' : 'Não consegui enviar agora'); }
+  }
+  function close() { clearInterval(poll); v.hidden = true; }
+  S.listRedraw = () => draw(true); S.navView = { t: 'chat', a: [handle] }; closeEd(); v.classList.remove('feedview'); draw(false); v.hidden = false;
+  load(); poll = setInterval(() => { if (v.hidden || !v.querySelector('.cht')) { clearInterval(poll); return; } load(); }, 10000);
+}
+// pontos de entrada: Comunidade (ícone ao lado do sino), amigo, livro
+{ const _dt = drawTab; drawTab = function () { _dt(); const box = $('#lista');
+  if ((S.tab === 'comunidade' || S.tab === 'inicio') && connected() && socialProfile && !box.querySelector('.ms-btn')) { const bell = box.querySelector('#v3-bell'); if (bell) { bell.insertAdjacentHTML('beforebegin', `<button type="button" class="v3-bell ms-btn" aria-label="Mensagens">${IC('comentar', 'ico-g')}</button>`); box.querySelector('.ms-btn').addEventListener('click', openThreads); paintMsgBadge(); } }
+  if (!S.msgAt || Date.now() - S.msgAt > 60000) { S.msgAt = Date.now(); loadThreads(); } }; }
+{ const _fm = friendMenu; friendMenu = function (f, anchor, after) { _fm(f, anchor, after); const pop = TR.querySelector('.pop'); if (!pop) return;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'pop-it'; b.innerHTML = '<span>Mandar mensagem</span>'; b.addEventListener('click', (ev) => { ev.stopPropagation(); closePop(); openChat(f.handle); });
+  const first = pop.querySelector('.pop-it'); first ? first.after(b) : pop.prepend(b); }; }
+{ const _fp = friendPage; friendPage = async function (handle) {
+  await _fp(handle); const v = $('#shelflist'), f = (SOC.fr.friends || []).find((x) => x.handle === handle), acts = v.querySelector('.fr-acts');
+  if (!f || !acts || acts.querySelector('#fr-msg')) return;
+  acts.insertAdjacentHTML('afterbegin', '<button type="button" class="pri" id="fr-msg">Mensagem</button>'); $('#fr-buddy', v)?.classList.remove('pri');
+  $('#fr-msg', v).addEventListener('click', () => openChat(handle));
+}; }
+{ const _bm = bookMenu; bookMenu = function (e) { _bm(e); const ed = $('#editor'), list = ed.querySelector('.bm-list'); if (!list || !(SOC.fr.friends || []).length) return;
+  list.insertAdjacentHTML('beforeend', `<button type="button" class="bm-it" id="bm-chat">${IC('comentar', 'ico-m')}<span>Conversar sobre este livro<small></small></span>›</button>`);
+  $('#bm-chat', ed).addEventListener('click', () => { closeEd(); sheet(`Conversar sobre “${e.title}” com…`, SOC.fr.friends.map((f) => [f.displayName, () => openChat(f.handle, { book: e.title })])); }); }; }
+// restaurar a tela depois de recarregar
+{ const _rn = restoreNav; restoreNav = function () { let n = null; try { n = JSON.parse(sessionStorage.getItem('bear.nav') || 'null'); } catch {}
+  if (n && n.view && (n.view.t === 'chat' || n.view.t === 'threads') && Date.now() - (n.at || 0) < 30 * 60000) { if (n.tab) goTab(n.tab); setTimeout(() => n.view.t === 'chat' ? openChat(n.view.a[0]) : openThreads(), 120); return; } _rn(); }; }
+
+// ----- excluir conta -----
+function deleteAccountSheet() {
+  if (!connected()) return; const ed = $('#editor'); ed.classList.add('compact');
+  ed.querySelector('.ed-body').innerHTML = `<button type="button" class="up-x" id="dl-x" aria-label="Fechar">×</button><h3 class="up-h">Excluir conta</h3>
+    <div class="dl-box"><p>Isso apaga <b>para sempre</b> a sua conta ${socialProfile ? '@' + esc(socialProfile.handle) + ' ' : ''}e tudo que está nela:</p>
+      <ul><li>estante, leituras, metas e histórico</li><li>avaliações, comentários, curtidas e marcadores</li><li>amizades, duelos, leituras conjuntas, indicações e mensagens</li></ul>
+      <p>Não dá para desfazer. Se quiser guardar uma cópia, baixe seus dados antes.</p>
+      <button type="button" class="soft" id="dl-exp">Baixar meus dados antes</button>
+      <p>Para confirmar, escreva <b>EXCLUIR</b>:</p><input id="dl-in" autocomplete="off" autocapitalize="characters" placeholder="EXCLUIR">
+      <button type="button" class="danger" id="dl-go" disabled>Excluir minha conta para sempre</button></div>`;
+  $('#dl-x', ed).addEventListener('click', closeEd);
+  $('#dl-exp', ed).addEventListener('click', () => document.getElementById('export').click());
+  const inp = $('#dl-in', ed), go = $('#dl-go', ed);
+  inp.addEventListener('input', () => { go.disabled = inp.value.trim().toUpperCase() !== 'EXCLUIR'; });
+  go.addEventListener('click', async () => {
+    go.disabled = true; go.textContent = 'Excluindo…';
+    const r = await sapi('DELETE', '/v1/me', { confirm: 'EXCLUIR' });
+    if (r.status !== 200) { go.disabled = false; go.textContent = 'Excluir minha conta para sempre'; return toast('Não consegui excluir agora. Tente de novo.'); }
+    try { Object.keys(localStorage).filter((k) => /bear/i.test(k)).forEach((k) => localStorage.removeItem(k)); sessionStorage.clear(); } catch {}
+    closeEd(); alert('Sua conta foi excluída. Obrigada por ter lido com a gente.'); location.reload();
+  });
+  ed.hidden = false; setTimeout(() => inp.focus(), 80);
+}
+{ const _da = drawAjustes; drawAjustes = function (box) { _da(box); if (!connected()) return; const out = box.querySelector('#aj-out'); if (!out) return;
+  out.insertAdjacentHTML('afterend', '<div class="aj-card" style="margin-top:.8rem"><button type="button" class="aj-row danger" id="aj-del"><span><b>Excluir conta</b><small>Apaga a conta e todos os dados dela, para sempre</small></span>›</button></div>');
+  $('#aj-del', box).addEventListener('click', deleteAccountSheet); }; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
