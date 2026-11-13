@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.6.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.6.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7653,6 +7653,20 @@ function openPeopleSearch() {
 { const _ob = openBookPage; openBookPage = function (e, tab) { const r = _ob(e, tab); const v = $('#shelflist'); bindBookNet(v); const rd = S.listRedraw; if (rd && !rd._bn) { S.listRedraw = function () { rd(); bindBookNet(v); }; S.listRedraw._bn = true; } return r; }; }
 // sobe a frase guardada no aparelho para a API uma vez (quem editou antes da API ter o campo)
 setTimeout(() => { if (T().bio && !T().bioSynced && connected() && socialProfile) sapi('PUT', '/v1/me/bio', { bio: T().bio }).then((r) => { if (r.status === 200) { T().bioSynced = true; save(); } }).catch(() => {}); }, 4000);
+// ---------- 3.6.2: desfazer amizade pela página do amigo ----------
+{ const st = document.createElement('style'); st.textContent = '.fr-unf{display:block;margin:1.4rem auto .6rem;border:0;background:none;color:#b8402a;font-weight:800;font-size:.8rem;text-decoration:underline}'; TR.append(st); }
+{ const _fp = friendPage; friendPage = async function (handle) {
+  await _fp(handle); const v = $('#shelflist'), f = (SOC.fr.friends || []).find((x) => x.handle === handle);
+  if (!f || v.hidden || v.querySelector('#fr-unf')) return;
+  v.querySelector('.sl-body').insertAdjacentHTML('beforeend', '<button type="button" class="fr-unf" id="fr-unf">Desfazer amizade</button>');
+  $('#fr-unf', v).addEventListener('click', async (ev) => {
+    if (!confirm(`Desfazer a amizade com ${f.displayName}? Vocês deixam de ver as leituras, avaliações e marcadores um do outro. Dá para pedir amizade de novo depois.`)) return;
+    ev.currentTarget.disabled = true;
+    const r = await sapi('DELETE', `/v1/friends/${encodeURIComponent(f.id)}`);
+    if (r.status >= 300) { ev.currentTarget.disabled = false; return toast('Não consegui desfazer agora'); }
+    SOC.fr.friends = SOC.fr.friends.filter((x) => x.id !== f.id); v.hidden = true; toast(`Você e ${String(f.displayName).split(' ')[0]} não são mais amigos`); refresh(); syncSocial3(true);
+  });
+}; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
