@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.3.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.3.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -5961,7 +5961,7 @@ function bookMenu(e) {
 }
 function statusMenu(e) {
   const ed = $('#editor'); ed.classList.add('compact');
-  const opts = [['LENDO', 'Lendo'], ['QUERO', 'Quero ler'], ['HIBERNANDO', 'Pausado'], ['LIDO', 'Lido'], ['ABANDONADO', 'Abandonado']].filter((o) => LIB_LABEL[o[0]]);
+  const opts = [['LENDO', 'Lendo'], ['QUERO', 'Quero ler'], ['HIBERNANDO', 'Pausado'], ['LIDO', 'Lido'], ['ABANDONEI', 'Abandonado']].filter((o) => LIB_LABEL[o[0]]);
   ed.querySelector('.ed-body').innerHTML = `<h3>Status de “${esc(e.title)}”</h3><div class="bm-list">${opts.map(([k, n]) => `<button type="button" class="bm-it${e.status === k ? ' on' : ''}" data-s="${k}"><span>${n}</span>${e.status === k ? '✓' : ''}</button>`).join('')}</div><button type="button" class="bm-close">Cancelar</button>`;
   $$('.bm-it', ed).forEach((b) => b.addEventListener('click', () => { closeEd(); if (b.dataset.s !== e.status) setLibStatus(e, b.dataset.s); }));
   ed.querySelector('.bm-close').addEventListener('click', closeEd); ed.hidden = false;
@@ -7201,6 +7201,21 @@ async function shareYear() {
   if (S.tab === 'progresso') {
     const pc = box.querySelector('.pc'); if (pc && !box.querySelector('#pg-year')) { const h = yearCardHTML(); if (h) { pc.insertAdjacentHTML('afterend', h); $('#pg-share', box)?.addEventListener('click', shareYear); } }
   }
+}; }
+// ---------- 3.3.2: remover livro pelo menu do livro ----------
+{ const _bm = bookMenu; bookMenu = function (e) {
+  _bm(e);
+  const ed = $('#editor'), list = ed.querySelector('.bm-list'); if (!list || e._preview || !lib().includes(e)) return;
+  list.insertAdjacentHTML('beforeend', `<hr><button type="button" class="bm-it danger" id="bm-del">${IC('pausar', 'ico-m')}<span>Remover da estante<small></small></span>›</button>`);
+  $('#bm-del', ed).addEventListener('click', () => {
+    closeEd();
+    if (e.link) return toast(`“${e.title}” faz parte de uma meta com prazo. Tire o livro da meta para remover.`);
+    if (!confirm(`Remover “${e.title}” da sua estante? O progresso, a anotação e os trechos dele saem junto.`)) return;
+    db.library = db.library.filter((x) => x !== e);
+    (db.shelves || []).forEach((s) => { s.bookIds = (s.bookIds || []).filter((i) => i !== e.id); });
+    if (T().nextId === e.id) T().nextId = null; if (T().currentId === e.id) T().currentId = null;
+    save(); $('#shelflist').hidden = true; refresh(); toast(`“${e.title}” saiu da estante`);
+  });
 }; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
