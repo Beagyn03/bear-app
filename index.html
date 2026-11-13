@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.5.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.5.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -2461,7 +2461,7 @@ function friendsSheet(fr) {
   const box = el('div', { class: 'box tall' }, [el('h3', { text: 'Amigos' }),
     ...(fr.friends.length ? fr.friends.map(x => row(x, [el('button', { type: 'button', class: 'small', text: 'Ver', onclick: () => { close(); friendPage(x.handle); } })])) : [el('p', { class: 'hint', text: 'Você ainda não tem amigos no app.' })]),
     ...(fr.outgoing.length ? [el('div', { class: 'group', text: 'Pedidos enviados' }), ...fr.outgoing.map(x => el('div', { class: 'soc-row' }, [avatarFor(x.displayName), el('div', { class: 'soc-name' }, [el('b', { text: x.displayName }), el('span', { text: `@${x.handle} · aguardando` })]),
-      el('button', { type: 'button', class: 'small', text: 'Cancelar', onclick: async () => { await sapi('DELETE', `/v1/friends/${x.id}`); close(); renderSocial(); } })]))] : []),
+      el('button', { type: 'button', class: 'small', text: 'Cancelar', onclick: async () => { await sapi('DELETE', `/v1/friends/${x.id}`); fr.outgoing = fr.outgoing.filter((y) => y.id !== x.id); if (typeof SOC !== 'undefined' && SOC.fr && SOC.fr.outgoing) SOC.fr.outgoing = SOC.fr.outgoing.filter((y) => y.id !== x.id); close(); toast('Pedido cancelado'); renderSocial(); } })]))] : []),
     el('button', { type: 'button', class: 'cancel', text: 'Fechar', onclick: close })]);
   const wrap = el('div', { class: 'sheet', onclick: (ev) => { if (ev.target === wrap) close(); } }, [box]);
   document.body.append(wrap);
@@ -7512,6 +7512,13 @@ function youSectionsHTML() {
 .fr-read b{display:block;font-size:.9rem;color:var(--ink)}.fr-read small{font-size:.72rem;color:var(--ink-2)}
 .fr-common{font-size:.78rem;color:var(--acc);font-weight:800;margin:-.3rem 0 .8rem}
 .fr-revs{display:grid;gap:.6rem}
+.fr-rv{display:grid;grid-template-columns:auto 1fr;gap:.7rem;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:.7rem}
+.fr-rcv{width:52px;height:78px;border-radius:3px 6px 6px 3px}
+.fr-rv > div{display:grid;gap:.2rem;min-width:0;align-content:start}
+.fr-rv b{font-size:.9rem;color:var(--ink)}.fr-rv small{font-size:.72rem;color:var(--ink-2)}
+.fr-paws{font-size:.8rem;font-weight:800;color:var(--acc)}
+.fr-tx{margin:.15rem 0 0;font-size:.86rem;line-height:1.45;color:var(--ink);white-space:pre-line}
+.fr-meta{margin-top:.15rem}
 `; TR.append(st); }
 friendPage = async function (handle) {
   const v = $('#shelflist'); closeEd();
@@ -7534,7 +7541,15 @@ friendPage = async function (handle) {
     ${d.shelf && (d.shelf.lidos || []).length ? `<div class="v3-sh"><b>Lidos recentes</b></div>${strip(d.shelf.lidos)}` : ''}
     ${d.reviews ? `<div class="v3-sh"><b>Avaliações</b></div><div class="fr-revs" id="fr-revs">${d.reviews.length ? '' : '<p class="v3-empty">Nenhuma avaliação ainda.</p>'}</div>` : ''}
     ${fechado ? `<p class="sl-empty">${esc(d.displayName)} preferiu manter a página fechada.</p>` : ''}`);
-  const rv = $('#fr-revs', v); if (rv && d.reviews) d.reviews.forEach((x) => rv.append(reviewCard(x)));
+  const rv = $('#fr-revs', v);
+  if (rv && d.reviews && d.reviews.length) {
+    const read = (t) => { const e = lib().find((x) => normT(x.title) === normT(t)); return e && e.status === 'LIDO'; };
+    rv.innerHTML = d.reviews.map((x, i) => { const hide = x.spoiler ? 'Contém spoiler' : !read(x.title) ? 'Você ainda não leu este livro' : '';
+      return `<article class="fr-rv">${cvh(x.title, x.cover, 'fr-rcv')}<div><b>${esc(x.title)}</b>${x.author ? `<small>${esc(x.author)}</small>` : ''}${x.paws ? `<span class="fr-paws">${pawTxt(x.paws)}</span>` : ''}
+        ${x.text ? (hide ? `<button type="button" class="fd-sp fr-see" data-i="${i}">${IC('spoiler', 'ico-b')}${hide} · toque para ver</button><p class="fr-tx" hidden>${esc(x.text)}</p>` : `<p class="fr-tx">${esc(x.text)}</p>`) : ''}
+        <small class="fr-meta">${esc(relTime(x.updatedAt))}${x.likes ? ` · ♥ ${x.likes}` : ''}${x.comments ? ` · ${plural(x.comments, 'comentário', 'comentários')}` : ''}</small></div></article>`; }).join('');
+    $$('.fr-see', rv).forEach((b) => b.addEventListener('click', () => { b.nextElementSibling.hidden = false; b.remove(); }));
+  }
   paintCv(v); paintAvatars();
   $('#fr-add', v)?.addEventListener('click', async (ev) => { ev.currentTarget.disabled = true; const r = await sapi('POST', '/v1/friends/requests', { handle: d.handle }); toast(r.status < 300 ? (r.data && r.data.status === 'ACCEPTED' ? 'Vocês já são amigos!' : 'Pedido enviado') : 'Não deu certo agora'); });
   $('#fr-duel', v)?.addEventListener('click', async () => {
