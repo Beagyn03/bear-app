@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.11.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.11.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -8155,7 +8155,7 @@ function openChat(handle, opt) {
     $('#cht-s', v)?.addEventListener('click', send);
     paintAvatars(); requestAnimationFrame(() => { v.scrollTop = v.scrollHeight; });
   };
-  async function load() { try { const r = await sapi('GET', `/v1/messages/with/${encodeURIComponent(handle)}`); if (r.status === 200 && r.data) { const n = (data && data.items.length) || 0; data = r.data; if (!v.hidden && S.listRedraw === draw && (n !== data.items.length || n === 0)) draw(true); loadThreads(); } } catch {} }
+  async function load() { try { const r = await sapi('GET', `/v1/messages/with/${encodeURIComponent(handle)}`); if (r.status === 200 && r.data) { const n = (data && data.items.length) || 0; data = r.data; if (!v.hidden && S.listRedraw === redraw && (n !== data.items.length || n === 0)) draw(true); loadThreads(); } } catch {} }
   async function send() {
     const t = $('#cht-t', v); const body = (t.value || '').trim(); if (!body || sending) return; sending = true; $('#cht-s', v).disabled = true;
     const r = await sapi('POST', '/v1/messages', { handle, body, bookTitle: book ? String(book).slice(0, 200) : null });
@@ -8164,7 +8164,7 @@ function openChat(handle, opt) {
     else { $('#cht-s', v).disabled = false; toast(r.status === 404 ? 'Vocês precisam ser amigos para conversar' : 'Não consegui enviar agora'); }
   }
   function close() { clearInterval(poll); v.hidden = true; }
-  S.listRedraw = () => draw(true); S.navView = { t: 'chat', a: [handle] }; closeEd(); v.classList.remove('feedview'); draw(false); v.hidden = false;
+  const redraw = () => draw(true); S.listRedraw = redraw; S.navView = { t: 'chat', a: [handle] }; closeEd(); v.classList.remove('feedview'); draw(false); v.hidden = false;
   load(); poll = setInterval(() => { if (v.hidden || !v.querySelector('.cht')) { clearInterval(poll); return; } load(); }, 10000);
 }
 // pontos de entrada: Comunidade (ícone ao lado do sino), amigo, livro
