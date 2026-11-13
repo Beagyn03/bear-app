@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.7.4', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.8.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -5317,7 +5317,7 @@ function openAchList() {
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
     $('.ach-f select', v).addEventListener('change', (e) => { S.achF = e.target.value; S.achP = 0; draw(); });
     $$('.ach-pg button', v).forEach((b) => b.addEventListener('click', () => { S.achP += Number(b.dataset.p); draw(); v.scrollTop = 0; }));
-    $$('.ach-cell', v).forEach((b) => b.addEventListener('click', () => { const a = st.find((x) => x.id === b.dataset.k); toast(a.done ? `${a.name}: conquistada · ${a.desc}. Ganhou ${a.rn.toLowerCase()}` : `${a.name}: como ganhar · ${a.desc} (${a.cur.toLocaleString('pt-BR')}/${a.goal.toLocaleString('pt-BR')})`); }));
+    $$('.ach-cell', v).forEach((b) => b.addEventListener('click', () => { const a = st.find((x) => x.id === b.dataset.k); if (a) achSheet(a); }));
   };
   S.listRedraw = null; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0;
 }
@@ -7769,13 +7769,110 @@ TR.addEventListener('click', (ev) => {
   const see = ev.target.closest('.bn-see');
   if (see) { ev.preventDefault(); (S.bnOpen || (S.bnOpen = new Set())).add(see.dataset.id); const all = Object.values(S.bookNet).flatMap((n) => (n && !n.loading ? [...(n.friends || []), ...(n.public || [])] : [])); const x = all.find((y) => y.id === see.dataset.id); const p = document.createElement('p'); p.className = 'bn-tx'; p.textContent = x ? x.text : ''; see.replaceWith(p); return; }
   const who = ev.target.closest('.bn-who'); if (who) { ev.preventDefault(); return friendPage(who.dataset.h); }
-  if (ev.target.closest('#shelflist .bp-tabs button')) setTimeout(() => { const v = $('#shelflist'); if (!v.hidden) decorateBookPage(v); }, 60);
 });
+// troca de aba: escuta na captura, antes do redesenho tirar o botão da tela
+TR.addEventListener('click', (ev) => { if (ev.target.closest('.bp-tabs button')) setTimeout(() => { const v = $('#shelflist'); if (!v.hidden) decorateBookPage(v); }, 60); }, true);
 { const _ob = openBookPage; openBookPage = function (e, tab) {
   const r = _ob(e, tab); const v = $('#shelflist'); enrichPreview(e); decorateBookPage(v);
   const rd = S.listRedraw; if (rd && !rd._dec) { S.listRedraw = function () { rd(); decorateBookPage(v); }; S.listRedraw._dec = true; S.listRedraw._bn = rd._bn; }
   return r;
 }; }
+// ---------- 3.8: Amigos (lista com ações), ações do amigo no topo, conquista em cartão e avisos mais delicados ----------
+{ const st = document.createElement('style'); st.textContent = `
+.fr-unf{display:none!important}
+.fr-acts .fr-more{flex:0 0 44px}
+.fl-row{display:grid;grid-template-columns:auto 1fr auto;gap:.65rem;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.55rem .6rem;margin-bottom:.45rem}
+.fl-row .av{width:42px;height:42px;color:#fff;font-weight:900}
+.fl-who{border:0;background:none;padding:0;text-align:left;color:var(--ink);min-width:0}
+.fl-who b{display:block;font-size:.9rem}.fl-who small{display:block;font-size:.72rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl-dots{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink-2);font-weight:900}
+.fl-req{display:flex;gap:.3rem}.fl-req button{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-weight:800;font-size:.76rem;padding:0 .7rem}
+.fl-req .pri{background:var(--acc);border:0;color:var(--on-acc,#fff)}
+.fl-add{width:100%;height:42px;border-radius:12px;border:1.5px dashed var(--line);background:none;color:var(--ink);font-weight:800;margin:.3rem 0 .8rem}
+.ac-card{display:grid;justify-items:center;gap:.4rem;text-align:center;padding:.2rem 0 .4rem}
+.ac-card img{width:110px;height:110px;object-fit:contain}.ac-card img.off{filter:grayscale(1) opacity(.5)}
+.ac-card b{font-size:1.1rem;color:var(--ink)}.ac-card p{margin:0;font-size:.86rem;color:var(--ink-2);line-height:1.4}
+.ac-card .v3-bar{width:80%;margin:.3rem 0 0}.ac-card small{font-size:.74rem;color:var(--ink-2);font-weight:700}
+.ac-tag{font-size:.66rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
+`; TR.append(st); }
+{ const st = document.createElement('style'); st.textContent = '.toast{background:rgba(28,22,36,.94)!important;color:#fff!important;font-size:.84rem!important;font-weight:700!important;line-height:1.35!important;border-radius:14px!important;padding:.55rem .9rem!important;max-width:min(340px,88vw)!important;box-shadow:0 8px 24px rgba(0,0,0,.25)!important;text-align:center}'; document.head.append(st); }
+
+// ----- ações com um amigo -----
+function friendReadTogether(f) {
+  const books = lib().filter((e) => e.status === 'LENDO' || e.status === 'QUERO');
+  if (!books.length) return toast('Coloque um livro em Lendo ou Quero ler para chamar alguém');
+  sheet(`Ler junto com ${String(f.displayName).split(' ')[0]}: qual livro?`, books.slice(0, 12).map((e) => [e.title, () => { inviteBuddy(e); setTimeout(() => { const b = $(`#editor .bud-pick[data-h="${f.handle}"]`); if (b && !b.classList.contains('on')) b.click(); }, 60); }]));
+}
+async function friendDuel(f) {
+  if (SOC.duels.some((x) => x.opponent && x.opponent.handle === f.handle)) return toast('Vocês já têm um duelo nesta semana');
+  const r = await sapi('POST', '/v1/duels', { handle: f.handle, weekStart: isoMonday() });
+  toast(r.status === 201 ? `Desafio enviado para ${String(f.displayName).split(' ')[0]}` : 'Não consegui enviar o desafio'); if (r.status === 201) syncSocial3(true);
+}
+async function friendUnfriend(f, after) {
+  if (!confirm(`Desfazer a amizade com ${f.displayName}? Vocês deixam de ver as leituras, avaliações e marcadores um do outro. Dá para pedir amizade de novo depois.`)) return;
+  const r = await sapi('DELETE', `/v1/friends/${encodeURIComponent(f.id)}`); if (r.status >= 300) return toast('Não consegui desfazer agora');
+  SOC.fr.friends = SOC.fr.friends.filter((x) => x.id !== f.id); toast(`Você e ${String(f.displayName).split(' ')[0]} não são mais amigos`); refresh(); syncSocial3(true); after && after();
+}
+function friendMenu(f, anchor, after) {
+  popMenu(anchor, [
+    { label: 'Ver perfil', fn: () => friendPage(f.handle) },
+    { label: 'Ler um livro junto', fn: () => friendReadTogether(f) },
+    { label: 'Duelo da semana', sub: 'quem lê mais páginas até domingo', fn: () => friendDuel(f) },
+    0,
+    { label: 'Desfazer amizade', danger: true, fn: () => friendUnfriend(f, after) },
+  ]);
+}
+
+// ----- página do amigo: ações no topo -----
+{ const _fp = friendPage; friendPage = async function (handle) {
+  await _fp(handle); const v = $('#shelflist'), f = (SOC.fr.friends || []).find((x) => x.handle === handle), acts = v.querySelector('.fr-acts');
+  if (!f || !acts || acts.querySelector('.fr-more')) return;
+  acts.innerHTML = `<button type="button" class="pri" id="fr-buddy">Ler junto</button><button type="button" id="fr-duel2">⚔ Duelo</button><button type="button" class="fr-more" aria-label="Mais opções">•••</button>`;
+  $('#fr-buddy', v).addEventListener('click', () => friendReadTogether(f));
+  $('#fr-duel2', v).addEventListener('click', () => friendDuel(f));
+  $('.fr-more', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [{ label: 'Desfazer amizade', danger: true, fn: () => friendUnfriend(f, () => { v.hidden = true; }) }]));
+}; }
+
+// ----- Amigos: lista com pedidos, busca e ações -----
+function openFriendsV3() {
+  if (needAccount()) return;
+  const v = $('#shelflist'); let q = '';
+  const draw = () => {
+    const fr = SOC.fr || { friends: [], incoming: [], outgoing: [] }, n = normT(q);
+    const list = (fr.friends || []).filter((f) => !n || normT(f.displayName).includes(n) || normT(f.handle).includes(n));
+    const reading = (h) => { const p = (SOC.feed || []).find((y) => !y.mine && y.user && y.user.handle === h && (y.kind === 'STARTED' || y.kind === 'PROGRESS')); return p ? `lendo ${p.title}` : ''; };
+    const row = (f, right, sub) => `<div class="fl-row"><span class="av" data-avh="${esc(f.handle)}" style="background:${friendColor(f.handle)}">${esc(initial(f.displayName))}</span><button type="button" class="fl-who" data-h="${esc(f.handle)}"><b>${esc(f.displayName)}</b><small>@${esc(f.handle)}${sub ? ' · ' + esc(sub) : ''}</small></button>${right}</div>`;
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Amigos</b><span></span></div>
+      <button type="button" class="fl-add" id="fl-add">+ Encontrar leitores</button>
+      ${(fr.incoming || []).length ? `<div class="v3-sh"><b>Pedidos para você</b></div>${fr.incoming.map((x) => row(x, `<span class="fl-req"><button type="button" class="pri" data-acc="${esc(x.id)}">Aceitar</button><button type="button" data-rej="${esc(x.id)}">Recusar</button></span>`)).join('')}` : ''}
+      ${(fr.friends || []).length > 6 ? `<input type="search" class="fs-input" id="fl-q" placeholder="Buscar entre seus amigos" value="${esc(q)}" style="margin-bottom:.6rem">` : ''}
+      <div class="v3-sh"><b>${plural((fr.friends || []).length, 'amigo', 'amigos')}</b></div>
+      ${list.length ? list.map((f) => row(f, `<button type="button" class="fl-dots" data-f="${esc(f.id)}" aria-label="Opções">•••</button>`, reading(f.handle))).join('') : `<p class="v3-empty">${(fr.friends || []).length ? 'Ninguém com esse nome.' : 'Você ainda não tem amigos no app. Toque em “Encontrar leitores”.'}</p>`}
+      ${(fr.outgoing || []).length ? `<div class="v3-sh"><b>Pedidos enviados</b></div>${fr.outgoing.map((x) => row(x, `<span class="fl-req"><button type="button" data-rej="${esc(x.id)}">Cancelar</button></span>`, 'aguardando')).join('')}` : ''}`;
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    $('#fl-add', v).addEventListener('click', openPeopleSearch);
+    $('#fl-q', v)?.addEventListener('input', (ev) => { q = ev.target.value; const pos = ev.target.selectionStart; draw(); const i = $('#fl-q', v); i.focus(); i.setSelectionRange(pos, pos); });
+    $$('.fl-who', v).forEach((b) => b.addEventListener('click', () => friendPage(b.dataset.h)));
+    $$('.fl-dots', v).forEach((b) => b.addEventListener('click', () => { const f = (SOC.fr.friends || []).find((x) => x.id === b.dataset.f); if (f) friendMenu(f, b, draw); }));
+    $$('[data-acc]', v).forEach((b) => b.addEventListener('click', async () => { b.disabled = true; const r = await sapi('POST', `/v1/friends/requests/${encodeURIComponent(b.dataset.acc)}/accept`); if (r.status < 300) { const x = SOC.fr.incoming.find((y) => y.id === b.dataset.acc); SOC.fr.incoming = SOC.fr.incoming.filter((y) => y.id !== b.dataset.acc); if (x) SOC.fr.friends = [...SOC.fr.friends, x]; toast('Agora vocês são amigos'); syncSocial3(true); draw(); } else { b.disabled = false; toast('Não deu certo agora'); } }));
+    $$('[data-rej]', v).forEach((b) => b.addEventListener('click', async () => { b.disabled = true; const r = await sapi('DELETE', `/v1/friends/${encodeURIComponent(b.dataset.rej)}`); if (r.status < 300) { SOC.fr.incoming = (SOC.fr.incoming || []).filter((y) => y.id !== b.dataset.rej); SOC.fr.outgoing = (SOC.fr.outgoing || []).filter((y) => y.id !== b.dataset.rej); draw(); } else b.disabled = false; }));
+    paintAvatars();
+  };
+  S.listRedraw = draw; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0;
+}
+openFriends = function () { openFriendsV3(); };
+// adicionar amigo passa pela busca de leitores (ver a pessoa antes de pedir amizade)
+inviteFriend = function () { if (needAccount()) return; openPeopleSearch(); };
+
+// ----- conquista: cartão em vez de aviso -----
+function achSheet(a) {
+  const ed = $('#editor'); ed.classList.add('compact'); const img = DECO_IMG[a.reward];
+  const pct = a.goal ? Math.min(100, Math.round((a.cur / a.goal) * 100)) : 0;
+  ed.querySelector('.ed-body').innerHTML = `<button type="button" class="up-x" id="ac-x" aria-label="Fechar">×</button>
+    <div class="ac-card">${img ? `<img src="${img}" alt="" class="${a.done ? '' : 'off'}">` : ''}<span class="ac-tag">${a.done ? 'Conquistada' : 'Como ganhar'}</span><b>${esc(a.name)}</b><p>${esc(a.desc)}</p>
+    ${a.done ? `<small>Você ganhou: ${esc(a.rn || '')}</small>` : `<i class="v3-bar"><i style="width:${pct}%"></i></i><small>${a.cur.toLocaleString('pt-BR')} de ${a.goal.toLocaleString('pt-BR')}</small>`}</div>`;
+  $('#ac-x', ed).addEventListener('click', closeEd); ed.hidden = false;
+}
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
