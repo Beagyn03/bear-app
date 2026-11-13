@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>B.E.A.R — Be A Reader</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap">
@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '4.0.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.0.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -8121,6 +8121,20 @@ const CH_KEY = 'bear.chats';
 function chatCache() { try { return JSON.parse(localStorage.getItem(CH_KEY) || '{}'); } catch { return {}; } }
 function chatCacheSet(h, d) { try { const c = chatCache(); c[h] = { with: d.with, items: (d.items || []).slice(-80), at: Date.now() }; const ks = Object.keys(c).sort((a, b) => c[b].at - c[a].at); ks.slice(15).forEach((k) => delete c[k]); localStorage.setItem(CH_KEY, JSON.stringify(c)); } catch {} }
 async function prefetchChat(h) { try { const r = await sapi('GET', `/v1/messages/with/${encodeURIComponent(h)}`); if (r.status === 200 && r.data) chatCacheSet(h, r.data); } catch {} }
+function chatMode(on) {
+  const tb = $('#tabbar'); if (tb) tb.style.display = on ? 'none' : '';
+  $('#shelflist').classList.toggle('chatview', on);
+  if (!on) { document.documentElement.classList.remove('kb-open'); TR.host && TR.host.classList.remove('kb-open'); }
+}
+{ const st = document.createElement('style'); st.textContent = `
+.shelflist.chatview{bottom:0!important}
+.chatview .cht-in{bottom:0!important;padding-bottom:calc(.5rem + env(safe-area-inset-bottom,0px))}
+.chatview .cht{padding-bottom:5rem}
+:host(.kb-open) .gtop{display:none}
+:host(.kb-open) .shelflist.chatview{top:0!important}
+:host(.kb-open) .chatview .cht-in{padding-bottom:.5rem}
+`; TR.append(st); }
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { const v = $('#shelflist'); if (v && v.classList.contains('chatview')) v.scrollTop = v.scrollHeight; });
 function openThreads() {
   if (needAccount()) return; const v = $('#shelflist');
   const draw = () => {
@@ -8156,7 +8170,7 @@ function openChat(handle, opt) {
     v.querySelector('.sl-back').addEventListener('click', close);
     $('.cht-who', v).addEventListener('click', () => { close(); friendPage(handle); });
     $$('[data-sp]', v).forEach((b) => b.addEventListener('click', () => { open.add(b.dataset.sp); draw(true); }));
-    const t = $('#cht-t', v); if (t) { t.value = draft; t.addEventListener('input', () => { t.style.height = 'auto'; t.style.height = Math.min(120, t.scrollHeight) + 'px'; }); }
+    const t = $('#cht-t', v); if (t) { t.value = draft; t.addEventListener('input', () => { t.style.height = 'auto'; t.style.height = Math.min(120, t.scrollHeight) + 'px'; }); t.addEventListener('focus', () => { document.documentElement.classList.add('kb-open'); TR.host && TR.host.classList.add('kb-open'); setTimeout(() => { v.scrollTop = v.scrollHeight; }, 250); }); t.addEventListener('blur', () => { document.documentElement.classList.remove('kb-open'); TR.host && TR.host.classList.remove('kb-open'); }); }
     $('#cht-nb', v)?.addEventListener('click', () => { book = null; draw(true); });
     $('#cht-s', v)?.addEventListener('click', send);
     paintAvatars(); requestAnimationFrame(() => { v.scrollTop = v.scrollHeight; });
@@ -8169,8 +8183,8 @@ function openChat(handle, opt) {
     if (r.status === 201) { data = data || { with: { handle, displayName: name() }, items: [] }; data.items.push({ id: r.data.id, body, bookTitle: book, mine: true, at: r.data.at }); chatCacheSet(handle, data); book = null; t.value = ''; draw(false); }
     else { $('#cht-s', v).disabled = false; toast(r.status === 404 ? 'Vocês precisam ser amigos para conversar' : 'Não consegui enviar agora'); }
   }
-  function close() { clearInterval(poll); v.hidden = true; }
-  const redraw = () => draw(true); S.listRedraw = redraw; S.navView = { t: 'chat', a: [handle] }; closeEd(); v.classList.remove('feedview'); draw(false); v.hidden = false;
+  function close() { clearInterval(poll); v.hidden = true; chatMode(false); }
+  const redraw = () => draw(true); S.listRedraw = redraw; S.navView = { t: 'chat', a: [handle] }; chatMode(true); closeEd(); v.classList.remove('feedview'); draw(false); v.hidden = false;
   load(); poll = setInterval(() => { if (v.hidden || !v.querySelector('.cht')) { clearInterval(poll); return; } load(); }, 10000);
 }
 // pontos de entrada: Comunidade (ícone ao lado do sino), amigo, livro
@@ -8316,7 +8330,7 @@ paintMsgBadge = function () { const b = $('#g-msg'); if (!b) return; let u = b.q
 .ptr{top:calc(env(safe-area-inset-top,0px) + 3.7rem)!important;opacity:0;transform:translate(-50%,-.6rem)!important;transition:opacity .15s,transform .15s}
 .ptr.show{opacity:1;transform:translate(-50%,0)!important}
 `; TR.append(st); }
-{ const _gt = goTab; goTab = function (tab, fromBar) { $('#shelflist').classList.toggle('on-buscar', tab === 'buscar'); return _gt(tab, fromBar); }; }
+{ const _gt = goTab; goTab = function (tab, fromBar) { chatMode(false); $('#shelflist').classList.toggle('on-buscar', tab === 'buscar'); return _gt(tab, fromBar); }; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
