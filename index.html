@@ -1321,7 +1321,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 'use strict';
 // ============ armazenamento ============
 const KEY = 'bear.v1';
-const APP_VERSION = '3.2.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.2.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -4053,7 +4053,7 @@ const COLORS = ['#8a4f2f','#a35a3c','#b07a3e','#7d4a2e','#c9a46c','#5e6b48','#7a
 const hashOf = (t) => { let h = 0; for (const c of String(t || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 const colorOf = (t) => COLORS[hashOf(t) % COLORS.length];
 const FRIEND_COLORS = ['#c98b6e', '#7f9cc4', '#8fae7f', '#c08aa8', '#b39a5a', '#6f8f8a'];
-const friendColor = (handle) => FRIEND_COLORS[hashOf(handle) % FRIEND_COLORS.length];
+const friendColor = (handle) => (typeof socialProfile !== 'undefined' && socialProfile && handle === socialProfile.handle ? 'var(--acc)' : FRIEND_COLORS[hashOf(handle) % FRIEND_COLORS.length]); // você sempre na cor do tema
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const initial = (n) => (String(n || '?').trim().charAt(0) || '?').toUpperCase();
@@ -6905,7 +6905,7 @@ function mkStickers() {
   const won = achState().filter((a) => a.done).map((a) => a.reward).filter((r) => r && DECO_IMG[r]);
   return [...['bear_reading_chair', 'bear_celebrating', 'bear_running_books', 'bear_sleeping', 'bear_bored'].filter((k) => ART[k]), ...[...new Set(won)].map((r) => 'd_' + r)];
 }
-const mkDefaultStyle = (kind) => ({ bg: kind === 'MILESTONE' ? 'floresta' : kind === 'REACTION' ? 'vinho' : 'caramelo', font: kind === 'QUOTE' ? 'classica' : 'moderna', emoji: kind === 'REACTION' ? 'susto' : null, sticker: null, sx: 80, sy: 70, cover: null });
+const mkDefaultStyle = (kind) => ({ bg: kind === 'MILESTONE' ? 'floresta' : kind === 'REACTION' ? 'vinho' : 'caramelo', font: kind === 'QUOTE' ? 'classica' : 'moderna', emoji: kind === 'REACTION' ? 'susto' : null, sticker: null, sx: 78, sy: 34, cover: null });
 function mkStyleOf(m) {
   const s = m && m.style; if (!s || typeof s !== 'object') return null;
   return { bg: (MK_BG[s.bg] || s.bg === 'cover') ? s.bg : 'caramelo', font: MK_FONT[s.font] ? s.font : 'moderna', emoji: MK_EMO[s.emoji] ? s.emoji : null,
@@ -6977,6 +6977,8 @@ function mkDecorate(ov, m, lock) { // aplica o estilo salvo ao marcador aberto
 .mk-em.on{background:rgba(255,255,255,.22)}
 .mk-st{flex:none;width:52px;height:52px;border-radius:12px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08) center/80% no-repeat;padding:0;color:#fff;font-size:.72rem;font-weight:800}
 .mk-hint{font-size:.72rem;opacity:.85;text-align:center;margin:0;color:#fff}
+.mk-ed.light .mk-top,.mk-ed.light>.mk-hint{color:#2b2018}
+.mk-ed.light .st-x{background:rgba(0,0,0,.12);color:#2b2018}
 .mk-go{border:0;border-radius:14px;padding:.8rem;font-weight:900;background:#fff;color:#1d140e;font-size:.95rem}
 .mk-go:disabled{opacity:.5}
 `; TR.append(st); }
@@ -7064,6 +7066,7 @@ function pgScrollTo(which) { // abre o Progresso já na parte certa
     box.querySelectorAll('.v3-st').forEach((b, i) => { const n = b.cloneNode(true); b.replaceWith(n); n.addEventListener('click', go[i] || (() => goTab('progresso'))); });
   }
   if (S.tab === 'comunidade') { box.querySelector('.v3-stats4')?.remove(); box.querySelector('#v3-board-all')?.remove(); }
+  const fb = box.querySelector('#v3-focus'); if (fb && focusState()) { fb.classList.add('v3-upd'); fb.lastChild.textContent = 'Voltar ao foco'; }
 }; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
