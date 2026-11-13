@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.4.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.5.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7427,6 +7427,80 @@ function importCSV() {
 { const _dt = drawTab; drawTab = function () {
   _dt(); const box = $('#lista');
   if (S.tab === 'estante' && !box.querySelector('#es-hist')) { const at = box.querySelector('#es-quotes') || box.querySelector('.es-chips'); at && at.insertAdjacentHTML('afterend', `<button type="button" class="v3-row" id="es-hist">${MN('estantes', 'ico-a')}<span><b>Montar meu histórico</b><small>Livros que você leu antes do app, por ano · importar do Goodreads</small></span>›</button>`); $('#es-hist', box)?.addEventListener('click', openHistory); }
+}; }
+// ---------- 3.5: "Você" no Início (o perfil que você usa), Busca na barra, Conta na engrenagem ----------
+{ const st = document.createElement('style'); st.textContent = `
+.yo-top{display:grid;grid-template-columns:auto 1fr auto;gap:.75rem;align-items:center;padding:.3rem .1rem .6rem}
+.yo-av{width:64px!important;height:64px!important;font-size:1.5rem!important;border:0;padding:0;cursor:pointer}
+.yo-id{display:grid;gap:.05rem;min-width:0}.yo-id b{font-size:1.15rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yo-id small{font-size:.76rem;color:var(--ink-2);font-weight:700}.yo-bio{margin:.15rem 0 0;font-size:.74rem;color:var(--ink-2);line-height:1.3}
+.yo-nums{display:grid;grid-template-columns:repeat(4,1fr);gap:.35rem;margin-bottom:.9rem}
+.yo-nums button{display:grid;justify-items:center;gap:0;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:.45rem .1rem;color:var(--ink)}
+.yo-nums b{font-size:1.05rem;font-weight:900;color:var(--acc)}.yo-nums small{font-size:.62rem;font-weight:700;color:var(--ink-2)}
+.yo-fila .es-bk small{font-size:.62rem;font-weight:800;color:var(--acc)}
+.yo-shelves{display:grid;gap:.45rem;margin-bottom:.9rem}
+.yo-shelf{display:grid;grid-template-columns:1fr auto;gap:.2rem .5rem;align-items:center;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.55rem .65rem;color:var(--ink)}
+.yo-shelf b{font-size:.88rem}.yo-shelf small{font-size:.7rem;color:var(--ink-2);font-weight:700}
+.yo-mini{grid-column:1/-1;display:flex;gap:.3rem}.yo-mini .cv{width:34px;height:51px;border-radius:2px 4px 4px 2px}
+.yo-ach .v3-shelf{margin-bottom:.4rem}
+`; TR.append(st); }
+{ const i = TABS.findIndex((t) => t[0] === 'inicio'); if (i >= 0) TABS[i] = ['inicio', 'Você', TABS[i][2]];
+  const p = TABS.findIndex((t) => t[0] === 'perfil'); if (p >= 0) TABS[p] = ['buscar', 'Buscar', null]; }
+{ const _tb = drawTabbar; drawTabbar = function () {
+  _tb(); const b = $('#tabbar button[data-tab="inicio"]'), h = drawHud(); if (!b) return;
+  const img = b.querySelector('img'); if (img) img.outerHTML = `<span class="tb-av" style="${h.ph ? `background-image:${cssUrl(h.ph)}` : ''}">${h.ph ? '' : esc(initial(h.name))}</span>`;
+}; }
+function youBio() {
+  const L = lib(), lidos = L.filter((e) => e.status === 'LIDO'), cnt = (arr) => { const m = new Map(); arr.filter(Boolean).forEach((x) => m.set(x, (m.get(x) || 0) + 1)); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+  const gen = cnt(lidos.map((e) => e.genre || (e.meta && e.meta.cat))).slice(0, 2).map((x) => String(x[0]).toLowerCase());
+  const fmt = cnt(L.filter((e) => e.status === 'LIDO' || e.status === 'LENDO').map((e) => fmtTxt(e)))[0];
+  const aut = cnt(lidos.map((e) => String(e.author || '').split(',')[0].trim()))[0];
+  return [gen.length ? `Lê mais ${gen.join(' e ')}` : '', aut && aut[1] > 1 ? `volta sempre a ${aut[0]}` : '', fmt && fmt[0] !== 'Físico' ? `lê no ${fmt[0]}` : ''].filter(Boolean).join(' · ') || 'Montando a estante por aqui.';
+}
+function youHeaderHTML() {
+  const h = drawHud(), L = lib(), st = achState(), won = st.filter((a) => a.done).length, n = unread();
+  const f = socialProfile && SOC.flairs[socialProfile.handle], fr = f && f.frame && PF_FRAMES.find((x) => x[0] === f.frame);
+  return `<header class="yo-top"><button type="button" class="av v3-av yo-av${fr ? ' framed' : ''}" id="yo-photo" aria-label="Trocar foto" style="${h.ph ? `background-image:${cssUrl(h.ph)};` : ''}${fr ? `--frame:${fr[2]}` : ''}">${h.ph ? '' : esc(initial(h.name))}</button>
+    <div class="yo-id"><b>${esc(h.name)}</b><small>${socialProfile && socialProfile.handle ? '@' + esc(socialProfile.handle) : 'sem @usuário ainda'}</small><p class="yo-bio">${esc(youBio())}</p></div>
+    <div class="v3-acts"><button type="button" class="v3-bell" id="v3-bell" aria-label="Notificações">${MN('notificacoes', 'ico-g')}${n ? `<u>${n > 9 ? '9+' : n}</u>` : ''}</button><button type="button" class="v3-bell" id="yo-cfg" aria-label="Conta e ajustes">${IC('config', 'ico-g')}</button></div></header>
+    <div class="yo-nums"><button type="button" data-go="lidos"><b>${L.filter((e) => e.status === 'LIDO').length}</b><small>lidos</small></button><button type="button" data-go="amigos"><b>${(SOC.fr.friends || []).length}</b><small>amigos</small></button><button type="button" data-go="conq"><b>${won}</b><small>conquistas</small></button><button type="button" data-go="trechos"><b>${L.reduce((a, e) => a + (e.quotes || []).length, 0)}</b><small>trechos</small></button></div>`;
+}
+function youSectionsHTML() {
+  const L = lib(), R = reading(), nextId = T().nextId;
+  const fila = [...L.filter((e) => e.status === 'LENDO' && (!R || R.e.id !== e.id)), ...L.filter((e) => e.id === nextId && e.status === 'QUERO'), ...L.filter((e) => e.status === 'QUERO' && e.id !== nextId).sort((a, b) => String(b.addedAt || '').localeCompare(String(a.addedAt || '')))].slice(0, 12);
+  const st = achState(), won = st.filter((a) => a.done), show = rareFirst(won).filter((a) => DECO_IMG[a.reward]).slice(0, 8), nx = nextAchievements()[0];
+  const revs = L.filter((e) => { const r = reviewOfLib(e); return r && r.paws; }).sort((a, b) => String(b.finishedAt || '').localeCompare(String(a.finishedAt || ''))).slice(0, 10);
+  const shelves = db.shelves || [];
+  return `${fila.length ? `<div class="v3-sh"><b>Na fila</b><button type="button" class="v3-link" id="yo-fila">Estante ›</button></div><div class="es-row yo-fila">${fila.map((e) => `<button type="button" class="es-bk" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'es-cv')}<small>${e.status === 'LENDO' ? 'lendo' : e.id === nextId ? 'próxima' : 'quero ler'}</small></button>`).join('')}</div>` : ''}
+    <section class="v3c yo-ach"><div class="v3-sh" style="margin:0 0 .5rem"><b>Conquistas · ${won.length} de ${st.length}</b><button type="button" class="v3-link" id="yo-achs">Todas ›</button></div>
+      ${show.length ? `<div class="v3-shelf">${show.map((a) => `<span class="v3-trophy${a.rare ? ' rare' : ''}" title="${esc(a.name)}"><img src="${DECO_IMG[a.reward]}" alt="${esc(a.name)}"></span>`).join('')}</div>` : ''}${nx ? achRow(nx) : ''}</section>
+    ${revs.length ? `<div class="v3-sh"><b>Minhas avaliações</b><button type="button" class="v3-link" id="yo-revs">Ver todas ›</button></div><div class="v3-heart">${revs.map((e) => `<button type="button" class="v3-hb" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'pf-cv')}<small class="pf-paw">${pawTxt(reviewOfLib(e).paws)}</small></button>`).join('')}</div>` : ''}
+    ${shelves.length ? `<div class="v3-sh"><b>Minhas estantes</b><button type="button" class="v3-link" id="yo-es">Todas ›</button></div><div class="yo-shelves">${shelves.slice(0, 4).map((s) => { const bk = (s.bookIds || []).map((id) => L.find((e) => e.id === id)).filter(Boolean); return `<button type="button" class="yo-shelf" data-sh="${esc(s.id)}"><b>${esc(s.name)}</b><small>${plural(bk.length, 'livro', 'livros')}</small><span class="yo-mini">${bk.slice(0, 6).map((e) => cvh(e.title, e.cover, '')).join('')}</span></button>`; }).join('')}</div>` : ''}`;
+}
+{ const _dt = drawTab; drawTab = function () {
+  _dt(); const box = $('#lista');
+  if (S.tab === 'inicio') {
+    const head = box.querySelector('.v3-brand'); if (head) head.outerHTML = youHeaderHTML();
+    const now = box.querySelector('.v3-now'); if (now) now.insertAdjacentHTML('afterend', youSectionsHTML());
+    const stats = box.querySelector('.v3-stats4'); if (stats) { const colA = box.querySelector('.v3-colA') || box; stats.insertAdjacentHTML('beforebegin', `<div class="v3-sh" id="yo-yr"><b>Seu ${todayISO().slice(0, 4)}</b><button type="button" class="v3-link" id="yo-pg">Progresso ›</button></div>`); colA.append(box.querySelector('#yo-yr'), stats); }
+    paintCv(box);
+    $('#v3-bell', box)?.addEventListener('click', openNotif);
+    $('#yo-cfg', box)?.addEventListener('click', () => goTab('perfil'));
+    $('#yo-photo', box)?.addEventListener('click', () => pickPhoto());
+    $('#yo-fila', box)?.addEventListener('click', () => goTab('estante'));
+    $('#yo-achs', box)?.addEventListener('click', openAchList); $$('.yo-ach .v3-ach', box).forEach((b) => b.addEventListener('click', openAchList));
+    $('#yo-revs', box)?.addEventListener('click', () => openShelfV3('LIDO'));
+    $('#yo-es', box)?.addEventListener('click', () => goTab('estante'));
+    $('#yo-pg', box)?.addEventListener('click', () => goTab('progresso'));
+    $$('.yo-fila .es-bk, .v3-hb[data-id]', box).forEach((b) => b.addEventListener('click', () => openBook(b.dataset.id)));
+    $$('.yo-shelf', box).forEach((b) => b.addEventListener('click', () => openShelfV3('sh:' + b.dataset.sh)));
+    $$('.yo-nums button', box).forEach((b) => b.addEventListener('click', () => { const g = b.dataset.go; if (g === 'lidos') openShelfV3('LIDO'); else if (g === 'amigos') openFriends(); else if (g === 'conq') openAchList(); else openAllQuotes(); }));
+    paintAvatars();
+  }
+  if (S.tab === 'perfil') {
+    const h1 = box.querySelector('.v3-top h1'); if (h1) h1.textContent = 'Conta e ajustes';
+    box.querySelectorAll('.lx-card').forEach((c) => { if (/Conquistas|Minhas avaliações/.test(c.textContent)) c.remove(); });
+  }
 }; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
