@@ -1321,7 +1321,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 'use strict';
 // ============ armazenamento ============
 const KEY = 'bear.v1';
-const APP_VERSION = '3.0.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.0.4', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -2724,6 +2724,17 @@ function addToLibrary(item, intoCase, direct) {
   }
 }
 function setLibStatus(e, st) {
+  if (e.link) { // livro de meta: a meta manda no status (libSync), então a troca vai para o livro da meta
+    const g = db.goals.find((x) => x.id === e.link.goalId), gb = g && g.books.find((x) => x.id === e.link.bookId);
+    const gs = { LENDO: 'LENDO', HIBERNANDO: 'PAUSADO', LIDO: 'CONCLUIDO', QUERO: 'NAO_INICIADO' }[st];
+    if (gb && !gb.before) {
+      if (!gs) return toast(`“${e.title}” faz parte da meta ${g.name}. Tire da meta para marcar como abandonado.`);
+      if (gs === 'LENDO' && g.books.some((x) => x.status === 'LENDO' && x.id !== gb.id)) return toast(`A meta ${g.name} já tem um livro em leitura. Pause o outro antes.`);
+      if (gs === 'CONCLUIDO') gb.finishedAt = gb.finishedAt || todayISO(); else delete gb.finishedAt;
+      if (gs === 'LENDO' && !gb.startedAt) gb.startedAt = todayISO();
+      gb.status = gs;
+    }
+  }
   e.status = st;
   if (st === 'HIBERNANDO' && (verifiedReading().perBook.get(e.id) || { pages: 0 }).pages >= (e.totalPages || 1) * 0.1) db.prefs = { ...(db.prefs || {}), hibEver: true };
   if (st === 'LENDO' && !e.startedAt) e.startedAt = todayISO();
@@ -3990,7 +4001,7 @@ setTimeout(() => { const sp = $('#splash'); sp.classList.add('out'); setTimeout(
 // Atualizações automáticas para o feed
 {
   const _setLibStatus = setLibStatus, _setStatus = setStatus, _libLog = libLog, _quickLog = quickLog;
-  setLibStatus = function (e, st) { const before = e.status; const r = _setLibStatus.apply(this, arguments); if (before !== st) { if (st === 'LENDO') publishActivity(e, 'STARTED'); if (st === 'LIDO') publishActivity(e, 'FINISHED'); } return r; };
+  setLibStatus = function (e, st) { const before = e.status; const r = _setLibStatus.apply(this, arguments); if (before !== st && e.status === st) { if (st === 'LENDO') publishActivity(e, 'STARTED'); if (st === 'LIDO') publishActivity(e, 'FINISHED'); } return r; };
   setStatus = function (b, st) { const before = b.status; const r = _setStatus.apply(this, arguments); if (before !== st) { const e = libFor(b); if (st === 'LENDO' && before === 'NAO_INICIADO') publishActivity(e, 'STARTED'); if (st === 'CONCLUIDO') publishActivity(e, 'FINISHED'); } return r; };
   libLog = function (e) { const r = _libLog.apply(this, arguments); setTimeout(() => { if (e.status === 'LIDO') publishActivity(e, 'FINISHED'); else publishActivity(e, 'PROGRESS'); }, 0); return r; };
   quickLog = function (g, b) { const r = _quickLog.apply(this, arguments); setTimeout(() => { const e = libFor(b); if (b.status === 'CONCLUIDO') publishActivity(e, 'FINISHED'); else publishActivity(e, 'PROGRESS'); }, 0); return r; };
@@ -4046,7 +4057,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const initial = (n) => (String(n || '?').trim().charAt(0) || '?').toUpperCase();
 function el(tag, cls, style, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (style) e.setAttribute('style', style); if (html != null) e.innerHTML = html; return e; }
-const cssUrl = (u) => `url("${String(u).replace(/["\\\n\r]/g, '')}")`;
+const cssUrl = (u) => `url('${String(u).replace(/['"\\\n\r]/g, '')}')`; // aspas simples: vai dentro de style="..." nos templates
 
 // ---------- dados do app ----------
 const T = () => (db.toca = db.toca || {});                       // tudo que é da toca mora em db.toca (campo novo)
@@ -4726,22 +4737,30 @@ function openCatalog() {
     v.querySelector('.sl-body').innerHTML = `
       <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Catálogo</b><span></span></div>
       <form class="ct-form"><input type="search" id="ct-q" class="fs-input" placeholder="Título, autor ou ISBN" value="${esc(q)}" autocomplete="off" enterkeyhint="search" aria-label="Buscar no catálogo"><button type="submit" class="ct-go">${IC('procurar', 'ico-b')}Buscar</button></form>
-      <div class="ct-list">${busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '<p class="sl-empty">Procure qualquer livro para ver a sinopse e adicionar à sua estante.</p>' : !res.length ? '<p class="sl-empty">Nada encontrado. Tente outro título ou o ISBN.</p>'
+      <div class="ct-list"></div>`;
+    drawList();
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    const run = async (now) => {
+      const val = $('#ct-q', v).value.trim(); if (val === q && res && !now) return; q = S.catQ = val;
+      if (q.length < 3) { if (now) toast('Digite pelo menos 3 letras'); token++; busy = false; res = S.catRes = null; return drawList(); }
+      const my = ++token; busy = true; drawList();
+      let out = []; try { out = await searchBooks(q); } catch {}
+      if (my !== token) return; busy = false; res = S.catRes = out; drawList();
+    };
+    let tm = 0;
+    $('#ct-q', v).addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(() => run(false), 450); });
+    v.querySelector('.ct-form').addEventListener('submit', (ev) => { ev.preventDefault(); clearTimeout(tm); $('#ct-q', v).blur(); run(true); });
+  };
+  const drawList = () => {
+    v.querySelector('.ct-list').innerHTML = `${busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '<p class="sl-empty">Procure qualquer livro para ver a sinopse e adicionar à sua estante.</p>' : !res.length ? '<p class="sl-empty">Nada encontrado. Tente outro título ou o ISBN.</p>'
         : res.map((it, i) => { const mine = inLib(it); return `<article class="ct-it">${cvh(it.title, it.coverUrl, 'ct-cv')}<div class="ct-tx"><b>${esc(it.title)}</b><small>${esc(it.author || '')}</small>
           <div class="ct-chips">${it.pages ? `<span>${it.pages} pág.</span>` : ''}${it.year ? `<span>${esc(it.year)}</span>` : ''}${/^pt/i.test(it.lang || '') ? '<span>Português</span>' : it.lang ? `<span>${esc(LANGS[it.lang] || it.lang)}</span>` : ''}</div>
-          <div class="ct-acts"><button type="button" class="ct-info" data-i="${i}">Sobre</button>${mine ? `<button type="button" class="ct-mine" data-id="${esc(mine.id)}">Na estante · ${esc(LIB_LABEL[mine.status] || '')}</button>` : `<button type="button" class="ct-add" data-i="${i}">+ Adicionar</button>`}</div></div></article>`; }).join('')}</div>`;
+          <div class="ct-acts"><button type="button" class="ct-info" data-i="${i}">Sobre</button>${mine ? `<button type="button" class="ct-mine" data-id="${esc(mine.id)}">Na estante · ${esc(LIB_LABEL[mine.status] || '')}</button>` : `<button type="button" class="ct-add" data-i="${i}">+ Adicionar</button>`}</div></div></article>`; }).join('')}`;
     paintCv(v);
-    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
-    v.querySelector('.ct-form').addEventListener('submit', async (ev) => {
-      ev.preventDefault(); q = S.catQ = $('#ct-q', v).value.trim(); if (q.length < 3) return toast('Digite pelo menos 3 letras');
-      const my = ++token; busy = true; draw();
-      let out = []; try { out = await searchBooks(q); } catch {}
-      if (my !== token) return; busy = false; res = S.catRes = out; draw();
-    });
     $$('.ct-info', v).forEach((b) => b.addEventListener('click', () => openBookPage(asBook(res[Number(b.dataset.i)]))));
     $$('.ct-it .ct-cv', v).forEach((c, i) => c.addEventListener('click', () => { const it = res[i], mine = inLib(it); openBookPage(mine || asBook(it)); }));
     $$('.ct-mine', v).forEach((b) => b.addEventListener('click', () => openBook(b.dataset.id)));
-    $$('.ct-add', v).forEach((b) => b.addEventListener('click', () => addFromCatalog(res[Number(b.dataset.i)], draw)));
+    $$('.ct-add', v).forEach((b) => b.addEventListener('click', () => addFromCatalog(res[Number(b.dataset.i)], drawList)));
   };
   S.listRedraw = draw; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0;
   if (!res) setTimeout(() => $('#ct-q', v)?.focus(), 50);
@@ -4997,7 +5016,7 @@ function openNovidades(focus, host) {
       : posts === null ? '<p class="sl-empty">Carregando…</p>'
       : posts.length ? posts.map(postHTML).join('')
       : tab === 'descobrir' ? state(A.urso_tedio, 'Nada por aqui ainda', 'Avaliações públicas de quem usa o app aparecem aqui.')
-      : state(A.urso_tedio, SOC.fr.friends.length ? 'Nenhuma novidade ainda' : 'Adicione seus amigos', SOC.fr.friends.length ? 'Quando vocês lerem e avaliarem livros, tudo aparece aqui.' : 'Toque no quadro vazio da sala e digite o @usuário da pessoa.', SOC.fr.friends.length ? '' : '<button type="button" id="fd-add">+ Adicionar amigos</button>');
+      : state(A.urso_tedio, SOC.fr.friends.length ? 'Nenhuma novidade ainda' : 'Adicione seus amigos', SOC.fr.friends.length ? 'Quando vocês lerem e avaliarem livros, tudo aparece aqui.' : 'Convide pelo @usuário para ver o que estão lendo.', SOC.fr.friends.length ? '' : '<button type="button" id="fd-add">+ Adicionar amigos</button>');
     if (host) host.innerHTML = `<div class="fd-list">${body}</div>`;
     else v.querySelector('.sl-body').innerHTML = `
       <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Novidades</b><span></span></div>
@@ -6078,7 +6097,7 @@ function drawInicioC(box) {
   const n = unread();
   const h = drawHud(), hr = new Date().getHours(), hello = hr < 5 ? 'Boa noite' : hr < 12 ? 'Bom dia' : hr < 18 ? 'Boa tarde' : 'Boa noite';
   box.innerHTML = `<header class="v3-brand"><p class="v3-greet">${hello}, <b>${esc(h.name)}</b></p><div class="v3-acts"><button type="button" class="v3-bell" id="v3-search" aria-label="Buscar livros">${IC('procurar', 'ico-g')}</button><button type="button" class="v3-bell" id="v3-bell" aria-label="Notificações">${MN('notificacoes', 'ico-g')}${n ? `<u>${n > 9 ? '9+' : n}</u>` : ''}</button></div></header>
-    ${earsRow()}<div class="v3-cols"><div class="v3-colA">${nowCardC()}${boardCard()}${statsStrip()}${heartShelf()}</div>
+    ${earsRow()}<div class="v3-cols"><div class="v3-colA">${nowCardC()}${statsStrip()}${boardCard()}${heartShelf()}</div>
     <div class="v3-colB"><div class="v3-sh"><b>Novidades dos amigos</b><button type="button" class="v3-link" id="v3-friends">Amigos ›</button></div><div class="v3-feed" id="v3-feed-host"></div></div></div>`;
   const R = reading();
   $('#v3-cta', box).addEventListener('click', () => { if (!R) return goTab('buscar'); if (S.madrugada) return wakeBear('upd'); editLeitura(); });
@@ -6439,7 +6458,7 @@ function drawProgresso(box) {
     return M;
   };
   const _set = setLibStatus;
-  setLibStatus = function (e, st) { if (e.status === 'QUERO' && st === 'LENDO') e.fromQuero = true; if (e.status === 'HIBERNANDO' && st === 'LENDO') e.wasPaused = true; return _set(e, st); };
+  setLibStatus = function (e, st) { const was = e.status; const r = _set(e, st); if (e.status === st && was === 'QUERO' && st === 'LENDO') e.fromQuero = true; if (e.status === st && was === 'HIBERNANDO' && st === 'LENDO') e.wasPaused = true; if (e.status === st && was !== st && (was === 'QUERO' || was === 'HIBERNANDO') && st === 'LENDO') save(); return r; };
   const _add = addFromCatalog;
   addFromCatalog = function (it, after) { const before = new Set(lib().map((x) => x.id)); return _add(it, () => { const n = lib().find((x) => !before.has(x.id)); if (n) { n.viaCat = true; save(); } after && after(); }); };
 }
@@ -6658,7 +6677,7 @@ earsRow = function () {
   const ear = (handle, name, cls, extra = '') => `<button type="button" class="v3-ear" data-h="${esc(handle)}"><span class="v3-mk ${cls}"><span class="v3-mk-av" data-avh="${esc(handle)}" style="background-color:${friendColor(handle)}">${esc(initial(name))}</span></span>${extra}<small>${esc(String(name).split(' ')[0])}</small></button>`;
   return `<div class="v3-ears"><button type="button" class="v3-ear" id="v3-ear-me"><span class="v3-mk ${mine.length ? '' : 'seen'}"><span class="v3-mk-av" style="${h.ph ? `background-image:${cssUrl(h.ph)}` : ''}">${h.ph ? '' : esc(initial(h.name))}</span></span><i class="v3-mk-plus" id="v3-mk-new">+</i><small>Você</small></button>
     ${groups.map((g) => ear(g.user.handle, g.user.displayName, g.list.some((m) => !seen.has(m.id)) ? '' : 'seen')).join('')}
-    ${fr.map((f) => ear(f.handle, f.displayName, 'seen none')).join('')}</div>`;
+</div>`;
 };
 { const _di = drawInicio; drawInicio = function (box) {
   _di(box);
@@ -6789,6 +6808,35 @@ function flairSheet() {
   const av = box.querySelector('#pf-photo'), f = socialProfile && SOC.flairs[socialProfile.handle];
   if (av && f && f.frame) { const fr = PF_FRAMES.find((x) => x[0] === f.frame); if (fr) { av.classList.add('framed'); av.style.setProperty('--frame', fr[2]); } }
 }; }
+// ---------- 3.0.1: alinhamento do Início vazio e marcador sem leitura ----------
+{ const st = document.createElement('style'); st.textContent = `
+.v3-now.empty{align-items:center}
+.v3-now.empty>div{display:grid;gap:.3rem;min-width:0;flex:1}
+.v3-now.empty .v3-pri{flex:none;white-space:nowrap}
+.v3-ears{padding-bottom:.6rem;align-items:flex-start}
+.v3-mk.ghost{background:var(--line);opacity:.7}
+.v3-mk.ghost .v3-mk-av{background:var(--panel);color:var(--acc);font-size:1.2rem}
+.v3-gap{text-align:left}
+`; TR.append(st); }
+{ const st = document.createElement('style'); st.textContent = '.toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}'; document.head.append(st); }
+function noReadingSheet() {
+  const ed = $('#editor'); ed.classList.add('compact');
+  ed.querySelector('.ed-body').innerHTML = `<button type="button" class="up-x" id="mk-x" aria-label="Fechar">×</button><h3 class="up-h">Marcadores</h3><p class="up-s">Um trecho, um marco ou uma reação sobre o livro que você está lendo. Fica 24 h no Início dos amigos e guardado na página do livro.</p><p class="mk-note">Comece uma leitura para publicar o primeiro.</p><button type="button" class="sv-ok" id="mk-find">Buscar livro</button>`;
+  $('#mk-x', ed).addEventListener('click', closeEd);
+  $('#mk-find', ed).addEventListener('click', () => { closeEd(); goTab('buscar'); });
+  ed.hidden = false;
+}
+{ const _cm = composeMarker; composeMarker = function () {
+  if (needAccount()) return;
+  if (!lib().some((e) => e.status === 'LENDO')) return noReadingSheet();
+  return _cm.apply(this, arguments);
+}; }
+{ const _er = earsRow; earsRow = function () {
+  const s = _er(); if ((SOC.fr.friends || []).length) return s;
+  const i = s.lastIndexOf('</div>');
+  return s.slice(0, i) + `<button type="button" class="v3-ear" id="v3-ear-inv"><span class="v3-mk ghost"><span class="v3-mk-av">+</span></span><small>Convidar</small></button>` + s.slice(i);
+}; }
+{ const _d = drawInicio; drawInicio = function (box) { _d(box); $('#v3-ear-inv', box)?.addEventListener('click', inviteFriend); }; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
