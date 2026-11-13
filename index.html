@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '4.2.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.2.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7817,7 +7817,6 @@ function friendMenu(f, anchor, after) {
   popMenu(anchor, [
     { label: 'Ver perfil', fn: () => friendPage(f.handle) },
     { label: 'Ler um livro junto', fn: () => friendReadTogether(f) },
-    { label: 'Duelo da semana', sub: 'quem lê mais páginas até domingo', fn: () => friendDuel(f) },
     0,
     { label: 'Desfazer amizade', danger: true, fn: () => friendUnfriend(f, after) },
   ]);
@@ -7827,9 +7826,8 @@ function friendMenu(f, anchor, after) {
 { const _fp = friendPage; friendPage = async function (handle) {
   await _fp(handle); const v = $('#shelflist'), f = (SOC.fr.friends || []).find((x) => x.handle === handle), acts = v.querySelector('.fr-acts');
   if (!f || !acts || acts.querySelector('.fr-more')) return;
-  acts.innerHTML = `<button type="button" class="pri" id="fr-buddy">Ler junto</button><button type="button" id="fr-duel2">⚔ Duelo</button><button type="button" class="fr-more" aria-label="Mais opções">•••</button>`;
+  acts.innerHTML = `<button type="button" class="pri" id="fr-buddy">Ler junto</button><button type="button" class="fr-more" aria-label="Mais opções">•••</button>`;
   $('#fr-buddy', v).addEventListener('click', () => friendReadTogether(f));
-  $('#fr-duel2', v).addEventListener('click', () => friendDuel(f));
   $('.fr-more', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [{ label: 'Desfazer amizade', danger: true, fn: () => friendUnfriend(f, () => { v.hidden = true; }) }]));
 }; }
 
@@ -8569,6 +8567,7 @@ S.esF = S.esF || 'ALL';
 function sectionNodes(sh) { const out = [sh]; let n = sh.nextElementSibling; while (n && !n.classList.contains('v3-sh') && !n.classList.contains('cm-fold')) { out.push(n); n = n.nextElementSibling; } return out; }
 function foldCommunity(box) {
   if (box.querySelector('.cm-fold')) return;
+  box.querySelectorAll('.v3-invs > *').forEach((n) => { if (/duelo/i.test(n.textContent || '')) n.remove(); }); const inv = box.querySelector('.v3-invs'); if (inv && !inv.children.length) inv.remove();
   const find = (re) => [...box.querySelectorAll('.v3-sh')].find((sh) => re.test((sh.querySelector('b') || sh).textContent.trim()));
   const top = box.querySelector('.v3-invs') || box.querySelector('.v3-ears');
   const nov = find(/^Novidades/);
@@ -8576,8 +8575,8 @@ function foldCommunity(box) {
   const trSh = find(/^Em alta/); const trHost = box.querySelector('#tr-host');
   const pl = find(/^Placar/); const myRow = box.querySelector('.v3-board .me, .v3-rank .me');
   const fT = fold(trSh, 'Em alta', ''); if (fT && trHost && !fT.contains(trHost)) fT.querySelector('.cm-in').append(trHost);
-  const fP = fold(pl, 'Placar da semana', '');
-  if (fP) { const me = [...fP.querySelectorAll('*')].find((x) => x.children.length === 0 && x.textContent.trim() === 'Você'); let row = me; for (let i = 0; i < 4 && row && !/^\s*\d+/.test(row.innerText || ''); i++) row = row.parentElement; const m = row && (row.innerText || '').match(/^\s*(\d+)/); if (m) fP.querySelector('summary').insertAdjacentHTML('beforeend', `<small>você em ${m[1]}º</small>`); }
+  if (pl) sectionNodes(pl).forEach((n) => n.remove()); const fP = null;
+  if (false) { const me = [...fP.querySelectorAll('*')].find((x) => x.children.length === 0 && x.textContent.trim() === 'Você'); let row = me; for (let i = 0; i < 4 && row && !/^\s*\d+/.test(row.innerText || ''); i++) row = row.parentElement; const m = row && (row.innerText || '').match(/^\s*(\d+)/); if (m) fP.querySelector('summary').insertAdjacentHTML('beforeend', `<small>você em ${m[1]}º</small>`); }
   if (nov && top) { const ns = sectionNodes(nov); top.after(...ns); }
   const order = [fT, fP].filter(Boolean); if (order.length && nov) { let after = sectionNodes(nov).pop(); order.forEach((f) => { after.after(f); after = f; }); }
 }
