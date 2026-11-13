@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '4.2.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.3.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -8520,7 +8520,7 @@ function openDrawer() {
     <div class="drw-g">Conquistas e metas</div>${it('ach', 'award', 'Conquistas')}${it('goals', 'target', 'Metas com prazo')}
     <div class="drw-g">Pessoas</div>${it('friends', 'users', 'Amigos', nF || '')}${it('people', 'plus', 'Encontrar leitores')}
     <div class="drw-g">App</div>${it('cfg', 'cfg', 'Ajustes')}`;
-  const go = { me: () => openMyProfile(), stats: () => goTab('progresso'), quotes: () => openAllQuotes(), cols: () => openCollections(), hist: () => openHistory(), ach: () => openAchList(), goals: () => screen('desafios'), friends: () => openFriendsV3(), people: () => openPeopleSearch(), cfg: () => goTab('perfil') };
+  const go = { me: () => openMyProfile(), stats: () => goTab('progresso'), quotes: () => openAllQuotes(), cols: () => openCollections(), hist: () => openHistory(), ach: () => openAchList(), goals: () => openGoalsV4(), friends: () => openFriendsV3(), people: () => openPeopleSearch(), cfg: () => goTab('perfil') };
   d.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { closeDrawer(); go[b.dataset.go](); }));
   TR.append(bg, d);
 }
@@ -8581,6 +8581,59 @@ function foldCommunity(box) {
   if (nov) { const ns = sectionNodes(nov); const anchorEl = trHost || top; if (anchorEl) anchorEl.after(...ns); }
   const order = [fT, fP].filter(Boolean); if (order.length && nov) { let after = sectionNodes(nov).pop(); order.forEach((f) => { after.after(f); after = f; }); }
 }
+// ---------- 4.3 (etapa 1 do teste): metas no padrão novo, títulos sem repetir, capa sempre com o menuzinho, busca mais limpa ----------
+{ const st = document.createElement('style'); st.textContent = `
+.shelflist .sl-top > b{visibility:hidden}
+.ct-acts .ct-info,.ct-acts .ct-add:not(.ct-now){display:none!important}
+.ct-it{cursor:pointer}
+.up-save:disabled{opacity:1!important;background:transparent!important;color:var(--ink-2)!important;border:1.5px dashed var(--line)!important}
+.gl-it{display:grid;gap:.35rem;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:.8rem .9rem;margin-bottom:.55rem;color:var(--ink)}
+.gl-it b{font-size:.95rem}.gl-it small{font-size:.74rem;color:var(--ink-2)}
+.gl-it i{display:block;height:7px;border-radius:4px;background:var(--line);overflow:hidden}.gl-it i i{height:100%;background:var(--acc);border-radius:4px}
+.gl-row{display:flex;justify-content:space-between;gap:.5rem}
+`; TR.append(st); }
+// título da tela interna vai para o topo fixo (o "‹ Voltar" continua no lugar)
+function syncTopTitle() { const v = $('#shelflist'), t = $('#g-t'); if (!t) return; if (v && !v.hidden) { const b = v.querySelector('.sl-top > b'); if (b && b.textContent.trim()) { t.textContent = b.textContent.trim(); return; } } t.textContent = S.tab === 'perfil' ? 'Ajustes' : S.tab === 'progresso' ? 'Estatísticas' : (TAB_T[S.tab] || ''); }
+TR.addEventListener('click', () => setTimeout(syncTopTitle, 90));
+{ const _pg = paintGtop; paintGtop = function () { _pg(); syncTopTitle(); }; }
+setInterval(syncTopTitle, 1500);
+// "Atualizar leitura": a linha de cima mostra página e porcentagem juntas
+{ const _us = updateSheet; updateSheet = function (e) { const r = _us(e); setTimeout(() => { const s = $('#editor .up-s'); if (s && e.totalPages) { const now = libProgress(e), p = Math.round((now / e.totalPages) * 100); s.textContent = `${e.title} · você estava na pág. ${now} (${p}%)`; } }, 0); return r; }; }
+// Metas com prazo: lista no padrão novo (criar e editar ainda usam a tela de metas)
+function openGoalsV4() {
+  const v = $('#shelflist');
+  const draw = () => {
+    const gs = db.goals || [], today = todayISO();
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Metas com prazo</b><span></span></div>
+      <button type="button" class="fl-add" id="gl-new">+ Nova meta</button>
+      ${gs.length ? gs.map((g) => { const tot = g.books.reduce((a, b) => a + (b.totalPages || 0), 0), dn = g.books.reduce((a, b) => a + pagesOf(g, b), 0), p = tot ? Math.round((dn / tot) * 100) : 0;
+          const left = g.targetDate ? Math.ceil((new Date(g.targetDate) - new Date(today)) / 86400000) : null, perDay = left > 0 ? Math.ceil(Math.max(0, tot - dn) / left) : null;
+          return `<button type="button" class="gl-it" data-g="${esc(g.id)}"><span class="gl-row"><b>${esc(g.name)}</b><small>${p}%</small></span><i><i style="width:${p}%"></i></i>
+            <span class="gl-row"><small>${plural(g.books.length, 'livro', 'livros')} · ${dn} de ${tot} pág.</small><small>${left == null ? '' : left > 0 ? `${left} dias · ${perDay} pág./dia` : left === 0 ? 'termina hoje' : 'prazo passou'}</small></span></button>`; }).join('')
+        : '<p class="sl-empty">Uma meta com prazo é uma lista de livros com data para terminar. O Bear calcula quantas páginas por dia você precisa ler.</p>'}`;
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    $('#gl-new', v).addEventListener('click', () => { v.hidden = true; screen('desafios'); setTimeout(() => goalForm(true), 120); });
+    $$('.gl-it', v).forEach((b) => b.addEventListener('click', () => { v.hidden = true; screen('desafios'); }));
+  };
+  S.listRedraw = draw; S.navView = { t: 'goals', a: [] }; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle();
+}
+// capa da leitura atual (Início) e resultados da busca também abrem o menuzinho
+TR.addEventListener('click', (ev) => {
+  if (ev.target.closest('#editor, .bkm')) return;
+  const now = ev.target.closest('.v3-now .v3-cv');
+  if (now) { const R = reading(); if (R) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); return bookQuickMenu(now, { e: R.e, title: R.e.title }); } }
+  const it = ev.target.closest('.ct-it'); if (!it || ev.target.closest('button')) return;
+  const t = it.querySelector('.ct-tx b'), a = it.querySelector('.ct-tx small'); if (!t) return;
+  ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+  bookQuickMenu(it.querySelector('.cv, .ct-cv') || it, { title: t.textContent, author: a ? a.textContent : null });
+}, true);
+// ---------- 4.3: busca prefere a obra principal (adaptações, quadrinhos, resumos e boxes vão para o fim) ----------
+{ const _sb = searchBooks; searchBooks = async function (q, ...rest) {
+  const list = await _sb(q, ...rest); if (!Array.isArray(list)) return list;
+  const qn = normT(q || ''), side = /\b(quadrinhos?|hq|graphic|novel grafic|grafica|manga|adaptacao|adaptado|resumo|analise|box|colecao|kit|livro de colorir|guia|edicao comentada)\b/;
+  const score = (it) => { const t = normT(it.title || ''); let s = 0; if (side.test(t) && !side.test(qn)) s += 10; if (!it.coverUrl) s += 2; if (t === qn) s -= 3; return s; };
+  return list.map((it, i) => [it, i]).sort((a, b) => score(a[0]) - score(b[0]) || a[1] - b[1]).map((x) => x[0]);
+}; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
