@@ -1263,8 +1263,8 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
       <h2>TBR</h2>
       <div class="tbr-sum" id="tbr-sum"></div>
       <ol class="books" id="books"></ol>
-      <button type="button" class="link add-in-adj" id="go-add-book">+ Adicionar livro ao desafio</button>
-      <div id="pre-wrap" class="hidden"><h2 style="margin-top:1rem">Lidos antes do desafio</h2><ol class="books" id="pre-books"></ol></div>
+      <button type="button" class="link add-in-adj" id="go-add-book">+ Adicionar livro à meta</button>
+      <div id="pre-wrap" class="hidden"><h2 style="margin-top:1rem">Lidos antes da meta</h2><ol class="books" id="pre-books"></ol></div>
 
     </div>
 
@@ -1284,7 +1284,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 
     <div class="panel" data-tab="ajustes">
       <h2>Ajustes do desafio</h2>
-      <h3 class="adj-h">Adicionar livro ao desafio</h3>
+      <h3 class="adj-h">Adicionar livro à meta</h3>
       <form id="f-book" class="inline">
         <button class="wide" type="button" id="find-book">Buscar livro (preenche sozinho)</button>
         <input class="wide" name="title" placeholder="Título" required maxlength="200">
@@ -1321,7 +1321,8 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 'use strict';
 // ============ armazenamento ============
 const KEY = 'bear.v1';
-const APP_VERSION = '3.2.4', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
+const APP_VERSION = '3.3.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -1471,10 +1472,10 @@ try { const pf = JSON.parse(localStorage.getItem('bear.profile') || 'null'); if 
 if (db.profile && db.profile.name) NAME = db.profile.name; // nome sincronizado entre aparelhos
 // Estado do Be.A.R. Prioridade: dia sem meta (folga/fora do plano) > ritmo.
 function mascot(p) {
-  if (p.remaining === 0 && p.total > 0) return { state: 'AHEAD', illustration: 'bear_celebrating', label: 'CONCLUÍDO', msg: `Desafio concluído${comNome()}! O Bear está comemorando com você!` };
+  if (p.remaining === 0 && p.total > 0) return { state: 'AHEAD', illustration: 'bear_celebrating', label: 'CONCLUÍDO', msg: `Meta concluída${comNome()}! O Bear está comemorando com você!` };
   if (p.todayType !== 'READING_DAY') {
     if (p.daysRemaining === 0) return { state: 'REST_DAY', illustration: 'bear_sleeping', label: 'PRAZO ENCERRADO', msg: 'O prazo terminou. Ajuste a data final ou crie um novo desafio.' };
-    if (p.todayType === 'OUT_OF_PLAN') return { state: 'REST_DAY', illustration: 'bear_sleeping', label: 'DESCANSO', msg: `O desafio começa em ${fmt(stateGoal().startDate)}. O Bear está esperando.` };
+    if (p.todayType === 'OUT_OF_PLAN') return { state: 'REST_DAY', illustration: 'bear_sleeping', label: 'DESCANSO', msg: `A meta começa em ${fmt(stateGoal().startDate)}. O Bear está esperando.` };
     return { state: 'REST_DAY', illustration: 'bear_sleeping', label: 'DESCANSO', msg: 'Dia de soneca! 0 páginas hoje. Aproveite o descanso!' };
   }
   if (p.status === 'AHEAD') return { state: 'AHEAD', illustration: 'bear_celebrating', label: 'À FRENTE', msg: `Incrível${comNome()}! Você está à frente do plano!` };
@@ -1502,15 +1503,15 @@ function renderCalEmpty() {
   if (db.goals.length || !calAsked) { box.replaceChildren(); return; }
   box.replaceChildren(el('div', { class: 'case-empty' }, [bearImg('bear_bored', ''), el('b', { text: 'Nenhum desafio no calendário' }),
     el('p', { text: 'Crie um desafio com prazo e o Bear monta o plano de páginas de cada dia aqui.' }),
-    el('button', { type: 'button', class: 'primary', text: '+ Novo desafio', onclick: () => { setHTab('desafios'); goalForm(true); } })]));
+    el('button', { type: 'button', class: 'primary', text: '+ Nova meta', onclick: () => { setHTab('desafios'); goalForm(true); } })]));
 }
 function calEntry() {
-  return el('button', { type: 'button', class: 'dcal', onclick: openCalendar }, [el('b', { text: '📅 Calendário dos desafios' }), el('span', { text: 'O plano de páginas de cada dia ›' })]);
+  return el('button', { type: 'button', class: 'dcal', onclick: openCalendar }, [el('b', { text: '📅 Calendário das metas' }), el('span', { text: 'O plano de páginas de cada dia ›' })]);
 }
 function renderGoals() {
   renderCalEmpty();
   const box = $('#goal-list'); box.replaceChildren();
-  if (!db.goals.length) box.append(el('div',{class:'panel'},[el('p',{text:'Nenhum desafio ainda. Toque em “Novo desafio” para montar o primeiro.'})]));
+  if (!db.goals.length) box.append(el('div',{class:'panel'},[el('p',{text:'Nenhuma meta com prazo ainda. Toque em “Nova meta” para montar a primeira.'})]));
   const today = todayISO();
   let lidos = 0;
   for (const g of db.goals) {
@@ -1588,7 +1589,7 @@ function renderHome(today) {
         el('p', { class: 'say', text: 'Comece pelos livros: o que você está lendo, o que quer ler e o que já leu. Se quiser, monte um desafio com prazo.' })])]),
       el('hr'),
       el('button', { class: 'primary', type: 'button', text: '+ Adicionar meu primeiro livro', onclick: () => searchSheet({ onPick: addToLibrary }) }),
-      el('button', { class: 'link', type: 'button', text: 'Criar um desafio com prazo ›', onclick: () => { setHTab('desafios'); goalForm(true); } }),
+      el('button', { class: 'link', type: 'button', text: 'Criar uma meta com prazo ›', onclick: () => { setHTab('desafios'); goalForm(true); } }),
     ]));
   }
   renderReading(shownId, g);
@@ -1730,7 +1731,7 @@ function bookEl(e) {
     ? el('img', { class: 'bk-img', src: e.cover, alt: '', loading: 'lazy' })
     : el('div', { class: 'bk-img blank', style: `--hue:${hueOf(e.title)}` }, [el('span', { class: 'bt', text: e.title }), ...(e.author ? [el('span', { class: 'ba', text: e.author })] : [])]);
   const badges = [];
-  if (e.review && e.review.paws) badges.push(el('span', { class: 'bk-badge', text: `${String(e.review.paws).replace('.', ',')} ★` }));
+  if (e.review && e.review.paws) badges.push(el('span', { class: 'bk-badge', text: pawTxt(e.review.paws) }));
 
   if (e.status === 'HIBERNANDO') badges.push(el('span', { class: 'bk-zz', text: 'z z', 'aria-hidden': 'true' }));
   const kids = [el('span', { class: 'bk-cover' }, [el('span', { class: 'bk-pages', 'aria-hidden': 'true' }), face, ...badges])];
@@ -1814,7 +1815,7 @@ function renderHero() {
       el('span', { class: 'hb-date', text: date }),
       el('span', { class: 'hb-k', text: 'Lendo agora' }),
       el('button', { type: 'button', class: 'hb-title link-t', text: e.title, onclick: () => libCard(e) }),
-      el('span', { class: 'hb-sub', text: [e.author, g ? `desafio “${g.name}”` : null].filter(Boolean).join(' · ') }),
+      el('span', { class: 'hb-sub', text: [e.author, g ? `meta “${g.name}”` : null].filter(Boolean).join(' · ') }),
       el('div', { class: 'hb-prog' }, [el('div', { class: 'bar' }, [fill]), el('b', { text: total ? `${pct}%` : '—' })]),
       el('div', { class: 'hb-btns' }, [
         el('button', { type: 'button', class: 'rl-btn hb-btn', text: 'Atualizar leitura', onclick: () => updateSheet(e) }),
@@ -1852,7 +1853,7 @@ function readingLite(e) {
     e.cover ? el('img', { class: 'cv', src: e.cover, alt: '' }) : el('span', { class: 'cv', text: e.title.charAt(0) }),
     el('div', { class: 'rl-mid' }, [
       el('div', { class: 'rr-top' }, [el('button', { type: 'button', class: 'link-t', text: e.title, onclick: () => libCard(e) }), el('b', { class: 'rr-pct', text: total ? `${pct}%` : '—' })]),
-      el('div', { class: 's', text: [e.author, g ? `desafio “${g.name}”` : null].filter(Boolean).join(' · ') }),
+      el('div', { class: 's', text: [e.author, g ? `meta “${g.name}”` : null].filter(Boolean).join(' · ') }),
       el('div', { class: 'bar' }, [fill]),
     ]),
     el('button', { type: 'button', class: 'rl-btn', 'aria-label': `Atualizar leitura de ${e.title}`, text: 'Atualizar', onclick: () => updateSheet(e) }),
@@ -1889,7 +1890,7 @@ function updateSheet(e) {
   const act = (t, fn, cls) => el('button', { type: 'button', class: 'upd-act ' + (cls || ''), text: t, onclick: () => { close(); fn(); } });
   const acts = [act('Terminei este livro', () => { if (!total) return toast('Informe o total de páginas na ficha'); save_(String(total), false); }, 'primary')];
   acts.push(act(e.review ? 'Editar avaliação' : 'Avaliar', () => { if (gb) { current = g; rateForm(gb); } else rateForm(e, { logs: [] }, () => renderHome(todayISO())); }));
-  acts.push(act('Hibernar (pausar)', () => { if ((verifiedReading().perBook.get(e.id) || { pages: 0 }).pages >= (e.totalPages || 1) * 0.1) db.prefs = { ...(db.prefs || {}), hibEver: true }; if (gb) { current = g; setStatus(gb, 'PAUSADO'); renderHome(todayISO()); } else setLibStatus(e, 'HIBERNANDO'); toast(`“${e.title}” foi hibernar 💤`); }));
+  acts.push(act('Pausar', () => { if ((verifiedReading().perBook.get(e.id) || { pages: 0 }).pages >= (e.totalPages || 1) * 0.1) db.prefs = { ...(db.prefs || {}), hibEver: true }; if (gb) { current = g; setStatus(gb, 'PAUSADO'); renderHome(todayISO()); } else setLibStatus(e, 'HIBERNANDO'); toast(`“${e.title}” foi pausado`); }));
   if (!gb) {
     acts.push(act('Voltar para Quero ler', () => setLibStatus(e, 'QUERO')));
     acts.push(act('Abandonei', () => setLibStatus(e, 'ABANDONEI'), 'danger'));
@@ -2062,7 +2063,7 @@ function cardHead(title, action) {
 }
 // Prateleiras do Início: a pessoa escolhe quais aparecem e em que ordem (Perfil não precisa: botão no fim do Início)
 const HOME_OPTS = () => [
-  ['ach', 'Cantinho das conquistas'], ['year', `Leituras ${todayISO().slice(0, 4)}`], ['FAV', 'Potinho de mel 🍯'], ['QUERO', 'Quero ler'], ['LIDO', 'Lidos'], ['ABANDONEI', 'Abandonei'],
+  ['ach', 'Cantinho das conquistas'], ['year', `Leituras ${todayISO().slice(0, 4)}`], ['FAV', 'Prateleira do coração'], ['QUERO', 'Quero ler'], ['LIDO', 'Lidos'], ['ABANDONEI', 'Abandonei'],
   ...(db.shelves || []).map(x => ['case:' + x.id, x.name]),
 ];
 function homePrefs() {
@@ -2086,7 +2087,7 @@ function renderYearCard(today) {
     }
     let title, list, empty;
     if (id.startsWith('case:')) { const c = (db.shelves || []).find(x => 'case:' + x.id === id); title = c.name; list = lib.filter(e => c.bookIds.includes(e.id)); empty = 'Estante vazia.'; }
-    else { title = { FAV: 'Potinho de mel 🍯', QUERO: 'Quero ler', LIDO: 'Lidos', ABANDONEI: 'Abandonei' }[id]; list = lib.filter(e => inShelf(e, id));
+    else { title = { FAV: 'Prateleira do coração', QUERO: 'Quero ler', LIDO: 'Lidos', ABANDONEI: 'Abandonei' }[id]; list = lib.filter(e => inShelf(e, id));
       empty = { FAV: 'Dê nota 5 a um livro e ele vem morar aqui.', QUERO: 'Sua TBR aparece aqui.', LIDO: 'Seus lidos aparecem aqui.', ABANDONEI: 'Nenhum abandonado.' }[id]; }
     list = sortBooks(list, (db.prefs && db.prefs.bookSort) || 'recent');
     if (!list.length) return null;
@@ -2120,7 +2121,7 @@ const ACHIEVEMENTS = [
   { id: 'rev20', name: 'Júri oficial', desc: 'Avaliar 5 livros lidos pelo app', m: 'reviews', goal: 5, reward: 'colmeia', rn: 'Colmeia' },
   { id: 'reg50', name: 'Hábito de urso', desc: 'Registrar progresso 50 vezes', m: 'regs', goal: 50, reward: 'luzinhas', rn: 'Luzinhas' },
   { id: 'streak30', name: 'Quinzena de leitura', desc: 'Registrar 15 dias seguidos', m: 'streak', goal: 15, reward: 'cogumelos', rn: 'Cogumelos' },
-  { id: 'goal1', name: 'Prazo cumprido', desc: 'Concluir um desafio dentro do prazo', m: 'goalsDone', goal: 1, reward: 'trofeu', rn: 'Troféu' },
+  { id: 'goal1', name: 'Prazo cumprido', desc: 'Concluir uma meta dentro do prazo', m: 'goalsDone', goal: 1, reward: 'trofeu', rn: 'Troféu' },
   { id: 'year', name: 'Meta do ano', desc: 'Bater a meta de livros do ano', m: 'yearDone', goal: 1, reward: 'heras', rn: 'Heras' },
   { id: 'audio', name: 'Ouvinte', desc: 'Concluir 1 audiobook', m: 'audio', goal: 1, reward: 'fone', rn: 'Fone de ouvido' },
   { id: 'aband', name: 'Sem culpa', desc: 'Abandonar um livro depois de ler pelo menos 10% dele', m: 'aband', goal: 1, reward: 'vela', rn: 'Vela' },
@@ -2135,7 +2136,7 @@ const ACHIEVEMENTS = [
   { id: 'pag50k', rare: true, name: 'Vinte mil páginas', desc: 'Ler 20.000 páginas', m: 'pages', goal: 20000, reward: 'livromagico', rn: 'Livro mágico' },
   { id: 'tijolao', rare: true, name: 'Tijolão', desc: 'Concluir um livro de 600+ páginas', m: 'bigBook', goal: 1, reward: 'globo', rn: 'Globo antigo' },
   { id: 'rev50', rare: true, name: 'Júri lendário', desc: 'Avaliar 25 livros lidos pelo app', m: 'reviews', goal: 25, reward: 'pena', rn: 'Pena mágica' },
-  { id: 'goal3', rare: true, name: 'Mestre dos prazos', desc: 'Concluir 3 desafios no prazo', m: 'goalsDone', goal: 3, reward: 'medalha', rn: 'Medalha de pata' },
+  { id: 'goal3', rare: true, name: 'Mestre dos prazos', desc: 'Concluir 3 metas no prazo', m: 'goalsDone', goal: 3, reward: 'medalha', rn: 'Medalha de pata' },
   { id: 'year2', rare: true, name: 'Meta dupla', desc: 'Bater a meta do ano 2 vezes', m: 'yearsHit', goal: 2, reward: 'balao', rn: 'Balão de urso' },
   { id: 'formatos', rare: true, name: 'Leitura completa', desc: 'Concluir livro físico, e-book e audiobook', m: 'formats', goal: 3, reward: 'gramofone', rn: 'Gramofone' },
   { id: 'autores20', rare: true, name: 'Expedição de autores', desc: 'Ler 20 autores diferentes', m: 'authors', goal: 20, reward: 'telescopio', rn: 'Telescópio' },
@@ -2153,7 +2154,7 @@ const ACHIEVEMENTS = [
   { id: 'curtir10', name: 'Coração de urso', desc: 'Curtir 10 avaliações de amigos', m: 'likesGiven', goal: 10, reward: 'cartinha', rn: 'Cartinha de pata' },
   { id: 'comentar5', name: 'Papo na toca', desc: 'Comentar 5 avaliações de amigos', m: 'commentsMade', goal: 5, reward: 'melduplo', rn: 'Mel para dois' },
   { id: 'amigas5', rare: true, name: 'Clube do livro', desc: 'Fazer 5 amizades no app', m: 'friends', goal: 5, reward: 'clube', rn: 'Roda de ursinhos' },
-  { id: 'hib1', name: 'Soninho de inverno', desc: 'Hibernar um livro depois de ler pelo menos 10% dele', m: 'hib', goal: 1, reward: 'manta', rn: 'Mantinha' },
+  { id: 'hib1', name: 'Soninho de inverno', desc: 'Pausar um livro depois de ler pelo menos 10% dele', m: 'hib', goal: 1, reward: 'manta', rn: 'Mantinha' },
   { id: 'case1', name: 'Curadoria da toca', desc: 'Montar uma estante sua com 2 livros lidos pelo app', m: 'cases', goal: 1, reward: 'aparador', rn: 'Aparador de urso' },
 ];
 // Conquistas valem só leitura feita no app:
@@ -2316,12 +2317,12 @@ function renderDash() {
     avgDur && ['Tempo médio por livro', `${avgDur} ${avgDur === 1 ? 'dia' : 'dias'} do início ao fim`],
     longest && ['Livro mais longo', `${longest.title} (${longest.totalPages} págs)`],
     topAuthor && ['Autor da toca', `${topAuthor[0]} · ${topAuthor[1]} ${topAuthor[1] === 1 ? 'livro' : 'livros'}`],
-    avgPaws && ['Nota média', `${avgPaws.toFixed(1).replace('.', ',')} ★ em ${rated.length} ${rated.length === 1 ? 'livro' : 'livros'}`],
+    avgPaws && ['Nota média', `${avgPaws.toFixed(1).replace('.', ',')} patas em ${rated.length} ${rated.length === 1 ? 'livro' : 'livros'}`],
     Object.keys(fmts).length && ['Formatos', Object.entries(fmts).map(([k, n]) => `${n} ${k.toLowerCase()}`).join(' · ')],
   ].filter(Boolean);
   const factsP = el('div', { class: 'panel' }, [el('h2', { text: 'Curiosidades' }),
     ...(facts.length ? facts.map(([k, v]) => el('div', { class: 'dfact' }, [el('span', { text: k }), el('b', { text: v })])) : [el('p', { class: 'hint', text: 'Registre algumas leituras e o Bear começa a contar coisas legais aqui.' })])]);
-  const calBtn = el('button', { type: 'button', class: 'dcal', onclick: openCalendar }, [el('b', { text: 'Calendário dos desafios' }), el('span', { text: 'o plano de páginas de cada dia ›' })]);
+  const calBtn = el('button', { type: 'button', class: 'dcal', onclick: openCalendar }, [el('b', { text: 'Calendário das metas' }), el('span', { text: 'o plano de páginas de cada dia ›' })]);
   if (!days.length && !lib.some(e => e.status === 'LIDO')) {
     setTimeout(() => { const hs = $('#home-stats'); if (hs) hs.replaceChildren(); }, 0);
     box.replaceChildren(el('div', { class: 'case-empty' }, [bearImg('bear_bored', ''), el('b', { text: 'Ainda não há números' }),
@@ -2485,7 +2486,7 @@ function reviewCard(rv) {
   } });
   return el('article', { class: 'panel rc' }, [
     el('div', { class: 'rc-head' }, [avatarFor(rv.user.displayName, rv.user.handle), el('button', { type: 'button', class: 'link-t soc-name', onclick: () => friendPage(rv.user.handle) }, [el('b', { text: rv.mine ? 'Você' : rv.user.displayName }), el('span', { text: `@${rv.user.handle} · ${relTime(rv.updatedAt)}` })])]),
-    el('div', { class: 'rc-book' }, [cover, el('div', {}, [el('b', { text: rv.title }), ...(rv.author ? [el('span', { class: 'hint', text: rv.author })] : []), ...(rv.paws ? [el('div', { class: 'rc-paws', text: `${'★'.repeat(Math.floor(rv.paws))}${rv.paws % 1 ? '½' : ''} ${String(rv.paws).replace('.', ',')}` })] : [])])]),
+    el('div', { class: 'rc-book' }, [cover, el('div', {}, [el('b', { text: rv.title }), ...(rv.author ? [el('span', { class: 'hint', text: rv.author })] : []), ...(rv.paws ? [el('div', { class: 'rc-paws', text: `${pawTxt(rv.paws)} ${String(rv.paws).replace('.', ',')}` })] : [])])]),
     body,
     el('div', { class: 'rc-acts' }, [likeBtn, comBtn]),
     thread,
@@ -2514,7 +2515,7 @@ async function friendPage(handle) {
   const parts = [el('div', { class: 'fp-head' }, [(() => { const s = avatarFor(d.displayName, d.handle); s.classList.add('fp-av'); return s; })(), el('div', {}, [el('h3', { text: d.displayName }), el('span', { class: 'hint', text: `@${d.handle}` })])])];
   if (d.reading) parts.push(...sec('Lendo agora', d.reading.length ? d.reading.map(b => el('div', { class: 'fp-read' }, [mini(b), el('div', {}, [el('b', { text: b.title }), el('span', { class: 'hint', text: `${b.pct || 0}%` })])])) : [el('p', { class: 'hint', text: 'Nada no momento.' })]));
   if (d.shelf) { const c = d.shelf.counts || {}; parts.push(...sec('Estante', [el('p', { class: 'hint', text: `${c.LIDO || 0} lidos · ${c.QUERO || 0} quero ler · ${c.LENDO || 0} lendo` }),
-    ...((d.shelf.potinho || []).length ? [el('b', { class: 'fp-sub', text: 'Potinho de mel 🍯' }), el('div', { class: 'car' }, d.shelf.potinho.map(mini))] : []),
+    ...((d.shelf.potinho || []).length ? [el('b', { class: 'fp-sub', text: 'Prateleira do coração' }), el('div', { class: 'car' }, d.shelf.potinho.map(mini))] : []),
     ...((d.shelf.lidos || []).length ? [el('b', { class: 'fp-sub', text: 'Lidos recentes' }), el('div', { class: 'car' }, d.shelf.lidos.map(mini))] : [])])); }
   if (d.achievements) parts.push(...sec(`Conquistas · ${(d.achievements.won || []).length}/${d.achievements.total || 0}`, [el('div', { class: 'cantinho mini' }, [el('div', { class: 'cantinho-shelf' },
     (d.achievements.won || []).length ? d.achievements.won.filter(a => DECO_IMG[a.k]).map(a => { const x = decoEl(a.k); x.classList.add('trophy'); if (a.rare) x.classList.add('rare'); x.title = a.n; return x; }) : [el('span', { class: 'cantinho-empty', text: 'Nenhuma conquista ainda.' })])])]));
@@ -2542,7 +2543,7 @@ async function socialSettingsSheet() {
   const form = el('form', { class: 'form' }, [el('h3', { text: 'Amigos e privacidade' }),
     el('label', { text: 'Nome' }, [name]), el('label', { text: '@usuário' }, [handle]),
     el('div', { class: 'group', text: 'O que seus amigos veem na sua página' }),
-    ck('reading', 'O que estou lendo agora'), ck('shelf', 'Minha estante (lidos e potinho de mel)'), ck('achievements', 'Minhas conquistas'), ck('reviews', 'Minhas avaliações (também no feed)'),
+    ck('reading', 'O que estou lendo agora'), ck('shelf', 'Minha estante (lidos e Prateleira do coração)'), ck('achievements', 'Minhas conquistas'), ck('reviews', 'Minhas avaliações (também nas Novidades)'),
     el('div', { class: 'group', text: 'Fora dos amigos' }), ck('public', 'Avaliações públicas: qualquer pessoa do app pode ver em Descobrir e na sua página'),
     msg, el('button', { type: 'submit', class: 'primary', text: 'Salvar' }), el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close })]);
   form.addEventListener('submit', async (ev) => { ev.preventDefault();
@@ -2626,9 +2627,9 @@ function genreChart(inPeriod) {
   if (!rows.length) { panel.append(el('p', { class: 'hint', text: L.length ? 'Descobrindo o gênero dos seus livros…' : 'Termine alguns livros e o Bear mostra seus gêneros favoritos.' })); return panel; }
   const fav = rows[0], max = Math.max(...rows.map(r => r.n));
   panel.append(el('div', { class: 'gfav' }, [el('span', { class: 'gfav-e', text: genreEmoji(fav.g) }), el('div', {}, [el('small', { text: 'Seu gênero favorito' }), el('b', { text: fav.g }),
-    el('small', { text: `${fav.n} ${fav.n === 1 ? 'livro' : 'livros'}${fav.avg ? ` · média ${fav.avg.toFixed(1).replace('.', ',')} ★` : ''}` })])]));
+    el('small', { text: `${fav.n} ${fav.n === 1 ? 'livro' : 'livros'}${fav.avg ? ` · média ${pawTxt(fav.avg)}` : ''}` })])]));
   panel.append(el('div', { class: 'gbars' }, rows.map(r => { const f = el('i'); f.style.width = `${Math.round(r.n / max * 100)}%`;
-    return el('div', { class: 'grow' }, [el('span', { class: 'gname', text: `${genreEmoji(r.g)} ${r.g}` }), el('div', { class: 'gbar' }, [f]), el('span', { class: 'gnum', text: `${r.n}${r.avg ? ` · ${r.avg.toFixed(1).replace('.', ',')}★` : ''}` })]); })));
+    return el('div', { class: 'grow' }, [el('span', { class: 'gname', text: `${genreEmoji(r.g)} ${r.g}` }), el('div', { class: 'gbar' }, [f]), el('span', { class: 'gnum', text: `${r.n}${r.avg ? ` · ${pawTxt(r.avg)}` : ''}` })]); })));
   if (none) panel.append(el('p', { class: 'hint', text: `${none} ${none === 1 ? 'livro ainda sem gênero' : 'livros ainda sem gênero'}: abra o livro na Estante e toque em “Gênero”.` }));
   return panel;
 }
@@ -2686,7 +2687,7 @@ function formatChips(obj, onChange) {
     onclick: () => { if (id === 'FISICO') delete obj.format; else obj.format = id; draw(); if (onChange) onChange(); } })));
   draw(); return box;
 }
-const LIB_LABEL = { QUERO: 'Quero ler', LENDO: 'Lendo', HIBERNANDO: 'Hibernando', LIDO: 'Lido', ABANDONEI: 'Abandonei' };
+const LIB_LABEL = { QUERO: 'Quero ler', LENDO: 'Lendo', HIBERNANDO: 'Pausado', LIDO: 'Lido', ABANDONEI: 'Abandonei' };
 // Espelha os livros das metas na biblioteca (a meta manda nesses; avulsos ficam como estão).
 function libSync() {
   if (!Array.isArray(db.library)) db.library = [];
@@ -2746,7 +2747,7 @@ function setLibStatus(e, st) {
 }
 function putInGoal(e) {
   if (!db.goals.length) return toast('Crie um desafio primeiro, na aba Metas');
-  sheet('Colocar em qual desafio?', db.goals.map(g => [g.name, () => {
+  sheet('Colocar em qual meta?', db.goals.map(g => [g.name, () => {
     const pages = Number(e.totalPages) || 0;
     if (!pages) return askPages(e, (n) => { e.totalPages = n; save(); putInGoalWith(e, g); });
     putInGoalWith(e, g);
@@ -2800,7 +2801,7 @@ function libCard(e) {
   const dates = whenText(e.startedAt || null, e.finishedAt || null);
   const acts = [];
   if (g && gb) {
-    acts.push(el('p', { class: 'hint', text: `Este livro está no desafio “${g.name}”: o andamento é registrado por lá.` }));
+    acts.push(el('p', { class: 'hint', text: `Este livro está na meta “${g.name}”: o andamento é registrado por lá.` }));
     acts.push(btn(`Abrir o desafio “${g.name}”`, () => open(g), 'primary'));
     if (e.status === 'LIDO') acts.push(btn(e.review ? 'Editar avaliação' : 'Avaliar este livro', () => { current = g; rateForm(gb); }));
   } else {
@@ -3083,14 +3084,14 @@ function render() {
     $('#hero').className = 'hero';
     $('#big-n').textContent = `${dn}/${ls.length}`; $('#big-l').textContent = ls.length === 1 ? 'livro concluído' : 'livros concluídos';
     pill.textContent = left ? `faltam ${left} ${left === 1 ? 'dia' : 'dias'}` : 'prazo encerrado'; pill.className = 'pill';
-    $('#say').textContent = ls.length ? (dn === ls.length ? 'Desafio completo! 🎉' : `Até ${fmt(g.targetDate)}. Leia no seu ritmo.`) : 'Adicione os livros do desafio em Ajustes.';
+    $('#say').textContent = ls.length ? (dn === ls.length ? 'Meta completa! 🎉' : `Até ${fmt(g.targetDate)}. Leia no seu ritmo.`) : 'Adicione os livros do desafio em Ajustes.';
   }
 
   // Um só progresso: o do desafio (mesma base da meta diária; páginas lidas antes do início ficam fora).
   const pct = p.total ? p.read / p.total * 100 : 0;
   $('#fill').style.width = pct + '%';
   $('#hero-fill').style.width = pct + '%';
-  $('#hero-bar-label').textContent = `${p.read} de ${p.total} páginas do desafio (${pct.toFixed(1).replace('.', ',')}%)`;
+  $('#hero-bar-label').textContent = `${p.read} de ${p.total} páginas da meta (${pct.toFixed(1).replace('.', ',')}%)`;
   const kv = $('#kv'); kv.replaceChildren();
   const listed = g.books.filter(b => !b.before).sort((a, b) => a.order - b.order), doneBooks = listed.filter(b => b.status === 'CONCLUIDO').length, curIdx = p.cur ? listed.findIndex(b => b.id === p.cur.id) + 1 : 0;
   const rows = [
@@ -3117,7 +3118,7 @@ function render() {
     const act = (t, fn) => el('button',{class:'small',text:t,onclick:fn});
     const A = [];
     if (b.status !== 'LENDO' && b.status !== 'CONCLUIDO') A.push(act(b.status === 'PAUSADO' ? 'Acordar' : 'Iniciar', () => setStatus(b, 'LENDO')));
-    if (b.status === 'LENDO') A.push(act('Hibernar', () => setStatus(b, 'PAUSADO')));
+    if (b.status === 'LENDO') A.push(act('Pausar', () => setStatus(b, 'PAUSADO')));
     if (b.status === 'CONCLUIDO') A.push(act('Reabrir', () => setStatus(b, 'PAUSADO')));
     const M = [];
     if (b.status === 'LENDO') M.push(['Concluir', () => setStatus(b, 'CONCLUIDO')]);
@@ -3406,7 +3407,7 @@ $('#f-log').addEventListener('submit', (e) => {
   if (page > b.totalPages) return toast(`Esse livro tem ${b.totalPages} páginas`);
   if (page === now) return toast(`Você já está na página ${now}`);
   if (page < now) {
-    if (page < init) return toast(`Você começou o desafio na página ${init}. Use um número a partir dela.`);
+    if (page < init) return toast(`Você começou a meta na página ${init}. Use um número a partir dela.`);
     if (!confirm(`Você estava na página ${now}. Corrigir para ${page}?`)) return;
     let diff = now - page;
     const mine = g.logs.filter(l => l.bookId === b.id).sort((a, c) => (a.date < c.date ? 1 : -1));
@@ -3549,7 +3550,7 @@ $('#cal-prev').addEventListener('click', () => { cal.m--; if (cal.m < 1) { cal.m
 $('#cal-next').addEventListener('click', () => { cal.m++; if (cal.m > 12) { cal.m = 1; cal.y++; } render(); });
 $('#edit-week').addEventListener('click', () => { weekInputs($('#week2'), current.weights); $('#f-week').classList.toggle('hidden'); });
 $('#f-week').addEventListener('submit', (e) => { e.preventDefault(); const f = new FormData(e.target); const w = DOW.map((_, i) => wNum(f.get(`w${i}`))); if (!w.some(x => x > 0)) return toast('Pelo menos um dia precisa ter peso maior que zero'); current.weights = w; save(); e.target.classList.add('hidden'); toast('Pesos atualizados'); render(); });
-$('#del-goal').addEventListener('click', () => { if (confirm(`Excluir o desafio “${current.name}” com todos os livros e leituras?`)) { db.goals = db.goals.filter(x => x.id !== current.id); save(); renderGoals(); } });
+$('#del-goal').addEventListener('click', () => { if (confirm(`Excluir a meta “${current.name}” com todos os livros e leituras?`)) { db.goals = db.goals.filter(x => x.id !== current.id); save(); renderGoals(); } });
 
 // Abas da home: Hoje (o dia + números do ano), Metas, Toca do urso.
 const HTABS = { amigos: ['#social'], cal: ['#dash', '#home-stats'], hoje: ['#home-me', '#home-hero', '#home-now', '#home-today', '#home-reading', '#home-year', '#home-favs'], toca: ['#home-shelf'], metas: ['#home-ygoal'], desafios: ['#goal-list', '#new-goal', '#goal-form', '#seed-panel'], perfil: ['#profile-panel'] };
@@ -3559,7 +3560,7 @@ if (!HTABS[htab]) htab = 'hoje';
 function setHTab(t) {
   htab = t;
   try { localStorage.setItem('bear.htab', t); } catch {}
-  $('#home-h1').textContent = { amigos: 'Feed', cal: 'Meus números', hoje: 'Início', metas: 'Meta de livros', desafios: 'Desafios', toca: 'Estante', perfil: 'Perfil' }[t];
+  $('#home-h1').textContent = { amigos: 'Feed', cal: 'Meus números', hoje: 'Início', metas: 'Meta de livros', desafios: 'Metas com prazo', toca: 'Estante', perfil: 'Perfil' }[t];
   $('#home-sub').textContent = { hoje: new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }), metas: 'Quantos livros você quer ler no ano, sejam quais forem.', desafios: 'Listas de livros com prazo e páginas por dia.', toca: 'O que você leu, está lendo e quer ler.', perfil: 'Sua conta e seus dados.', cal: 'Seus números de leitura, contados pelo Bear.', amigos: 'Suas leituras e as dos seus amigos.' }[t];
   for (const [k, sels] of Object.entries(HTABS)) for (const s of sels) { const n = document.querySelector(s); if (n) n.hidden = k !== t; }
   $('#home-h1').hidden = $('#home-sub').hidden = t === 'hoje'; // a home tem o cabeçalho de perfil no lugar
@@ -3824,7 +3825,7 @@ function readingRow(e) {
     e.cover ? el('img', { class: 'cv', src: e.cover, alt: '' }) : el('span', { class: 'cv', text: e.title.charAt(0) }),
     el('div', {}, [
       el('div', { class: 'rr-top' }, [el('button', { type: 'button', class: 't link-t', text: e.title, onclick: () => libCard(e) }), ...(total ? [el('b', { class: 'rr-pct', text: `${pct}%` })] : [])]),
-      el('div', { class: 's', text: [e.author, g ? `desafio “${g.name}”` : null].filter(Boolean).join(' · ') }),
+      el('div', { class: 's', text: [e.author, g ? `meta “${g.name}”` : null].filter(Boolean).join(' · ') }),
       el('div', { class: 'bar' }, [fill]),
       el('div', { class: 's rr-info', text: !total ? 'Páginas não informadas' : pctMode ? `${pct}% · ${fmtLabel((gb || e).format)}` : `Página ${now} de ${total} · ${pct}%` }),
       form,
@@ -3952,7 +3953,7 @@ let gmode = 'meta';
 document.addEventListener('click', (ev) => { if (ev.target && ev.target.id === 'go-add-book') { setGMode('ajustes'); setTimeout(() => { const t = $('#f-book').elements.title; t.focus(); t.scrollIntoView({ block: 'center' }); }, 50); } });
 function setGMode(m) {
   gmode = m;
-  if (!$('#goal-cal-btn')) { const bt = el('button', { type: 'button', id: 'goal-cal-btn', class: 'dcal', 'data-tab': 'hoje', onclick: () => setGMode('cal') }, [el('b', { text: '📅 Calendário deste desafio' }), el('span', { text: 'O plano de páginas de cada dia ›' })]); $('#hero').after(bt); }
+  if (!$('#goal-cal-btn')) { const bt = el('button', { type: 'button', id: 'goal-cal-btn', class: 'dcal', 'data-tab': 'hoje', onclick: () => setGMode('cal') }, [el('b', { text: '📅 Calendário desta meta' }), el('span', { text: 'O plano de páginas de cada dia ›' })]); $('#hero').after(bt); }
   const calBtn = $('#goal-cal-btn'); if (calBtn) calBtn.style.display = isPlan(current) ? '' : 'none';
   const ew = $('#edit-week'); if (ew) ew.style.display = isPlan(current) ? '' : 'none';
   let pt = $('#toggle-plan'); if (!pt && ew) { pt = el('button', { class: 'small', id: 'toggle-plan', type: 'button', onclick: () => { current.plan = !isPlan(current); if (current.plan) current.weights = current.weights || [1,1,1,1,1,1,1]; save(); render(); setGMode('ajustes'); toast(current.plan ? 'Páginas por dia ativadas' : 'Páginas por dia desativadas'); } }); ew.parentNode.insertBefore(pt, ew); }
@@ -3961,7 +3962,7 @@ function setGMode(m) {
   document.querySelectorAll('#v-goal [data-tab]').forEach(n => { n.hidden = !vis(n); });
   $('#tabs').hidden = true;
   $('#nav').classList.toggle('hidden', m === 'cal' || $('#v-goal').classList.contains('hidden'));
-  $('#g-title').textContent = m === 'cal' ? 'Calendário dos desafios' : current ? (m === 'ajustes' ? `Ajustes · ${current.name}` : current.name) : '';
+  $('#g-title').textContent = m === 'cal' ? 'Calendário das metas' : current ? (m === 'ajustes' ? `Ajustes · ${current.name}` : current.name) : '';
   renderCalGoals();
   if (!$('#v-goal').classList.contains('hidden')) document.querySelectorAll('#htabs button').forEach(b => { const on = b.dataset.hgo === 'metas'; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
   if (!$('#v-goal').classList.contains('hidden')) window.scrollTo(0, 0);
@@ -3971,7 +3972,7 @@ function renderCalGoals() {
   let box = $('#cal-goals');
   if (!box) { box = el('div', { id: 'cal-goals', class: 'chips' }); const panel = document.querySelector('#v-goal [data-tab="calendario"]'); panel.parentNode.insertBefore(box, panel); }
   box.style.display = gmode !== 'cal' ? 'none' : '';
-  if (gmode === 'cal') { const back = el('button', { type: 'button', class: 'back-dash', text: '‹ Desafios', onclick: () => { renderGoals(); setHTab('desafios'); } }); box.replaceChildren(back, ...(db.goals.filter(isPlan).length > 1 ? db.goals.filter(isPlan).map(g => el('button', { type: 'button', class: current && g.id === current.id ? 'on' : '', text: g.name, onclick: () => { open(g); setGMode('cal'); } })) : [])); return; }
+  if (gmode === 'cal') { const back = el('button', { type: 'button', class: 'back-dash', text: '‹ Metas', onclick: () => { renderGoals(); setHTab('desafios'); } }); box.replaceChildren(back, ...(db.goals.filter(isPlan).length > 1 ? db.goals.filter(isPlan).map(g => el('button', { type: 'button', class: current && g.id === current.id ? 'on' : '', text: g.name, onclick: () => { open(g); setGMode('cal'); } })) : [])); return; }
   box.replaceChildren(...db.goals.map(g => el('button', { type: 'button', class: current && g.id === current.id ? 'on' : '', text: g.name, onclick: () => { open(g); setGMode('cal'); } })));
 }
 var calAsked = false;
@@ -4252,8 +4253,8 @@ const inGoalQueue = (e, g) => !!e.link && e.link.goalId === g.id && e.status ===
 function goalQueue(g) { const ord = (e) => { const b = g.books.find((x) => x.id === e.link.bookId); return b ? b.order : 999; }; return lib().filter((e) => inGoalQueue(e, g)).sort((a, b) => ord(a) - ord(b)); }
 function rules() {
   const R = { fav: ['Favoritos (nota 5)', (e) => isFav(e)], lendo: ['Lendo', (e) => e.status === 'LENDO'], quero: ['Quero ler', (e) => e.status === 'QUERO'], lidos: ['Lidos', (e) => e.status === 'LIDO'],
-    pausados: ['Pausados (hibernando)', (e) => e.status === 'HIBERNANDO'], aband: ['Abandonados', (e) => e.status === 'ABANDONEI'], nota4: ['Nota 4 ou mais', (e) => nota(e) >= 4] };
-  for (const g of activeGoals()) R['d:' + g.id] = [`Desafio: ${g.name}`, (e) => inGoalQueue(e, g)];
+    pausados: ['Pausados', (e) => e.status === 'HIBERNANDO'], aband: ['Abandonados', (e) => e.status === 'ABANDONEI'], nota4: ['Nota 4 ou mais', (e) => nota(e) >= 4] };
+  for (const g of activeGoals()) R['d:' + g.id] = [`Meta: ${g.name}`, (e) => inGoalQueue(e, g)];
   for (const g of [...new Set(lib().map((e) => e.genre).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))) R['g:' + g] = [`Gênero: ${g}`, (e) => e.genre === g];
   return R;
 }
@@ -4375,7 +4376,7 @@ function shelfRow(r, si, sh, x0, y0, x1, y1) {
   r.append(row);
 }
 function openBook(id) { const e = byId(id); if (e) openBookPage(e); }
-const slItem = (e) => `<button type="button" class="sl-item" data-id="${esc(e.id)}">${cvh(e.title, e.cover, '', 'font-size:.4rem')}<span class="sl-info"><b>${esc(e.title)}</b><small>${esc([e.author, e.genre].filter(Boolean).join(' · '))}</small><em>${nota(e) ? '★'.repeat(Math.floor(nota(e))) + (nota(e) % 1 ? '½' : '') : ''}</em></span><i>›</i></button>`;
+const slItem = (e) => `<button type="button" class="sl-item" data-id="${esc(e.id)}">${cvh(e.title, e.cover, '', 'font-size:.4rem')}<span class="sl-info"><b>${esc(e.title)}</b><small>${esc([e.author, e.genre].filter(Boolean).join(' · '))}</small><em>${nota(e) ? pawTxt(nota(e)) : ''}</em></span><i>›</i></button>`;
 // prateleira expandida: todos os livros em lista
 function openShelfList(si, from) {
   const E = curEstante(), sh = E.cfg.shelves[si], v = $('#shelflist'); if (!sh) return;
@@ -4386,7 +4387,7 @@ function openShelfList(si, from) {
       <div class="sl-top"><button type="button" class="sl-back">‹ ${from ? from.label : 'Voltar'}</button><b>${esc(sh.name)}</b><span>${plural(list.length, 'livro', 'livros')}</span></div>
       <div class="sl-tools"><button type="button" class="sl-view" aria-label="${T().slView === 'grade' ? 'Ver em lista' : 'Ver em grade'}">${T().slView === 'grade' ? '☰ Lista' : '▦ Grade'}</button><select class="sl-sort" aria-label="Ordenar">${Object.entries(SORTS).filter(([k]) => k !== 'manual' || sh.type === 'manual').map(([k, n]) => `<option value="${k}" ${sortOf(sh, E) === k ? 'selected' : ''}>${n}</option>`).join('')}</select><button type="button" class="pri">+ Adicionar livro</button></div>
       ${!list.length ? '<p class="sl-empty">Nenhum livro aqui ainda.</p>' : T().slView === 'grade'
-        ? `<div class="sl-grid">${list.map((e) => `<button type="button" class="sl-item sl-gi" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'sl-gcv')}<b>${esc(e.title)}</b>${nota(e) ? `<em>${'★'.repeat(Math.floor(nota(e)))}</em>` : ''}</button>`).join('')}</div>`
+        ? `<div class="sl-grid">${list.map((e) => `<button type="button" class="sl-item sl-gi" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'sl-gcv')}<b>${esc(e.title)}</b>${nota(e) ? `<em>${pawTxt(nota(e))}</em>` : ''}</button>`).join('')}</div>`
         : `<div class="sl-list">${list.map(slItem).join('')}</div>`}`;
     paintCv(v);
     v.querySelector('.sl-back').addEventListener('click', back);
@@ -4414,7 +4415,7 @@ function openCases() {
   const draw = () => {
     const all = estantes();
     // prateleiras extras de “Minha estante”: desafios ativos, pausados e abandonados (só aparecem quando têm livros)
-    const extras = [...activeGoals().map((g) => ['d:' + g.id, `Desafio · ${g.name}`, goalQueue(g)]), ['pa', 'Pausados', sortList(lib().filter((e) => e.status === 'HIBERNANDO'), 'recentes')], ['ab', 'Abandonados', sortList(lib().filter((e) => e.status === 'ABANDONEI'), 'recentes')]].filter((x) => x[2].length);
+    const extras = [...activeGoals().map((g) => ['d:' + g.id, `Meta · ${g.name}`, goalQueue(g)]), ['pa', 'Pausados', sortList(lib().filter((e) => e.status === 'HIBERNANDO'), 'recentes')], ['ab', 'Abandonados', sortList(lib().filter((e) => e.status === 'ABANDONEI'), 'recentes')]].filter((x) => x[2].length);
     v.querySelector('.sl-body').innerHTML = `
       <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Estantes</b><span>${plural(lib().length, 'livro', 'livros')}</span></div>
       <div class="cs-bar"><button type="button" id="cs-add" class="pri">+ Adicionar livro</button><button type="button" id="cs-new">+ Nova estante</button><button type="button" id="cs-find" aria-label="Procurar um livro nas suas estantes">${IC('procurar', 'ico-b')}Procurar</button></div>
@@ -4615,7 +4616,7 @@ function editLeitura() {
   };
   const draw = () => {
     const pg = mode === 'pg' ? val : Math.round(val / 100 * total), p = total ? Math.min(100, Math.round(pg / total * 100)) : 0;
-    ed.querySelector('.ed-body').innerHTML = `<div class="lt-head">${cvh(e.title, e.cover, 'lt-cv')}<div class="lt-hd"><b>${esc(e.title)}</b><small>${esc(e.author || (g ? `desafio “${g.name}”` : ''))}</small><i class="mt-bar"><i style="width:${p}%"></i></i><em>${total ? `pág. ${pg} de ${total} · ${p}%` : 'total de páginas não informado'}</em></div><button type="button" class="lt-swapi" id="lt-swap" aria-label="Trocar leitura" title="Trocar leitura">${IC('trocar')}<small>Trocar</small></button></div>
+    ed.querySelector('.ed-body').innerHTML = `<div class="lt-head">${cvh(e.title, e.cover, 'lt-cv')}<div class="lt-hd"><b>${esc(e.title)}</b><small>${esc(e.author || (g ? `meta “${g.name}”` : ''))}</small><i class="mt-bar"><i style="width:${p}%"></i></i><em>${total ? `pág. ${pg} de ${total} · ${p}%` : 'total de páginas não informado'}</em></div><button type="button" class="lt-swapi" id="lt-swap" aria-label="Trocar leitura" title="Trocar leitura">${IC('trocar')}<small>Trocar</small></button></div>
       <span class="lt-q">Onde você parou?</span>
       <div class="lt-input"><div class="lt-field"><select id="lt-unit" aria-label="Unidade"><option value="pg" ${mode === 'pg' ? 'selected' : ''}>Página</option><option value="pct" ${mode === 'pct' ? 'selected' : ''} ${total ? '' : 'disabled'}>%</option></select><input id="lt-val" type="number" inputmode="numeric" min="0" value="${val}" aria-label="${mode === 'pg' ? 'Página' : 'Porcentagem'}"></div></div>
       <div class="lt-quick">${(mode === 'pg' ? [10, 25, 50] : [5, 10, 25]).map((n) => `<button type="button" data-q="${n}">+${n}${mode === 'pg' ? '' : '%'}</button>`).join('')}</div>
@@ -4637,7 +4638,7 @@ function editLeitura() {
     });
     $('#lt-ab', ed).addEventListener('click', () => {
       closeEd();
-      if (gb) return toast(`Este livro está no desafio “${g.name}”. Tire-o do desafio para abandonar.`);
+      if (gb) return toast(`Este livro está na meta “${g.name}”. Tire-o da meta para abandonar.`);
       setLibStatus(e, 'ABANDONEI'); toast(`“${e.title}” foi para o baú da biblioteca`);
     });
     $('#lt-swap', ed).addEventListener('click', () => { closeEd(); swapReading(); });
@@ -4837,7 +4838,7 @@ function openBookPage(e, tab = 'sobre') {
     const info = readingInfo(e), r = reviewOfLib(e) || {}, m = e.meta || null, pct = info.total ? Math.min(100, Math.round(info.now / info.total * 100)) : 0;
     const days = e.startedAt ? Math.max(1, between(e.startedAt, e.finishedAt || todayISO()) + 1) : 0, ser = bookSeries(e);
     const foc = (db.focus || []).filter((f) => f.libId === e.id), focMin = foc.reduce((a, f) => a + (f.minutes || 0), 0);
-    const tabs = e._preview ? [['sobre', 'Sobre'], ['comunidade', 'Comunidade']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['trechos', `Trechos${(e.quotes || []).length ? ' · ' + e.quotes.length : ''}`], ['comunidade', 'Amigos']];
+    const tabs = e._preview ? [['sobre', 'Sobre'], ['comunidade', 'Amigos']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['trechos', `Trechos${(e.quotes || []).length ? ' · ' + e.quotes.length : ''}`], ['comunidade', 'Amigos']];
     let body = '';
     if (tab === 'sobre') {
       const rows = [['Páginas', info.total || e.totalPages], ['Gênero', e.genre || (m && m.cat)], ['Publicação', m && m.pub], ['Publicado em', m && m.date && (m.date.length >= 10 ? fmt(m.date) : m.date)], ['Idioma', m && m.lang && (LANGS[m.lang] || m.lang)], ['ISBN', e.isbn]].filter((x) => x[1]);
@@ -4849,9 +4850,9 @@ function openBookPage(e, tab = 'sobre') {
       body = `<section class="bp-card"><div class="bp-row"><span>Status</span><select class="bp-st" aria-label="Status">${['QUERO', 'LENDO', 'HIBERNANDO', 'LIDO', 'ABANDONEI'].map((st) => `<option value="${st}" ${e.status === st ? 'selected' : ''}>${LIB_LABEL[st]}</option>`).join('')}</select></div>
         ${info.total ? `<div class="rc-prog"><i class="mt-bar"><i style="width:${pct}%"></i></i><em>${pct}%</em></div><small class="bp-small">página ${info.now} de ${info.total}</small>` : ''}
         <div class="bp-stats">${[[e.startedAt ? fmt(e.startedAt) : '—', 'início'], [e.finishedAt ? fmt(e.finishedAt) : '—', 'fim'], [days ? plural(days, 'dia', 'dias') : '—', 'de leitura'], [ser.length ? Math.round(ser[ser.length - 1].acc / ser.length) : '—', 'pág. por dia lido'], [foc.length ? `${focMin} min` : '—', `em ${plural(foc.length, 'foco', 'focos')}`]].map(([a, b]) => `<div><b>${a}</b><small>${b}</small></div>`).join('')}</div>
-        ${canReadNow(e) ? `<button type="button" class="bp-btn pri" data-a="now">Ler agora</button>` : e.status === 'LENDO' ? `<button type="button" class="bp-btn pri" data-a="upd">${IC('atualizar', 'ico-b')}Atualizar leitura</button>` : ''}</section>
+        ${e.status === 'QUERO' ? `<button type="button" class="bp-btn" data-a="next">${T().nextId === e.id ? 'Desmarcar como próxima leitura' : 'Marcar como próxima leitura'}</button>` : ''}${canReadNow(e) ? `<button type="button" class="bp-btn pri" data-a="now">Ler agora</button>` : e.status === 'LENDO' ? `<button type="button" class="bp-btn pri" data-a="upd">${IC('atualizar', 'ico-b')}Atualizar leitura</button>` : ''}</section>
         <section class="bp-card"><div class="bp-row"><span>Minha avaliação</span><button type="button" class="bp-link" data-a="rate">${r.paws ? 'Editar' : 'Avaliar'}</button></div>
-        ${r.paws ? `<div class="bp-stars">${'★'.repeat(Math.floor(r.paws))}${r.paws % 1 ? '½' : ''} <small>${String(r.paws).replace('.', ',')}</small></div>` : '<small class="bp-small">Ainda sem avaliação.</small>'}
+        ${r.paws ? `<div class="bp-stars">${pawTxt(r.paws)} <small>${String(r.paws).replace('.', ',')}</small></div>` : '<small class="bp-small">Ainda sem avaliação.</small>'}
         ${r.frase ? `<q class="bp-q">${esc(String(r.frase).replace(/^["“]|["”]$/g, ''))}</q>` : ''}</section>
         ${ser.length ? `<section class="bp-card"><div class="bp-row"><span>Páginas por dia</span></div>${chartSvg(ser, info.total)}</section>` : ''}
         <button type="button" class="bp-btn" data-a="menu">Mais opções do livro</button>`;
@@ -4860,7 +4861,7 @@ function openBookPage(e, tab = 'sobre') {
         : '<section class="bp-card"><p class="bp-load">Ainda não há leituras registradas deste livro.</p></section>';
     } else if (tab === 'trechos') {
       const qs = [...(e.quotes || [])].map((q, i) => ({ ...q, i })).sort((a, b) => (a.p || 99999) - (b.p || 99999));
-      body = `${e.note ? `<section class="bp-card"><div class="bp-row"><span>Onde parei</span><button type="button" class="bp-link" data-a="note">Editar</button></div><p class="bq-note">${esc(e.note)}</p></section>` : ''}
+      body = `${e.note ? `<section class="bp-card"><div class="bp-row"><span>Anotação</span><button type="button" class="bp-link" data-a="note">Editar</button></div><p class="bq-note">${esc(e.note)}</p></section>` : ''}
         <section class="bp-card">${qs.length ? qs.map((q) => `<div class="bq"><span class="bq-p">${q.p ? `pág.<br>${q.p}` : '—'}</span><q>${esc(q.t)}</q><button type="button" class="bq-x" data-q="${q.i}" aria-label="Apagar trecho">×</button></div>`).join('') : '<p class="bp-load">Guarde aqui as frases que te marcaram neste livro.</p>'}
         <button type="button" class="bp-btn pri" data-a="quote">+ Salvar trecho</button></section>
         ${bookMarkersHTML(e)}
@@ -4868,7 +4869,7 @@ function openBookPage(e, tab = 'sobre') {
     } else if (tab === 'comunidade') {
       const same = (SOC.feed || []).filter((p) => !p.mine && normT(p.title) === normT(e.title));
       body = `<section class="bp-card">${same.length ? same.map((p) => { const rev = isReview(p), who = (p.user && p.user.displayName) || 'Alguém', h = (p.user && p.user.handle) || '';
-          return `<div class="bf"><span class="av sm" data-avh="${esc(h)}" style="background:${friendColor(h)}">${esc(initial(who))}</span><div><p><b>${esc(who)}</b> ${rev ? `avaliou ${'★'.repeat(Math.floor(p.paws || 0))}` : p.kind === 'STARTED' ? 'começou a ler' : p.kind === 'FINISHED' ? 'terminou' : `está em ${Number(p.pct) || 0}%`}</p>${rev && p.text && !p.spoiler ? `<q>${esc(p.text)}</q>` : ''}<small>${esc(relTime(p.updatedAt))}</small></div></div>`; }).join('')
+          return `<div class="bf"><span class="av sm" data-avh="${esc(h)}" style="background:${friendColor(h)}">${esc(initial(who))}</span><div><p><b>${esc(who)}</b> ${rev ? `avaliou com ${pawTxt(p.paws || 0)}` : p.kind === 'STARTED' ? 'começou a ler' : p.kind === 'FINISHED' ? 'terminou' : `está em ${Number(p.pct) || 0}%`}</p>${rev && p.text && !p.spoiler ? `<q>${esc(p.text)}</q>` : ''}<small>${esc(relTime(p.updatedAt))}</small></div></div>`; }).join('')
           : '<p class="bp-load">Nenhum amigo leu ou está lendo este livro ainda.</p>'}
         ${e.status === 'LENDO' || e.status === 'QUERO' ? '<button type="button" class="bp-btn pri" data-a="buddy">Convidar alguém para ler junto</button>' : ''}</section>`;
     } else {
@@ -4876,7 +4877,7 @@ function openBookPage(e, tab = 'sobre') {
     }
     v.querySelector('.sl-body').innerHTML = `
       <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b></b>${e._preview ? '<span></span>' : '<button type="button" class="es-dots" data-a="menu" aria-label="Opções do livro">•••</button>'}</div>
-      <header class="bp-hero">${cvh(e.title, e.cover, 'bp-cv')}<div class="bp-ht"><h2>${esc(e.title)}</h2><small>${esc(e.author || '')}</small><div class="bp-chips">${e.status ? `<span class="bp-chip">${esc(LIB_LABEL[e.status] || '')}</span>` : '<span class="bp-chip">Catálogo</span>'}${info.total ? `<span class="bp-chip">${info.total} pág.</span>` : ''}${r.paws ? `<span class="bp-chip gold">★ ${String(r.paws).replace('.', ',')}</span>` : ''}</div></div></header>
+      <header class="bp-hero">${cvh(e.title, e.cover, 'bp-cv')}<div class="bp-ht"><h2>${esc(e.title)}</h2><small>${esc(e.author || '')}</small><div class="bp-chips">${e.status ? `<span class="bp-chip">${esc(LIB_LABEL[e.status] || '')}</span>` : '<span class="bp-chip">Catálogo</span>'}${info.total ? `<span class="bp-chip">${info.total} pág.</span>` : ''}${r.paws ? `<span class="bp-chip gold">${pawTxt(r.paws)}</span>` : ''}</div></div></header>
       <nav class="bp-tabs">${tabs.map(([k, n]) => `<button type="button" data-t="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}</nav>
       ${body}`;
     paintCv(v);
@@ -4888,6 +4889,7 @@ function openBookPage(e, tab = 'sobre') {
       const a = b.dataset.a;
       if (a === 'upd') { setCurrent(e.id); editLeitura(); const ed = $('#editor'), wait = () => { if (!ed.hidden) return setTimeout(wait, 250); if (!v.hidden) draw(); }; setTimeout(wait, 250); }
       if (a === 'now') { if (readNow(e)) draw(); }
+      if (a === 'next') { setNext(e); draw(); }
       if (a === 'rate') rateForm(e, { logs: [] }, () => { refresh(); draw(); });
       if (a === 'more' || a === 'menu') bookMenu(e);
       if (a === 'quote') saveQuote(e);
@@ -4993,7 +4995,7 @@ function openNotif() {
 function openNovidades(focus, host) {
   const v = host || $('#shelflist'); let tab = 'amigas', posts = null, err = null, token = 0;
   const open = new Set(focus ? [focus] : []), seen = new Set(), threads = {};
-  const stars = (p) => (p ? ' ' + '★'.repeat(Math.floor(p)) + (p % 1 ? '½' : '') : '');
+  const stars = (p) => (p ? ' ' + pawTxt(p) : '');
   const postOf = (n) => posts.find((x) => String(x.id) === n.closest('.fd-post').dataset.id);
   async function load() {
     const my = ++token; posts = null; err = null; draw();
@@ -5462,7 +5464,7 @@ function drawLista() { // Lista “clean”: perfil, números, leitura atual, me
   const stats = [['pg', 'Paginômetro', pagesRead.toLocaleString('pt-BR'), 'páginas'], ['LIDO', 'Lidos', cnt('LIDO'), 'livros'], ['LENDO', 'Lendo', cnt('LENDO'), 'livros'], ['QUERO', 'Quero ler', cnt('QUERO'), 'livros'], ['ABANDONEI', 'Abandonados', cnt('ABANDONEI'), 'livros'], ['rev', 'Avaliações', reviews, 'livros']];
   const items = [
     ['catalogo', 'Catálogo', () => openCatalog()], ['estantes', 'Estantes', () => screen('toca')], ['novidades', 'Novidades', () => openNovidades(), novo ? '•' : ''],
-    ['notificacoes', 'Notificações', openNotif, n ? String(n > 9 ? '9+' : n) : ''], ['desafios', 'Desafios', () => screen('desafios')], ['numeros', 'Números', () => screen('cal')],
+    ['notificacoes', 'Notificações', openNotif, n ? String(n > 9 ? '9+' : n) : ''], ['desafios', 'Metas', () => screen('desafios')], ['numeros', 'Números', () => screen('cal')],
     ['conquistas', 'Conquistas', openAchList], ['foco', 'Foco', startFocus], ['perfil', 'Perfil', () => screen('perfil')], ['toca', 'Toca', null],
   ];
   const pctY = Y0.target ? Math.min(100, Math.round(Y0.done / Y0.target * 100)) : 0;
@@ -5511,7 +5513,7 @@ function carPick() { // { E, ei, sh, si } da prateleira escolhida, ou null
   const si = Math.min(Number(c.shelf) || 0, all[ei].cfg.shelves.length - 1), sh = all[ei].cfg.shelves[si];
   return sh ? { E: all[ei], ei, sh, si } : null;
 }
-const starsOf = (e) => { const n = nota(e); return n ? '★'.repeat(Math.floor(n)) + (n % 1 ? '½' : '') : ''; };
+const starsOf = (e) => { const n = nota(e); return n ? pawTxt(n) : ''; };
 const carInfo = (e) => (e ? `<b>${esc(e.title)}</b><small>${esc([e.author, starsOf(e)].filter(Boolean).join(' · ') || 'toque para abrir a ficha')}</small>` : '');
 function carHTML() {
   const P = carPick();
@@ -5826,7 +5828,7 @@ function drawTab() {
       <section class="lx-card"><div class="lx-head"><b>${MN('meta', 'ico-h')}Meta de ${Y0.y}</b><button type="button" class="lx-link" id="v3-meta">${Y0.target ? 'Editar ›' : 'Definir ›'}</button></div>
         ${Y0.target ? `<div class="lx-goal"><div class="lx-gn"><b>${Y0.done}</b><span>de ${Y0.target} livros</span></div><div class="lx-gb"><i class="mt-bar"><i style="width:${pctY}%"></i></i><small>${Y0.done >= Y0.target ? 'Meta batida!' : `${pctY}% · ${Y0.diff >= 0 ? 'no ritmo' : `${-Y0.diff} atrás do ritmo`} · ${esc(Y0.paceTxt)}`}</small></div></div>` : `<p class="lx-empty">Quantos livros você quer ler em ${Y0.y}?</p>`}</section>
       <div class="lx-stats v3-stats">${[['Páginas em ' + Y0.y, pagesYear.toLocaleString('pt-BR')], ['Livros em ' + Y0.y, Y0.done], ['Dias seguidos', streakNow()], ['Lidos no total', cnt('LIDO')]].map(([t, v]) => `<div class="lx-stat"><small>${t}</small><b>${v}</b></div>`).join('')}</div>
-      <section class="lx-card"><div class="lx-head"><b>${MN('desafios', 'ico-h')}Desafios</b><button type="button" class="lx-link" id="v3-goals">${goals.length ? 'Ver ›' : 'Criar ›'}</button></div>
+      <section class="lx-card"><div class="lx-head"><b>${MN('desafios', 'ico-h')}Metas com prazo</b><button type="button" class="lx-link" id="v3-goals">${goals.length ? 'Ver ›' : 'Criar ›'}</button></div>
         ${goals.length ? goals.slice(0, 3).map((g) => { const tot = g.books.reduce((a, b) => a + (b.totalPages || 0), 0), done = g.books.reduce((a, b) => a + pagesOf(g, b), 0), p = tot ? Math.round((done / tot) * 100) : 0;
           return `<button type="button" class="v3-goal" data-g="${esc(g.id)}"><b>${esc(g.name)}</b><small>${plural(g.books.length, 'livro', 'livros')}${g.targetDate ? ` · até ${fmt(g.targetDate)}` : ''}</small><span class="rc-prog"><i class="mt-bar"><i style="width:${p}%"></i></i><em>${p}%</em></span></button>`; }).join('')
           : '<p class="lx-empty">Listas de livros com prazo e páginas por dia.</p>'}</section>
@@ -5939,7 +5941,7 @@ function bookMenu(e) {
   const R = reading(), isCur = R && R.e.id === e.id, rv = reviewOfLib(e);
   const items = [
     isCur && ['comentar', 'Salvar trecho', '', () => saveQuote(e)],
-    isCur && ['editar', 'Onde parei', e.note ? ' · ' + esc(e.note.slice(0, 24)) : '', () => editNote(e)],
+    isCur && ['editar', 'Anotação', e.note ? ' · ' + esc(e.note.slice(0, 24)) : '', () => editNote(e)],
     isCur && ['trocar', 'Trocar leitura', '', () => swapReading()],
     0,
     ['meta', 'Mudar status', ' · ' + esc(LIB_LABEL[e.status] || ''), () => statusMenu(e)],
@@ -5966,7 +5968,7 @@ function statusMenu(e) {
 }
 function editNote(e) {
   const ed = $('#editor'); ed.classList.add('compact');
-  ed.querySelector('.ed-body').innerHTML = `<h3>Onde parei</h3><small class="hint">Uma anotação só sua, para lembrar onde você estava na história.</small>
+  ed.querySelector('.ed-body').innerHTML = `<h3>Anotação</h3><small class="hint">Uma anotação só sua, para lembrar onde você estava na história.</small>
     <textarea id="nt-txt" maxlength="200" rows="3" placeholder="Ex.: cap. 14, logo depois do julgamento">${esc(e.note || '')}</textarea>
     <div class="row end"><button type="button" id="nt-cancel">Cancelar</button><button type="button" class="pri" id="nt-save">Salvar</button></div>`;
   ed.hidden = false; $('#nt-txt', ed).focus();
@@ -6152,7 +6154,7 @@ editLeitura = function () {
   let pct = byPct(R.gb || R.e), page = R.now;
   const draw = () => {
     const p = Math.round((page / R.total) * 100), d = page - R.now;
-    ed.querySelector('.ed-body').innerHTML = `<button type="button" class="up-x" id="up-cancel" aria-label="Fechar">×</button><h3 class="up-h">Onde você parou?</h3><p class="up-s">${esc(R.e.title)} · antes: pág. ${R.now}</p>
+    ed.querySelector('.ed-body').innerHTML = `<button type="button" class="up-x" id="up-cancel" aria-label="Fechar">×</button><h3 class="up-h">Atualizar leitura</h3><p class="up-s">${esc(R.e.title)} · antes: pág. ${R.now}</p>
       <div class="up-seg"><button type="button" data-m="pg" class="${pct ? '' : 'on'}">Página</button><button type="button" data-m="pct" class="${pct ? 'on' : ''}">%</button></div>
       <div class="up-big"><input id="up-n" type="number" style="width:${String(pct ? 100 : R.total).length + 0.9}ch" inputmode="numeric" min="0" max="${pct ? 100 : R.total}" value="${pct ? p : page}" aria-label="${pct ? 'Porcentagem' : 'Página'}"><span>${pct ? '%' : `de ${R.total}`}</span></div>
       <input id="up-r" class="up-range" type="range" min="0" max="${R.total}" value="${page}" style="--p:${p}%" aria-label="Arraste até onde você parou">
@@ -6359,7 +6361,7 @@ bookMenu = function (e) {
   const R = reading(), isCur = R && R.e.id === e.id, rv = reviewOfLib(e);
   const items = [
     isCur && ['comentar', 'Salvar trecho', '', () => saveQuote(e)],
-    isCur && ['editar', 'Onde parei', e.note ? ' · ' + esc(e.note.slice(0, 24)) : '', () => editNote(e)],
+    isCur && ['editar', 'Anotação', e.note ? ' · ' + esc(e.note.slice(0, 24)) : '', () => editNote(e)],
     isCur && ['trocar', 'Trocar leitura', '', () => swapReading()],
     e.status === 'LIDO' && ['trocar', 'Iniciar releitura', '', () => startReread(e)],
     0,
@@ -6434,7 +6436,7 @@ function drawProgresso(box) {
     ${calHTML()}</div><div class="v3-colB">
     <div class="pg-grid">${stat(pgY.toLocaleString('pt-BR'), `páginas em ${y}`, yDays.length ? `${Math.round(pgY / yDays.length)} por dia lido` : '')}${stat(fin.length, `livros em ${y}`, avgDays.length ? `${Math.round(avgDays.reduce((a, b) => a + b, 0) / avgDays.length)} dias por livro` : '')}${stat(streakNow(), 'dias seguidos', `recorde: ${bestStreak()}`)}${stat(focMin >= 60 ? `${Math.floor(focMin / 60)}h${String(focMin % 60).padStart(2, '0')}` : `${focMin} min`, 'em foco', `${(db.focus || []).filter((f) => String(f.date).startsWith(y)).length} sessões`)}</div>
     ${monthsBars(y)}
-    <section class="v3c"><div class="v3-sh" style="margin:0 0 .5rem"><b>Desafios</b><button type="button" class="v3-link" id="pg-goals">${goals.length ? 'Ver todos ›' : 'Criar ›'}</button></div>
+    <section class="v3c"><div class="v3-sh" style="margin:0 0 .5rem"><b>Metas com prazo</b><button type="button" class="v3-link" id="pg-goals">${goals.length ? 'Ver todos ›' : 'Criar ›'}</button></div>
       ${goals.length ? goals.slice(0, 3).map((g) => { const tot = g.books.reduce((a, b) => a + (b.totalPages || 0), 0), dn = g.books.reduce((a, b) => a + pagesOf(g, b), 0), p = tot ? Math.round((dn / tot) * 100) : 0;
         return `<button type="button" class="v3-goal" data-g="${esc(g.id)}"><span class="pg-gh"><b>${esc(g.name)}</b><em>${p}%</em></span><small>${plural(g.books.length, 'livro', 'livros')}${g.targetDate ? ` · até ${fmt(g.targetDate)}` : ''}</small><i class="v3-bar"><i style="width:${p}%"></i></i></button>`; }).join('')
         : '<p class="v3-empty" style="margin:0">Monte uma lista de livros com prazo e o app calcula as páginas por dia.</p>'}</section>
@@ -6540,7 +6542,7 @@ function drawPerfil(box) {
     <section class="lx-card"><div class="lx-head"><b>${MN('conquistas', 'ico-h')}Conquistas · ${won.length} de ${st.length}</b><button type="button" class="lx-link" id="v3-achs">Ver todas ›</button></div>
       ${show.length ? `<div class="v3-shelf">${show.map((a) => `<span class="v3-trophy${a.rare ? ' rare' : ''}" title="${esc(a.name)}"><img src="${DECO_IMG[a.reward]}" alt="${esc(a.name)}"></span>`).join('')}</div>` : bearEmpty('bear_running_books', 'Nenhuma conquista ainda', 'Leia, registre e avalie para ganhar as primeiras.')}</section>
     <section class="lx-card"><div class="lx-head"><b>${IC('curtir', 'ico-h')}Minhas avaliações · ${revs.length}</b>${revs.length ? '<button type="button" class="lx-link" id="pf-revs">Ver todas ›</button>' : ''}</div>
-      ${revs.length ? `<div class="v3-heart">${sortList(revs, 'nota').slice(0, 10).map((e) => `<button type="button" class="v3-hb" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'pf-cv')}<small class="pf-paw">${'★'.repeat(Math.floor(reviewOfLib(e).paws))}</small></button>`).join('')}</div>` : '<p class="v3-empty" style="margin:0">Ao terminar um livro, dê sua nota e escreva o que achou.</p>'}</section>
+      ${revs.length ? `<div class="v3-heart">${sortList(revs, 'nota').slice(0, 10).map((e) => `<button type="button" class="v3-hb" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'pf-cv')}<small class="pf-paw">${pawTxt(reviewOfLib(e).paws)}</small></button>`).join('')}</div>` : '<p class="v3-empty" style="margin:0">Ao terminar um livro, dê sua nota e escreva o que achou.</p>'}</section>
     <div class="pf-group">Amigos</div>
     ${row('pf-friends', MN('perfil', 'ico-a'), 'Amigos', on ? `${plural(SOC.fr.friends.length, 'amigo', 'amigos')}${SOC.fr.incoming.length ? ` · ${plural(SOC.fr.incoming.length, 'pedido novo', 'pedidos novos')}` : ''}` : 'Entre na conta para ter amigos')}
     ${on ? row('pf-add', IC('procurar', 'ico-a'), 'Adicionar amigo', 'Procure pelo @usuário') : ''}
@@ -6793,8 +6795,8 @@ function extraPostHTML(p) {
   const ms = p.members || [], names = ms.map((m) => String(m.displayName).split(' ')[0]);
   const first = ms.filter((m) => m.days).sort((a, b) => a.days - b.days)[0];
   return `<article class="fd-post fd-bud" data-id="${esc(p.id)}"><header><span class="fd-budic">${IC('curtir', 'ico-b')}</span><div><p><b>${esc(names.slice(0, -1).join(', '))}${names.length > 1 ? ' e ' : ''}${esc(names[names.length - 1] || '')}</b> terminaram <b>${esc(p.title)}</b> em leitura conjunta</p><small>${esc(relTime(p.updatedAt))}</small></div></header>
-    ${p.avgPaws != null ? `<div class="fd-avg"><b>★ ${String(p.avgPaws).replace('.', ',')}</b><small>média do grupo</small></div>` : ''}
-    <div class="fd-mem">${ms.map((m) => `<div><span class="av sm" data-avh="${esc(m.handle)}" style="background:${friendColor(m.handle)}">${esc(initial(m.displayName))}</span><span><b>${esc(String(m.displayName).split(' ')[0])}</b> ${m.paws != null ? '★'.repeat(Math.floor(m.paws)) : 'sem nota'}${m.days ? ` · ${m.days} ${m.days === 1 ? 'dia' : 'dias'}` : ''}${m.phrase ? `<q>${esc(m.phrase)}</q>` : ''}</span></div>`).join('')}</div>
+    ${p.avgPaws != null ? `<div class="fd-avg"><b>${pawTxt(p.avgPaws)}</b><small>média do grupo</small></div>` : ''}
+    <div class="fd-mem">${ms.map((m) => `<div><span class="av sm" data-avh="${esc(m.handle)}" style="background:${friendColor(m.handle)}">${esc(initial(m.displayName))}</span><span><b>${esc(String(m.displayName).split(' ')[0])}</b> ${m.paws != null ? pawTxt(m.paws) : 'sem nota'}${m.days ? ` · ${m.days} ${m.days === 1 ? 'dia' : 'dias'}` : ''}${m.phrase ? `<q>${esc(m.phrase)}</q>` : ''}</span></div>`).join('')}</div>
     ${first ? `<small class="fd-first">${esc(String(first.displayName).split(' ')[0])} terminou primeiro</small>` : ''}</article>`;
 }
 
@@ -7070,6 +7072,134 @@ function pgScrollTo(which) { // abre o Progresso já na parte certa
   }
   if (S.tab === 'comunidade') { box.querySelector('.v3-stats4')?.remove(); box.querySelector('#v3-board-all')?.remove(); }
   const fb = box.querySelector('#v3-focus'); if (fb && focusState()) { fb.classList.add('v3-upd'); fb.lastChild.textContent = 'Voltar ao foco'; }
+}; }
+// ---------- 3.3: arrumação (repetições, janelas) e recursos para quem lê ----------
+{ const st = document.createElement('style'); st.textContent = `
+.editor.compact{align-items:flex-end!important;padding:0!important}
+.editor.compact .ed-body{width:min(560px,100%)!important;max-height:90vh!important;border-radius:22px 22px 0 0!important;border:0!important;border-top:1px solid var(--line)!important;padding:1.4rem 1rem calc(1rem + env(safe-area-inset-bottom,0px))!important;box-shadow:0 -10px 30px rgba(0,0,0,.25)!important;position:relative}
+.editor.compact .ed-body::before{content:"";position:absolute;top:.5rem;left:50%;width:40px;height:4px;border-radius:4px;background:var(--line);transform:translateX(-50%)}
+.ed-body > .up-x{top:.9rem!important}
+.v3-plus{display:flex;gap:.4rem;margin-top:.5rem}
+.v3-plus button{flex:1;height:34px;border-radius:10px;border:1px dashed var(--line);background:none;color:var(--ink);font-weight:800;font-size:.78rem}
+.v3-next{display:grid;grid-template-columns:auto 1fr;gap:.8rem;align-items:center}
+.v3-next .v3-cv{width:64px;height:96px}
+.v3-next-b{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap}
+.v3-next-b button{height:36px;border-radius:10px;padding:0 .9rem;font-weight:800;font-size:.8rem;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.v3-next-b .v3-pri{border:0}
+.qt-search{margin:.2rem 0 .6rem}
+.qt-it{display:grid;gap:.25rem;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.7rem .8rem;margin-bottom:.5rem;text-align:left;width:100%;color:var(--ink)}
+.qt-it q{font-family:Georgia,serif;font-style:italic;font-size:.92rem;line-height:1.4}
+.qt-it small{font-size:.7rem;color:var(--ink-2);font-weight:700}
+.yr-list{display:grid;gap:.45rem;margin:0;padding:0;list-style:none}
+.yr-list li{display:flex;justify-content:space-between;gap:.6rem;font-size:.84rem;color:var(--ink-2)}
+.yr-list b{color:var(--ink);text-align:right}
+.yr-share{width:100%;margin-top:.7rem;height:42px;border-radius:12px;border:0;background:var(--acc);color:var(--on-acc,#fff);font-weight:900}
+`; TR.append(st); }
+
+// ----- leitura atual: data prevista e registro rápido; sem leitura: próxima da fila -----
+const nextBook = () => { const id = T().nextId, L = lib(); return L.find((e) => e.id === id && e.status === 'QUERO') || null; };
+const fmtDM = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
+{ const _nc = nowCardC; nowCardC = function () {
+  const R = reading();
+  if (!R) {
+    const nx = nextBook() || lib().filter((e) => e.status === 'QUERO').sort((a, b) => String(b.addedAt || '').localeCompare(String(a.addedAt || '')))[0];
+    if (!nx) return _nc();
+    return `<section class="v3c v3-now v3-next">${cvh(nx.title, nx.cover, 'v3-cv')}<div><span class="v3-k">${nextBook() ? 'Sua próxima leitura' : 'Da sua lista Quero ler'}</span><b class="v3-ttl">${esc(nx.title)}</b><span class="v3-au">${esc(nx.author || '')}</span>
+      <div class="v3-next-b"><button type="button" class="v3-pri" id="v3-start" data-id="${esc(nx.id)}">Começar a ler</button><button type="button" id="v3-cta">Buscar outro</button></div></div></section>`;
+  }
+  let html = _nc(); const days = paceDays(R);
+  if (days) { const end = fmtDM(addDays(todayISO(), days)); html = html.replace(/No seu ritmo, <b>[^<]*<\/b>/, `No seu ritmo, termina <b>dia ${end}</b>`); }
+  if (R.total && R.now < R.total) html = html.replace('<div class="v3-two">', `<div class="v3-plus"><button type="button" data-add="10">+10 pág.</button><button type="button" data-add="25">+25 pág.</button><button type="button" data-add="50">+50 pág.</button></div><div class="v3-two">`);
+  return html;
+}; }
+
+// ----- marcar a próxima leitura (livro em Quero ler) -----
+function setNext(e) { T().nextId = T().nextId === e.id ? null : e.id; save(); toast(T().nextId ? `“${e.title}” é sua próxima leitura` : 'Próxima leitura desmarcada'); }
+
+// ----- todos os trechos, com busca -----
+function openAllQuotes() {
+  const v = $('#shelflist'); let q = '';
+  const all = () => lib().flatMap((e) => (e.quotes || []).map((x) => ({ e, t: x.t, p: x.p, at: x.at || '' }))).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  const drawList = () => {
+    const n = normT(q), list = all().filter((x) => !n || normT(x.t).includes(n) || normT(x.e.title).includes(n) || normT(x.e.author || '').includes(n));
+    v.querySelector('.qt-list').innerHTML = list.length ? list.map((x) => `<button type="button" class="qt-it" data-id="${esc(x.e.id)}"><q>${esc(x.t)}</q><small>${esc(x.e.title)}${x.p ? ` · pág. ${x.p}` : ''}</small></button>`).join('')
+      : `<p class="sl-empty">${all().length ? 'Nenhum trecho com esse texto.' : 'Os trechos que você salvar nos livros aparecem aqui.'}</p>`;
+    $$('.qt-it', v).forEach((b) => b.addEventListener('click', () => { const e = byId(b.dataset.id); if (e) openBookPage(e, 'trechos'); }));
+  };
+  const draw = () => {
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Meus trechos</b><span></span></div>
+      <input type="search" class="fs-input qt-search" id="qt-q" placeholder="Buscar por texto, livro ou autor" value="${esc(q)}" autocomplete="off"><div class="qt-list"></div>`;
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    $('#qt-q', v).addEventListener('input', (ev) => { q = ev.target.value; drawList(); });
+    drawList();
+  };
+  S.listRedraw = draw; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0;
+}
+
+// ----- números do ano no Progresso e "Meu ano em livros" -----
+function yearDetail() {
+  const y = todayISO().slice(0, 4), lidos = lib().filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').startsWith(y));
+  const rated = lidos.map((e) => (reviewOfLib(e) || {}).paws).filter((n) => n);
+  const avg = rated.length ? rated.reduce((a, b) => a + b, 0) / rated.length : null;
+  const top = (arr) => { const m = new Map(); arr.filter(Boolean).forEach((x) => m.set(x, (m.get(x) || 0) + 1)); return [...m.entries()].sort((a, b) => b[1] - a[1])[0] || null; };
+  const autor = top(lidos.map((e) => String(e.author || '').split(',')[0].trim())), genero = top(lidos.map((e) => e.genre || (e.meta && e.meta.cat)));
+  const timed = lidos.filter((e) => e.startedAt && e.finishedAt).map((e) => ({ e, d: Math.max(1, between(e.startedAt, e.finishedAt) + 1) }));
+  const rapido = timed.sort((a, b) => a.d - b.d)[0] || null, longo = lidos.filter((e) => Number(e.totalPages)).sort((a, b) => Number(b.totalPages) - Number(a.totalPages))[0] || null;
+  const pages = readingEvents().filter((x) => String(x.date).startsWith(y)).reduce((a, x) => a + Math.max(0, x.pages || 0), 0);
+  return { y, lidos, avg, rated: rated.length, autor, genero, rapido, longo, pages };
+}
+function yearCardHTML() {
+  const d = yearDetail(); if (!d.lidos.length) return '';
+  const li = (t, v) => (v ? `<li><span>${t}</span><b>${v}</b></li>` : '');
+  return `<section class="v3c" id="pg-year"><div class="v3-sh" style="margin:0 0 .6rem"><b>Seu ${d.y} em detalhes</b></div><ul class="yr-list">
+    ${li('Média das suas notas', d.avg != null ? `${pawTxt(d.avg)} em ${plural(d.rated, 'livro', 'livros')}` : '')}
+    ${li('Autor mais lido', d.autor && d.autor[1] > 1 ? `${esc(d.autor[0])} · ${d.autor[1]} livros` : d.autor ? esc(d.autor[0]) : '')}
+    ${li('Gênero mais lido', d.genero ? esc(d.genero[0]) : '')}
+    ${li('Leitura mais rápida', d.rapido ? `${esc(d.rapido.e.title)} · ${plural(d.rapido.d, 'dia', 'dias')}` : '')}
+    ${li('Livro mais longo', d.longo ? `${esc(d.longo.title)} · ${d.longo.totalPages} pág.` : '')}
+  </ul><button type="button" class="yr-share" id="pg-share">Gerar “Meu ano em livros”</button></section>`;
+}
+async function shareYear() {
+  const d = yearDetail(), c = document.createElement('canvas'); c.width = 1080; c.height = 1350; const g = c.getContext('2d');
+  const css = getComputedStyle(document.documentElement), acc = (css.getPropertyValue('--acc') || '#c46f2b').trim() || '#c46f2b';
+  g.fillStyle = '#2a1a10'; g.fillRect(0, 0, 1080, 1350); g.fillStyle = acc; g.fillRect(0, 0, 1080, 14);
+  const txt = (t, x, y, size, color = '#fff3dc', weight = 800, font = 'Nunito, system-ui, sans-serif') => { g.font = `${weight} ${size}px ${font}`; g.fillStyle = color; g.fillText(t, x, y); };
+  txt('MEU ANO EM LIVROS', 90, 170, 40, acc, 900); txt(d.y, 90, 330, 170, '#fff3dc', 900);
+  txt(String(d.lidos.length), 90, 560, 150, acc, 900); txt(d.lidos.length === 1 ? 'livro lido' : 'livros lidos', 90, 630, 46, '#e6cfae', 700);
+  txt(d.pages.toLocaleString('pt-BR'), 600, 560, 110, '#fff3dc', 900); txt('páginas', 600, 630, 46, '#e6cfae', 700);
+  let y = 780; const row = (k, v) => { if (!v) return; txt(k, 90, y, 34, '#c9b096', 700); txt(v.length > 34 ? v.slice(0, 33) + '…' : v, 90, y + 52, 46, '#fff3dc', 800); y += 140; };
+  row('Média das notas', d.avg != null ? `${String(Math.round(d.avg * 2) / 2).replace('.', ',')} patas` : '');
+  row('Autor mais lido', d.autor ? d.autor[0] : ''); row('Livro mais longo', d.longo ? `${d.longo.title}` : '');
+  txt('Be A Reader', 90, 1280, 40, acc, 900);
+  const img = ART && ART.bear_celebrating; if (img) await new Promise((ok) => { const im = new Image(); im.onload = () => { g.drawImage(im, 700, 960, 320, 320); ok(); }; im.onerror = ok; im.src = img; });
+  c.toBlob(async (blob) => {
+    const file = new File([blob], `meu-ano-em-livros-${d.y}.png`, { type: 'image/png' });
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Meu ano em livros' }); return; } } catch {}
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }, 'image/png');
+}
+
+// ----- ganchos nas telas -----
+{ const _dt = drawTab; drawTab = function () {
+  _dt();
+  const box = $('#lista');
+  if (S.tab === 'inicio' || S.tab === 'comunidade') {
+    $('#v3-start', box)?.addEventListener('click', (ev) => { const e = byId(ev.currentTarget.dataset.id); if (e && readNow(e)) { if (T().nextId === e.id) T().nextId = null; save(); refresh(); } });
+    const cta = $('#v3-cta', box); if (cta && !reading()) { const n = cta.cloneNode(true); cta.replaceWith(n); n.addEventListener('click', () => goTab('buscar')); }
+  }
+  if (S.tab === 'comunidade') box.querySelector('#v3-search')?.remove();
+  if (S.tab === 'perfil') {
+    box.querySelector('.lx-stats.v3-stats')?.remove();
+    ['#pf-priv', '#pf-cfg', '#pf-install'].forEach((id) => box.querySelector(id)?.remove());
+    [...box.querySelectorAll('.pf-group')].filter((g) => /^App$/i.test(g.textContent.trim())).forEach((g) => g.remove());
+  }
+  if (S.tab === 'estante') {
+    const at = box.querySelector('.es-chips');
+    if (at && !box.querySelector('#es-quotes')) { at.insertAdjacentHTML('afterend', `<button type="button" class="v3-row" id="es-quotes">${IC('comentar', 'ico-a')}<span><b>Meus trechos</b><small>${plural(lib().reduce((a, e) => a + (e.quotes || []).length, 0), 'trecho salvo', 'trechos salvos')} · buscar por texto, livro ou autor</small></span>›</button>`); $('#es-quotes', box).addEventListener('click', openAllQuotes); }
+  }
+  if (S.tab === 'progresso') {
+    const pc = box.querySelector('.pc'); if (pc && !box.querySelector('#pg-year')) { const h = yearCardHTML(); if (h) { pc.insertAdjacentHTML('afterend', h); $('#pg-share', box)?.addEventListener('click', shareYear); } }
+  }
 }; }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
