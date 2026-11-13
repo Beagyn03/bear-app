@@ -1321,7 +1321,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 'use strict';
 // ============ armazenamento ============
 const KEY = 'bear.v1';
-const APP_VERSION = '3.2.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.2.4', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -6890,7 +6890,10 @@ function paintCommDot() {
     L.commSeenAt = new Date().toISOString(); saveL();
   } else {
     box.classList.remove('v3-comm'); _dt();
-    if (S.tab === 'inicio') box.querySelectorAll('.v3-ears, .v3-invs, .v3-colB').forEach((n) => n.remove());
+    if (S.tab === 'inicio') {
+      box.querySelectorAll('.v3-ears, .v3-invs, .v3-colB, .v3-board').forEach((n) => n.remove()); // placar só na Comunidade
+      [...box.querySelectorAll('.v3-sh')].find((n) => /Placar da semana/.test(n.textContent))?.remove();
+    }
   }
   paintCommDot();
 }; }
