@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.9.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.10.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7952,6 +7952,106 @@ function paintRecs() {
 { const _pd = paintCommDot; paintCommDot = function () { _pd(); const b = $('#tabbar button[data-tab="comunidade"]'); if (b && S.tab !== 'comunidade' && recNew() && !b.querySelector('.tb-dot')) b.insertAdjacentHTML('beforeend', '<i class="tb-dot" aria-label="Novidades"></i>'); }; }
 { const _ss = syncSocial3; syncSocial3 = async function (force) { const r = await _ss(force); loadRecs(); return r; }; }
 setTimeout(loadRecs, 3000);
+// ---------- 3.10: Ajustes (substitui "Conta e ajustes" e a janela antiga de Configurações) ----------
+{ const st = document.createElement('style'); st.textContent = `
+.aj-me{display:grid;grid-template-columns:auto 1fr;gap:.9rem;align-items:center;margin:.3rem 0 1.1rem}
+.aj-av{width:72px;height:72px;font-size:1.6rem;position:relative;background-size:cover;background-position:center}
+.aj-me b{display:block;font-size:1.1rem;color:var(--ink)}.aj-me small{font-size:.8rem;color:var(--ink-2)}
+.aj-g{font-size:.68rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin:1rem .2rem .4rem}
+.aj-card{border:1px solid var(--line);background:var(--panel);border-radius:16px;overflow:hidden}
+.aj-row{display:flex;align-items:center;justify-content:space-between;gap:.7rem;width:100%;min-height:54px;padding:.6rem .85rem;border:0;border-top:1px solid var(--line);background:none;color:var(--ink-2);text-align:left;font-size:1rem}
+.aj-card .aj-row:first-child{border-top:0}
+.aj-row span{min-width:0}.aj-row b{display:block;font-size:.9rem;color:var(--ink);font-weight:800}.aj-row small{display:block;font-size:.74rem;color:var(--ink-2);margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aj-row em{font-style:normal;font-size:.76rem;font-weight:800;color:var(--acc)}
+.aj-static{cursor:default}
+.sw2.on{background:var(--acc)}.sw2.on i{left:21px}
+`; TR.append(st); }
+function drawAjustes(box) {
+  const on = connected(), h = drawHud(), prof = socialProfile, ph = myPhoto(), pal = document.documentElement.dataset.pal || 'papel', pv = (prof && prof.privacy) || {};
+  const row = (id, t, s, end) => `<button type="button" class="aj-row" id="${id}"><span><b>${t}</b>${s ? `<small>${s}</small>` : ''}</span>${end || '›'}</button>`;
+  const sync = on ? `${esc(apiCfg.email || '')}${lastSyncAt ? ' · última às ' + esc(fmtDateTime(lastSyncAt)) : ' · automática'}` : '';
+  box.innerHTML = `<header class="v3-top"><button type="button" class="sl-back" id="aj-back">‹ Você</button><h1>Ajustes</h1><span></span></header>
+    <section class="aj-me"><button type="button" class="av aj-av" id="aj-photo" aria-label="Trocar foto" style="${ph ? `background-image:${cssUrl(ph)}` : ''}">${ph ? '' : esc(initial(h.name))}<i class="pf-cam">${IC('editar', 'ico-b')}</i></button>
+      <div><b>${esc(h.name)}</b><small>${prof ? '@' + esc(prof.handle) : on ? 'Sem @usuário ainda' : 'Sem conta conectada'}</small></div></section>
+    <div class="aj-g">Perfil</div><div class="aj-card">
+      ${row('aj-name', 'Nome', esc(h.name))}
+      ${on ? row('aj-handle', prof ? '@usuário' : 'Criar meu @usuário', prof ? '@' + esc(prof.handle) : 'Para ter amigos e aparecer na busca') : ''}
+      ${row('aj-bio', 'Frase do perfil', esc((T().bio || '').trim() || 'Automática, montada pelas suas leituras'))}
+      ${prof ? row('aj-flair', 'Moldura e selo', 'O que seus amigos veem na sua foto e no seu nome') : ''}
+      ${ph ? row('aj-rmph', 'Remover foto', '') : ''}
+    </div>
+    ${on ? `<div class="aj-g">Privacidade</div><div class="aj-card">${row('aj-priv', 'Quem vê o quê', prof ? (pv.public ? 'Perfil aberto: leitores de fora veem suas avaliações' : 'Só seus amigos veem suas leituras') : 'Crie seu @usuário primeiro')}</div>` : ''}
+    <div class="aj-g">Aparência</div><div class="aj-card">
+      <div class="aj-row aj-static"><span><b>Tema</b><small id="aj-thn">${esc(THEMES.find((t) => t[0] === pal)[1])}</small></span><div class="th-dots">${THEMES.map(([k, n, bg, acc]) => `<button type="button" data-th="${k}" class="${pal === k ? 'on' : ''}" aria-label="${n}" title="${n}" style="--b:${bg};--a:${acc}"></button>`).join('')}</div></div>
+      <div class="aj-row aj-static"><span><b>Sons</b><small>Página virada, conquistas e foco</small></span><button type="button" class="sw2 ${SFX.on() ? 'on' : ''}" id="aj-sound" role="switch" aria-checked="${SFX.on()}" aria-label="Sons"><i></i></button></div>
+    </div>
+    <div class="aj-g">Conta e dados</div><div class="aj-card">
+      ${on ? row('aj-sync', 'Sincronização', sync, '<em>Agora</em>') : row('aj-login', 'Entrar ou criar conta', 'Seus dados em todos os aparelhos')}
+      ${appInstalled() ? '' : row('aj-install', 'Instalar no celular', 'Ícone na tela inicial, em tela cheia')}
+      ${row('aj-exp', 'Baixar meus dados', 'Arquivo com toda a sua estante')}
+      ${row('aj-imp', 'Restaurar de um arquivo', 'Só para trazer dados de fora da conta')}
+    </div>
+    ${on ? '<button type="button" class="pf-out" id="aj-out">Sair da conta</button>' : ''}
+    <small class="cfg-ver">B.E.A.R ${APP_VERSION}</small>`;
+  const on_ = (id, fn) => $('#' + id, box)?.addEventListener('click', fn);
+  on_('aj-back', () => goTab('inicio')); on_('aj-photo', pickPhoto); on_('aj-name', editName); on_('aj-handle', socialSettingsSheet); on_('aj-bio', editBio);
+  on_('aj-flair', flairSheet); on_('aj-rmph', () => { if (confirm('Remover sua foto?')) removePhoto(); }); on_('aj-priv', socialSettingsSheet);
+  on_('aj-sync', () => { pull(); toast('Sincronizando…'); }); on_('aj-login', () => connectSheet()); on_('aj-install', installApp);
+  on_('aj-exp', () => document.getElementById('export').click()); on_('aj-imp', () => document.getElementById('import').click());
+  on_('aj-out', () => { if (confirm('Sair da conta neste aparelho? Seus dados continuam guardados na conta.')) logout(); });
+  $$('.th-dots button', box).forEach((b) => b.addEventListener('click', () => { applyTheme(b.dataset.th, true); $$('.th-dots button', box).forEach((x) => x.classList.toggle('on', x === b)); $('#aj-thn', box).textContent = THEMES.find((t) => t[0] === b.dataset.th)[1]; }));
+  $('#aj-sound', box).addEventListener('click', (ev) => { const v = !SFX.on(); SFX.set(v); ev.currentTarget.classList.toggle('on', v); ev.currentTarget.setAttribute('aria-checked', String(v)); if (v) setTimeout(() => SFX.play('chime'), 60); });
+  paintAvatars && paintAvatars();
+}
+{ const _dt = drawTab; drawTab = function () { _dt(); if (S.tab === 'perfil') drawAjustes($('#lista')); }; }
+// a engrenagem e qualquer atalho antigo de "Configurações" levam aos Ajustes (a janela antiga sumia com os temas ao mexer nos sons)
+editConfig = function () { closeEd(); goTab('perfil'); };
+// ---------- 3.10.1: puxar para atualizar sem sair da tela + volta para onde estava se o app recarregar ----------
+{ const st = document.createElement('style'); st.textContent = 'html,body{overscroll-behavior-y:none}'; document.head.append(st); }
+{ const st = document.createElement('style'); st.textContent = `
+.shelflist,#lista{overscroll-behavior-y:contain}
+.ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + .4rem);transform:translate(-50%,-140%);z-index:80;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:.35rem .85rem;font-size:.76rem;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.18);transition:transform .18s;pointer-events:none}
+.ptr.show{transform:translate(-50%,0)}
+`; TR.append(st); }
+// --- onde a pessoa está (para restaurar depois de um recarregamento) ---
+S.navView = null;
+const navTrack = (name, fn) => function (...a) { const r = fn.apply(this, a); S.navView = { t: name, a: a.filter((x) => typeof x === 'string' || typeof x === 'number' || x == null) }; return r; };
+openShelfV3 = navTrack('shelf', openShelfV3); openAchList = navTrack('ach', openAchList); openStatusList = navTrack('status', openStatusList);
+openFriendsV3 = navTrack('friends', openFriendsV3); openPeopleSearch = navTrack('people', openPeopleSearch); openCatalog = navTrack('catalog', openCatalog);
+{ const _f = friendPage; friendPage = function (h) { S.navView = { t: 'friend', a: [h] }; return _f(h); }; }
+{ const _ob = openBookPage; openBookPage = function (e, tab) { S.navView = e && e._preview ? { t: 'anybook', a: [e.title, e.author || null] } : e ? { t: 'book', a: [e.id] } : null; return _ob(e, tab); }; }
+openFriends = function () { openFriendsV3(); };
+function saveNav() {
+  try { const v = $('#shelflist'); sessionStorage.setItem('bear.nav', JSON.stringify({ tab: S.tab, view: v && !v.hidden ? S.navView : null, at: Date.now() })); } catch {}
+}
+addEventListener('pagehide', saveNav); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveNav(); });
+setInterval(saveNav, 4000);
+function restoreNav() {
+  let n = null; try { n = JSON.parse(sessionStorage.getItem('bear.nav') || 'null'); } catch {}
+  if (!n || Date.now() - (n.at || 0) > 30 * 60000) return;
+  try {
+    if (n.tab && n.tab !== S.tab) goTab(n.tab);
+    const v = n.view; if (!v) return; const a = v.a || [];
+    const run = { shelf: () => openShelfV3(a[0]), ach: () => openAchList(), status: () => openStatusList(a[0], a[1]), friends: () => openFriendsV3(), people: () => openPeopleSearch(), catalog: () => openCatalog(),
+      friend: () => friendPage(a[0]), book: () => { if (lib().some((e) => e.id === a[0])) openBook(a[0]); }, anybook: () => openAnyBook(a[0], a[1]) }[v.t];
+    run && setTimeout(run, 120);
+  } catch (err) { console.warn('restoreNav', err); }
+}
+setTimeout(restoreNav, 600);
+// --- puxar para atualizar dentro do app ---
+{ let y0 = null, dy = 0, busy = false; const ind = document.createElement('div'); ind.className = 'ptr'; TR.append(ind);
+  const scroller = () => { const v = $('#shelflist'); if (v && !v.hidden) return v; let el = $('#lista'); while (el && el !== TR && el.nodeType === 1) { const o = getComputedStyle(el).overflowY; if ((o === 'auto' || o === 'scroll') && el.scrollHeight > el.clientHeight) return el; el = el.parentElement; } return document.scrollingElement; };
+  const atTop = () => { const s = scroller(); return !s || s.scrollTop <= 0; };
+  const blocked = () => !$('#editor').hidden || document.querySelector('.sheet') || TR.querySelector('.st-ov:not([hidden])');
+  TR.addEventListener('touchstart', (ev) => { if (busy || blocked() || ev.touches.length !== 1 || !atTop()) { y0 = null; return; } y0 = ev.touches[0].clientY; dy = 0; }, { passive: true });
+  TR.addEventListener('touchmove', (ev) => { if (y0 == null) return; dy = ev.touches[0].clientY - y0; if (dy > 20 && atTop()) { ind.textContent = dy > 80 ? 'Solte para atualizar' : 'Puxe para atualizar'; ind.classList.add('show'); } else ind.classList.remove('show'); }, { passive: true });
+  TR.addEventListener('touchend', async () => {
+    if (y0 == null) return; const go = dy > 80 && atTop(); y0 = null; if (!go) { ind.classList.remove('show'); return; }
+    busy = true; ind.textContent = 'Atualizando…'; ind.classList.add('show');
+    try { S.bookNet = {}; S.trends = null; S.recsAt = 0; await Promise.allSettled([connected() ? pull() : null, connected() ? syncSocial3(true) : null]); loadRecs(); }
+    finally { const v = $('#shelflist'); if (v && !v.hidden && S.listRedraw) S.listRedraw(); else drawAll(); ind.textContent = 'Atualizado'; setTimeout(() => { ind.classList.remove('show'); busy = false; }, 700); }
+  });
+}
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
