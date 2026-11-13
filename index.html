@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.7.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.7.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7766,7 +7766,10 @@ function decorateBookPage(v) {
   if (net === undefined && connected() && socialProfile) bookNetHTML({ title }); // busca a média já no topo
   if (/^Sobre/.test(tabOn) && !v.querySelector('.au-row')) { const sec = v.querySelector('.sl-body'); const h = authorStripHTML({ title, author }); if (h) { sec.insertAdjacentHTML('beforeend', h); paintCv(v); } }
 }
-{ const v0 = $('#shelflist'); let busy = false; new MutationObserver(() => { if (busy || v0.hidden || !v0.querySelector('.bp-tabs')) return; busy = true; try { bindBookNet(v0); decorateBookPage(v0); } finally { busy = false; } }).observe(v0, { childList: true, subtree: true }); }
+{ const v0 = $('#shelflist'), opt = { childList: true, subtree: true }; let tm = 0;
+  // desliga a observação enquanto mexe na página (o que esta função muda não pode disparar ela de novo) e agrupa as mudanças
+  const mo = new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { if (v0.hidden || !v0.querySelector('.bp-tabs')) return; mo.disconnect(); try { bindBookNet(v0); decorateBookPage(v0); } finally { mo.takeRecords(); mo.observe(v0, opt); } }, 30); });
+  mo.observe(v0, opt); }
 { const _ob = openBookPage; openBookPage = function (e, tab) {
   const r = _ob(e, tab); const v = $('#shelflist'); enrichPreview(e); decorateBookPage(v);
   const rd = S.listRedraw; if (rd && !rd._dec) { S.listRedraw = function () { rd(); decorateBookPage(v); }; S.listRedraw._dec = true; S.listRedraw._bn = rd._bn; }
