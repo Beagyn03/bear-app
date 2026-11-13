@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.7.3', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.7.4', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7600,8 +7600,6 @@ function bookNetHTML(e) {
     ${!others && c.mine ? '<p class="bp-load" style="padding:.4rem 0 0">Só você avaliou por enquanto.</p>' : ''}</section>`;
 }
 function bindBookNet(v) {
-  $$('.bn-see:not([data-on])', v).forEach((b) => { b.dataset.on = 1; b.addEventListener('click', () => { (S.bnOpen || (S.bnOpen = new Set())).add(b.dataset.id); const it = b.closest('.bn-it'); if (it) { const p = document.createElement('p'); p.className = 'bn-tx'; const net = Object.values(S.bookNet).find((n) => n && [...(n.friends || []), ...(n.public || [])].some((x) => x.id === b.dataset.id)); const x = net && [...(net.friends || []), ...(net.public || [])].find((y) => y.id === b.dataset.id); p.textContent = x ? x.text : ''; b.replaceWith(p); } }); });
-  $$('.bn-who:not([data-on])', v).forEach((b) => { b.dataset.on = 1; b.addEventListener('click', () => friendPage(b.dataset.h)); });
   paintAvatars();
 }
 
@@ -7766,10 +7764,13 @@ function decorateBookPage(v) {
   if (net === undefined && connected() && socialProfile) bookNetHTML({ title }); // busca a média já no topo
   if (/^Sobre/.test(tabOn) && !v.querySelector('.au-row')) { const sec = v.querySelector('.sl-body'); const h = authorStripHTML({ title, author }); if (h) { sec.insertAdjacentHTML('beforeend', h); paintCv(v); } }
 }
-{ const v0 = $('#shelflist'), opt = { childList: true, subtree: true }; let tm = 0;
-  // desliga a observação enquanto mexe na página (o que esta função muda não pode disparar ela de novo) e agrupa as mudanças
-  const mo = new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { if (v0.hidden || !v0.querySelector('.bp-tabs')) return; mo.disconnect(); try { bindBookNet(v0); decorateBookPage(v0); } finally { mo.takeRecords(); mo.observe(v0, opt); } }, 30); });
-  mo.observe(v0, opt); }
+// ligações por delegação: valem para qualquer redesenho e troca de aba da página do livro
+TR.addEventListener('click', (ev) => {
+  const see = ev.target.closest('.bn-see');
+  if (see) { ev.preventDefault(); (S.bnOpen || (S.bnOpen = new Set())).add(see.dataset.id); const all = Object.values(S.bookNet).flatMap((n) => (n && !n.loading ? [...(n.friends || []), ...(n.public || [])] : [])); const x = all.find((y) => y.id === see.dataset.id); const p = document.createElement('p'); p.className = 'bn-tx'; p.textContent = x ? x.text : ''; see.replaceWith(p); return; }
+  const who = ev.target.closest('.bn-who'); if (who) { ev.preventDefault(); return friendPage(who.dataset.h); }
+  if (ev.target.closest('#shelflist .bp-tabs button')) setTimeout(() => { const v = $('#shelflist'); if (!v.hidden) decorateBookPage(v); }, 60);
+});
 { const _ob = openBookPage; openBookPage = function (e, tab) {
   const r = _ob(e, tab); const v = $('#shelflist'); enrichPreview(e); decorateBookPage(v);
   const rd = S.listRedraw; if (rd && !rd._dec) { S.listRedraw = function () { rd(); decorateBookPage(v); }; S.listRedraw._dec = true; S.listRedraw._bn = rd._bn; }
