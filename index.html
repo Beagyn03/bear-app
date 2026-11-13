@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.4.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.4.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7287,7 +7287,16 @@ function rankBooks(list, q) {
   const [a, g] = await Promise.all([_sb(q).catch(() => []), q.length >= 3 ? getJSON(`https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=20&langRestrict=pt&q=${encodeURIComponent(q)}`, 9000).then(fromGoogle).catch(() => []) : []]);
   const seen = new Set(), all = [];
   for (const it of [...g, ...a]) { if (!it || !it.title) continue; const k = it.isbn || normT(it.title) + '|' + normT(String(it.author || '').split(',')[0]); if (seen.has(k)) continue; seen.add(k); all.push(it); }
-  return rankBooks(all, q);
+  const ranked = rankBooks(all, q);
+  // capa que falta nos primeiros resultados: tenta pelo ISBN (Open Library e Google), sem segurar a busca mais de 1,8 s
+  const imgOk = (u) => new Promise((ok) => { const im = new Image(); const t = setTimeout(() => ok(false), 1500); im.onload = () => { clearTimeout(t); ok(im.naturalWidth > 20); }; im.onerror = () => { clearTimeout(t); ok(false); }; im.src = u; });
+  const fill = async (it) => {
+    const isbn = String(it.isbn || '').replace(/\D/g, ''); if (it.coverUrl || isbn.length < 10) return;
+    const ol = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg?default=false`; if (await imgOk(ol)) { it.coverUrl = ol; return; }
+    try { const d = await getJSON(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`, 1500); const im = d && d.items && d.items[0] && d.items[0].volumeInfo && d.items[0].volumeInfo.imageLinks; const u = im && httpsUrl(im.thumbnail || im.smallThumbnail); if (u) it.coverUrl = u; } catch {}
+  };
+  await Promise.race([Promise.all(ranked.slice(0, 6).flatMap((m) => [m, ...(m.editions || [])].filter((x) => !x.coverUrl).slice(0, 2)).map(fill)), new Promise((r) => setTimeout(r, 1800))]);
+  return ranked.map((m) => { if (!m.coverUrl) { const alt = (m.editions || []).find((x) => x.coverUrl && langOf(x) === langOf(m)); if (alt) { const i = m.editions.indexOf(alt); m.editions.splice(i, 1, m); alt.editions = m.editions; m.editions = []; return alt; } } return m; });
 }; }
 
 // ----- sinopse: se veio em inglês, tenta a edição em português -----
