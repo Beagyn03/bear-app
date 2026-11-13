@@ -1321,7 +1321,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 'use strict';
 // ============ armazenamento ============
 const KEY = 'bear.v1';
-const APP_VERSION = '3.2.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.2.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -4966,7 +4966,7 @@ function openNotif() {
     const all = [...reqs, ...rest];
     ed.querySelector('.ed-body').innerHTML = `<h3>Notificações</h3>
       <div class="nt-list">${all.length ? all.map((n) => `<div class="nt-it${n.k === 'req' ? '' : ' nt-go'}" data-id="${esc(n.id)}" ${n.k === 'req' ? '' : 'role="button" tabindex="0"'}><span class="av sm" ${n.h ? `data-avh="${esc(n.h)}"` : ''} style="background:${n.c}">${esc(n.i)}</span><div><p>${n.txt}</p><small>${n.when}</small>${n.k === 'req' ? (n.x.done ? `<small class="ok">${esc(n.x.done)}</small>` : '<div class="nt-bt"><button type="button" class="pri" data-a="ok">Aceitar</button><button type="button" data-a="no">Recusar</button></div>') : ''}</div><button type="button" class="nt-x" aria-label="Apagar notificação">×</button></div>`).join('')
-        : `<p class="nt-empty">${connected() ? (SOC.noHandle ? 'Crie seu @usuário no Perfil para receber pedidos de amizade, curtidas e comentários.' : 'Nada novo por aqui. O passarinho avisa quando chegar algo.') : 'Entre na sua conta para receber notificações.'}</p>`}</div>
+        : `<p class="nt-empty">${connected() ? (SOC.noHandle ? 'Crie seu @usuário no Perfil para receber pedidos de amizade, curtidas e comentários.' : 'Nada novo por aqui. Quando chegar algo, aparece aqui.') : 'Entre na sua conta para receber notificações.'}</p>`}</div>
       <div class="row end">${all.length ? '<button type="button" id="nt-clear">Limpar tudo</button>' : ''}<button type="button" id="nt-close" class="pri">Fechar</button></div>`;
     const idOf = (n) => n.closest('.nt-it').dataset.id, itemOf = (n) => all.find((x) => x.id === idOf(n));
     $$('.nt-bt button', ed).forEach((b) => b.addEventListener('click', async (ev) => {
@@ -6839,12 +6839,13 @@ function flairSheet() {
 .v3-mk.ghost .v3-mk-av{background:var(--panel);color:var(--acc);font-size:1.2rem}
 .v3-gap{text-align:left}
 .editor,.editor.compact{background:rgba(8,5,4,.66)!important;-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+.editor{z-index:70!important}
 .ed-body .up-big #up-n{font-size:2.6rem!important;font-weight:900;background:none!important;border:0!important;border-bottom:2.5px solid var(--acc)!important;border-radius:0!important;padding:0 .15rem!important;box-sizing:content-box!important;min-width:2ch;text-align:center}
 `; TR.append(st); }
 { const st = document.createElement('style'); st.textContent = '.toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}.sheet{background:rgba(8,5,4,.66)!important;-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}'; document.head.append(st); }
 function noReadingSheet() {
   const ed = $('#editor'); ed.classList.add('compact');
-  ed.querySelector('.ed-body').innerHTML = `<button type="button" class="up-x" id="mk-x" aria-label="Fechar">×</button><h3 class="up-h">Marcadores</h3><p class="up-s">Um trecho, um marco ou uma reação sobre o livro que você está lendo. Fica 24 h no Início dos amigos e guardado na página do livro.</p><p class="mk-note">Comece uma leitura para publicar o primeiro.</p><button type="button" class="sv-ok" id="mk-find">Buscar livro</button>`;
+  ed.querySelector('.ed-body').innerHTML = `<button type="button" class="up-x" id="mk-x" aria-label="Fechar">×</button><h3 class="up-h">Marcadores</h3><p class="up-s">Um trecho, um marco ou uma reação sobre o livro que você está lendo. Fica 24 h na Comunidade dos amigos e guardado na página do livro.</p><p class="mk-note">Comece uma leitura para publicar o primeiro.</p><button type="button" class="sv-ok" id="mk-find">Buscar livro</button>`;
   $('#mk-x', ed).addEventListener('click', closeEd);
   $('#mk-find', ed).addEventListener('click', () => { closeEd(); goTab('buscar'); });
   ed.hidden = false;
