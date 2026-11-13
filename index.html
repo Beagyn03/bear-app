@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.11.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.11.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7953,6 +7953,7 @@ function paintRecs() {
 { const _pd = paintCommDot; paintCommDot = function () { _pd(); const b = $('#tabbar button[data-tab="comunidade"]'); if (b && S.tab !== 'comunidade' && recNew() && !b.querySelector('.tb-dot')) b.insertAdjacentHTML('beforeend', '<i class="tb-dot" aria-label="Novidades"></i>'); }; }
 { const _ss = syncSocial3; syncSocial3 = async function (force) { const r = await _ss(force); loadRecs(); return r; }; }
 setTimeout(loadRecs, 3000);
+try { fetch('https://bear-api-hkuf.onrender.com/health', { cache: 'no-store' }).catch(() => {}); } catch {}
 // ---------- 3.10: Ajustes (substitui "Conta e ajustes" e a janela antiga de Configurações) ----------
 { const st = document.createElement('style'); st.textContent = `
 .aj-me{display:grid;grid-template-columns:auto 1fr;gap:.9rem;align-items:center;margin:.3rem 0 1.1rem}
@@ -8116,6 +8117,10 @@ function paintMsgBadge() {
 }
 const dayLabel = (iso) => { const d = new Date(iso), t = new Date(); const y = new Date(t); y.setDate(t.getDate() - 1); const same = (a, b) => a.toDateString() === b.toDateString(); return same(d, t) ? 'Hoje' : same(d, y) ? 'Ontem' : d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }); };
 const hm = (iso) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const CH_KEY = 'bear.chats';
+function chatCache() { try { return JSON.parse(localStorage.getItem(CH_KEY) || '{}'); } catch { return {}; } }
+function chatCacheSet(h, d) { try { const c = chatCache(); c[h] = { with: d.with, items: (d.items || []).slice(-80), at: Date.now() }; const ks = Object.keys(c).sort((a, b) => c[b].at - c[a].at); ks.slice(15).forEach((k) => delete c[k]); localStorage.setItem(CH_KEY, JSON.stringify(c)); } catch {} }
+async function prefetchChat(h) { try { const r = await sapi('GET', `/v1/messages/with/${encodeURIComponent(h)}`); if (r.status === 200 && r.data) chatCacheSet(h, r.data); } catch {} }
 function openThreads() {
   if (needAccount()) return; const v = $('#shelflist');
   const draw = () => {
@@ -8130,15 +8135,16 @@ function openThreads() {
     paintAvatars();
   };
   S.listRedraw = draw; S.navView = { t: 'threads', a: [] }; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0;
-  loadThreads().then(() => { if (!v.hidden && S.listRedraw === draw) draw(); });
+  loadThreads().then((th) => { if (!v.hidden && S.listRedraw === draw) draw(); (th || []).filter((x) => x.unread).slice(0, 3).forEach((x) => prefetchChat(x.with.handle)); });
 }
 function openChat(handle, opt) {
-  if (needAccount()) return; const v = $('#shelflist'); let data = null, book = (opt && opt.book) || null, poll = 0, sending = false;
+  if (needAccount()) return; const v = $('#shelflist'); let data = chatCache()[handle] || null, book = (opt && opt.book) || null, poll = 0, sending = false;
+  const preview = !data && (S.msg.threads || []).find((x) => x.with.handle === handle);
   const friend = (SOC.fr.friends || []).find((f) => f.handle === handle);
   const open = S.chOpen || (S.chOpen = new Set());
   const bubble = (m) => { const hide = !m.mine && m.bookTitle && !iReadT(m.bookTitle) && !open.has(m.id);
     return `<div class="bub ${m.mine ? 'me' : 'ot'}">${m.bookTitle ? `<i>📖 ${esc(m.bookTitle)}</i>` : ''}${hide ? `<button type="button" class="bub-sp" data-sp="${esc(m.id)}">Você ainda não leu este livro · toque para ver</button>` : esc(m.body)}<small>${hm(m.at)}</small></div>`; };
-  const list = () => { if (!data) return '<p class="sl-empty">Carregando…</p>'; if (!data.items.length) return '<p class="cht-note">Comece a conversa. Mensagens sobre um livro que a outra pessoa não terminou ficam escondidas até ela tocar.</p>';
+  const list = () => { if (!data) return preview ? `${bubble({ id: 'pv', body: preview.last, bookTitle: preview.bookTitle, mine: preview.mine, at: preview.at })}<p class="cht-note">Carregando o resto da conversa…</p>` : '<p class="cht-note">Carregando a conversa…</p>'; if (!data.items.length) return '<p class="cht-note">Comece a conversa. Mensagens sobre um livro que a outra pessoa não terminou ficam escondidas até ela tocar.</p>';
     let last = ''; return data.items.map((m) => { const d = dayLabel(m.at), head = d !== last ? `<div class="cht-day">${d}</div>` : ''; last = d; return head + bubble(m); }).join(''); };
   const name = () => (data && data.with.displayName) || (friend && friend.displayName) || '@' + handle;
   const draw = (keepDraft) => {
@@ -8155,12 +8161,12 @@ function openChat(handle, opt) {
     $('#cht-s', v)?.addEventListener('click', send);
     paintAvatars(); requestAnimationFrame(() => { v.scrollTop = v.scrollHeight; });
   };
-  async function load() { try { const r = await sapi('GET', `/v1/messages/with/${encodeURIComponent(handle)}`); if (r.status === 200 && r.data) { const n = (data && data.items.length) || 0; data = r.data; if (!v.hidden && S.listRedraw === redraw && (n !== data.items.length || n === 0)) draw(true); loadThreads(); } } catch {} }
+  async function load() { try { const r = await sapi('GET', `/v1/messages/with/${encodeURIComponent(handle)}`); if (r.status === 200 && r.data) { const n = (data && data.items.length) || 0, had = !!(data && data.items); data = r.data; chatCacheSet(handle, data); if (!had) { draw(true); loadThreads(); return; } if (!v.hidden && S.listRedraw === redraw && (n !== data.items.length || n === 0)) draw(true); loadThreads(); } } catch {} }
   async function send() {
     const t = $('#cht-t', v); const body = (t.value || '').trim(); if (!body || sending) return; sending = true; $('#cht-s', v).disabled = true;
     const r = await sapi('POST', '/v1/messages', { handle, body, bookTitle: book ? String(book).slice(0, 200) : null });
     sending = false;
-    if (r.status === 201) { data = data || { with: { handle, displayName: name() }, items: [] }; data.items.push({ id: r.data.id, body, bookTitle: book, mine: true, at: r.data.at }); book = null; t.value = ''; draw(false); }
+    if (r.status === 201) { data = data || { with: { handle, displayName: name() }, items: [] }; data.items.push({ id: r.data.id, body, bookTitle: book, mine: true, at: r.data.at }); chatCacheSet(handle, data); book = null; t.value = ''; draw(false); }
     else { $('#cht-s', v).disabled = false; toast(r.status === 404 ? 'Vocês precisam ser amigos para conversar' : 'Não consegui enviar agora'); }
   }
   function close() { clearInterval(poll); v.hidden = true; }
