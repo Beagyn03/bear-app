@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.10.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.10.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7882,6 +7882,7 @@ function achSheet(a) {
 .rc-it small{font-size:.68rem;color:var(--ink-2)}
 .rc-bt{display:flex;gap:.35rem;margin-top:.35rem}.rc-bt button{height:32px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:800;font-size:.74rem;padding:0 .7rem}
 .rc-bt .pri{background:var(--acc);border:0;color:var(--on-acc,#fff)}
+.rc-have{display:block;color:var(--acc)!important;font-weight:800;margin-top:.2rem}
 .rc-x{position:absolute;top:.35rem;right:.45rem;border:0;background:none;color:var(--ink-2);font-size:1.1rem}
 `; TR.append(st); }
 S.recs = S.recs || [];
@@ -7916,7 +7917,7 @@ function recsHTML() {
   const list = S.recs.filter((x) => x.status !== 'SAVED'); if (!list.length) return '';
   return `<div class="v3-sh"><b>Indicações para você</b></div><div class="rc-list">${list.slice(0, 6).map((x) => { const mine = lib().find((e) => normT(e.title) === normT(x.title));
     return `<article class="rc-it" data-rc="${esc(x.id)}">${cvh(x.title, x.cover, '')}<div><p><b>${esc(String(x.from.displayName).split(' ')[0])}</b> indicou <b>${esc(x.title)}</b></p>${x.note ? `<q>${esc(x.note)}</q>` : ''}<small>${esc(relTime(x.createdAt))}${x.author ? ' · ' + esc(x.author) : ''}</small>
-      <div class="rc-bt">${mine ? `<button type="button" data-rcv>Na estante · ${esc((LIB_LABEL[mine.status] || '').toLowerCase())}</button>` : '<button type="button" class="pri" data-rcq>Quero ler</button>'}<button type="button" data-rcv>Ver livro</button></div></div><button type="button" class="rc-x" data-rcx aria-label="Dispensar">×</button></article>`; }).join('')}</div>`;
+      ${mine ? `<small class="rc-have">Já está na sua estante · ${esc((LIB_LABEL[mine.status] || '').toLowerCase())}</small>` : ''}<div class="rc-bt">${mine ? '' : '<button type="button" class="pri" data-rcq>Quero ler</button>'}<button type="button" data-rcv>Ver livro</button></div></div><button type="button" class="rc-x" data-rcx aria-label="Dispensar">×</button></article>`; }).join('')}</div>`;
 }
 function paintRecs() {
   const host = $('#rc-host'); if (!host) return; host.innerHTML = recsHTML(); paintCv(host);
