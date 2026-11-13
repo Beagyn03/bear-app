@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.5.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.5.2', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -7502,6 +7502,46 @@ function youSectionsHTML() {
     box.querySelectorAll('.lx-card').forEach((c) => { if (/Conquistas|Minhas avaliações/.test(c.textContent)) c.remove(); });
   }
 }; }
+// ---------- 3.5.2: página do amigo no formato do Você ----------
+{ const st = document.createElement('style'); st.textContent = `
+.fr-acts{display:flex;gap:.4rem;margin:-.2rem 0 .8rem}
+.fr-acts button{flex:1;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:800;font-size:.82rem}
+.fr-acts .pri{background:var(--acc);border:0;color:var(--on-acc,#fff)}
+.fr-read{display:grid;grid-template-columns:auto 1fr;gap:.7rem;align-items:center;margin-bottom:.5rem}
+.fr-read .cv{width:52px;height:78px;border-radius:3px 6px 6px 3px}
+.fr-read b{display:block;font-size:.9rem;color:var(--ink)}.fr-read small{font-size:.72rem;color:var(--ink-2)}
+.fr-common{font-size:.78rem;color:var(--acc);font-weight:800;margin:-.3rem 0 .8rem}
+.fr-revs{display:grid;gap:.6rem}
+`; TR.append(st); }
+friendPage = async function (handle) {
+  const v = $('#shelflist'); closeEd();
+  const shell = (body) => { v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>@${esc(handle)}</b><span></span></div>${body}`; v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; }); };
+  v.classList.remove('feedview'); shell('<p class="sl-empty">Carregando…</p>'); v.hidden = false; v.scrollTop = 0;
+  let d; try { const r = await sapi('GET', `/v1/users/${encodeURIComponent(handle)}`); if (r.status !== 200) throw 0; d = r.data; } catch { return shell('<p class="sl-empty">Não foi possível abrir essa página agora.</p>'); }
+  const c = (d.shelf && d.shelf.counts) || {}, won = (d.achievements && d.achievements.won) || [], fl = SOC.flairs[d.handle], fr = fl && fl.frame && PF_FRAMES.find((x) => x[0] === fl.frame);
+  const mine = new Set(lib().filter((e) => e.status === 'LIDO').map((e) => normT(e.title)));
+  const common = ((d.shelf && d.shelf.lidos) || []).filter((b) => mine.has(normT(b.title)));
+  const strip = (arr) => `<div class="es-row">${arr.map((b) => `<span class="es-bk">${cvh(b.title, b.cover, 'es-cv')}</span>`).join('')}</div>`;
+  const fechado = !d.reading && !d.shelf && !d.achievements && !d.reviews;
+  shell(`<header class="yo-top"><span class="av v3-av yo-av${fr ? ' framed' : ''}" data-avh="${esc(d.handle)}" style="background-color:${friendColor(d.handle)};${fr ? `--frame:${fr[2]}` : ''}">${esc(initial(d.displayName))}</span>
+      <div class="yo-id"><b>${esc(d.displayName)}</b><small>@${esc(d.handle)}</small></div><span></span></header>
+    ${d.self ? '' : `<div class="fr-acts">${d.isFriend ? `<button type="button" id="fr-duel">⚔ Duelo da semana</button>` : `<button type="button" class="pri" id="fr-add">+ Adicionar aos amigos</button>`}</div>`}
+    ${d.shelf || d.achievements ? `<div class="yo-nums"><button type="button" disabled><b>${c.LIDO || 0}</b><small>${(c.LIDO || 0) === 1 ? 'lido' : 'lidos'}</small></button><button type="button" disabled><b>${c.LENDO || 0}</b><small>lendo</small></button><button type="button" disabled><b>${c.QUERO || 0}</b><small>quero ler</small></button><button type="button" disabled><b>${won.length}</b><small>${won.length === 1 ? 'conquista' : 'conquistas'}</small></button></div>` : ''}
+    ${common.length ? `<p class="fr-common">Vocês dois leram ${common.slice(0, 3).map((b) => esc(b.title)).join(', ')}${common.length > 3 ? ` e mais ${common.length - 3}` : ''}</p>` : ''}
+    ${d.reading ? `<div class="v3-sh"><b>Lendo agora</b></div>${d.reading.length ? d.reading.map((b) => `<div class="fr-read">${cvh(b.title, b.cover, '')}<div><b>${esc(b.title)}</b><small>${Number(b.pct) || 0}% lido</small><i class="v3-bar"><i style="width:${Math.max(0, Math.min(100, Number(b.pct) || 0))}%"></i></i></div></div>`).join('') : '<p class="v3-empty">Nada no momento.</p>'}` : ''}
+    ${d.achievements ? `<section class="v3c"><div class="v3-sh" style="margin:0 0 .5rem"><b>Conquistas · ${won.length} de ${d.achievements.total || 0}</b></div>${won.filter((a) => DECO_IMG[a.k]).length ? `<div class="v3-shelf">${won.filter((a) => DECO_IMG[a.k]).slice(0, 12).map((a) => `<span class="v3-trophy${a.rare ? ' rare' : ''}" title="${esc(a.n)}"><img src="${DECO_IMG[a.k]}" alt="${esc(a.n)}"></span>`).join('')}</div>` : '<p class="v3-empty" style="margin:0">Nenhuma conquista ainda.</p>'}</section>` : ''}
+    ${d.shelf && (d.shelf.potinho || []).length ? `<div class="v3-sh"><b>Prateleira do coração</b></div>${strip(d.shelf.potinho)}` : ''}
+    ${d.shelf && (d.shelf.lidos || []).length ? `<div class="v3-sh"><b>Lidos recentes</b></div>${strip(d.shelf.lidos)}` : ''}
+    ${d.reviews ? `<div class="v3-sh"><b>Avaliações</b></div><div class="fr-revs" id="fr-revs">${d.reviews.length ? '' : '<p class="v3-empty">Nenhuma avaliação ainda.</p>'}</div>` : ''}
+    ${fechado ? `<p class="sl-empty">${esc(d.displayName)} preferiu manter a página fechada.</p>` : ''}`);
+  const rv = $('#fr-revs', v); if (rv && d.reviews) d.reviews.forEach((x) => rv.append(reviewCard(x)));
+  paintCv(v); paintAvatars();
+  $('#fr-add', v)?.addEventListener('click', async (ev) => { ev.currentTarget.disabled = true; const r = await sapi('POST', '/v1/friends/requests', { handle: d.handle }); toast(r.status < 300 ? (r.data && r.data.status === 'ACCEPTED' ? 'Vocês já são amigos!' : 'Pedido enviado') : 'Não deu certo agora'); });
+  $('#fr-duel', v)?.addEventListener('click', async () => {
+    if (SOC.duels.some((x) => x.opponent && x.opponent.handle === d.handle)) return toast('Vocês já têm um duelo nesta semana');
+    const r = await sapi('POST', '/v1/duels', { handle: d.handle, weekStart: isoMonday() }); toast(r.status === 201 ? `Desafio enviado para ${String(d.displayName).split(' ')[0]}` : 'Não consegui enviar o desafio'); if (r.status === 201) syncSocial3(true);
+  });
+};
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
