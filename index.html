@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '3.6.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '3.6.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -5045,7 +5045,7 @@ function openNovidades(focus, host) {
     if (p.type === 'achievement' || p.type === 'buddy_done') return extraPostHTML(p);
     const rev = isReview(p), who = p.mine ? 'Você' : (p.user && p.user.displayName) || 'Alguém', handle = (p.user && p.user.handle) || '';
     const verb = rev ? 'avaliou' : p.kind === 'STARTED' ? 'começou a ler' : p.kind === 'FINISHED' ? 'terminou' : 'avançou em';
-    const th = threads[p.id], hid = rev && p.text && !seen.has(p.id) && (p.spoiler || (!p.mine && !iReadT(p.title)));
+    const th = threads[p.id], hid = rev && p.text && !p.mine && !seen.has(p.id) && (p.spoiler || !iReadT(p.title)); // a sua própria avaliação nunca fica escondida para você
     return `<article class="fd-post${focus === p.id ? ' focus' : ''}" data-id="${esc(p.id)}">
       <header><span class="av sm" data-avh="${esc(handle || '')}" style="background:${friendColor(handle)}">${esc(initial(who === 'Você' ? NAME : who))}</span><div><p><button type="button" class="fd-who" data-h="${esc(handle)}">${esc(who)}</button> ${verb} <b>${esc(p.title)}</b>${rev ? stars(p.paws) : p.kind === 'FINISHED' ? ' 🎉' : ''}</p><small>${tab === 'descobrir' && handle ? '@' + esc(handle) + ' · ' : ''}${esc(relTime(p.updatedAt))}</small></div>${cvh(p.title, p.cover, 'nv-cv')}</header>
       ${!rev && p.kind === 'PROGRESS' && p.pct != null ? `<i class="mt-bar"><i style="width:${Math.max(0, Math.min(100, Number(p.pct) || 0))}%"></i></i><small>${Number(p.pct) || 0}%${p.pages ? ` · pág. ${Number(p.pages)}` : ''}</small>` : ''}
