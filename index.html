@@ -9168,7 +9168,7 @@ function yearShelfHTML(items, year, own) {
   const sem = list.filter((x) => x.ap || !String(x.d).slice(5, 7)); if (sem.length) groups.push(['Sem mês', sem]);
   const pages = list.reduce((s, x) => s + (x.pg || 0), 0);
   const bk = (x) => { const c = pawColor(x.p); return `<button type="button" class="es-bk ys-bk${c ? ' paw' : ''}" ${own && x.id ? `data-id="${esc(x.id)}"` : `data-book="${esc(x.t)}" data-author="${esc(x.a || '')}"`} title="${esc(x.t)}" aria-label="${esc(x.t)}" style="${c ? `--pc:${c}` : ''}">${cvh(x.t, x.c, 'ys-cv', 'font-size:.38rem;line-height:1.05')}</button>`; };
-  return `<section class="v3c ys"><div class="ys-h"><b>Leituras de ${y} por mês</b><span class="ys-y"><button type="button" data-ysy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><b>${y}</b><button type="button" data-ysy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></span></div>
+  return `<section class="v3c ys"><div class="ys-h"><b>Leituras por mês</b><span class="ys-y"><button type="button" data-ysy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><b>${y}</b><button type="button" data-ysy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></span></div>
     <div class="es5-c"><span>${plural(list.length, 'livro', 'livros')}</span>${pages ? `<span>${pages.toLocaleString('pt-BR')} páginas</span>` : ''}</div>
     <div class="ys-row">${groups.map(([n, g]) => `<div class="ys-g"><span class="ys-m">${n}</span><div class="ys-bks">${g.map(bk).join('')}</div></div>`).join('')}</div>
     ${list.some((x) => x.p) ? `<div class="ys-leg"><span><i style="background:#e0a526"></i>5 patas</span><span><i style="background:#3f8f5a"></i>4 ou mais</span><span><i style="background:#c8742e"></i>3 ou mais</span><span><i style="background:#9a8f86"></i>abaixo de 3</span></div>` : ''}</section>`;
@@ -9196,7 +9196,7 @@ publishSnapshot = async function () {
   const reading = L.filter((e) => e.status === 'LENDO').slice(0, 3).map((e) => ({ ...mini(e), pct: readingInfo(e).pct }));
   const counts = {}; for (const e of L) counts[e.status] = (counts[e.status] || 0) + 1;
   const lidos = L.filter((e) => e.status === 'LIDO').sort((a, b) => (b.finishedAt || '').localeCompare(a.finishedAt || '')).slice(0, 12).map(mini);
-  const potinho = L.filter((e) => e.status === 'LIDO' && ((reviewOfLib(e) || {}).paws || 0) >= 4.5).sort((a, b) => String(b.finishedAt || '').localeCompare(String(a.finishedAt || ''))).slice(0, 12).map(mini); // 4.4: Melhores avaliados (4,5 e 5 patas), leituras mais recentes primeiro
+  const potinho = L.filter((e) => e.status === 'LIDO' && ((reviewOfLib(e) || {}).paws || 0) >= 4.5).sort((a, b) => String(b.finishedAt || '').localeCompare(String(a.finishedAt || ''))).slice(0, 12).map((e) => ({ ...mini(e), p: (reviewOfLib(e) || {}).paws || 0 })); // 4.4: Melhores avaliados (4,5 e 5 patas), leituras mais recentes primeiro
   const ano = L.filter((e) => e.status === 'LIDO' && e.finishedAt).sort((a, b) => String(b.finishedAt).localeCompare(String(a.finishedAt))).slice(0, 200)
     .map((e) => ({ t: e.title, a: e.author || null, c: /^https:\/\//.test(e.cover || '') ? e.cover : null, d: String(e.finishedAt), ...(e.dateApprox === 'year' ? { ap: 1 } : {}), p: (reviewOfLib(e) || {}).paws || 0, pg: Number(e.totalPages) || 0 }));
   const st = achState();
@@ -9655,7 +9655,7 @@ TR.addEventListener('click', (ev) => {
 `; TR.append(st); }
 // --- 07_pessoa.js ---
 // Toque numa pessoa da leitura conjunta (linha no card do Início ou bolinha na página Lendo junto): Ver perfil / Mandar mensagem.
-{ const st = document.createElement('style'); st.textContent = `.v3-bud-r{cursor:pointer;border-radius:10px}.v3-bud-r:active{background:color-mix(in srgb,var(--acc) 10%,transparent)}.bj-dot[data-avh]{cursor:pointer}`; TR.append(st); }
+{ const st = document.createElement('style'); st.textContent = `.v3-bud-r{cursor:pointer;border-radius:10px}.v3-bud-r:active{background:color-mix(in srgb,var(--acc) 10%,transparent)}.bj-dot[data-avh],.fd-post .av[data-avh],.pt-com .av[data-avh]{cursor:pointer}`; TR.append(st); }
 const personMenu = (anchor, handle, name) => {
   const me = (typeof socialProfile !== 'undefined' && socialProfile && socialProfile.handle) || ''; if (!handle || handle === me) return;
   const first = String(name || handle).split(' ')[0];
@@ -9665,10 +9665,10 @@ const personMenu = (anchor, handle, name) => {
   ]);
 };
 TR.addEventListener('click', (ev) => {
-  const row = ev.target.closest && ev.target.closest('.v3-bud-r, .bj-dot[data-avh]'); if (!row) return;
+  const row = ev.target.closest && ev.target.closest('.v3-bud-r, .bj-dot[data-avh], .fd-post .av[data-avh], .pt-com .av[data-avh], .nt-fd .av[data-avh], .bj-it .bj-av[data-avh]'); if (!row) return;
   const av = row.matches('[data-avh]') ? row : row.querySelector('[data-avh]'); if (!av) return;
   ev.preventDefault(); ev.stopPropagation();
-  const name = row.querySelector('small')?.textContent || (row.getAttribute('title') || '').split(' · ')[0];
+  const name = row.matches('.av') ? ((row.closest('.fd-post, .pt-com, .nt-fd') || row).querySelector('.fd-who, b')?.textContent || '') : row.querySelector('small')?.textContent || (row.getAttribute('title') || '').split(' · ')[0];
   personMenu(row, av.dataset.avh, name);
 }, true);
 // --- 08_perfil.js ---
@@ -9679,6 +9679,9 @@ TR.addEventListener('click', (ev) => {
 // - selo escolhido aparece ao lado do nome; sem o vão entre o topo e a foto
 // - "Prateleira do coração" vira "Melhores avaliados" (4,5 e 5 patas, leituras mais recentes)
 { const st = document.createElement('style'); st.textContent = `
+#shelflist .sl-body{min-width:0;max-width:100%;overflow-x:hidden}#shelflist .sl-body > *{min-width:0;max-width:100%}
+.yo-top{min-width:0}.yo-top .yo-id{flex:1 1 auto;min-width:0}.yo-id > b,.yo-id > small,.yo-bio{overflow:hidden;text-overflow:ellipsis}
+.yo-now{width:100%}.yo-now b{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mine-page.tabroot .sl-top{display:none!important}
 .mine-page .yo-top{margin-top:.2rem}
 .yo-top .me-more{margin-left:auto;align-self:flex-start;width:40px;height:36px;border:1px solid var(--line);border-radius:99px;background:var(--panel);color:var(--ink);font:inherit;font-weight:900;letter-spacing:.05em;flex:none}
@@ -9688,6 +9691,7 @@ TR.addEventListener('click', (ev) => {
 .yo-now em{font-style:normal;font-weight:800;color:var(--acc);flex:none}
 .yo-now svg{width:14px;height:14px;flex:none;color:var(--acc)}
 .yo-id .yo-badge{width:22px;height:22px;object-fit:contain;vertical-align:-4px;margin-left:.3rem}
+.mb-bk{flex:none;display:flex;flex-direction:column;align-items:center;gap:.2rem}.mb-bk small{font-size:.74rem;font-weight:800;color:var(--ink-2)}
 .yo-nums button[data-go]{cursor:pointer}.yo-nums button[data-go]:not([disabled]){color:inherit}
 `; TR.append(st); }
 {
@@ -9699,6 +9703,11 @@ TR.addEventListener('click', (ev) => {
     const r = await _fp.apply(this, arguments); const v = $('#shelflist'), d = S.fpData; if (v.hidden || !d || d.handle !== h) return r;
     const nm = v.querySelector('.yo-id > b'); if (nm && !nm.querySelector('.yo-badge')) nm.insertAdjacentHTML('beforeend', badgeImg(h));
     [...v.querySelectorAll('.v3-sh b')].forEach((b) => { if (b.textContent.trim() === 'Prateleira do coração') b.textContent = 'Melhores avaliados'; });
+    // nota embaixo de cada capa dos Melhores avaliados (do resumo publicado; no próprio perfil, do aparelho)
+    const mh = [...v.querySelectorAll('.v3-sh')].find((x) => /Melhores avaliados/.test(x.textContent)), row = mh && mh.nextElementSibling;
+    if (row && !row.dataset.paws) { row.dataset.paws = 1; const list = (d.shelf && d.shelf.potinho) || [];
+      [...row.querySelectorAll('.es-bk')].forEach((b, i) => { let p = (list[i] || {}).p; if (!p && d.self) { const e = lib().find((x) => normT(x.title) === normT(b.dataset.book || '')); p = e ? (reviewOfLib(e) || {}).paws : 0; }
+        const w = document.createElement('div'); w.className = 'mb-bk'; b.replaceWith(w); w.append(b); if (p) w.insertAdjacentHTML('beforeend', '<small>' + pawTxt(p) + '</small>'); }); }
     return r;
   };
   const _om = openMyProfile;
@@ -9964,6 +9973,17 @@ manualBookSheet = function (onPick) {
   TR.addEventListener('touchstart', (ev) => { const b = ev.target.closest && ev.target.closest('.ys-bk'); if (b) up(b); }, { passive: true });
   TR.addEventListener('touchend', () => setTimeout(() => up(null), 250), { passive: true });
 }
+// capas inteiras (proporção de livro, 2:3) e seletor de ano menor
+{ const st = document.createElement('style'); st.textContent = `
+.ys{width:100%!important;min-width:0!important;max-width:100%!important;overflow:hidden;box-sizing:border-box}
+.ys-row{max-width:100%}
+.ys-bk{width:64px!important}
+.ys-bk .cv{width:64px!important;height:96px!important;border-radius:2px 4px 0 0!important}
+.ys-bk .cv *{font-size:.5rem!important}
+.ys-y button{width:28px!important;height:28px!important;border-radius:99px!important;font-size:.8rem!important;padding:0!important;line-height:1}
+.ys-y b{font-size:.9rem}
+.ys-h > b{font-size:1rem}
+`; TR.append(st); }
 // --- 14_duplicado.js ---
 // Livro que já está na biblioteca não entra duplicado sem perguntar: lido → "Ler de novo" (releitura no mesmo livro, nota e
 // avaliação continuam); em andamento ou na fila → abrir o que já existe. "Adicionar outra edição" fica como saída consciente.
@@ -10094,6 +10114,41 @@ TR.addEventListener('click', (ev) => {
   if (lib().filter((e) => e.status === 'QUERO').length < 2) return toast('Coloque pelo menos 2 livros em Quero ler para sortear');
   sortShelf('QUERO');
 });
+// --- 19_conquistas_perfil.js ---
+// Conquistas no perfil: carrossel com o nome embaixo, ordenar (Padrão, Raras primeiro, A–Z) e sem imagem repetida
+// (a conquista antiga e a nova que a substituiu têm a mesma imagem: aparece uma vez só).
+{ const st = document.createElement('style'); st.textContent = `
+.ach-car{display:flex;gap:.6rem;overflow-x:auto;scrollbar-width:none;padding:.1rem .1rem .3rem;scroll-snap-type:x proximity}
+.ach-car::-webkit-scrollbar{display:none}
+.ach-it{flex:none;width:76px;display:flex;flex-direction:column;align-items:center;gap:.25rem;scroll-snap-align:start;text-align:center}
+.ach-it span{width:64px;height:64px;border-radius:14px;border:1px solid var(--line);background:var(--bg);display:grid;place-items:center}
+.ach-it.rare span{border-color:#e0a526;box-shadow:0 0 0 2px color-mix(in srgb,#e0a526 30%,transparent)}
+.ach-it img{width:52px;height:52px;object-fit:contain}
+.ach-it small{font-size:.66rem;line-height:1.2;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ach-sort{margin-left:auto;border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.78rem;min-height:32px}
+`; TR.append(st); }
+{
+  const _fp = friendPage;
+  friendPage = async function (h) {
+    const r = await _fp.apply(this, arguments); const v = $('#shelflist'), d = S.fpData; if (v.hidden || !d || d.handle !== h || !d.achievements) return r;
+    const shelf = v.querySelector('.v3-shelf'); if (!shelf || shelf.dataset.car) return r;
+    const sec = shelf.closest('section'), head = sec && sec.querySelector('.v3-sh');
+    const seen = new Set(); const won = [...(d.achievements.won || [])].sort((x, y) => (/edição antiga/.test(x.n) ? 1 : 0) - (/edição antiga/.test(y.n) ? 1 : 0)).filter((a) => DECO_IMG[a.k] && !seen.has(a.k) && seen.add(a.k)).map((a, i) => ({ ...a, i, n: String(a.n || '').replace(/ \(edição antiga\)$/, '') }));
+    let mode = 'padrao';
+    const paint = () => {
+      const list = mode === 'raras' ? [...won].sort((a, b) => (b.rare ? 1 : 0) - (a.rare ? 1 : 0) || a.i - b.i) : mode === 'az' ? [...won].sort((a, b) => a.n.localeCompare(b.n, 'pt-BR')) : won;
+      shelf.innerHTML = list.map((a) => `<div class="ach-it${a.rare ? ' rare' : ''}" title="${esc(a.n)}"><span><img src="${DECO_IMG[a.k]}" alt=""></span><small>${esc(a.n)}</small></div>`).join('');
+    };
+    shelf.dataset.car = 1; shelf.className = 'ach-car'; paint();
+    const b = head && head.querySelector('b'); if (b) b.textContent = `Conquistas · ${won.length} de ${d.achievements.total || 0}`;
+    if (head && won.length > 1 && !head.querySelector('.ach-sort')) {
+      head.style.display = 'flex'; head.style.alignItems = 'center';
+      head.insertAdjacentHTML('beforeend', '<button type="button" class="ach-sort">Ordenar</button>');
+      head.querySelector('.ach-sort').addEventListener('click', (ev) => popMenu(ev.currentTarget, [['padrao', 'Padrão'], ['raras', 'Raras primeiro'], ['az', 'A–Z']].map(([k, t]) => ({ label: t, on: mode === k, fn: () => { mode = k; paint(); } }))));
+    }
+    return r;
+  };
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
