@@ -9475,6 +9475,149 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+// ==== 4.4 rodada 2 (início) ====
+// --- 01_voltar.js ---
+// Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
+// Só sai do app quando já está no Início sem nada aberto. Cada camada aberta ganha uma entrada no histórico do navegador.
+(() => {
+  const vis = (n) => n && !n.hidden && n.offsetParent !== null;
+  const layers = () => {
+    let n = 0;
+    if (S.tab && S.tab !== 'inicio') n++;
+    const v = $('#shelflist'); if (v && !v.hidden && !v.classList.contains('tabroot')) n++;
+    if (vis($('#editor'))) n++;
+    if (TR.querySelector('.drw')) n++;
+    if (TR.querySelector('.pop')) n++;
+    if (document.querySelector('body > .sheet')) n++;
+    if (TR.querySelector('.bd-page:not([hidden]), .gp-page:not([hidden])')) n++;
+    return n;
+  };
+  const closeTop = () => {
+    if (TR.querySelector('.pop')) return closePop();
+    const sh = [...document.querySelectorAll('body > .sheet')].pop(); if (sh) return sh.remove();
+    if (vis($('#editor'))) return closeEd();
+    if (TR.querySelector('.drw')) return closeDrawer();
+    const back = [...TR.querySelectorAll('.sl-back')].find(vis); if (back) return back.click();
+    if (S.tab && S.tab !== 'inicio') return goTab('inicio');
+  };
+  let pushed = 0, skip = 0, t = 0;
+  const sync = () => {
+    t = 0; const n = layers();
+    if (n > pushed) { while (pushed < n) { history.pushState({ bear: ++pushed }, ''); } }
+    else if (n < pushed) { const d = pushed - n; pushed = n; skip += d; history.go(-d); }
+  };
+  const later = () => { if (!t) t = setTimeout(sync, 60); };
+  addEventListener('popstate', () => {
+    if (skip > 0) { skip--; return; }
+    pushed = Math.max(0, pushed - 1);
+    try { closeTop(); } catch (err) { console.error('voltar', err); }
+    later();
+  });
+  const mo = new MutationObserver(later);
+  mo.observe(TR, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+  mo.observe(document.body, { childList: true });
+  later();
+})();
+// --- 02_meta.js ---
+// Página da meta (rodada 2): ano numa lista (só anos com leitura), "•••" com as ações, sem botão grande,
+// toque num livro lido abre as opções dele, e o ano não se repete nos cartões.
+{ const st = document.createElement('style'); st.textContent = `
+.gp-yb{display:inline-flex;align-items:center;gap:.25rem;min-height:36px;padding:0 .7rem;border:1px solid var(--line);border-radius:99px;background:var(--panel);color:var(--ink);font:inherit;font-weight:800;font-size:.9rem}
+.gp-yb svg{width:14px;height:14px}
+.gp-acts{display:flex;align-items:center;gap:.4rem;margin-left:auto}
+.gp-more{width:40px;height:36px;border:1px solid var(--line);border-radius:99px;background:var(--panel);color:var(--ink);font:inherit;font-weight:900;letter-spacing:.05em}
+.gp-page .ys .ys-y{display:none}
+.gp-page .gp-h{margin-top:1rem}
+`; TR.append(st); }
+openGoalPage = function (year) {
+  const v = $('#shelflist');
+  const draw = () => {
+    const today = todayISO(), cy = Number(today.slice(0, 4)), y = year || cy;
+    const lidos = lib().filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').startsWith(String(y))).sort((a, b) => String(b.finishedAt).localeCompare(String(a.finishedAt)));
+    const target = Number((db.yearGoals || {})[y]) || 0, done = lidos.length, pct = target ? Math.min(100, Math.round((done / target) * 100)) : 0;
+    const years = [...new Set([cy, ...lib().filter((e) => e.status === 'LIDO' && e.finishedAt).map((e) => Number(String(e.finishedAt).slice(0, 4)))])].filter(Boolean).sort((a, b) => b - a);
+    let lines = '';
+    if (!target) lines = y === cy ? '<p>Você ainda não definiu a meta deste ano. Toque em ••• para definir.</p>' : '<p>Sem meta registrada neste ano.</p>';
+    else if (y < cy) lines = `<p>${done >= target ? 'Meta batida.' : `Faltaram ${plural(target - done, 'livro', 'livros')}.`}</p>`;
+    else {
+      const end = `${y}-12-31`, daysLeft = Math.max(1, between(today, end) + 1), daysGone = between(`${y}-01-01`, today) + 1, left = Math.max(0, target - done);
+      const proj = Math.floor((done / daysGone) * (daysGone + daysLeft - 1));
+      lines = done >= target ? '<p>Meta batida. Tudo o que vier agora é bônus.</p>'
+        : `<p>Faltam ${plural(left, 'livro', 'livros')} em ${plural(daysLeft, 'dia', 'dias')}.</p><p>No seu ritmo, você chega a ${proj}${proj >= target ? ' e bate a meta' : ''}. Para bater: 1 livro a cada ${Math.max(1, Math.floor(daysLeft / left))} dias.</p>`;
+    }
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Meta de ${y}</b><span class="gp-acts">${years.length > 1 ? `<button type="button" class="gp-yb" id="gp-y" aria-label="Escolher ano">${y}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>` : ''}<button type="button" class="gp-more" id="gp-more" aria-label="Mais opções da meta">•••</button></span></div><div class="gp-page">
+      <div class="gp-top"><div class="gp-ring" style="--p:${pct}"><div><b>${done}</b><small>${target ? `de ${target}` : 'lidos'}</small></div></div><div class="gp-txt"><b>${target ? `${pct}% da meta` : `${plural(done, 'livro lido', 'livros lidos')}`}</b>${lines}</div></div>
+      <div id="gp-ys"></div>
+      <div class="gp-h"><b>Lidos · ${done}</b></div>
+      <div class="sl-list">${lidos.map((e) => slItem(e).replace('<i>›</i>', `<i>${esc(fmt(e.finishedAt))} ›</i>`)).join('') || '<p class="sl-empty">Nenhum livro terminado neste ano ainda.</p>'}</div></div>`;
+    paintCv(v);
+    S.ysYear = y; const a = $('#gp-ys', v); mountYearShelf(v, a, ysItems(), true); a.remove();
+    const ysH = v.querySelector('.ys .ys-h > b'); if (ysH) ysH.textContent = 'Por mês';
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; S.listRedraw = null; refresh(); });
+    $('#gp-y', v)?.addEventListener('click', (ev) => popMenu(ev.currentTarget, years.map((n) => ({ label: String(n), on: n === y, fn: () => { year = n; draw(); } }))));
+    $('#gp-more', v).addEventListener('click', (ev) => {
+      const items = [];
+      if (y === cy) items.push({ label: target ? 'Alterar meta' : 'Definir meta', sub: target ? `hoje: ${plural(target, 'livro', 'livros')}` : 'quantos livros neste ano', fn: () => { editMetas(); const ed = $('#editor'), wait = () => { if (!ed.hidden) return setTimeout(wait, 250); if (!v.hidden) draw(); }; setTimeout(wait, 250); } });
+      if (y === cy && done) items.push({ label: 'Gerar “Meu ano em livros”', sub: 'imagem para compartilhar', fn: () => shareYear() });
+      items.push({ label: 'Ver estatísticas', sub: 'páginas, ritmo e dias seguidos', fn: () => { v.hidden = true; S.listRedraw = null; goTab('progresso'); } });
+      if (y === cy && target) items.push(0, { label: 'Tirar a meta deste ano', danger: true, fn: () => { delete (db.yearGoals || {})[y]; save(); draw(); toast('Meta tirada'); } });
+      popMenu(ev.currentTarget, items);
+    });
+    $$('.sl-item', v).forEach((b) => b.addEventListener('click', (ev) => {
+      ev.stopImmediatePropagation(); const e = byId(b.dataset.id); if (!e) return;
+      const rv = reviewOfLib(e);
+      popMenu(b, [
+        { label: rv && rv.paws ? 'Ver minha avaliação' : 'Avaliar', sub: rv && rv.paws ? pawTxt(rv.paws) : '', fn: () => rateForm(e, { logs: [] }, () => draw()) },
+        { label: 'Abrir o livro', sub: 'progresso, trechos e anotação', fn: () => openBook(e.id) },
+        { label: 'Ver no catálogo', sub: 'sinopse e ficha', fn: () => openBookPage(e) },
+        { label: 'Indicar a alguém', fn: () => recommendToFriend(e) },
+        { label: 'Ler de novo', fn: () => startReread(e) },
+      ]);
+    }, true));
+    syncTopTitle();
+  };
+  S.listRedraw = draw; S.navView = { t: 'goal', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot'); draw(); v.hidden = false; v.scrollTop = 0;
+};
+// --- 03_sorteio.js ---
+// Sorteio animado: o urso gira os livros (img/sorteio_gira.webp) e depois aparece segurando a carta com a capa sorteada (img/sorteio_fim.webp).
+// A capa entra no retângulo da carta (medido no quadro final do GIF: 52–91% na horizontal, 29–85% na vertical).
+{ const st = document.createElement('style'); st.textContent = `
+.srt-stage{position:relative;width:min(240px,64vw);aspect-ratio:1;margin:.2rem auto .6rem;border-radius:22px;overflow:hidden;background:#000}
+.srt-stage img.srt-a{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.srt-card{position:absolute;left:53.6%;top:30.6%;width:36.2%;height:52.4%;border-radius:4px 7px 7px 4px;overflow:hidden;opacity:0;transform:scale(.6) rotate(-6deg);transition:opacity .35s ease,transform .45s cubic-bezier(.2,1.4,.4,1)}
+.srt-card .cv{width:100%!important;height:100%!important;border-radius:0!important;font-size:.5rem}
+.srt-stage.done .srt-card{opacity:1;transform:none}
+.srt-stage ~ .srt-bk .srt-cv{display:none}.srt-stage ~ .srt-bk{justify-content:center;text-align:center}
+#editor .srt-wait{opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .3s,transform .3s}
+#editor .srt-show{opacity:1;transform:none;pointer-events:auto}
+`; TR.append(st); }
+{
+  const blobs = {}; // cada sorteio recomeça o GIF do primeiro quadro (URL nova a cada vez)
+  const src = async (f) => { try { if (!blobs[f]) blobs[f] = await (await fetch('img/' + f)).blob(); return URL.createObjectURL(blobs[f]); } catch { return 'img/' + f; } };
+  const _ss = sortShelf;
+  sortShelf = async function (key, lastId) {
+    _ss(key, lastId);
+    const ed = $('#editor'); if (ed.hidden) return;
+    const bk = ed.querySelector('.srt-bk'); if (!bk) return;
+    const title = bk.querySelector('b')?.textContent || '', cov = bk.querySelector('.cv, .srt-cv');
+    const stage = document.createElement('div'); stage.className = 'srt-stage';
+    const img = document.createElement('img'); img.className = 'srt-a'; img.alt = ''; stage.append(img);
+    const card = document.createElement('div'); card.className = 'srt-card'; if (cov) { card.append(cov.cloneNode(true)); cov.remove(); } stage.append(card);
+    bk.before(stage);
+    const rest = [...ed.querySelectorAll('.dd > *')].filter((n) => n !== stage && n.tagName !== 'H3');
+    const h3 = ed.querySelector('.dd > h3'); const h3t = h3 ? h3.textContent : '';
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const finish = async () => { img.src = await src('sorteio_fim.webp'); stage.classList.add('done'); if (h3) h3.textContent = h3t; rest.forEach((n) => n.classList.add('srt-show')); };
+    rest.forEach((n) => n.classList.add('srt-wait'));
+    if (reduce) return finish();
+    if (h3) h3.textContent = 'Sorteando…';
+    img.src = await src('sorteio_gira.webp');
+    const token = (S.srtTok = (S.srtTok || 0) + 1);
+    setTimeout(() => { if (S.srtTok === token && !ed.hidden) finish(); }, 1150);
+  };
+  drawLot = (key) => sortShelf(key);
+}
+// ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
