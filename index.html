@@ -5030,7 +5030,7 @@ function openNotif() {
 }
 // ===== Novidades: tela inteira (feed das amigas e Descobrir) =====
 function openNovidades(focus, host) {
-  const v = host || $('#shelflist'); let tab = 'amigas', posts = null, err = null, token = 0;
+  const v = host || $('#shelflist'); let tab = 'amigas', posts = null, err = null, token = 0, feedMore = false, moreBusy = false;
   const open = new Set(focus ? [focus] : []), seen = new Set(), threads = {};
   const stars = (p) => (p ? ' ' + pawTxt(p) : '');
   const postOf = (n) => posts.find((x) => String(x.id) === n.closest('.fd-post').dataset.id);
@@ -5044,7 +5044,7 @@ function openNovidades(focus, host) {
       tab = 'amigas'; const r = await sapi('GET', '/v1/feed');
       if (my !== token) return;
       if (r.status !== 200 || !r.data || !Array.isArray(r.data.items)) throw 0;
-      posts = r.data.items;
+      posts = r.data.items; feedMore = posts.length >= 20; S.feedMore = more; // 4.4: carrega mais ao rolar
       try { const x = await sapi('GET', '/v1/feed/extra'); if (x.status === 200 && x.data && Array.isArray(x.data.items)) SOC.feedExtra = x.data.items; } catch {}
       const plain = posts; posts = mergeFeed(posts); if (tab === 'amigas') { SOC.feed = plain; S.feedAt = Date.now(); L.feedSeenAt = new Date().toISOString(); saveL(); }
       draw(); for (const id of open) loadThread(id);
@@ -5054,6 +5054,13 @@ function openNovidades(focus, host) {
   async function loadThread(id) {
     try { const r = await sapi('GET', `/v1/reviews/${id}/comments`); threads[id] = r.status === 200 && r.data ? r.data.items || [] : []; } catch { threads[id] = []; }
     if (!v.hidden) draw();
+  }
+  // 4.4: próxima página (mais antigas), chamada quando o fim da lista aparece na tela
+  async function more() {
+    if (moreBusy || !feedMore || !posts || !posts.length || tab !== 'amigas') return; moreBusy = true;
+    const last = posts.map((p) => p.updatedAt).filter(Boolean).sort()[0];
+    try { const r = await sapi('GET', `/v1/feed?before=${encodeURIComponent(last)}`); const it = r.status === 200 && r.data && Array.isArray(r.data.items) ? r.data.items : []; const ids = new Set(posts.map((p) => String(p.id))); const add = it.filter((p) => !ids.has(String(p.id))); posts = posts.concat(add); feedMore = add.length > 0; } catch { feedMore = false; }
+    moreBusy = false; draw();
   }
   const state = (img, t, s, btn) => `<div class="fd-state"><img src="${img}" alt=""><b>${t}</b><span>${s}</span>${btn || ''}</div>`;
   function postHTML(p) {
@@ -5074,7 +5081,7 @@ function openNovidades(focus, host) {
       : err === 'handle' ? state(A.urso_lendo, 'Crie seu @usuário', 'É como seus amigos vão te encontrar. Ninguém vê seu e-mail.', '<button type="button" id="fd-handle">Criar meu @usuário</button>')
       : err === 'rede' ? state(A.urso_tedio, 'Sem conexão agora', 'Tente de novo em instantes.', '<button type="button" id="fd-retry">Tentar de novo</button>')
       : posts === null ? '<p class="sl-empty">Carregando…</p>'
-      : posts.length ? posts.map(postHTML).join('')
+      : posts.length ? posts.filter(S.feedPrefOk || (() => true)).map(postHTML).join('') + (feedMore ? '<div class="fd-more" aria-hidden="true">Carregando mais…</div>' : '')
       : tab === 'descobrir' ? state(A.urso_tedio, 'Nada por aqui ainda', 'Avaliações públicas de quem usa o app aparecem aqui.')
       : state(A.urso_tedio, SOC.fr.friends.length ? 'Nenhuma novidade ainda' : 'Adicione seus amigos', SOC.fr.friends.length ? 'Quando vocês lerem e avaliarem livros, tudo aparece aqui.' : 'Convide pelo @usuário para ver o que estão lendo.', SOC.fr.friends.length ? '' : '<button type="button" id="fd-add">+ Adicionar amigos</button>');
     if (host) host.innerHTML = `<div class="fd-list">${body}</div>`;
@@ -5103,7 +5110,7 @@ function openNovidades(focus, host) {
       try { await sapi('DELETE', `/v1/comments/${cid}`); p.comments = Math.max(0, (p.comments || 0) - 1); if (p.mine && L.seen[p.id]) { L.seen[p.id].c = p.comments; saveL(); } await loadThread(p.id); } catch { toast('Não consegui apagar'); } }));
   }
   if (host) { // Início: mostra o que já tem na hora e só busca de novo se passou mais de 1 minuto
-    if (connected() && socialProfile && Array.isArray(SOC.feed) && SOC.ok && S.feedAt) { posts = mergeFeed(SOC.feed); draw(); if (Date.now() - (S.feedAt || 0) > 60000) load(); }
+    if (connected() && socialProfile && Array.isArray(SOC.feed) && SOC.ok && S.feedAt) { posts = mergeFeed(SOC.feed); feedMore = SOC.feed.length >= 20; S.feedMore = more; draw(); if (Date.now() - (S.feedAt || 0) > 60000) load(); }
     else load();
     return;
   }
@@ -9972,6 +9979,40 @@ manualBookSheet = function (onPick) {
     sheetList(`“${esc(e.title)}” já está na sua biblioteca: ${ST[e.status] || 'já está aqui'}`, items);
   };
 }
+// --- 15_feed.js ---
+// Comunidade: carrega mais novidades ao chegar no fim da lista, e Ajustes › "Novidades no feed" escolhe o que aparece.
+{ const st = document.createElement('style'); st.textContent = `.fd-more{text-align:center;font-size:.8rem;color:var(--ink-2);padding:1rem 0 1.4rem}`; TR.append(st); }
+const FEED_KINDS = [['review', 'Avaliações'], ['STARTED', 'Começou a ler'], ['PROGRESS', 'Avanços na leitura'], ['FINISHED', 'Terminou um livro'], ['achievement', 'Conquistas'], ['buddy_done', 'Leituras conjuntas terminadas']];
+const feedOff = () => ((db.prefs && db.prefs.feedOff) || []);
+S.feedPrefOk = (p) => {
+  const off = feedOff(); if (!off.length || !p) return true;
+  const k = p.type === 'activity' ? p.kind : p.type === 'review' || (typeof isReview === 'function' && isReview(p)) ? 'review' : p.type;
+  return !off.includes(k);
+};
+{ // fim da lista na tela → próxima página
+  const io = new IntersectionObserver((ents) => { if (ents.some((e) => e.isIntersecting) && typeof S.feedMore === 'function') S.feedMore(); }, { rootMargin: '300px' });
+  const seen = new WeakSet();
+  new MutationObserver(() => { TR.querySelectorAll('.fd-more').forEach((n) => { if (!seen.has(n)) { seen.add(n); io.observe(n); } }); }).observe(TR, { childList: true, subtree: true });
+}
+function feedPrefsSheet() {
+  let off = [...feedOff()];
+  const ed = $('#editor'); ed.classList.add('compact');
+  const draw = () => {
+    ed.querySelector('.ed-body').innerHTML = `<div class="dd"><h3>Novidades no feed</h3><p>Escolha o que aparece nas Novidades dos amigos.</p>
+      ${FEED_KINDS.map(([k, n]) => `<div class="hp-row${off.includes(k) ? ' off' : ''}"><button type="button" class="hp-ck" data-k="${k}" aria-label="Mostrar ${n}" aria-pressed="${!off.includes(k)}">✓</button><b>${n}</b></div>`).join('')}
+      <button type="button" class="op main" id="fp-ok"><b>Pronto</b></button></div>`;
+    $$('.hp-ck', ed).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; off = off.includes(k) ? off.filter((x) => x !== k) : [...off, k]; draw(); }));
+    $('#fp-ok', ed).addEventListener('click', () => { db.prefs = { ...(db.prefs || {}), feedOff: off }; save(); closeEd(); if (S.tab === 'comunidade') drawTab(); toast('Feed ajustado'); });
+  };
+  draw(); ed.hidden = false;
+}
+{ const _da = drawAjustes; drawAjustes = function (box) {
+  _da(box); if (S.ajMode === 'perfil') return;
+  const home = box.querySelector('#aj-home'); if (!home || box.querySelector('#aj-feed')) return;
+  const n = FEED_KINDS.length - feedOff().length;
+  home.insertAdjacentHTML('afterend', `<button type="button" class="aj-row" id="aj-feed"><span><b>Novidades no feed</b><small>${n === FEED_KINDS.length ? 'Tudo aparece' : `${n} de ${FEED_KINDS.length} tipos aparecem`}</small></span>›</button>`);
+  $('#aj-feed', box).addEventListener('click', feedPrefsSheet);
+}; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
