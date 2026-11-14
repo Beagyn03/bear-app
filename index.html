@@ -9581,13 +9581,13 @@ openGoalPage = function (year) {
 };
 // --- 03_sorteio.js ---
 // Sorteio animado: o urso gira os livros (img/sorteio_gira.webp) e depois aparece segurando a carta com a capa sorteada (img/sorteio_fim.webp).
-// A capa entra no retângulo da carta (medido no quadro final do GIF: 52–91% na horizontal, 29–85% na vertical; GIF "animação sorteio" sem o fundo preto).
+// A capa entra no retângulo da carta (quadro 13 do GIF "Urso Feliz com Cartão Brilhante"; a capa entra pela matriz dos 4 cantos medidos).
 { const st = document.createElement('style'); st.textContent = `
-.srt-stage{position:relative;width:min(240px,64vw);aspect-ratio:1;margin:0 auto .4rem}
+.srt-stage{position:relative;width:min(280px,74vw);aspect-ratio:362/289;margin:0 auto .4rem}
 .srt-stage img.srt-a{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.srt-card{position:absolute;left:53.6%;top:30.6%;width:36.2%;height:52.4%;border-radius:4px 7px 7px 4px;--sk:rotate(0deg);overflow:hidden;opacity:0;transform:var(--sk) scale(.6);transition:opacity .35s ease,transform .45s cubic-bezier(.2,1.4,.4,1)}
+.srt-card{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;transform:translate(48.48%,24.39%) matrix(0.3425,0.0276,-0.0484,0.6021,0,0);border-radius:6px;overflow:hidden;opacity:0;transition:opacity .4s ease}
 .srt-card .cv{width:100%!important;height:100%!important;border-radius:0!important;font-size:.42rem;background-size:cover!important;background-position:center!important}
-.srt-stage.done .srt-card{opacity:1;transform:var(--sk)}
+.srt-stage.done .srt-card{opacity:1}
 .srt-stage ~ .srt-bk .srt-cv{display:none}.srt-stage ~ .srt-bk{justify-content:center;text-align:center}
 #editor .srt-wait{opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .3s,transform .3s}
 #editor .srt-show{opacity:1;transform:none;pointer-events:auto}
