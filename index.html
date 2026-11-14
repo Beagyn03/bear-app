@@ -2954,7 +2954,7 @@ function searchSheet(opts) {
     const items = await searchBooks(t);
     if (my !== seq) return; // chegou um resultado antigo depois de um novo: ignora
     res.replaceChildren();
-    msg.textContent = items.length ? 'Toque no livro certo:' : (navigator.onLine === false ? 'Sem internet agora. Tente de novo quando conectar.' : 'Nada encontrado nas bases de livros. Tente só o título, o título com o autor, ou cadastre à mão.');
+    msg.textContent = items.length ? 'Toque no livro certo:' : (navigator.onLine === false ? 'Sem internet agora. Tente de novo quando conectar.' : (S.searchLimited ? 'Busca limitada no momento: as bases de livros estão sobrecarregadas. Tente de novo em alguns minutos ou busque pelo ISBN. Ou cadastre à mão.' : 'Nada encontrado nas bases de livros. Tente só o título, o título com o autor, ou cadastre à mão.'));
     for (const it of items) res.append(el('button', { type: 'button', class: 'result', onclick: async () => {
       msg.textContent = 'Preparando a capa…';
       const cover = it.coverUrl ? await toDataCover(it.coverUrl) : null;
@@ -4740,6 +4740,7 @@ const fromCatalogDTO = (b) => ({
     const q = String(t || '').trim();
     if (q.length >= 3) {
       const d = await getJSON(`${catBase()}/v1/books/search?limit=25&q=${encodeURIComponent(q.slice(0, 120))}`, 12000);
+      S.searchLimited = !d || !!d.partial; // 4.4: Google fora (cota) ou API sem resposta
       if (d && Array.isArray(d.items) && d.items.length) return d.items.map(fromCatalogDTO);
     }
     return _direct(t); // reserva: Google, Open Library e BrasilAPI direto do aparelho
@@ -4783,7 +4784,7 @@ function openCatalog() {
     v.querySelector('.ct-form').addEventListener('submit', (ev) => { ev.preventDefault(); clearTimeout(tm); $('#ct-q', v).blur(); run(true); });
   };
   const drawList = () => {
-    v.querySelector('.ct-list').innerHTML = `${busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '<p class="sl-empty">Procure qualquer livro para ver a sinopse e adicionar à sua estante.</p>' : !res.length ? '<p class="sl-empty">Nada encontrado. Tente outro título ou o ISBN.</p>'
+    v.querySelector('.ct-list').innerHTML = `${busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '<p class="sl-empty">Procure qualquer livro para ver a sinopse e adicionar à sua estante.</p>' : !res.length ? '<p class="sl-empty">' + (S.searchLimited ? 'Busca limitada no momento: as bases de livros estão sobrecarregadas. Tente de novo em alguns minutos ou busque pelo ISBN.' : 'Nada encontrado. Tente outro título ou o ISBN.') + '</p>'
         : res.map((it, i) => { const mine = inLib(it); return `<article class="ct-it">${cvh(it.title, it.coverUrl, 'ct-cv')}<div class="ct-tx"><b>${esc(it.title)}</b><small>${esc(it.author || '')}</small>
           <div class="ct-chips">${it.pages ? `<span>${it.pages} pág.</span>` : ''}${it.year ? `<span>${esc(it.year)}</span>` : ''}${/^pt/i.test(it.lang || '') ? '<span>Português</span>' : it.lang ? `<span>${esc(LANGS[it.lang] || it.lang)}</span>` : ''}</div>
           <div class="ct-acts">${it.editions && it.editions.length ? `<button type="button" class="ct-eds" data-i="${i}">+${it.editions.length} ${it.editions.length === 1 ? 'edição' : 'edições'}</button>` : ''}<button type="button" class="ct-info" data-i="${i}">Sobre</button>${mine ? `<button type="button" class="ct-mine" data-id="${esc(mine.id)}">Na estante · ${esc(LIB_LABEL[mine.status] || '')}</button>${canReadNow(mine) ? `<button type="button" class="ct-add ct-now" data-id="${esc(mine.id)}">Ler agora</button>` : ''}` : `<button type="button" class="ct-add" data-i="${i}">+ Adicionar</button>`}</div></div></article>`; }).join('')}`;
@@ -7355,7 +7356,7 @@ function openHistory() {
   };
   const drawList = () => {
     const box = v.querySelector('.hs-list'); if (!box) return;
-    box.innerHTML = (added ? `<p class="hs-count">${plural(added, 'livro adicionado', 'livros adicionados')} nesta sessão</p>` : '') + (busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '' : !res.length ? '<p class="sl-empty">Nada encontrado. Tente o título com outras palavras ou o ISBN.</p>'
+    box.innerHTML = (added ? `<p class="hs-count">${plural(added, 'livro adicionado', 'livros adicionados')} nesta sessão</p>` : '') + (busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '' : !res.length ? '<p class="sl-empty">' + (S.searchLimited ? 'Busca limitada no momento: as bases de livros estão sobrecarregadas. Tente de novo em alguns minutos ou busque pelo ISBN.' : 'Nada encontrado. Tente o título com outras palavras ou o ISBN.') + '</p>'
       : res.map((it, i) => { const mine = inLib(it); return `<article class="ct-it">${cvh(it.title, it.coverUrl, 'ct-cv')}<div class="ct-tx"><b>${esc(it.title)}</b><small>${esc(it.author || '')}</small>
         <div class="ct-chips">${it.year ? `<span>${esc(it.year)}</span>` : ''}${it.lang ? `<span>${esc(LANGS[it.lang] || it.lang)}</span>` : ''}</div>
         ${mine ? `<div class="ct-acts"><button type="button" class="ct-mine">Na estante · ${esc(LIB_LABEL[mine.status] || '')}</button></div>`
