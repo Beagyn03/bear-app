@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '4.3.0', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.3.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -6178,7 +6178,7 @@ editLeitura = function () {
   let pct = byPct(R.gb || R.e), page = R.now;
   const draw = () => {
     const p = Math.round((page / R.total) * 100), d = page - R.now;
-    ed.querySelector('.ed-body').innerHTML = `<button type="button" class="up-x" id="up-cancel" aria-label="Fechar">×</button><h3 class="up-h">Atualizar leitura</h3><p class="up-s">${esc(R.e.title)} · antes: pág. ${R.now}</p>
+    ed.querySelector('.ed-body').innerHTML = `<button type="button" class="up-x" id="up-cancel" aria-label="Fechar">×</button><h3 class="up-h">Atualizar leitura</h3><p class="up-s">${esc(R.e.title)} · você estava na pág. ${R.now}${R.total ? ` (${Math.round((R.now / R.total) * 100)}%)` : ''}</p>
       <div class="up-seg"><button type="button" data-m="pg" class="${pct ? '' : 'on'}">Página</button><button type="button" data-m="pct" class="${pct ? 'on' : ''}">%</button></div>
       <div class="up-big"><input id="up-n" type="number" style="width:${String(pct ? 100 : R.total).length + 0.9}ch" inputmode="numeric" min="0" max="${pct ? 100 : R.total}" value="${pct ? p : page}" aria-label="${pct ? 'Porcentagem' : 'Página'}"><span>${pct ? '%' : `de ${R.total}`}</span></div>
       <input id="up-r" class="up-range" type="range" min="0" max="${R.total}" value="${page}" style="--p:${p}%" aria-label="Arraste até onde você parou">
