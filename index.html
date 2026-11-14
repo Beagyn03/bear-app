@@ -9640,13 +9640,34 @@ TR.addEventListener('click', (ev) => {
 // Capas (rodada 2): "lido" vira uma fitinha de marcador verde na borda de cima (não cobre o título da capa);
 // títulos longos ficam em até 2 linhas com reticências nas listas e na busca.
 { const st = document.createElement('style'); st.textContent = `
-.es4-done{top:0!important;right:9px!important;width:13px!important;height:21px!important;border-radius:0!important;font-size:0!important;color:transparent!important;
-  background:linear-gradient(90deg,#24693f,#2e8a52 45%,#24693f)!important;box-shadow:none!important;clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%)}
 .ct-tx small,.es4-bk > small,.es-bk > small,.sl-item b,.ys-bk + small,.car small,.v3-q small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis}
 .ct-tx b,.fs-res b,.fs-it b,.srch-it b,.res-it b,.bk-res b{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 `; TR.append(st); }
 // busca (folha "Adicionar livro", fora do shadow root): título em até 3 linhas, autor em 1
 { const st = document.createElement('style'); st.textContent = `.sheet .result b{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.sheet .result span{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}`; document.head.append(st); }
+// --- 05b_lido_patas.js ---
+// Escolha da Bia (15/11): "lido" = barra cheia na base da capa (a mesma barrinha do "lendo", completa e verde);
+// nota = cinco patinhas desenhadas (com meia patinha), no lugar de "lido · 🐾 4,5".
+{ const st = document.createElement('style'); st.textContent = `
+.es4-done{top:auto!important;right:6px!important;left:6px!important;bottom:6px!important;width:auto!important;height:4px!important;border-radius:99px!important;clip-path:none!important;
+  background:#2e8a52!important;box-shadow:0 0 0 1px rgba(255,255,255,.55)!important;font-size:0!important;color:transparent!important}
+.pw5{display:inline-flex;gap:1px;vertical-align:-2px}
+.pw5 i{position:relative;width:11px;height:11px;display:inline-block}
+.pw5 svg{position:absolute;inset:0;width:11px;height:11px;fill:currentColor;stroke:none}
+.pw5 i.o svg{opacity:.22}
+.pw5 i.h svg + svg{clip-path:inset(0 50% 0 0)}
+.pw5 i.h svg:first-child{opacity:.22}
+.pw5{color:#c8742e}
+`; TR.append(st); }
+const pawSvg = () => `<svg viewBox="0 0 24 24" aria-hidden="true">${BI.paw}</svg>`;
+const paws5 = (n) => `<span class="pw5" role="img" aria-label="${String(n).replace('.', ',')} patas">${[1, 2, 3, 4, 5].map((i) => n >= i ? `<i>${pawSvg()}</i>` : n >= i - 0.5 ? `<i class="h">${pawSvg()}${pawSvg()}</i>` : `<i class="o">${pawSvg()}</i>`).join('')}</span>`;
+{ // legendas "lido · 🐾 4,5" → patinhas; "lido" sem nota fica "lido"
+  const fix = (root) => root.querySelectorAll('small.es4-st, .es4-bk small, .au-grid small').forEach((s) => {
+    if (s.dataset.pw) return; const m = s.textContent.trim().match(/^lido\s*·\s*\D*?(\d+(?:,\d)?)\s*$/); if (!m) return;
+    s.dataset.pw = 1; s.innerHTML = paws5(Number(m[1].replace(',', '.')));
+  });
+  new MutationObserver(() => fix(TR)).observe(TR, { childList: true, subtree: true }); fix(TR);
+}
 // --- 06_estante.js ---
 // Página da estante (rodada 2): ordenar e sortear ficam só no "•••" do topo (padrão do app); a barra mostra só a contagem.
 { const st = document.createElement('style'); st.textContent = `
