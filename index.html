@@ -9580,13 +9580,13 @@ openGoalPage = function (year) {
 };
 // --- 03_sorteio.js ---
 // Sorteio animado: o urso gira os livros (img/sorteio_gira.webp) e depois aparece segurando a carta com a capa sorteada (img/sorteio_fim.webp).
-// A capa entra no retângulo da carta (medido no quadro final do GIF: 52–91% na horizontal, 29–85% na vertical).
+// A capa entra no retângulo da carta (medido no quadro final do GIF: 64–89% na horizontal, 35–65% na vertical; GIF "Urso fofo sorteia livro roxo").
 { const st = document.createElement('style'); st.textContent = `
 .srt-stage{position:relative;width:min(240px,64vw);aspect-ratio:1;margin:0 auto .4rem}
 .srt-stage img.srt-a{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.srt-card{position:absolute;left:53.6%;top:30.6%;width:36.2%;height:52.4%;border-radius:4px 7px 7px 4px;overflow:hidden;opacity:0;transform:scale(.6) rotate(-6deg);transition:opacity .35s ease,transform .45s cubic-bezier(.2,1.4,.4,1)}
-.srt-card .cv{width:100%!important;height:100%!important;border-radius:0!important;font-size:.5rem}
-.srt-stage.done .srt-card{opacity:1;transform:none}
+.srt-card{position:absolute;left:66.3%;top:34.6%;width:22.4%;height:31%;border-radius:3px;--sk:skewX(-10.8deg);overflow:hidden;opacity:0;transform:var(--sk) scale(.6);transition:opacity .35s ease,transform .45s cubic-bezier(.2,1.4,.4,1)}
+.srt-card .cv{width:100%!important;height:100%!important;border-radius:0!important;font-size:.42rem;background-size:cover!important;background-position:center!important}
+.srt-stage.done .srt-card{opacity:1;transform:var(--sk)}
 .srt-stage ~ .srt-bk .srt-cv{display:none}.srt-stage ~ .srt-bk{justify-content:center;text-align:center}
 #editor .srt-wait{opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .3s,transform .3s}
 #editor .srt-show{opacity:1;transform:none;pointer-events:auto}
@@ -9613,7 +9613,7 @@ openGoalPage = function (year) {
     if (h3) h3.textContent = 'Sorteando…';
     img.src = await src('sorteio_gira.webp');
     const token = (S.srtTok = (S.srtTok || 0) + 1);
-    setTimeout(() => { if (S.srtTok === token && !ed.hidden) finish(); }, 1150);
+    setTimeout(() => { if (S.srtTok === token && !ed.hidden) finish(); }, 1200);
   };
   drawLot = (key) => sortShelf(key);
 }
@@ -9641,6 +9641,24 @@ TR.addEventListener('click', (ev) => {
 .esv-bar #esv-sort,.esv-bar [data-lot]{display:none!important}
 .es4-r [data-lot]{display:none!important}
 `; TR.append(st); }
+// --- 07_pessoa.js ---
+// Toque numa pessoa da leitura conjunta (linha no card do Início ou bolinha na página Lendo junto): Ver perfil / Mandar mensagem.
+{ const st = document.createElement('style'); st.textContent = `.v3-bud-r{cursor:pointer;border-radius:10px}.v3-bud-r:active{background:color-mix(in srgb,var(--acc) 10%,transparent)}.bj-dot[data-avh]{cursor:pointer}`; TR.append(st); }
+const personMenu = (anchor, handle, name) => {
+  const me = (typeof socialProfile !== 'undefined' && socialProfile && socialProfile.handle) || ''; if (!handle || handle === me) return;
+  const first = String(name || handle).split(' ')[0];
+  popMenu(anchor, [
+    { label: `Ver perfil de ${esc(first)}`, sub: '@' + esc(handle), fn: () => friendPage(handle) },
+    { label: 'Mandar mensagem', fn: () => openChat(handle) },
+  ]);
+};
+TR.addEventListener('click', (ev) => {
+  const row = ev.target.closest && ev.target.closest('.v3-bud-r, .bj-dot[data-avh]'); if (!row) return;
+  const av = row.matches('[data-avh]') ? row : row.querySelector('[data-avh]'); if (!av) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const name = row.querySelector('small')?.textContent || (row.getAttribute('title') || '').split(' · ')[0];
+  personMenu(row, av.dataset.avh, name);
+}, true);
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
