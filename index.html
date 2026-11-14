@@ -7152,7 +7152,7 @@ const fmtDM = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
 { const _nc = nowCardC; nowCardC = function () {
   const R = reading();
   if (!R) {
-    const nx = nextBook() || lib().filter((e) => e.status === 'QUERO').sort((a, b) => String(b.addedAt || '').localeCompare(String(a.addedAt || '')))[0];
+    const nx = nextBook() || lib().filter((e) => e.status === 'QUERO').sort((a, b) => ((a.prio || 2) - (b.prio || 2)) || String(b.addedAt || '').localeCompare(String(a.addedAt || '')))[0];
     if (!nx) return _nc();
     return `<section class="v3c v3-now v3-next">${cvh(nx.title, nx.cover, 'v3-cv')}<div><span class="v3-k">${nextBook() ? 'Sua próxima leitura' : 'Da sua lista Quero ler'}</span><b class="v3-ttl">${esc(nx.title)}</b><span class="v3-au">${esc(nx.author || '')}</span>
       <div class="v3-next-b"><button type="button" class="v3-pri" id="v3-start" data-id="${esc(nx.id)}">Começar a ler</button><button type="button" id="v3-sort" class="v3-ic" aria-label="Sortear da fila" title="Sortear da fila">${bsv('dice')}</button><button type="button" id="v3-cta" class="v3-ic" aria-label="Buscar outro livro" title="Buscar outro livro">${bsv('search')}</button></div></div></section>`;
@@ -7511,7 +7511,7 @@ function youHeaderHTML() {
 function youSectionsHTML() {
   const L = lib(), R = reading(), nextId = T().nextId;
   const tambem = L.filter((e) => e.status === 'LENDO' && (!R || R.e.id !== e.id)); // outros livros em andamento: seção própria, fora da fila
-  const fila = [...L.filter((e) => e.id === nextId && e.status === 'QUERO'), ...L.filter((e) => e.status === 'QUERO' && e.id !== nextId).sort((a, b) => String(b.addedAt || '').localeCompare(String(a.addedAt || '')))].slice(0, 12);
+  const fila = [...L.filter((e) => e.id === nextId && e.status === 'QUERO'), ...L.filter((e) => e.status === 'QUERO' && e.id !== nextId).sort((a, b) => ((a.prio || 2) - (b.prio || 2)) || String(b.addedAt || '').localeCompare(String(a.addedAt || '')))].slice(0, 12);
   const st = achState(), won = st.filter((a) => a.done), show = rareFirst(won).filter((a) => DECO_IMG[a.reward]).slice(0, 8), nx = nextAchievements()[0];
   const revs = L.filter((e) => { const r = reviewOfLib(e); return r && r.paws; }).sort((a, b) => (reviewOfLib(b).paws - reviewOfLib(a).paws) || String(b.finishedAt || '').localeCompare(String(a.finishedAt || ''))).slice(0, 10); // as mais bem avaliadas primeiro
   const shelves = db.shelves || [];
@@ -8774,7 +8774,7 @@ function bookMenuOpen(anchor, b) {
   const foco = ['clock', focusState() && isCur ? 'Voltar ao foco' : 'Foco', () => { if (!isCur) setCurrent(e.id); startFocus(); }];
   const queueIt = ['queue', 'Voltar para Quero ler', toQueue, '', '', 1];
   const top = !e ? [['plus', 'Adicionar à estante', () => addToLibrary(libItem(b)), 'escolha como está e em quais estantes']]
-    : st === 'QUERO' ? [['play', 'Começar a ler', () => startReading(e)], ['check', 'Já li', set('LIDO')]]
+    : st === 'QUERO' ? [['play', 'Começar a ler', () => startReading(e)], ['flag', 'Prioridade', () => prioSheet(e), ({ 1: 'Alta', 3: 'Baixa' })[e.prio] || 'Normal'], ['check', 'Já li', set('LIDO')]]
     : st === 'LENDO' ? [['pen', 'Atualizar leitura', upd], foco, ['queue', 'Tirar de Lendo', toQueue, '', '', 1], rateIt]
     : st === 'LIDO' ? [rateIt, ['redo', 'Ler de novo', () => startReread(e)]]
     : st === 'HIBERNANDO' ? [['play', 'Retomar leitura', () => startReading(e)], rateIt]
@@ -8911,7 +8911,7 @@ const es4Mark = (e) => {
   const p = e.status === 'LENDO' ? (readingInfo(e).total ? Math.min(100, Math.round((readingInfo(e).now / readingInfo(e).total) * 100)) : 0) : 0, rv = reviewOfLib(e);
   return {
     over: e.status === 'LENDO' ? `<span class="es4-bar"><i style="width:${p}%"></i></span>` : e.status === 'LIDO' ? '<span class="es4-done" aria-hidden="true">✓</span>' : '',
-    label: e.status === 'LENDO' ? `lendo · ${p}%` : e.status === 'LIDO' ? (rv && rv.paws ? `lido · ${pawTxt(rv.paws)}` : 'lido') : e.status === 'QUERO' ? (T().nextId === e.id ? 'próxima leitura' : 'quero ler') : e.status === 'HIBERNANDO' ? 'pausado' : 'abandonado',
+    label: e.status === 'LENDO' ? `lendo · ${p}%` : e.status === 'LIDO' ? (rv && rv.paws ? `lido · ${pawTxt(rv.paws)}` : 'lido') : e.status === 'QUERO' ? (T().nextId === e.id ? 'próxima leitura' : e.prio === 1 ? 'prioridade alta' : e.prio === 3 ? 'prioridade baixa' : 'quero ler') : e.status === 'HIBERNANDO' ? 'pausado' : 'abandonado',
     dim: e.status === 'ABANDONEI',
   };
 };
@@ -10237,6 +10237,23 @@ TR.addEventListener('click', (ev) => {
     S.listRedraw = draw; closeEd(); v.classList.remove('feedview', 'tabroot'); draw(); v.hidden = false; v.scrollTop = 0;
   };
 }
+// --- 21_prioridade.js ---
+// Prioridade na fila (Quero ler): Alta / Normal / Baixa (e.prio = 1 / 2 / 3). A próxima leitura marcada à mão continua acima de tudo;
+// sem ela, o Início sugere a de prioridade mais alta. Ordenação "Prioridade" nas estantes.
+function prioSheet(e) {
+  const cur = e.prio || 2, set = (p) => { if (p === 2) delete e.prio; else e.prio = p; save(); refresh(); if (S.listRedraw && !$('#shelflist').hidden) S.listRedraw(); toast(`Prioridade ${({ 1: 'alta', 2: 'normal', 3: 'baixa' })[p]}`); };
+  sheetList(`Prioridade de “${esc(e.title)}”`, [
+    { label: 'Alta', sub: 'vai para a frente da fila', on: cur === 1, fn: () => set(1) },
+    { label: 'Normal', on: cur === 2, fn: () => set(2) },
+    { label: 'Baixa', sub: 'fica no fim da fila', on: cur === 3, fn: () => set(3) },
+  ]);
+}
+if (!ES_SORTS.some((x) => x[0] === 'prioridade')) ES_SORTS.splice(1, 0, ['prioridade', 'Prioridade']);
+{ const _sl = sortList; sortList = function (list, mode) {
+  if (mode !== 'prioridade') return _sl.apply(this, arguments);
+  const rank = (e) => (e.status === 'LENDO' ? 0 : e.status === 'QUERO' ? 1 : 2);
+  return [...list].sort((a, b) => rank(a) - rank(b) || (a.status === 'QUERO' && b.status === 'QUERO' ? ((a.id === T().nextId ? 0 : a.prio || 2) - (b.id === T().nextId ? 0 : b.prio || 2)) : 0) || String(b.addedAt || '').localeCompare(String(a.addedAt || '')));
+}; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
