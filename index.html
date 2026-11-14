@@ -4540,7 +4540,7 @@ function editEstante() {
     const sel = new Set(E.ref.bookIds || []);
     ed.querySelector('.ed-body').innerHTML = `<h3>Livros de “${esc(E.nome)}”</h3><p class="fl" style="margin:0">Marque os livros da sua biblioteca que entram nesta estante. As prateleiras automáticas usam só estes livros.</p>
       <div class="picks" style="max-height:48vh">${sortList(lib(), 'titulo').map((b) => `<label class="pick"><input type="checkbox" value="${esc(b.id)}" ${sel.has(b.id) ? 'checked' : ''}><span>${esc(b.title)}</span></label>`).join('') || '<span class="pick">Sua biblioteca ainda está vazia.</span>'}</div>
-      <button type="button" class="pri-wide" id="es-search">🔍 Buscar livro novo</button>
+      <button type="button" class="pri-wide" id="es-search">Buscar livro novo</button>
       <div class="row end"><button type="button" id="es-bcancel">Cancelar</button><button type="button" id="es-bsave" class="pri">Salvar</button></div>`;
     $('#es-search', ed).addEventListener('click', () => { closeEd(); searchSheet({ title: `Adicionar em ${E.nome}`, onPick: (it) => addToLibrary(it, E.ref) }); });
     $('#es-bcancel', ed).addEventListener('click', closeEd);
@@ -8289,6 +8289,8 @@ const ICO = {
 .gtop .g-b u{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:9px;background:#d9443a;color:#fff;font-size:.62rem;font-weight:900;text-decoration:none;display:grid;place-items:center;padding:0 .25rem}
 .gtop-sp{height:calc(env(safe-area-inset-top,0px) + 3.3rem)}
 .shelflist{top:calc(env(safe-area-inset-top,0px) + 3.2rem)!important}
+/* 4.4: a tela interna desce até ficar por baixo da barra de baixo (antes sobravam 3px em que o Início aparecia por trás) */
+.shelflist:not(.chatview){bottom:calc(3.4rem + env(safe-area-inset-bottom,0px))!important;padding-bottom:.6rem}
 #lista .yo-top,#lista .v3-top .v3-bell,#lista .ms-btn,#lista #yo-cfg{display:none!important}
 #tabbar button svg{width:26px;height:26px;color:var(--ink-2)}
 #tabbar button.on svg{color:var(--acc);stroke-width:2.3}
@@ -9292,7 +9294,7 @@ function homePrefsSheet() {
 }
 { const _dt = drawTab; drawTab = function () { _dt(); if (S.tab === 'inicio') applyHomePrefs($('#lista')); }; }
 { const _da2 = drawAjustes; drawAjustes = function (box) { _da2(box); if (S.ajMode === 'perfil') return; const g = [...box.querySelectorAll('.aj-g')].find((x) => x.textContent.trim() === 'Aparência'), card = g && g.nextElementSibling;
-  if (card && !box.querySelector('#aj-home')) { card.insertAdjacentHTML('beforeend', '<button type="button" class="aj-row" id="aj-home"><span><b>Personalizar Início</b><small>o que aparece e em que ordem</small></span>›</button>'); $('#aj-home', box).addEventListener('click', homePrefsSheet); } }; }
+  if (card && !box.querySelector('#aj-home')) { card.insertAdjacentHTML('beforeend', '<button type="button" class="aj-row" id="aj-home"><span><b>Personalizar Início</b><small>O que aparece e em que ordem</small></span>›</button>'); $('#aj-home', box).addEventListener('click', homePrefsSheet); } }; }
 
 // ---------- 4.4: tela própria da meta do ano ----------
 { const st = document.createElement('style'); st.textContent = `
