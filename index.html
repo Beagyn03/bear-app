@@ -9581,11 +9581,11 @@ openGoalPage = function (year) {
 };
 // --- 03_sorteio.js ---
 // Sorteio animado: o urso gira os livros (img/sorteio_gira.webp) e depois aparece segurando a carta com a capa sorteada (img/sorteio_fim.webp).
-// A capa entra no retângulo da carta (quadro 13 do GIF "Urso Feliz com Cartão Brilhante"; a capa entra pela matriz dos 4 cantos medidos).
+// A capa entra no retângulo da carta (quadro 13 do GIF "Urso Feliz com Cartão Brilhante"; capa reta 2:3, girada como a carta, com margem).
 { const st = document.createElement('style'); st.textContent = `
 .srt-stage{position:relative;width:min(280px,74vw);aspect-ratio:362/289;margin:0 auto .4rem}
 .srt-stage img.srt-a{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.srt-card{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;transform:translate(48.48%,24.39%) matrix(0.3425,0.0276,-0.0484,0.6021,0,0);border-radius:6px;overflow:hidden;opacity:0;transition:opacity .4s ease}
+.srt-card{position:absolute;left:49.13%;top:28.89%;width:29.10%;height:54.67%;transform:rotate(4.7deg);border-radius:6px;overflow:hidden;opacity:0;transition:opacity .4s ease}
 .srt-card .cv{width:100%!important;height:100%!important;border-radius:0!important;font-size:.42rem;background-size:cover!important;background-position:center!important}
 .srt-stage.done .srt-card{opacity:1}
 .srt-stage ~ .srt-bk .srt-cv{display:none}.srt-stage ~ .srt-bk{justify-content:center;text-align:center}
@@ -9768,6 +9768,55 @@ TR.addEventListener('click', (ev) => {
   openNotif = function () { ed.classList.add('ntpage'); const r = _on.apply(this, arguments); decorate(); return r; };
 }
 { const gt = $('#g-t'); if (gt) new MutationObserver(() => { const ed = $('#editor'); if (ed && !ed.hidden && ed.classList.contains('ntpage') && gt.textContent !== 'Notificações') gt.textContent = 'Notificações'; }).observe(gt, { childList: true, characterData: true, subtree: true }); }
+// --- 10_avaliar.js ---
+// Ficha de avaliação mais compacta: título curto, patas em destaque no topo, datas numa linha (toque para alterar),
+// spoiler e compartilhar lado a lado, ressaca literária numa linha, Agora não e Salvar lado a lado.
+{ const st = document.createElement('style'); st.textContent = `
+.sheet.rt2 .form{gap:.6rem!important}
+.sheet.rt2 .rate-h{margin:0;font-size:1rem;line-height:1.25}.sheet.rt2 .rate-h small{display:block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.65;margin-bottom:.1rem}
+.sheet.rt2 .rate-nota{display:flex;flex-direction:column;align-items:center;gap:.15rem;margin:.1rem 0 .2rem}
+.sheet.rt2 .rate-nota > .lbl{display:none}
+.sheet.rt2 .rate-paws{display:flex;gap:.35rem;justify-content:center}.sheet.rt2 .rate-paws button{width:46px;height:46px;padding:0}.sheet.rt2 .rate-paws svg{width:34px;height:34px}
+.sheet.rt2 .paw-lbl{font-size:.78rem;opacity:.75}
+.sheet.rt2 .rt-dates{display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.82rem;opacity:.9;border:0;background:none;padding:.2rem 0;color:inherit;font-family:inherit;text-align:left;width:100%}
+.sheet.rt2 .rt-dates b{font-weight:800}.sheet.rt2 .rt-dates span:last-child{font-weight:800;color:#c46f2b;flex:none}
+.sheet.rt2 .rate-dates[hidden]{display:none!important}
+.sheet.rt2 textarea{background:rgba(255,255,255,.7)!important;min-height:4.6rem}
+.sheet.rt2 .rt-opts{display:flex;flex-wrap:wrap;gap:.4rem .9rem;align-items:center}
+.sheet.rt2 .rt-opts .ck-line,.sheet.rt2 .rt-opts .ck-row{margin:0}
+.sheet.rt2 .rt-ress{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}.sheet.rt2 .rt-ress .lbl{margin:0;flex:1 1 auto;font-size:.86rem}
+.sheet.rt2 .rt-ress .yn{display:flex;gap:.35rem;flex:none}.sheet.rt2 .rt-ress .yn button{min-height:36px;padding:0 1rem}
+.sheet.rt2 .rt-btns{display:grid;grid-template-columns:auto 1fr;gap:.5rem;align-items:center}.sheet.rt2 .rt-btns .cancel{margin:0;padding:0 1rem}
+`; document.head.append(st); }
+{
+  const _rf = rateForm;
+  rateForm = function (b) {
+    const r = _rf.apply(this, arguments);
+    try {
+      const wrap = [...document.querySelectorAll('body > .sheet')].pop(), form = wrap && wrap.querySelector('form.form'); if (!form || wrap.classList.contains('rt2')) return r;
+      wrap.classList.add('rt2');
+      const h = form.querySelector('.rate-h'); if (h) h.innerHTML = `<small>${b.review && b.review.paws ? 'Sua avaliação' : 'Avaliar'}</small>${esc(b.title)}`;
+      const nota = form.querySelector('.rate-nota'); if (h && nota) h.after(nota);
+      const dates = form.querySelector('.rate-dates');
+      if (dates) {
+        const [i, f] = [...dates.querySelectorAll('input')];
+        const txt = () => (i.value && f.value ? `Lido de <b>${fmt(i.value)}</b> a <b>${fmt(f.value)}</b>` : f.value ? `Terminei em <b>${fmt(f.value)}</b>` : i.value ? `Comecei em <b>${fmt(i.value)}</b>` : 'Sem datas');
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'rt-dates';
+        const paint = () => { btn.innerHTML = `<span>${txt()}</span><span>${dates.hidden ? 'Alterar' : 'Pronto'}</span>`; };
+        dates.hidden = true; paint(); nota.after(btn); btn.after(dates);
+        btn.addEventListener('click', () => { dates.hidden = !dates.hidden; paint(); });
+        [i, f].forEach((x) => x.addEventListener('change', paint));
+      }
+      const spoil = form.querySelector('.ck-line'), share = [...form.querySelectorAll(':scope > .ck-row')].pop();
+      if (spoil && share) { const row = document.createElement('div'); row.className = 'rt-opts'; spoil.before(row); row.append(spoil, share); }
+      const yn = form.querySelector('.yn'), ylbl = yn && yn.previousElementSibling;
+      if (yn && ylbl) { const row = document.createElement('div'); row.className = 'rt-ress'; ylbl.textContent = 'Ressaca literária?'; ylbl.before(row); row.append(ylbl, yn); }
+      const ok = form.querySelector('button[type=submit]'), no = form.querySelector('button.cancel');
+      if (ok && no) { const row = document.createElement('div'); row.className = 'rt-btns'; ok.before(row); row.append(no, ok); ok.textContent = 'Salvar'; }
+    } catch (err) { console.error('ficha', err); }
+    return r;
+  };
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
