@@ -1322,7 +1322,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '🐾 ' + String(n).replace('.', ','); }
-const APP_VERSION = '4.3.1', APP_BUILD = '2026-11-13'; // atualizar a cada publicação
+const APP_VERSION = '4.4.0', APP_BUILD = '2026-11-14'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -1759,10 +1759,10 @@ function caseForm(cur) {
   const close = () => wrap.remove();
   const inp = el('input', { name: 'name', maxlength: '40', value: cur ? cur.name : '', placeholder: 'Ex.: Favoritos, Fantasia, Clube do livro' });
   const form = el('form', { class: 'form' }, [
-    el('h3', { text: cur ? 'Renomear coleção' : 'Nova coleção' }),
+    el('h3', { text: cur ? 'Renomear estante' : 'Nova estante' }),
     ...(cur ? [] : [el('p', { class: 'hint', text: 'Uma estante sua para separar livros do jeito que quiser. Depois, abra um livro e use “Colocar em uma estante”.' })]),
     el('label', { text: 'Nome' }, [inp]),
-    el('button', { type: 'submit', class: 'primary', text: cur ? 'Salvar' : 'Criar coleção' }),
+    el('button', { type: 'submit', class: 'primary', text: cur ? 'Salvar' : 'Criar estante' }),
     el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }),
   ]);
   form.addEventListener('submit', (ev) => {
@@ -2086,7 +2086,7 @@ function renderYearCard(today) {
       return el('div', { class: 'panel card' }, [cardHead(`Leituras ${y}`, ['Estante ›', () => { if (Toca) Toca.library(); }]), chips, carousel(lidos, 'Quando terminar um livro, ele aparece aqui.')]);
     }
     let title, list, empty;
-    if (id.startsWith('case:')) { const c = (db.shelves || []).find(x => 'case:' + x.id === id); title = c.name; list = lib.filter(e => c.bookIds.includes(e.id)); empty = 'Coleção vazia.'; }
+    if (id.startsWith('case:')) { const c = (db.shelves || []).find(x => 'case:' + x.id === id); title = c.name; list = lib.filter(e => c.bookIds.includes(e.id)); empty = 'Estante vazia.'; }
     else { title = { FAV: 'Prateleira do coração', QUERO: 'Quero ler', LIDO: 'Lidos', ABANDONEI: 'Abandonei' }[id]; list = lib.filter(e => inShelf(e, id));
       empty = { FAV: 'Dê nota 5 a um livro e ele vem morar aqui.', QUERO: 'Sua TBR aparece aqui.', LIDO: 'Seus lidos aparecem aqui.', ABANDONEI: 'Nenhum abandonado.' }[id]; }
     list = sortBooks(list, (db.prefs && db.prefs.bookSort) || 'recent');
@@ -2543,7 +2543,7 @@ async function socialSettingsSheet() {
   const form = el('form', { class: 'form' }, [el('h3', { text: 'Amigos e privacidade' }),
     el('label', { text: 'Nome' }, [name]), el('label', { text: '@usuário' }, [handle]),
     el('div', { class: 'group', text: 'O que seus amigos veem na sua página' }),
-    ck('reading', 'O que estou lendo agora'), ck('shelf', 'Minha estante (lidos e Prateleira do coração)'), ck('achievements', 'Minhas conquistas'), ck('reviews', 'Minhas avaliações (também nas Novidades)'),
+    ck('reading', 'O que estou lendo agora'), ck('shelf', 'Minha biblioteca (lidos e Prateleira do coração)'), ck('achievements', 'Minhas conquistas'), ck('reviews', 'Minhas avaliações (também nas Novidades)'),
     el('div', { class: 'group', text: 'Fora dos amigos' }), ck('public', 'Avaliações públicas: qualquer pessoa do app pode ver em Descobrir e na sua página'),
     msg, el('button', { type: 'submit', class: 'primary', text: 'Salvar' }), el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close })]);
   form.addEventListener('submit', async (ev) => { ev.preventDefault();
@@ -3257,11 +3257,7 @@ function rateForm(b, g, after) {
     el('div', { class: 'ck-line' }, [el('label', { class: 'ck-row' }, [spoilCk, el('span', { text: 'Tem spoiler' })]),
       (() => { const tip = el('span', { class: 'tip-pop', hidden: '', text: 'Quem abrir sua avaliação vê o texto borrado e precisa confirmar antes de ler.' });
         return el('span', { class: 'tip-wrap' }, [el('button', { type: 'button', class: 'tip-btn', 'aria-label': 'O que é isso?', title: 'Quem abrir sua avaliação vê o texto borrado e precisa confirmar antes de ler.', text: '?', onclick: () => { tip.hidden = !tip.hidden; } }), tip]); })()]),
-    el('details', { class: 'rate-more', ...((r.frase || r.ressaca === true) ? { open: '' } : {}) }, [
-      el('summary', { text: 'Mais detalhes (frase, ressaca literária)' }),
-      el('label', { class: 'lbl', text: 'Em uma frase' }, [frase]),
-      el('div', { class: 'lbl', text: 'Me deixou de ressaca literária?' }), yn,
-    ]),
+    el('div', { class: 'lbl', text: 'Me deixou de ressaca literária?' }), yn, // "Em uma frase" saiu do formulário: a resenha já cobre; a frase antiga continua guardada
     el('label', { class: 'ck-row' }, [shareCk, el('span', { text: 'Compartilhar com meus amigos' })]),
     el('button', { type: 'submit', class: 'primary', text: 'Salvar ficha' }),
     el('button', { type: 'button', class: 'cancel', text: 'Agora não', onclick: close }),
@@ -4278,14 +4274,14 @@ function rules() {
   return R;
 }
 const ruleOf = (k) => rules()[k] || [k && k.startsWith('g:') ? `Gênero: ${k.slice(2)}` : k && k.startsWith('d:') ? 'Meta encerrada' : 'Regra', () => false];
-// estantes: “Minha estante” (a biblioteca toda) + as estantes criadas (db.shelves). As prateleiras de cada uma ficam em db.toca.cases
+// estantes: “Minha biblioteca” (a biblioteca toda) + as estantes criadas (db.shelves). As prateleiras de cada uma ficam em db.toca.cases
 function estantes() {
   const t = T(); t.cases = t.cases || {};
   const mk = (id, nome, ref) => { let cfg = t.cases[id]; if (!cfg || !Array.isArray(cfg.shelves)) cfg = t.cases[id] = { shelves: DEFAULT_SHELVES() }; return { id, nome, ref, main: !ref, cfg }; };
-  return [mk('all', 'Minha estante', null), ...(db.shelves || []).map((x) => mk(x.id, x.name, x))];
+  return [mk('all', 'Minha biblioteca', null), ...(db.shelves || []).map((x) => mk(x.id, x.name, x))];
 }
 function curEstante() { const all = estantes(); if (S.estante >= all.length) S.estante = 0; return all[S.estante]; }
-// regras automáticas olham só os livros desta estante (“Minha estante” = a biblioteca toda)
+// regras automáticas olham só os livros desta estante (“Minha biblioteca” = a biblioteca toda)
 const poolOf = (E) => (E.main ? lib() : lib().filter((e) => (E.ref.bookIds || []).includes(e.id)));
 function sortList(list, mode) {
   const idx = new Map(lib().map((e, i) => [e.id, i]));
@@ -4371,7 +4367,7 @@ function drawLib() {
   hot(r, 'Trocar o enfeite do pedestal direito', 552, 270, 614, 332, () => pickPrizes('Trocar enfeite', 'Escolha qual prêmio fica neste pedestal.', 'pedestals', 0, 1), false).style.zIndex = 26;
   hot(r, 'Abandonados', 145, 828, 287, 960, () => openAbandoned(), true, 'bottom:-4%');
   const prev = el('button', 'arrow sm', '', '‹'), next = el('button', 'arrow sm', '', '›');
-  prev.type = next.type = 'button'; prev.setAttribute('aria-label', 'Estante anterior'); next.setAttribute('aria-label', S.estante === all.length - 1 ? 'Nova coleção' : 'Próxima estante');
+  prev.type = next.type = 'button'; prev.setAttribute('aria-label', 'Estante anterior'); next.setAttribute('aria-label', S.estante === all.length - 1 ? 'Nova estante' : 'Próxima estante');
   prev.addEventListener('click', () => { S.estante = (S.estante + all.length - 1) % all.length; drawLib(); applyRug(); });
   next.addEventListener('click', () => { if (S.estante === all.length - 1) return newEstante(); S.estante++; drawLib(); applyRug(); });
   bar.append(prev, nm, next);
@@ -4433,11 +4429,11 @@ function openCases() {
   const strip = (list, emptyTxt) => `<div class="cs-strip">${list.map((e) => `<button type="button" class="cs-bk" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'cs-cv')}</button>`).join('') || `<span class="cs-empty">${emptyTxt}</span>`}</div>`;
   const draw = () => {
     const all = estantes();
-    // prateleiras extras de “Minha estante”: desafios ativos, pausados e abandonados (só aparecem quando têm livros)
+    // prateleiras extras de “Minha biblioteca”: desafios ativos, pausados e abandonados (só aparecem quando têm livros)
     const extras = [...activeGoals().map((g) => ['d:' + g.id, `Meta · ${g.name}`, goalQueue(g)]), ['pa', 'Pausados', sortList(lib().filter((e) => e.status === 'HIBERNANDO'), 'recentes')], ['ab', 'Abandonados', sortList(lib().filter((e) => e.status === 'ABANDONEI'), 'recentes')]].filter((x) => x[2].length);
     v.querySelector('.sl-body').innerHTML = `
       <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Estantes</b><span>${plural(lib().length, 'livro', 'livros')}</span></div>
-      <div class="cs-bar"><button type="button" id="cs-add" class="pri">+ Adicionar livro</button><button type="button" id="cs-new">+ Nova coleção</button><button type="button" id="cs-find" aria-label="Procurar um livro nas suas estantes">${IC('procurar', 'ico-b')}Procurar</button></div>
+      <div class="cs-bar"><button type="button" id="cs-add" class="pri">+ Adicionar livro</button><button type="button" id="cs-new">+ Nova estante</button><button type="button" id="cs-find" aria-label="Procurar um livro nas suas estantes">${IC('procurar', 'ico-b')}Procurar</button></div>
       ${all.map((E, ei) => { const pool = poolOf(E), open = S.casesOpen.has(E.id), shs = E.cfg.shelves.slice(0, 4);
         return `<section class="cs-card" data-ei="${ei}">
           <header><button type="button" class="cs-name" data-a="toggle" aria-expanded="${open}"><b>${esc(E.nome)}</b><small>${plural(pool.length, 'livro', 'livros')} · ${plural(shs.length, 'prateleira', 'prateleiras')}</small></button>
@@ -4530,7 +4526,7 @@ function editEstante() {
   let nome = E.nome.slice(0, 18), sort = E.cfg.sort || 'recentes';
   ed.querySelector('.ed-body').innerHTML = `
     <h3>Configurar estante</h3>
-    <label class="fl">Nome da coleção<input id="es-name" maxlength="18" value="${esc(nome)}" ${main ? 'disabled' : ''}><small id="es-count">${main ? 'A estante principal não muda de nome' : nome.length + '/18'}</small></label>
+    <label class="fl">Nome da estante<input id="es-name" maxlength="18" value="${esc(nome)}" ${main ? 'disabled' : ''}><small id="es-count">${main ? 'A estante principal não muda de nome' : nome.length + '/18'}</small></label>
     <label class="fl">Ordem dos livros em todas as prateleiras<select id="es-sort">${Object.entries(SORTS).filter(([k]) => k !== 'manual').map(([k, n]) => `<option value="${k}" ${sort === k ? 'selected' : ''}>${n}</option>`).join('')}</select><small>Cada prateleira ainda pode ter a sua própria ordem.</small></label>
     <div class="fl">Prateleiras<div class="es-shelves">${E.cfg.shelves.map((s, i) => `<span>${i + 1}. ${esc(s.name)}</span>`).join('')}</div><small>Toque na plaquinha de cada prateleira para editar, mover ou remover.</small></div>
     <div class="row">${E.cfg.shelves.length < 4 ? '<button type="button" id="es-add">+ Adicionar prateleira</button>' : ''}<button type="button" id="es-books">+ Adicionar livros</button>${main ? '' : '<button type="button" id="es-del" class="danger">Excluir estante</button>'}</div>
@@ -4551,7 +4547,7 @@ function editEstante() {
     $('#es-bsave', ed).addEventListener('click', () => { E.ref.bookIds = $$('.picks input:checked', ed).map((x) => x.value); closeEd(); commit(); toast(`${plural(E.ref.bookIds.length, 'livro', 'livros')} nesta estante`); });
   });
   $('#es-del', ed)?.addEventListener('click', () => {
-    if (!confirm(`Excluir a estante “${E.nome}”? Os livros continuam na Minha estante.`)) return;
+    if (!confirm(`Excluir a estante “${E.nome}”? Os livros continuam na Minha biblioteca.`)) return;
     db.shelves = (db.shelves || []).filter((x) => x !== E.ref); delete T().cases[E.id]; if (typeof caseId !== 'undefined' && caseId === E.id) caseId = 'all';
     S.estante = 0; closeEd(); commit(); toast('Estante excluída. Os livros continuam na sua biblioteca.');
   });
@@ -4562,10 +4558,10 @@ function editEstante() {
 // última estante + ›: criar uma estante nova
 function newEstante() {
   const ed = $('#editor'); ed.classList.toggle('compact', true);
-  ed.querySelector('.ed-body').innerHTML = `<h3>+ Nova coleção</h3>
-    <label class="fl">Nome da coleção<input id="ne-name" maxlength="18" placeholder="Ex.: Clube do livro"><small id="ne-count">0/18</small></label>
+  ed.querySelector('.ed-body').innerHTML = `<h3>+ Nova estante</h3>
+    <label class="fl">Nome da estante<input id="ne-name" maxlength="18" placeholder="Ex.: Clube do livro"><small id="ne-count">0/18</small></label>
     <div class="fl"><small>Ela começa com Favoritos, Lendo, Quero ler e Lidos. Depois, use “+ Adicionar livros” para escolher o que entra.</small></div>
-    <div class="row end"><button type="button" id="ne-cancel">Cancelar</button><button type="button" id="ne-save" class="pri">Criar coleção</button></div>`;
+    <div class="row end"><button type="button" id="ne-cancel">Cancelar</button><button type="button" id="ne-save" class="pri">Criar estante</button></div>`;
   const inp = $('#ne-name', ed); inp.addEventListener('input', () => { $('#ne-count', ed).textContent = `${inp.value.length}/18`; });
   $('#ne-cancel', ed).addEventListener('click', closeEd);
   $('#ne-save', ed).addEventListener('click', () => {
@@ -4860,14 +4856,14 @@ function openBookPage(e, tab = 'sobre') {
     const info = readingInfo(e), r = reviewOfLib(e) || {}, m = e.meta || null, pct = info.total ? Math.min(100, Math.round(info.now / info.total * 100)) : 0;
     const days = e.startedAt ? Math.max(1, between(e.startedAt, e.finishedAt || todayISO()) + 1) : 0, ser = bookSeries(e);
     const foc = (db.focus || []).filter((f) => f.libId === e.id), focMin = foc.reduce((a, f) => a + (f.minutes || 0), 0);
-    const tabs = e._preview ? [['sobre', 'Sobre'], ['comunidade', 'Amigos'], ['trechos', 'Marcadores']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['trechos', `Trechos${(e.quotes || []).length ? ' · ' + e.quotes.length : ''}`], ['comunidade', 'Amigos']];
+    const tabs = e._preview ? [['sobre', 'Sobre'], ['comunidade', 'Amigos']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['trechos', `Trechos${(e.quotes || []).length ? ' · ' + e.quotes.length : ''}`], ['comunidade', 'Amigos']];
     let body = '';
     if (tab === 'sobre') {
       const rows = [['Páginas', info.total || e.totalPages], ['Gênero', e.genre || (m && m.cat)], ['Publicação', m && m.pub], ['Publicado em', m && m.date && (m.date.length >= 10 ? fmt(m.date) : m.date)], ['Idioma', m && m.lang && (LANGS[m.lang] || m.lang)], ['ISBN', e.isbn]].filter((x) => x[1]);
       body = `<section class="bp-sec">${!m ? '<p class="bp-load">Buscando a sinopse…</p>' : m.desc ? `<div class="bp-desc ${S.bpMore ? 'open' : ''}">${esc(m.desc).replace(/\n/g, '<br>')}</div>${m.desc.length > 420 ? `<button type="button" class="bp-more">${S.bpMore ? 'Mostrar menos' : 'Ler mais'}</button>` : ''}` : '<p class="bp-load">Não encontramos a sinopse deste livro.</p>'}</section>
         ${rows.length ? `<dl class="bp-dl">${rows.map(([k, val]) => `<dt>${k}</dt><dd>${esc(val)}</dd>`).join('')}</dl>` : ''}
         ${m && m.desc ? `<p class="bp-src">Fonte: ${esc(m.src)}</p>` : ''}
-        ${e._preview ? `<button type="button" class="bp-btn pri" data-a="add">+ Adicionar à minha estante</button>` : ''}`;
+        ${e._preview ? `<button type="button" class="bp-btn pri" data-a="add">+ Adicionar à minha biblioteca</button>` : ''}`;
     } else if (tab === 'minha') {
       body = `<section class="bp-card"><div class="bp-row"><span>Status</span><select class="bp-st" aria-label="Status">${['QUERO', 'LENDO', 'HIBERNANDO', 'LIDO', 'ABANDONEI'].map((st) => `<option value="${st}" ${e.status === st ? 'selected' : ''}>${LIB_LABEL[st]}</option>`).join('')}</select></div>
         ${info.total ? `<div class="rc-prog"><i class="mt-bar"><i style="width:${pct}%"></i></i><em>${pct}%</em></div><small class="bp-small">página ${info.now} de ${info.total}</small>` : ''}
@@ -4877,7 +4873,11 @@ function openBookPage(e, tab = 'sobre') {
         ${r.paws ? `<div class="bp-stars">${pawTxt(r.paws)} <small>${String(r.paws).replace('.', ',')}</small></div>` : '<small class="bp-small">Ainda sem avaliação.</small>'}
         ${r.frase ? `<q class="bp-q">${esc(String(r.frase).replace(/^["“]|["”]$/g, ''))}</q>` : ''}</section>
         ${ser.length ? `<section class="bp-card"><div class="bp-row"><span>Páginas por dia</span></div>${chartSvg(ser, info.total)}</section>` : ''}
-        <button type="button" class="bp-btn" data-a="menu">Mais opções do livro</button>`;
+        <section class="bp-card"><div class="bp-row"><span>Ajustes do livro</span></div>
+          <button type="button" class="bp-adj" data-a="fmt"><span>Formato</span><b>${esc(fmtTxt(e))}</b><i>›</i></button>
+          <button type="button" class="bp-adj" data-a="pages"><span>Total de páginas</span><b>${e.totalPages || '—'}</b><i>›</i></button>
+          <button type="button" class="bp-adj" data-a="edition"><span>Trocar edição</span><b>capa, páginas e ISBN</b><i>›</i></button>
+          <button type="button" class="bp-adj" data-a="rmlib" style="color:#b3261e"><span>Tirar da Minha biblioteca</span><b>adicionado por engano</b><i>›</i></button></section>`;
     } else if (tab === 'grafico') {
       body = ser.length ? `<section class="bp-card">${chartSvg(ser, info.total)}<small class="bp-small">Páginas acumuladas em cada dia em que você registrou leitura.</small></section>`
         : '<section class="bp-card"><p class="bp-load">Ainda não há leituras registradas deste livro.</p></section>';
@@ -4916,6 +4916,17 @@ function openBookPage(e, tab = 'sobre') {
       if (a === 'next') { setNext(e); draw(); }
       if (a === 'rate') rateForm(e, { logs: [] }, () => { refresh(); draw(); });
       if (a === 'more' || a === 'menu') bookMenu(e);
+      if (a === 'fmt') askFormat((f) => { setFormat(e, f); save(); refresh(); if (!v.hidden) draw(); }, `Como você lê “${e.title}”?`);
+      if (a === 'pages') fixPages(e);
+      if (a === 'edition') changeEdition(e);
+      if (a === 'rmlib') {
+        if (e.link) return toast(`“${e.title}” faz parte de uma meta com prazo. Tire o livro da meta para remover.`);
+        if (!confirm(`Tirar “${e.title}” da sua estante? A nota, a avaliação, os trechos e o progresso saem junto, e ele sai de todas as estantes.`)) return;
+        const hadReview = !!e.review; delete e.review; if (hadReview) publishReview(e);
+        db.library = db.library.filter((x) => x !== e); (db.shelves || []).forEach((s) => { s.bookIds = (s.bookIds || []).filter((i) => i !== e.id); });
+        if (T().nextId === e.id) T().nextId = null; if (T().currentId === e.id) T().currentId = null;
+        save(); v.hidden = true; refresh(); toast(`“${e.title}” saiu da sua estante`);
+      }
       if (a === 'quote') saveQuote(e);
       if (a === 'note') editNote(e);
       if (a === 'buddy') inviteBuddy(e);
@@ -4992,8 +5003,8 @@ function openNotif() {
     const all = [...reqs, ...rest];
     ed.querySelector('.ed-body').innerHTML = `<h3>Notificações</h3>
       <div class="nt-list">${all.length ? all.map((n) => `<div class="nt-it${n.k === 'req' ? '' : ' nt-go'}" data-id="${esc(n.id)}" ${n.k === 'req' ? '' : 'role="button" tabindex="0"'}><span class="av sm" ${n.h ? `data-avh="${esc(n.h)}"` : ''} style="background:${n.c}">${esc(n.i)}</span><div><p>${n.txt}</p><small>${n.when}</small>${n.k === 'req' ? (n.x.done ? `<small class="ok">${esc(n.x.done)}</small>` : '<div class="nt-bt"><button type="button" class="pri" data-a="ok">Aceitar</button><button type="button" data-a="no">Recusar</button></div>') : ''}</div><button type="button" class="nt-x" aria-label="Apagar notificação">×</button></div>`).join('')
-        : `<p class="nt-empty">${connected() ? (SOC.noHandle ? 'Crie seu @usuário no Perfil para receber pedidos de amizade, curtidas e comentários.' : 'Nada novo por aqui. Quando chegar algo, aparece aqui.') : 'Entre na sua conta para receber notificações.'}</p>`}</div>
-      <div class="row end">${all.length ? '<button type="button" id="nt-clear">Limpar tudo</button>' : ''}<button type="button" id="nt-close" class="pri">Fechar</button></div>`;
+        : `<p class="nt-empty">${connected() ? (SOC.noHandle ? 'Crie seu @usuário para receber pedidos de amizade, curtidas e comentários.' : 'Nada novo por aqui. Quando chegar algo, aparece aqui.') : 'Entre na sua conta para receber notificações.'}</p>`}</div>
+      <div class="row end">${all.length ? '<button type="button" id="nt-clear">Limpar tudo</button>' : ''}${!all.length && connected() && SOC.noHandle ? '<button type="button" id="nt-close">Agora não</button><button type="button" id="nt-handle" class="pri">Criar meu @usuário</button>' : '<button type="button" id="nt-close" class="pri">Fechar</button>'}</div>`;
     const idOf = (n) => n.closest('.nt-it').dataset.id, itemOf = (n) => all.find((x) => x.id === idOf(n));
     $$('.nt-bt button', ed).forEach((b) => b.addEventListener('click', async (ev) => {
       ev.stopPropagation(); const it = itemOf(b); if (!it) return; b.disabled = true;
@@ -5012,6 +5023,7 @@ function openNotif() {
     $$('.nt-go', ed).forEach((n) => { const goPost = () => { const it = itemOf(n); closeEd(); openNovidades(it && it.n.rid); }; n.addEventListener('click', goPost); n.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') goPost(); }); });
     $('#nt-clear', ed)?.addEventListener('click', () => { L.reqHidden = [...new Set([...(L.reqHidden || []), ...reqsShown().map((x) => x.id)])]; L.list = []; saveL(); draw(); });
     $('#nt-close', ed).addEventListener('click', closeEd);
+    $('#nt-handle', ed)?.addEventListener('click', () => { closeEd(); socialSettingsSheet(); });
   };
   draw(); ed.hidden = false;
 }
@@ -6157,7 +6169,7 @@ function drawInicioC(box) {
   $$('.v3-seg button', box).forEach((b) => b.addEventListener('click', () => { S.board = b.dataset.b; drawTab(); }));
   $('#v3-board-all', box).addEventListener('click', () => goTab(S.tab === 'comunidade' ? 'progresso' : 'comunidade'));
   $('#v3-duel', box).addEventListener('click', () => (SOC.fr.friends.length ? toast('Duelos chegam com o placar entre amigos') : inviteFriend()));
-  $('#v3-ear-me', box).addEventListener('click', () => toast('Marcadores chegam na próxima etapa'));
+  $('#v3-ear-me', box)?.addEventListener('click', () => toast('Marcadores chegam na próxima etapa'));
   $$('.v3-ear[data-h]', box).forEach((b) => b.addEventListener('click', () => friendPage(b.dataset.h)));
   $$('.v3-st', box).forEach((b) => b.addEventListener('click', () => goTab('progresso')));
   $$('.v3-hb', box).forEach((b) => b.addEventListener('click', () => openBook(b.dataset.id)));
@@ -6219,7 +6231,7 @@ function savedModal(e, before, page, total) {
 }
 // ===================== 3.0 · Estante, menu da estante e menu do livro completo =====================
 const ST_SECTIONS = [['LENDO', 'Lendo'], ['QUERO', 'Quero ler'], ['LIDO', 'Lidos'], ['HIBERNANDO', 'Pausados'], ['ABANDONEI', 'Abandonados']];
-const ES_SORTS = [['recentes', 'Adicionados recentemente'], ['conclusao', 'Terminados recentemente'], ['nota', 'Maior nota'], ['titulo', 'Título (A–Z)']];
+const ES_SORTS = [['recentes', 'Adicionados recentemente'], ['conclusao', 'Data de conclusão'], ['nota', 'Maior nota'], ['titulo', 'Título (A–Z)']];
 T().shelfSort = T().shelfSort || {};
 const sortKey = (key) => T().shelfSort[key] || (key === 'LIDO' ? 'conclusao' : 'recentes');
 function shelfBooks(key) {
@@ -6229,7 +6241,7 @@ function shelfBooks(key) {
   else list = lib().filter((e) => e.status === key);
   return sortList(list, sortKey(key));
 }
-const shelfName = (key) => (key === 'FAV' ? 'Prateleira do coração' : key.startsWith('sh:') ? ((db.shelves || []).find((x) => x.id === key.slice(3)) || {}).name || 'Coleção' : (ST_SECTIONS.find((x) => x[0] === key) || [0, key])[1]);
+const shelfName = (key) => (key === 'FAV' ? 'Prateleira do coração' : key.startsWith('sh:') ? ((db.shelves || []).find((x) => x.id === key.slice(3)) || {}).name || 'Estante' : (ST_SECTIONS.find((x) => x[0] === key) || [0, key])[1]);
 function shelfRowHTML(key, empty) {
   const list = shelfBooks(key);
   if (!list.length && !empty) return '';
@@ -6239,10 +6251,10 @@ function shelfRowHTML(key, empty) {
 function drawEstante(box) {
   const total = lib().length, mine = db.shelves || [];
   box.innerHTML = `<header class="v3-top"><h1>Estante</h1><div class="v3-acts"><button type="button" class="v3-bell" id="es-find" aria-label="Procurar na estante">${IC('procurar', 'ico-g')}</button></div></header>
-    <div class="es-actions"><button type="button" class="es-add" id="es-add">+ Adicionar livro</button><button type="button" class="es-new" id="es-new">+ Nova coleção</button></div>
+    <div class="es-actions"><button type="button" class="es-add" id="es-add">+ Adicionar livro</button><button type="button" class="es-new" id="es-new">+ Nova estante</button></div>
     <div class="es-chips">${ST_SECTIONS.map(([k, n]) => `<button type="button" data-open="${k}"><b>${lib().filter((e) => e.status === k).length}</b><small>${n}</small></button>`).join('')}</div>
     ${shelfRowHTML('LENDO', 'Nenhum livro em leitura agora.')}${shelfRowHTML('QUERO', 'Sua lista de desejos aparece aqui.')}${shelfRowHTML('LIDO', 'Os livros que você terminar aparecem aqui.')}${shelfRowHTML('FAV')}
-    ${mine.length ? `<div class="es-sub">Coleções</div>${mine.map((s) => shelfRowHTML('sh:' + s.id, 'Coleção vazia. Toque em ••• para adicionar livros.')).join('')}` : ''}
+    ${mine.length ? `<div class="es-sub">Estantes</div>${mine.map((s) => shelfRowHTML('sh:' + s.id, 'Estante vazia. Toque em ••• para adicionar livros.')).join('')}` : ''}
     ${shelfRowHTML('HIBERNANDO')}${shelfRowHTML('ABANDONEI')}
     <p class="es-foot">${plural(total, 'livro', 'livros')} na sua estante</p>`;
   paintCv(box);
@@ -6312,7 +6324,7 @@ function drawLot(key) {
 }
 function shelfNameForm(s) {
   const ed = $('#editor'); ed.classList.add('compact');
-  ed.querySelector('.ed-body').innerHTML = `<h3>${s ? 'Renomear coleção' : 'Nova coleção'}</h3><input id="sn-n" maxlength="40" placeholder="Ex.: Clube do livro, Fantasia, Para reler" value="${esc(s ? s.name : '')}">
+  ed.querySelector('.ed-body').innerHTML = `<h3>${s ? 'Renomear estante' : 'Nova estante'}</h3><input id="sn-n" maxlength="40" placeholder="Ex.: Clube do livro, Fantasia, Para reler" value="${esc(s ? s.name : '')}">
     <div class="row end"><button type="button" id="sn-c">Cancelar</button><button type="button" class="pri" id="sn-s">${s ? 'Salvar' : 'Criar'}</button></div>`;
   ed.hidden = false; $('#sn-n', ed).focus();
   $('#sn-c', ed).addEventListener('click', closeEd);
@@ -6374,7 +6386,7 @@ async function changeEdition(e) {
 }
 function moveToShelf(e) {
   const mine = db.shelves || [];
-  if (!mine.length) return sheetList('Coleções', [{ label: 'Criar uma estante', fn: () => shelfNameForm() }]);
+  if (!mine.length) return sheetList('Estantes', [{ label: 'Criar uma estante', fn: () => shelfNameForm() }]);
   sheetList(`Estantes de “${esc(e.title)}”`, mine.map((s) => ({ label: esc(s.name), on: (s.bookIds || []).includes(e.id), fn: () => { s.bookIds = (s.bookIds || []).includes(e.id) ? s.bookIds.filter((x) => x !== e.id) : [...(s.bookIds || []), e.id]; save(); refresh(); toast((s.bookIds || []).includes(e.id) ? `Adicionado a ${s.name}` : `Removido de ${s.name}`); } })), 'Fechar');
 }
 statusMenu = function (e) {
@@ -6612,7 +6624,7 @@ async function syncSocial3(force) {
     const [b, d, m, bu, fl] = await Promise.all([sapi('GET', `/v1/board?week=${wk}`), sapi('GET', `/v1/duels?week=${wk}`), sapi('GET', '/v1/markers/feed'), sapi('GET', '/v1/buddies'), sapi('GET', '/v1/flairs')]);
     if (b.status === 200 && b.data) SOC.board = b.data.items || [];
     if (d.status === 200 && d.data) SOC.duels = d.data.items || [];
-    if (m.status === 200 && m.data) SOC.markers = m.data.items || [];
+    SOC.markers = []; // 4.4: marcadores saíram do app
     if (fl.status === 200 && fl.data) SOC.flairs = Object.fromEntries((fl.data.items || []).map((x) => [x.handle, x]));
     if (bu.status === 200 && bu.data) { SOC.buddies = bu.data.items || []; mapBuddies(); await pushBuddyProgress(); }
     await flushLocalInvites();
@@ -6713,9 +6725,11 @@ function duelPick(anchor) {
 }
 
 // ---------- marcadores: fileira, publicar, ver ----------
-const MK_KIND = { QUOTE: 'Trecho', MILESTONE: 'Marco', REACTION: 'Reação' };
+const MK_KIND = { QUOTE: 'Trecho', MILESTONE: 'Marco', REACTION: 'Comentário' }; // marcos não se criam mais (4.4)
 function myPageFor(key) { const e = lib().find((x) => bookKey(x) === key); if (!e) return { page: 0, has: false }; const i = readingInfo(e); return { page: e.status === 'LIDO' ? 1e9 : i.now || 0, has: true }; }
-const mkLocked = (m) => !m.mine && m.kind !== 'MILESTONE' && m.page && myPageFor(m.bookKey).page < m.page;
+// 4.4: marcos também ficam protegidos. Com página: abre quando a pessoa chega nela; só com %: quando chega na %; sem nada: quando termina o livro.
+const mkLocked = (m) => { if (m.mine) return false; const mp = myPageFor(m.bookKey); if (mp.page >= 1e9) return false; if (m.page) return mp.page < m.page;
+  if (m.kind === 'MILESTONE' && m.pct != null) { const e = lib().find((x) => bookKey(x) === m.bookKey); return !e || readingInfo(e).pct < m.pct; } return true; };
 earsRow = function () {
   const h = drawHud(), mine = SOC.markers.filter((m) => m.mine), seen = new Set(L.mkSeen);
   const by = new Map(); for (const m of SOC.markers) if (!m.mine) { const k = m.user.handle; if (!by.has(k)) by.set(k, { user: m.user, list: [] }); by.get(k).list.push(m); }
@@ -6728,7 +6742,7 @@ earsRow = function () {
 };
 { const _di = drawInicio; drawInicio = function (box) {
   _di(box);
-  box.querySelector('.v3-ears')?.insertAdjacentHTML('afterend', invitesHTML()); bindInvites(box);
+  { const ears = box.querySelector('.v3-ears'), inv = invitesHTML(); if (ears) ears.insertAdjacentHTML('afterend', inv); else if (inv) box.insertAdjacentHTML('afterbegin', inv); } bindInvites(box); /* convites de leitura conjunta continuam sem a fileira de marcadores (4.4) */
   const old = $('#v3-ear-me', box), meEar = old && old.cloneNode(true); if (old) old.replaceWith(meEar);
   meEar?.addEventListener('click', (ev) => { if (ev.target.id === 'v3-mk-new' || !SOC.markers.some((m) => m.mine)) return composeMarker(); openStories(SOC.markers.filter((m) => m.mine).sort((x, y) => new Date(x.createdAt) - new Date(y.createdAt))); }, true);
   $$('.v3-ear[data-h]', box).forEach((b) => b.replaceWith(b.cloneNode(true)));
@@ -6745,11 +6759,11 @@ function composeMarker(kind = 'QUOTE') {
   const draw = () => {
     const info = readingInfo(e), pct = info.total ? Math.round((info.now / info.total) * 100) : 0;
     ed.querySelector('.ed-body').innerHTML = `<button type="button" class="up-x" id="mk-x" aria-label="Fechar">×</button><h3 class="up-h">Novo marcador</h3><p class="up-s">Fica 24 h no Início dos amigos e guardado na página do livro</p>
-      <div class="mk-types">${[['QUOTE', 'Trecho', 'comentar'], ['MILESTONE', 'Marco', 'meta'], ['REACTION', 'Reação', 'curtir'], ['PHOTO', 'Foto', 'perfil']].map(([k, n, ic]) => `<button type="button" data-k="${k}" class="${kind === k ? 'on' : ''}${k === 'PHOTO' ? ' off' : ''}">${k === 'MILESTONE' || k === 'PHOTO' ? MN(ic, 'ico-m') : IC(ic, 'ico-m')}<small>${n}${k === 'PHOTO' ? '<br>em breve' : ''}</small></button>`).join('')}</div>
+      <div class="mk-types">${[['QUOTE', 'Trecho', 'comentar'], ['REACTION', 'Comentário', 'curtir'], ['PHOTO', 'Foto', 'perfil']].map(([k, n, ic]) => `<button type="button" data-k="${k}" class="${kind === k ? 'on' : ''}${k === 'PHOTO' ? ' off' : ''}">${k === 'MILESTONE' || k === 'PHOTO' ? MN(ic, 'ico-m') : IC(ic, 'ico-m')}<small>${n}${k === 'PHOTO' ? '<br>em breve' : ''}</small></button>`).join('')}</div>
       ${lendo.length > 1 ? `<label class="fl">Livro<select id="mk-book">${lendo.map((x) => `<option value="${esc(x.id)}" ${x.id === e.id ? 'selected' : ''}>${esc(x.title)}</option>`).join('')}</select></label>` : `<p class="mk-book">${esc(e.title)} · pág. ${info.now}</p>`}
       <label class="fl">${kind === 'QUOTE' ? 'Trecho' : kind === 'MILESTONE' ? 'Seu marco' : 'O que você sentiu?'}<textarea id="mk-t" maxlength="400" rows="3" placeholder="${kind === 'QUOTE' ? 'Copie a frase que te marcou' : kind === 'REACTION' ? 'Ex.: não acredito nesse capítulo' : ''}">${kind === 'MILESTONE' ? `Cheguei aos ${pct}% de ${esc(e.title)}` : ''}</textarea></label>
       <label class="fl">Página<input id="mk-p" type="number" inputmode="numeric" min="0" value="${info.now || ''}"></label>
-      <p class="mk-note">${kind === 'MILESTONE' ? 'Marcos aparecem para todo mundo.' : 'Quem estiver antes desta página no livro vê o marcador protegido.'}</p>
+      <p class="mk-note">Quem estiver antes desta página no livro vê o marcador protegido.</p>
       <button type="button" class="sv-ok" id="mk-go">Publicar marcador</button>`;
     $('#mk-x', ed).addEventListener('click', closeEd);
     $$('.mk-types button', ed).forEach((b) => b.addEventListener('click', () => { if (b.dataset.k === 'PHOTO') return toast('Fotos chegam em breve'); kind = b.dataset.k; draw(); }));
@@ -6775,8 +6789,8 @@ function openStories(list, start = 0) {
     ov.innerHTML = `<div class="st-bg" style="--h:${(normT(m.title).length * 37) % 360}"></div><div class="st-bars">${list.map((_, j) => `<i class="${j < i ? 'f' : j === i ? 'c' : ''}"></i>`).join('')}</div>
       <header class="st-h"><span class="v3-ra fr" data-avh="${esc(m.user.handle)}" style="background-color:${friendColor(m.user.handle)}">${esc(initial(m.user.displayName))}</span><b>${m.mine ? 'Você' : esc(m.user.displayName)}</b><small>${esc(relTime(m.createdAt))}</small><button type="button" class="st-x" aria-label="Fechar">×</button></header>
       <div class="st-book">${cvh(m.title, e && e.cover, 'st-cv')}<div><b>${esc(m.title)}</b><small>${m.page ? `${MK_KIND[m.kind]} · pág. ${m.page}` : MK_KIND[m.kind]}${mp.has && !m.mine && mp.page < 1e9 ? ` · você na pág. ${mp.page}` : ''}</small></div></div>
-      <div class="st-body${lock ? ' lock' : ''} k-${m.kind}">${m.kind === 'MILESTONE' && m.pct != null ? `<b class="st-big">${m.pct}%</b>` : ''}<p>${m.kind === 'QUOTE' ? `“${esc(m.text)}”` : esc(m.text)}</p></div>
-      ${lock ? `<div class="st-lock"><img src="${A.ic_spoiler}" alt=""><b>Você ainda está na pág. ${mp.page}</b><small>Este marcador é da pág. ${m.page}. Ele abre sozinho quando você chegar lá.</small><button type="button" class="st-see">Ver mesmo assim</button></div>` : ''}
+      <div class="st-body${lock ? ' lock' : ''} k-${m.kind}">${m.kind === 'MILESTONE' && m.pct != null ? `<b class="st-big">${m.pct}%</b>` : ''}<p>${lock ? 'Trecho escondido para não estragar a leitura. Trecho escondido para não estragar a leitura.' : m.kind === 'QUOTE' ? `“${esc(m.text)}”` : esc(m.text)}</p></div>
+      ${lock ? `<div class="st-lock"><img src="${A.ic_spoiler}" alt="">${m.page ? `<b>Você ainda está na pág. ${mp.page}</b><small>Este marcador é da pág. ${m.page}. Ele abre sozinho quando você chegar lá.</small>` : `<b>Você ainda não terminou este livro</b><small>Este marcador não diz a página. Ele abre sozinho quando você terminar.</small>`}<button type="button" class="st-see">Ver mesmo assim</button></div>` : ''}
       <footer class="st-f">${m.mine ? `<button type="button" class="st-del">Apagar marcador</button>` : `<button type="button" class="st-like${m.liked ? ' on' : ''}" aria-label="Curtir">♥ ${m.likes || ''}</button>`}</footer>
       <button type="button" class="st-prev" aria-label="Anterior"></button><button type="button" class="st-next" aria-label="Próximo"></button>`;
     paintCv(ov); paintAvatars(); mkDecorate(ov, m, lock);
@@ -6803,7 +6817,7 @@ function bookMarkersHTML(e) {
   return `<section class="bp-card"><div class="bp-row"><span>Marcadores dos amigos</span></div>${items.map((m) => {
     const sep = !line && m.page && m.page > mp && mp < 1e9 ? ((line = true), `<div class="bk-sep">você está aqui · pág. ${mp}</div>`) : '';
     const lock = mkLocked(m);
-    return `${sep}<div class="bq${lock ? ' locked' : ''}"><span class="bq-p">${m.page ? `pág.<br>${m.page}` : '—'}</span><div><small class="bk-who">${m.mine ? 'Você' : esc(m.user.displayName)} · ${MK_KIND[m.kind].toLowerCase()}</small><q>${esc(m.text)}</q>${lock ? `<small class="bk-ahead">Abre quando você chegar à pág. ${m.page}</small>` : ''}</div><span></span></div>`; }).join('')}</section>`;
+    return `${sep}<div class="bq${lock ? ' locked' : ''}"><span class="bq-p">${m.page ? `pág.<br>${m.page}` : '—'}</span><div><small class="bk-who">${m.mine ? 'Você' : esc(m.user.displayName)} · ${MK_KIND[m.kind].toLowerCase()}</small>${lock ? `<small class="bk-ahead">${m.page ? `Abre quando você chegar à pág. ${m.page}` : 'Abre quando você terminar o livro'}</small>` : `<q>${esc(m.text)}</q>`}</div><span></span></div>`; }).join('')}</section>`;
 }
 
 const mergeFeed = (items) => [...(items || []), ...(SOC.feedExtra || [])].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 60);
@@ -7012,6 +7026,7 @@ function mkDecorate(ov, m, lock) { // aplica o estilo salvo ao marcador aberto
 .mk-go:disabled{opacity:.5}
 `; TR.append(st); }
 function composeMarker2(kind = 'QUOTE') {
+  if (kind === 'MILESTONE') kind = 'QUOTE'; // marcos não se criam mais (4.4)
   const lendo = lib().filter((x) => x.status === 'LENDO'), R = reading();
   let e = R ? R.e : lendo[0], st = mkDefaultStyle(kind), text = '', page = readingInfo(e).now || 0, tab = 'bg', touched = false;
   const ov = document.createElement('div'); ov.className = 'mk-ed'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', 'Novo marcador'); TR.append(ov);
@@ -7033,12 +7048,12 @@ function composeMarker2(kind = 'QUOTE') {
     ov.classList.toggle('light', st.bg === 'papel');
     ov.innerHTML = `<div class="st-bg" style="${mkBgStyle(st)}"></div>
       <div class="mk-top"><b>Novo marcador</b><button type="button" class="st-x" id="mk-x" aria-label="Fechar">×</button></div>
-      <div class="mk-seg">${[['QUOTE', 'Trecho'], ['MILESTONE', 'Marco'], ['REACTION', 'Reação']].map(([k, n]) => `<button type="button" data-k="${k}" class="${kind === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <div class="mk-seg">${[['QUOTE', 'Trecho'], ['REACTION', 'Comentário']].map(([k, n]) => `<button type="button" data-k="${k}" class="${kind === k ? 'on' : ''}">${n}</button>`).join('')}</div>
       <div class="mk-bk">${lendo.length > 1 ? `<select id="mk-book" aria-label="Livro">${lendo.map((x) => `<option value="${esc(x.id)}" ${x.id === e.id ? 'selected' : ''}>${esc(x.title)}</option>`).join('')}</select>` : `<b>${esc(e.title)}</b>`}<label>pág.<input id="mk-p" type="number" inputmode="numeric" min="0" value="${page || ''}"></label></div>
       <div class="mk-stage"><div class="mk-sty f-${st.font} k-${kind}">${mkBodyHTML({ kind, page, pct: pctNow() }, st, `<textarea class="mk-tx" id="mk-t" maxlength="400" rows="3" placeholder="${ph}">${esc(text)}</textarea>`)}</div></div>
       ${src ? `<img class="mk-stk" id="mk-stk" src="${src}" alt="" style="left:${st.sx}%;top:${st.sy}%">` : ''}
       <div class="mk-tools"><div class="mk-tabs">${tabs.map(([k, n]) => `<button type="button" data-tab="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}</div><div class="mk-opts">${opts}</div>${tab === 'stk' && src ? '<p class="mk-hint">Arraste a figurinha para posicionar</p>' : ''}</div>
-      <p class="mk-hint">${kind === 'MILESTONE' ? 'Marcos aparecem para todo mundo.' : 'Quem estiver antes desta página vê o marcador protegido.'} Fica 24 h para os amigos.</p>
+      <p class="mk-hint">Quem estiver antes desta página vê o marcador protegido. Fica 24 h para os amigos.</p>
       <button type="button" class="mk-go" id="mk-go">Publicar marcador</button>`;
     const ta = $('#mk-t', ov); ta.addEventListener('input', () => { text = ta.value; touched = true; });
     $('#mk-x', ov).addEventListener('click', close);
@@ -7133,7 +7148,7 @@ const fmtDM = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
       <div class="v3-next-b"><button type="button" class="v3-pri" id="v3-start" data-id="${esc(nx.id)}">Começar a ler</button><button type="button" id="v3-cta">Buscar outro</button></div></div></section>`;
   }
   let html = _nc(); const days = paceDays(R);
-  if (days) { const end = fmtDM(addDays(todayISO(), days)); html = html.replace(/No seu ritmo, <b>[^<]*<\/b>/, `No seu ritmo, termina <b>dia ${end}</b>`); }
+  if (days) html = html.replace(/No seu ritmo, <b>[^<]*<\/b>/, `No seu ritmo, termina em <b>${days === 1 ? '1 dia' : `${days} dias`}</b>`);
   if (R.total && R.now < R.total) html = html.replace('<div class="v3-two">', `<div class="v3-plus"><button type="button" data-add="10">+10 pág.</button><button type="button" data-add="25">+25 pág.</button><button type="button" data-add="50">+50 pág.</button></div><div class="v3-two">`);
   return html;
 }; }
@@ -7393,16 +7408,31 @@ function importCSV() {
     let rows; try { rows = parseCSV(await file.text()); } catch { return toast('Não consegui ler esse arquivo'); }
     if (rows.length < 2) return toast('O arquivo está vazio');
     const H = rows[0].map((h) => normT(h)), col = (...names) => H.findIndex((h) => names.includes(h));
-    const cT = col('title', 'titulo', 'livro'), cA = col('author', 'autor', 'autora'), cI = col('isbn13') >= 0 ? col('isbn13') : col('isbn'), cR = col('my rating', 'nota', 'patas', 'avaliacao'),
-      cD = col('date read', 'data', 'lido em', 'ano', 'data de leitura'), cS = col('exclusive shelf', 'status', 'estante'), cP = col('number of pages', 'paginas', 'pages'),
+    // nomes de coluna do Goodreads, StoryGraph, Skoob e planilhas comuns; a nota também é achada por "contém" (Minha nota, Estrelas…)
+    const has = (...parts) => H.findIndex((h) => parts.some((p) => h.includes(p)));
+    const cT = col('title', 'titulo', 'livro', 'nome do livro'), cA = col('author', 'authors', 'autor', 'autora', 'autores', 'autor a'), cI = col('isbn13') >= 0 ? col('isbn13') : col('isbn', 'isbn uid'),
+      cR = col('my rating', 'star rating', 'rating', 'nota', 'patas', 'avaliacao', 'estrelas') >= 0 ? col('my rating', 'star rating', 'rating', 'nota', 'patas', 'avaliacao', 'estrelas') : has('rating', 'nota', 'avaliac', 'estrela', 'patas'),
+      cD = col('date read', 'last date read', 'data', 'lido em', 'ano', 'data de leitura', 'data de termino'), cS = col('exclusive shelf', 'read status', 'status', 'estante'), cP = col('number of pages', 'paginas', 'pages', 'numero de paginas'),
       cB = col('binding', 'formato'), cX = col('bookshelves', 'estantes', 'tags');
     if (cT < 0) return toast('Não encontrei a coluna de título');
     const Y = Number(todayISO().slice(0, 4)), shelfOf = new Map((db.shelves || []).map((x) => [normT(x.name), x]));
-    let n = 0, skip = 0; const fresh = [];
+    let n = 0, skip = 0, upd = 0; const fresh = [];
+    // resenha (Goodreads "My Review", StoryGraph "Review") e spoiler; o Goodreads às vezes exporta quebras de linha como \n literal
+    const cV = col('my review', 'review', 'resenha', 'comentario'), cSp = col('spoiler');
+    const revOf = (r) => (cV >= 0 ? String(r[cV] || '').replace(/\\n/g, '\n').replace(/​/g, '').replace(/<br\s*\/?>/gi, '\n').trim().slice(0, 4000) : '');
+    const spOf = (r) => cSp >= 0 && /^(true|sim|yes|1)$/i.test(String(r[cSp] || '').trim());
     for (const r of rows.slice(1, 3001)) {
       const title = String(r[cT] || '').trim().slice(0, 200); if (!title) continue;
       const author = cA >= 0 ? String(r[cA] || '').trim().slice(0, 120) : '', isbn = cI >= 0 ? String(r[cI] || '').replace(/\D/g, '') : '';
-      if (lib().some((e) => (isbn && e.isbn === isbn) || (normT(e.title) === normT(title) && normT(String(e.author || '').split(',')[0]) === normT(author.split(',')[0])))) { skip++; continue; }
+      const had = lib().find((e) => (isbn && e.isbn === isbn) || (normT(e.title) === normT(title) && normT(String(e.author || '').split(',')[0]) === normT(author.split(',')[0])));
+      if (had) { // já estava na estante: completa o que falta (nota, páginas), sem sobrescrever o que a pessoa já preencheu
+        const pw = cR >= 0 ? Math.max(0, Math.min(5, Math.round(Number(String(r[cR]).replace(',', '.')) * 2) / 2)) : 0, pg = cP >= 0 ? Number(String(r[cP]).replace(/\D/g, '')) || null : null;
+        let ch = false;
+        if (pw && !(reviewOfLib(had) || {}).paws && had.status === 'LIDO') { had.review = { ...(had.review || {}), paws: pw }; ch = true; }
+        const tx = revOf(r); if (tx && had.status === 'LIDO' && !(reviewOfLib(had) || {}).texto) { had.review = { ...(had.review || {}), texto: tx, ...(spOf(r) ? { spoiler: true } : {}) }; ch = true; }
+        if (pg && !had.totalPages) { had.totalPages = pg; ch = true; }
+        ch ? upd++ : skip++; continue;
+      }
       const sh = cS >= 0 ? normT(r[cS]) : '', status = /currently|lendo|reading/.test(sh) ? 'LENDO' : /to read|quero|wish/.test(sh) ? 'QUERO' : /abandon|did not finish|dnf/.test(sh) ? 'ABANDONEI' : 'LIDO';
       const raw = cD >= 0 ? String(r[cD] || '').trim() : '', dm = raw.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/) || raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/), ym = raw.match(/\b(19\d\d|20\d\d)\b/);
       let when = 'unknown';
@@ -7412,14 +7442,15 @@ function importCSV() {
       const e = addToLibrary({ title, author: author || null, totalPages: pages, isbn: isbn || null }, null, status, { when: status === 'LIDO' ? when : null, quiet: true, paws: status === 'LIDO' && paws ? paws : 0,
         fmt: /kindle/.test(bind) ? { format: 'EBOOK', device: 'Kindle' } : /kobo/.test(bind) ? { format: 'EBOOK', device: 'Kobo' } : /ebook|e book|nook|digital/.test(bind) ? { format: 'EBOOK' } : /audio|audible/.test(bind) ? { format: 'AUDIO' } : null });
       if (status === 'LENDO') e.startedAt = todayISO();
+      const tx = revOf(r); if (tx && status === 'LIDO') e.review = { ...(e.review || {}), texto: tx, ...(spOf(r) ? { spoiler: true } : {}) };
       if (cX >= 0) for (const name of String(r[cX] || '').split(/[,;]/).map((x) => x.trim()).filter((x) => x && !/^(read|to-read|currently-reading|lidos?|quero ler|lendo)$/i.test(x)).slice(0, 5)) {
         let s = shelfOf.get(normT(name)); if (!s) { db.shelves = db.shelves || []; s = { id: uid(), name: name.slice(0, 40), bookIds: [] }; db.shelves.push(s); shelfOf.set(normT(name), s); } s.bookIds.push(e.id);
       }
       n++; if (isbn) fresh.push(e);
     }
-    save(); refresh(); toast(`${plural(n, 'livro importado', 'livros importados')}${skip ? ` · ${skip} já estavam na estante` : ''}`); S.listRedraw && S.listRedraw();
+    save(); refresh(); toast(`${plural(n, 'livro importado', 'livros importados')}${upd ? ` · ${plural(upd, 'livro completado', 'livros completados')} com nota ou páginas` : ''}${skip ? ` · ${skip} já estavam na estante` : ''}`); S.listRedraw && S.listRedraw();
     // capas pelo ISBN (Open Library), aos poucos
-    let i = 0; const next = () => { const e = fresh[i++]; if (!e) { save(); refresh(); return; } const u = `https://covers.openlibrary.org/b/isbn/${e.isbn}-M.jpg?default=false`, im = new Image(); im.onload = () => { if (im.naturalWidth > 20) e.cover = u; next(); }; im.onerror = next; im.src = u; };
+    let i = 0; const next = () => { const e = fresh[i++]; if (!e) { save(); refresh(); if (!S.coverAfter) { S.coverAfter = 1; setTimeout(() => { S.coverAfter = 0; fillMissingCovers(); }, 2500); } return; } const u = `https://covers.openlibrary.org/b/isbn/${e.isbn}-M.jpg?default=false`, im = new Image(); im.onload = () => { if (im.naturalWidth > 20) e.cover = u; next(); }; im.onerror = next; im.src = u; };
     for (let k = 0; k < 3; k++) next();
   });
   inp.click();
@@ -7469,15 +7500,17 @@ function youHeaderHTML() {
 }
 function youSectionsHTML() {
   const L = lib(), R = reading(), nextId = T().nextId;
-  const fila = [...L.filter((e) => e.status === 'LENDO' && (!R || R.e.id !== e.id)), ...L.filter((e) => e.id === nextId && e.status === 'QUERO'), ...L.filter((e) => e.status === 'QUERO' && e.id !== nextId).sort((a, b) => String(b.addedAt || '').localeCompare(String(a.addedAt || '')))].slice(0, 12);
+  const tambem = L.filter((e) => e.status === 'LENDO' && (!R || R.e.id !== e.id)); // outros livros em andamento: seção própria, fora da fila
+  const fila = [...L.filter((e) => e.id === nextId && e.status === 'QUERO'), ...L.filter((e) => e.status === 'QUERO' && e.id !== nextId).sort((a, b) => String(b.addedAt || '').localeCompare(String(a.addedAt || '')))].slice(0, 12);
   const st = achState(), won = st.filter((a) => a.done), show = rareFirst(won).filter((a) => DECO_IMG[a.reward]).slice(0, 8), nx = nextAchievements()[0];
   const revs = L.filter((e) => { const r = reviewOfLib(e); return r && r.paws; }).sort((a, b) => (reviewOfLib(b).paws - reviewOfLib(a).paws) || String(b.finishedAt || '').localeCompare(String(a.finishedAt || ''))).slice(0, 10); // as mais bem avaliadas primeiro
   const shelves = db.shelves || [];
-  return `${fila.length ? `<div class="v3-sh"><b>Na fila</b><button type="button" class="v3-link" id="yo-fila">Estante ›</button></div><div class="es-row yo-fila">${fila.map((e) => `<button type="button" class="es-bk" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'es-cv')}<small>${e.status === 'LENDO' ? 'lendo' : e.id === nextId ? 'próxima' : 'quero ler'}</small></button>`).join('')}</div>` : ''}
+  const pctTxt = (e) => (e.totalPages ? `${Math.round((libProgress(e) / e.totalPages) * 100)}%` : `pág. ${libProgress(e)}`);
+  return `${tambem.length ? `<div class="v3-sh"><b>Também lendo</b></div><div class="es-row yo-fila">${tambem.map((e) => `<button type="button" class="es-bk" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'es-cv')}<small>lendo · ${pctTxt(e)}</small></button>`).join('')}</div>` : ''}${fila.length ? `<div class="v3-sh yo-fsh"><button type="button" class="yo-ft" id="yo-fila"><b>Na fila</b><span>${L.filter((e) => e.status === 'QUERO').length}</span></button><button type="button" class="es5-more" id="yo-fmore" aria-label="Opções da fila">•••</button></div><div class="es-row yo-fila">${fila.map((e) => `<button type="button" class="es-bk" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'es-cv')}<small>${e.id === nextId ? 'próxima' : 'quero ler'}</small></button>`).join('')}</div>` : ''}
     <section class="v3c yo-ach"><div class="v3-sh" style="margin:0 0 .5rem"><b>Conquistas · ${won.length} de ${st.length}</b><button type="button" class="v3-link" id="yo-achs">Todas ›</button></div>
       ${show.length ? `<div class="v3-shelf">${show.map((a) => `<span class="v3-trophy${a.rare ? ' rare' : ''}" title="${esc(a.name)}"><img src="${DECO_IMG[a.reward]}" alt="${esc(a.name)}"></span>`).join('')}</div>` : ''}${nx ? achRow(nx) : ''}</section>
     ${revs.length ? `<div class="v3-sh"><b>Mais bem avaliados</b><button type="button" class="v3-link" id="yo-revs">Todas as avaliações ›</button></div><div class="v3-heart">${revs.map((e) => `<button type="button" class="v3-hb yo-top" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'pf-cv')}<span class="yo-pw">${pawTxt(reviewOfLib(e).paws)}</span></button>`).join('')}</div>` : ''}
-    ${shelves.length ? `<div class="v3-sh"><b>Coleções</b><button type="button" class="v3-link" id="yo-es">Todas ›</button></div><div class="yo-shelves">${shelves.slice(0, 4).map((s) => { const bk = (s.bookIds || []).map((id) => L.find((e) => e.id === id)).filter(Boolean); return `<button type="button" class="yo-shelf" data-sh="${esc(s.id)}"><b>${esc(s.name)}</b><small>${plural(bk.length, 'livro', 'livros')}</small><span class="yo-mini">${bk.slice(0, 6).map((e) => cvh(e.title, e.cover, '')).join('')}</span></button>`; }).join('')}</div>` : ''}`;
+    ${shelves.length ? `<div class="v3-sh"><b>Estantes</b><button type="button" class="v3-link" id="yo-es">Todas ›</button></div><div class="yo-shelves">${shelves.slice(0, 4).map((s) => { const bk = (s.bookIds || []).map((id) => L.find((e) => e.id === id)).filter(Boolean); return `<button type="button" class="yo-shelf" data-sh="${esc(s.id)}"><b>${esc(s.name)}</b><small>${plural(bk.length, 'livro', 'livros')}</small><span class="yo-mini">${bk.slice(0, 6).map((e) => cvh(e.title, e.cover, '')).join('')}</span></button>`; }).join('')}</div>` : ''}`;
 }
 { const _dt = drawTab; drawTab = function () {
   _dt(); const box = $('#lista');
@@ -7489,7 +7522,8 @@ function youSectionsHTML() {
     $('#v3-bell', box)?.addEventListener('click', openNotif);
     $('#yo-cfg', box)?.addEventListener('click', () => goTab('perfil'));
     $('#yo-photo', box)?.addEventListener('click', () => pickPhoto());
-    $('#yo-fila', box)?.addEventListener('click', () => goTab('estante'));
+    $('#yo-fila', box)?.addEventListener('click', () => openShelfV3('QUERO'));
+    $('#yo-fmore', box)?.addEventListener('click', (ev) => shelfMenu4('QUERO', ev.currentTarget));
     $('#yo-achs', box)?.addEventListener('click', openAchList); $$('.yo-ach .v3-ach', box).forEach((b) => b.addEventListener('click', openAchList));
     $('#yo-revs', box)?.addEventListener('click', () => openShelfV3('LIDO'));
     $('#yo-es', box)?.addEventListener('click', () => goTab('estante'));
@@ -7528,7 +7562,7 @@ friendPage = async function (handle) {
   const v = $('#shelflist'); closeEd();
   const shell = (body) => { v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>@${esc(handle)}</b><span></span></div>${body}`; v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; }); };
   v.classList.remove('feedview'); shell('<p class="sl-empty">Carregando…</p>'); v.hidden = false; v.scrollTop = 0;
-  let d; try { const r = await sapi('GET', `/v1/users/${encodeURIComponent(handle)}`); if (r.status !== 200) throw 0; d = r.data; } catch { return shell('<p class="sl-empty">Não foi possível abrir essa página agora.</p>'); }
+  let d; try { const r = await sapi('GET', `/v1/users/${encodeURIComponent(handle)}`); if (r.status !== 200) throw 0; d = r.data; S.fpData = d; } catch { return shell('<p class="sl-empty">Não foi possível abrir essa página agora.</p>'); }
   const c = (d.shelf && d.shelf.counts) || {}, won = (d.achievements && d.achievements.won) || [], fl = SOC.flairs[d.handle], fr = fl && fl.frame && PF_FRAMES.find((x) => x[0] === fl.frame);
   const mine = new Set(lib().filter((e) => e.status === 'LIDO').map((e) => normT(e.title)));
   const common = ((d.shelf && d.shelf.lidos) || []).filter((b) => mine.has(normT(b.title)));
@@ -7688,7 +7722,7 @@ function loadTrends(force) {
 }
 function trendsHTML() {
   const d = S.trends; if (!d) return '<p class="tr-empty">Carregando o que está em alta…</p>';
-  const tabs = [['friends', 'Entre amigos'], ['topRated', 'Bem avaliados'], ['app', 'No app'], ['marked', 'Mais marcados']];
+  const tabs = [['friends', 'Entre amigos'], ['topRated', 'Bem avaliados'], ['app', 'No app']];
   const list = d[S.trTab] || [];
   const cap = (x) => S.trTab === 'friends' ? (x.who && x.who.length ? (x.n > 2 ? `${String(x.who[0]).split(' ')[0]} e mais ${x.n - 1}` : x.who.map((w) => String(w).split(' ')[0]).join(' e ')) : plural(x.n, 'amigo', 'amigos'))
     : S.trTab === 'topRated' ? `${pawTxt(x.avg)} · ${x.n}` : S.trTab === 'app' ? plural(x.n, 'leitor', 'leitores') : plural(x.n, 'marcador', 'marcadores');
@@ -7914,12 +7948,13 @@ async function setRecStatus(x, status) { x.status = status; try { await sapi('PO
 function recsHTML() {
   const list = S.recs.filter((x) => x.status !== 'SAVED'); if (!list.length) return '';
   return `<div class="v3-sh"><b>Indicações para você</b></div><div class="rc-list">${list.slice(0, 6).map((x) => { const mine = lib().find((e) => normT(e.title) === normT(x.title));
-    return `<article class="rc-it" data-rc="${esc(x.id)}">${cvh(x.title, x.cover, '')}<div><p><b>${esc(String(x.from.displayName).split(' ')[0])}</b> indicou <b>${esc(x.title)}</b></p>${x.note ? `<q>${esc(x.note)}</q>` : ''}<small>${esc(relTime(x.createdAt))}${x.author ? ' · ' + esc(x.author) : ''}</small>
+    return `<article class="rc-it" data-rc="${esc(x.id)}">${cvh(x.title, x.cover, '')}<div><p><b>${esc(String(x.from.displayName).split(' ')[0])}</b> indicou <b>${esc(x.title)}</b></p>${x.note ? (iReadT(x.title) || (S.rcOpen && S.rcOpen.has(x.id)) ? `<q>${esc(x.note)}</q>` : `<button type="button" class="fd-sp" data-rcsp>${IC('spoiler', 'ico-b')}Recado sobre um livro que você não leu · toque para ver</button>`) : ''}<small>${esc(relTime(x.createdAt))}${x.author ? ' · ' + esc(x.author) : ''}</small>
       ${mine ? `<small class="rc-have">Já está na sua estante · ${esc((LIB_LABEL[mine.status] || '').toLowerCase())}</small>` : ''}<div class="rc-bt">${mine ? '' : '<button type="button" class="pri" data-rcq>Quero ler</button>'}<button type="button" data-rcv>Ver livro</button></div></div><button type="button" class="rc-x" data-rcx aria-label="Dispensar">×</button></article>`; }).join('')}</div>`;
 }
 function paintRecs() {
   const host = $('#rc-host'); if (!host) return; host.innerHTML = recsHTML(); paintCv(host);
   $$('.rc-it', host).forEach((a) => { const x = S.recs.find((y) => y.id === a.dataset.rc); if (!x) return;
+    a.querySelector('[data-rcsp]')?.addEventListener('click', () => { (S.rcOpen || (S.rcOpen = new Set())).add(x.id); paintRecs(); });
     a.querySelector('[data-rcq]')?.addEventListener('click', () => { addToLibrary({ title: x.title, author: x.author, cover: x.cover, totalPages: null }, null, 'QUERO'); setRecStatus(x, 'SAVED'); paintRecs(); });
     a.querySelectorAll('[data-rcv], .cv').forEach((b) => b.addEventListener('click', () => { if (x.status === 'NEW') setRecStatus(x, 'SEEN'); openAnyBook(x.title, x.author, x.cover); }));
     a.querySelector('[data-rcx]').addEventListener('click', () => { setRecStatus(x, 'DISMISSED'); S.recs = S.recs.filter((y) => y !== x); paintRecs(); paintRecBadge(); });
@@ -7940,12 +7975,12 @@ function paintRecs() {
   $('#bm-rec', ed).addEventListener('click', () => { closeEd(); recommendToFriend(e); }); }; }
 // Comunidade e sino
 { const _dt = drawTab; drawTab = function () { _dt(); const box = $('#lista');
-  if (S.tab === 'comunidade' && !box.querySelector('#rc-host')) { const at = box.querySelector('.v3-invs') || box.querySelector('.v3-ears'); if (at) at.insertAdjacentHTML('afterend', '<div id="rc-host"></div>'); paintRecs(); }
+  if (S.tab === 'comunidade' && !box.querySelector('#rc-host')) { const at = box.querySelector('.v3-invs') || box.querySelector('.v3-ears'); if (at) at.insertAdjacentHTML('afterend', '<div id="rc-host"></div>'); else box.insertAdjacentHTML('afterbegin', '<div id="rc-host"></div>'); /* sem a fileira de marcadores (4.4), as indicações vão para o topo */ paintRecs(); }
   if (!S.recsAt || Date.now() - S.recsAt > 120000) { S.recsAt = Date.now(); loadRecs(); }
   paintRecBadge(); }; }
 { const _on = openNotif; openNotif = function () { _on(); const ed = $('#editor'), list = S.recs.filter((x) => x.status === 'NEW' || x.status === 'SEEN').slice(0, 8); if (!list.length) return;
   const h3 = ed.querySelector('.ed-body h3'); if (!h3) return;
-  h3.insertAdjacentHTML('afterend', `<div class="nt-list">${list.map((x) => `<div class="nt-it nt-go" data-rcn="${esc(x.id)}" role="button" tabindex="0"><span class="av sm" data-avh="${esc(x.from.handle)}" style="background:${friendColor(x.from.handle)}">${esc(initial(x.from.displayName))}</span><div><p><b>${esc(x.from.displayName)}</b> indicou <b>${esc(x.title)}</b>${x.note ? `: “${esc(x.note)}”` : ''}</p><small>${esc(relTime(x.createdAt))}</small></div><span></span></div>`).join('')}</div>`);
+  h3.insertAdjacentHTML('afterend', `<div class="nt-list">${list.map((x) => `<div class="nt-it nt-go" data-rcn="${esc(x.id)}" role="button" tabindex="0"><span class="av sm" data-avh="${esc(x.from.handle)}" style="background:${friendColor(x.from.handle)}">${esc(initial(x.from.displayName))}</span><div><p><b>${esc(x.from.displayName)}</b> indicou <b>${esc(x.title)}</b>${x.note ? (iReadT(x.title) ? `: “${esc(x.note)}”` : ' · com recado') : ''}</p><small>${esc(relTime(x.createdAt))}</small></div><span></span></div>`).join('')}</div>`);
   $$('[data-rcn]', ed).forEach((n) => n.addEventListener('click', () => { const x = S.recs.find((y) => y.id === n.dataset.rcn); closeEd(); if (x) openAnyBook(x.title, x.author, x.cover); }));
   list.filter((x) => x.status === 'NEW').forEach((x) => setRecStatus(x, 'SEEN')); paintAvatars(); setTimeout(paintRecBadge, 50); }; }
 
@@ -8139,7 +8174,7 @@ function openThreads() {
     const th = S.msg.threads, fr = SOC.fr.friends || [];
     v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Mensagens</b><span></span></div>
       <button type="button" class="fl-add" id="th-new">+ Nova mensagem</button>
-      ${th == null ? '<p class="sl-empty">Carregando…</p>' : th.length ? th.map((x) => `<button type="button" class="th-row${x.unread ? ' un' : ''}" data-h="${esc(x.with.handle)}"><span class="av" data-avh="${esc(x.with.handle)}" style="background:${friendColor(x.with.handle)}">${esc(initial(x.with.displayName))}</span><span><b>${esc(x.with.displayName)}</b><small>${x.mine ? 'Você: ' : ''}${x.bookTitle ? '📖 ' : ''}${esc(x.last)}</small></span><span class="th-meta">${esc(relTime(x.at))}${x.unread ? `<span class="th-dot">${x.unread}</span>` : ''}</span></button>`).join('')
+      ${th == null ? '<p class="sl-empty">Carregando…</p>' : th.length ? th.map((x) => `<button type="button" class="th-row${x.unread ? ' un' : ''}" data-h="${esc(x.with.handle)}"><span class="av" data-avh="${esc(x.with.handle)}" style="background:${friendColor(x.with.handle)}">${esc(initial(x.with.displayName))}</span><span><b>${esc(x.with.displayName)}</b><small>${x.mine ? 'Você: ' : ''}${x.bookTitle && !x.mine && !iReadT(x.bookTitle) ? `📖 Sobre ${esc(x.bookTitle)} · toque para ver` : `${x.bookTitle ? '📖 ' : ''}${esc(x.last)}`}</small></span><span class="th-meta">${esc(relTime(x.at))}${x.unread ? `<span class="th-dot">${x.unread}</span>` : ''}</span></button>`).join('')
         : `<p class="sl-empty">${fr.length ? 'Nenhuma conversa ainda. Toque em “Nova mensagem” e escolha um amigo.' : 'Mensagens são só entre amigos. Adicione amigos para conversar.'}</p>`}`;
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
     $('#th-new', v).addEventListener('click', () => { if (!fr.length) return openPeopleSearch(); sheet('Conversar com…', fr.map((f) => [f.displayName, () => openChat(f.handle)])); });
@@ -8245,6 +8280,8 @@ const ICO = {
 { const st = document.createElement('style'); st.textContent = `
 .gtop{position:fixed;left:0;right:0;top:0;z-index:35;display:flex;align-items:center;gap:.6rem;padding:calc(env(safe-area-inset-top,0px) + .45rem) .8rem .45rem;background:var(--bg);border-bottom:1px solid var(--line)}
 .gtop .g-av{width:34px;height:34px;border-radius:50%;border:0;padding:0;flex:none;background:var(--acc);color:var(--on-acc,#fff);font-weight:900;background-size:cover;background-position:center}
+.gtop .g-av.g-menu{width:40px;height:40px;border-radius:12px;background:none!important;color:var(--ink);display:grid;place-items:center}.gtop .g-av.g-menu svg{width:24px;height:24px}
+.gtop .g-t.g-brand{letter-spacing:.2em;font-weight:900}
 .gtop .g-t{flex:1;min-width:0;font-weight:900;font-size:1.05rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gtop .g-b{position:relative;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);display:grid;place-items:center;padding:0}
 .gtop .g-b svg{width:21px;height:21px}
@@ -8270,8 +8307,9 @@ TR.append(gtop);
 S.notifN = S.notifN || 0;
 function paintGtop() {
   const h = drawHud(), av = $('#g-av');
-  av.style.backgroundImage = h.ph ? cssUrl(h.ph) : ''; av.textContent = h.ph ? '' : initial(h.name);
-  $('#g-t').textContent = S.tab === 'perfil' ? 'Ajustes' : TAB_T[S.tab] || '';
+  // 4.4: o botão do canto abre o menu lateral (o perfil virou aba): ícone de menu no lugar da foto
+  av.style.backgroundImage = ''; av.classList.add('g-menu'); av.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+  if (typeof syncTopTitle === 'function') syncTopTitle();
   const old = $('#lista #v3-bell u'); if (old) S.notifN = Number(String(old.textContent).replace('+', '')) || 0; else if ($('#lista #v3-bell')) S.notifN = 0;
   const bell = $('#g-bell'); let u = bell.querySelector('u'); const n = S.notifN + (typeof recNew === 'function' ? recNew() : 0); if (!n) u && u.remove(); else { if (!u) { u = document.createElement('u'); bell.append(u); } u.textContent = n > 9 ? '9+' : n; }
   paintMsgBadge();
@@ -8283,13 +8321,13 @@ $('#g-bell').addEventListener('click', () => { openNotif(); S.notifN = 0; setTim
 { const _tb = drawTabbar; drawTabbar = function () { _tb(); $$('#tabbar button').forEach((b) => { const k = b.dataset.tab; if (!ICO[k]) return; const old = b.querySelector('img, .tb-av, .tb-ic'); if (old) old.outerHTML = SVG(ICO[k]); const sm = b.querySelector('small'); if (sm && k === 'inicio') sm.textContent = 'Início'; }); paintCommDot(); }; }
 // --- Início: só o que pede ação ---
 function trimInicio(box) {
-  const drop = /^(Mais bem avaliados|Prateleira do coração|Coleções|Seu \d{4})/;
+  const drop = /^(Mais bem avaliados|Prateleira do coração|Coleções|Estantes|Seu \d{4})/;
   let meta = null; const st4 = box.querySelector('.v3-stats4'); if (st4) { const t = st4.innerText.replace(/\s+/g, ' '); const m = t.match(/Livros \d{4} (\d+) meta (\d+)/); if (m) meta = { n: +m[1], goal: +m[2] }; }
   box.querySelectorAll('.yo-nums, .yo-ach').forEach((n) => n.remove());
   [...box.querySelectorAll('.v3-sh')].forEach((sh) => { const t = (sh.querySelector('b') || sh).textContent.trim(); if (drop.test(t)) { const nx = sh.nextElementSibling; if (nx && !nx.classList.contains('v3-sh')) nx.remove(); sh.remove(); } });
   const now = box.querySelector('.v3-now');
   if (now && !box.querySelector('#rc-host')) now.insertAdjacentHTML('afterend', '<div id="rc-host"></div>');
-  if (meta && !box.querySelector('.ini-meta')) { const pct = meta.goal ? Math.min(100, Math.round((meta.n / meta.goal) * 100)) : 0; const host = box.querySelector('.v3-colA') || box; host.insertAdjacentHTML('beforeend', `<button type="button" class="ini-meta" id="ini-meta"><b>Meta de ${new Date().getFullYear()}</b><small>${meta.n} de ${meta.goal} livros</small><i><i style="width:${pct}%"></i></i></button>`); $('#ini-meta', box).addEventListener('click', () => goTab('progresso')); }
+  if (meta && !box.querySelector('.ini-meta')) { const pct = meta.goal ? Math.min(100, Math.round((meta.n / meta.goal) * 100)) : 0; const host = box.querySelector('.v3-colA') || box; host.insertAdjacentHTML('beforeend', `<button type="button" class="ini-meta" id="ini-meta"><b>Meta de ${new Date().getFullYear()}</b><small>${meta.n} de ${meta.goal} livros</small><i><i style="width:${pct}%"></i></i></button>`); $('#ini-meta', box).addEventListener('click', () => openGoalPage()); }
   paintRecs();
 }
 { const _dt = drawTab; drawTab = function () {
@@ -8309,7 +8347,7 @@ async function openMyProfile() {
   const nums = v.querySelector('.yo-nums'); if (nums) nums.insertAdjacentHTML('beforebegin', html); else if (acts) acts.insertAdjacentHTML('afterend', html); else v.querySelector('.sl-top')?.insertAdjacentHTML('afterend', html);
   $('#g-t').textContent = 'Seu perfil';
   const top = v.querySelector('.sl-top b'); if (top) top.textContent = 'Seu perfil';
-  $('#me-cfg', v).addEventListener('click', () => { v.hidden = true; goTab('perfil'); });
+  $('#me-cfg', v).addEventListener('click', () => { v.hidden = true; S.ajMode = 'sistema'; goTab('perfil'); });
   $('#me-edit', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [
     { label: myPhoto() ? 'Trocar foto' : 'Adicionar foto', fn: pickPhoto }, { label: 'Nome', fn: editName }, { label: 'Frase do perfil', fn: editBio },
     { label: '@usuário e privacidade', fn: socialSettingsSheet }, { label: 'Moldura e selo', fn: flairSheet }]));
@@ -8515,12 +8553,13 @@ function openDrawer() {
   const bg = document.createElement('div'); bg.className = 'drw-bg'; bg.addEventListener('click', closeDrawer);
   const d = document.createElement('nav'); d.className = 'drw'; d.setAttribute('aria-label', 'Menu');
   const it = (id, ic, t, small) => `<button type="button" class="drw-it" data-go="${id}">${dsv(ic)}${t}${small ? `<small>${small}</small>` : ''}</button>`;
-  d.innerHTML = `<button type="button" class="drw-me" data-go="me"><span class="av" style="${h.ph ? `background-image:${cssUrl(h.ph)}` : ''}">${h.ph ? '' : esc(initial(h.name))}</span><span><b>${esc(h.name)}</b><small>${prof ? 'Ver meu perfil ›' : 'Ajustes da conta ›'}</small></span></button>
-    <div class="drw-g">Minha leitura</div>${it('stats', 'stats', 'Estatísticas')}${it('quotes', 'quote', 'Meus trechos', nQ || '')}${it('cols', 'folder', 'Coleções', nC || '')}${it('hist', 'hist', 'Montar histórico')}
+  d.innerHTML = `<button type="button" class="drw-me" data-go="me"><span class="av" style="${h.ph ? `background-image:${cssUrl(h.ph)}` : ''}">${h.ph ? '' : esc(initial(h.name))}</span><span><b>${esc(h.name)}</b><small>${prof ? '@' + esc(prof.handle) : 'Sem @usuário ainda'}</small></span></button>
+    <div class="drw-g">Minha leitura</div>${it('stats', 'stats', 'Estatísticas')}${it('quotes', 'quote', 'Meus trechos', nQ || '')}${it('cols', 'shelves', 'Estantes', nC || '')}${it('hist', 'hist', 'Montar histórico')}
     <div class="drw-g">Conquistas e metas</div>${it('ach', 'award', 'Conquistas')}${it('goals', 'target', 'Metas com prazo')}
     <div class="drw-g">Pessoas</div>${it('friends', 'users', 'Amigos', nF || '')}${it('people', 'plus', 'Encontrar leitores')}
-    <div class="drw-g">App</div>${it('cfg', 'cfg', 'Ajustes')}`;
-  const go = { me: () => openMyProfile(), stats: () => goTab('progresso'), quotes: () => openAllQuotes(), cols: () => openCollections(), hist: () => openHistory(), ach: () => openAchList(), goals: () => openGoalsV4(), friends: () => openFriendsV3(), people: () => openPeopleSearch(), cfg: () => goTab('perfil') };
+    <div class="drw-g">Você</div>${it('prof', 'pen', prof ? 'Editar perfil' : 'Criar meu perfil')}
+    <div class="drw-g">App</div>${it('cfg', 'cfg', 'Ajustes', 'tema, sons e dados')}`;
+  const go = { me: () => openMyProfile(), stats: () => goTab('progresso'), quotes: () => openAllQuotes(), cols: () => goTab('estante'), hist: () => openHistory(), ach: () => openAchList(), goals: () => openGoalsV4(), friends: () => openFriendsV3(), people: () => openPeopleSearch(), prof: () => { S.ajMode = 'perfil'; goTab('perfil'); }, cfg: () => { S.ajMode = 'sistema'; goTab('perfil'); } };
   d.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { closeDrawer(); go[b.dataset.go](); }));
   TR.append(bg, d);
 }
@@ -8530,9 +8569,9 @@ function openCollections() {
   const v = $('#shelflist');
   const draw = () => {
     const mine = db.shelves || [];
-    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Coleções</b><span></span></div>
-      <button type="button" class="fl-add" id="col-new">+ Nova coleção</button>
-      ${mine.length ? mine.map((s) => shelfRowHTML('sh:' + s.id, 'Coleção vazia. Toque em ••• para adicionar livros.')).join('') : '<p class="sl-empty">Crie coleções para agrupar livros do seu jeito: clube do livro, favoritos do ano, para dar de presente…</p>'}`;
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Estantes</b><span></span></div>
+      <button type="button" class="fl-add" id="col-new">+ Nova estante</button>
+      ${mine.length ? mine.map((s) => shelfRowHTML('sh:' + s.id, 'Estante vazia. Toque em ••• para adicionar livros.')).join('') : '<p class="sl-empty">Crie estantes para agrupar livros do seu jeito: clube do livro, favoritos do ano, para dar de presente…</p>'}`;
     paintCv(v);
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
     $('#col-new', v).addEventListener('click', () => shelfNameForm());
@@ -8593,7 +8632,11 @@ function foldCommunity(box) {
 .gl-row{display:flex;justify-content:space-between;gap:.5rem}
 `; TR.append(st); }
 // título da tela interna vai para o topo fixo (o "‹ Voltar" continua no lugar)
-function syncTopTitle() { const v = $('#shelflist'), t = $('#g-t'); if (!t) return; if (v && !v.hidden) { const b = v.querySelector('.sl-top > b'); if (b && b.textContent.trim()) { t.textContent = b.textContent.trim(); return; } } t.textContent = S.tab === 'perfil' ? 'Ajustes' : S.tab === 'progresso' ? 'Estatísticas' : (TAB_T[S.tab] || ''); }
+// 4.4: telas principais (as abas de baixo) mostram só a marca; telas internas mostram o próprio título
+function syncTopTitle() { const v = $('#shelflist'), t = $('#g-t'); if (!t) return; const put = (x, brand) => { t.textContent = x; t.classList.toggle('g-brand', !!brand); };
+  const back = v && !v.hidden && v.querySelector('.sl-top .sl-back'), inner = back && back.offsetParent !== null && !v.classList.contains('tabroot'); // tem "‹ Voltar" = tela interna
+  if (inner) { const b = v.querySelector('.sl-top > b'); if (b && b.textContent.trim()) return put(b.textContent.trim()); }
+  put(S.tab === 'perfil' ? (S.ajMode === 'perfil' ? 'Editar perfil' : 'Ajustes') : S.tab === 'progresso' ? 'Estatísticas' : 'B·E·A·R', S.tab !== 'perfil' && S.tab !== 'progresso'); }
 TR.addEventListener('click', () => setTimeout(syncTopTitle, 90));
 { const _pg = paintGtop; paintGtop = function () { _pg(); syncTopTitle(); }; }
 setInterval(syncTopTitle, 1500);
@@ -8621,7 +8664,8 @@ function openGoalsV4() {
 TR.addEventListener('click', (ev) => {
   if (ev.target.closest('#editor, .bkm')) return;
   const now = ev.target.closest('.v3-now .v3-cv');
-  if (now) { const R = reading(); if (R) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); return bookQuickMenu(now, { e: R.e, title: R.e.title }); } }
+  // card "Lendo agora" já tem o "•••": a capa abre a página do livro (o card "próxima leitura", sem "•••", continua abrindo o menu)
+  if (now) { const R = reading(); if (R) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); return now.closest('.v3-next') ? bookQuickMenu(now, { e: R.e, title: R.e.title }) : openBookPage(R.e); } }
   const it = ev.target.closest('.ct-it'); if (!it || ev.target.closest('button')) return;
   const t = it.querySelector('.ct-tx b'), a = it.querySelector('.ct-tx small'); if (!t) return;
   ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
@@ -8634,6 +8678,800 @@ TR.addEventListener('click', (ev) => {
   const score = (it) => { const t = normT(it.title || ''); let s = 0; if (side.test(t) && !side.test(qn)) s += 10; if (!it.coverUrl) s += 2; if (t === qn) s -= 3; return s; };
   return list.map((it, i) => [it, i]).sort((a, b) => score(a[0]) - score(b[0]) || a[1] - b[1]).map((x) => x[0]);
 }; }
+// ---------- 4.4: menu único do livro (toque na capa, "•••" do Início e da página do livro abrem o mesmo menu) ----------
+{ const st = document.createElement('style'); st.textContent = `
+.v3-now:not(.v3-next) .v3-plus,.v3-now:not(.v3-next) .v3-two{display:none!important} /* card enxuto: Atualizar leitura e Foco ficam no "•••"; +10/+25/+50 saíram */
+.tabbar{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:1fr} /* uma coluna por aba, quantas houver */
+.bkm{width:276px;max-height:calc(100vh - 96px);overflow:auto}
+.yo-fh{display:flex;align-items:center;gap:.9rem}.yo-sort{display:inline-flex;align-items:center;gap:.3rem}.yo-sort svg{width:16px;height:16px}
+.srt-bk{display:flex;gap:.8rem;align-items:center;margin:.2rem 0 .4rem}.srt-bk .cv{width:64px;height:96px;border-radius:3px 6px 6px 3px;flex:none}
+.srt-bk b{display:block;font-size:1rem;color:var(--ink)}.srt-bk small{display:block;font-size:.8rem;color:var(--ink-2);margin-top:.2rem}
+.bkm.sheetlike{left:8px!important;right:8px;width:auto;max-width:420px;margin:0 auto;top:auto!important;bottom:calc(78px + env(safe-area-inset-bottom))}
+.bkm button{padding:.68rem .8rem;min-height:44px}
+.bkm button .t{display:flex;flex-direction:column;min-width:0}
+.bkm button .t small{font-size:.72rem;color:var(--ink-2);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bkm button.main .t small{color:var(--ink-2)}
+.bkm .bkm-g{font-weight:inherit}
+.bkm .bkm-sub button.on{color:var(--acc);font-weight:800}.bkm .bkm-sub button.on::after{content:'✓';margin-left:auto;font-weight:900} /* mesmo peso das outras linhas: a seta já indica o grupo */.bkm .bkm-g.open{background:color-mix(in srgb,var(--acc) 10%,transparent)}.bkm .bkm-g .r{font-size:1rem}
+.bkm .bkm-sub{border-left:3px solid color-mix(in srgb,var(--acc) 35%,transparent);margin-left:.9rem}.bkm .bkm-sub button{font-size:.84rem;padding-left:.75rem;border-top-color:color-mix(in srgb,var(--line) 70%,transparent)}
+.bkm .bkm-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;padding:.6rem .7rem;border-top:1px solid var(--line)}
+.bkm .bkm-quick button{min-height:44px;border:1px dashed var(--line);border-radius:12px;justify-content:center;font-weight:800;font-size:.84rem;padding:0}
+.bkm .fx4{display:grid;grid-template-columns:repeat(4,1fr);border-top:1.5px solid var(--line)}
+.bkm .fx4 button{flex-direction:column;justify-content:center;gap:.3rem;border-top:0;padding:.55rem .15rem;font-size:.7rem;color:var(--ink-2);text-align:center;min-height:58px}
+.bkm .fx4 button svg{width:20px;height:20px}
+.bkm button.danger,.bkm button.danger svg{color:#b3261e}
+.bkm .bkm-q{padding:.75rem .8rem .55rem;border-top:1px solid var(--line);font-size:.88rem;font-weight:800;color:var(--ink)}
+.bkm .bkm-q small{display:block;margin-top:.2rem;font-size:.75rem;font-weight:400;color:var(--ink-2)}
+.bp-adj{display:flex;align-items:center;gap:.5rem;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:.86rem;text-align:left;padding:.7rem 0;min-height:44px}
+.bp-adj b{margin-left:auto;font-weight:600;color:var(--ink-2);font-size:.8rem}.bp-adj i{font-style:normal;color:var(--ink-2)}
+`; TR.append(st); }
+Object.assign(BI, {
+  quote: '<path d="M6 8h4v4c0 2.6-1.3 4.3-3.5 5"/><path d="M14 8h4v4c0 2.6-1.3 4.3-3.5 5"/>',
+  note: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 16h5"/>',
+  stop: '<circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.5v5M14.5 9.5v5"/>',
+  trash: '<path d="M4 7h16"/><path d="M6 7l1 13h10l1-13"/><path d="M9.5 7V4h5v3"/><path d="M10 11v5M14 11v5"/>',
+  swap: '<path d="M7 7h12l-3-3"/><path d="M17 17H5l3 3"/>',
+  clock: '<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 1.5M10 3h4"/>',
+  shelves: '<path d="M4.5 4h3v15h-3zM9.5 4h3v15h-3z"/><path d="m14.6 5 2.9-.8 3.7 14.4-2.9.8z"/><path d="M3 20.5h18"/>',
+  dice: '<rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="9" cy="9" r="1.1" fill="currentColor"/><circle cx="15" cy="15" r="1.1" fill="currentColor"/><circle cx="15" cy="9" r="1.1" fill="currentColor"/><circle cx="9" cy="15" r="1.1" fill="currentColor"/>',
+  queue: '<path d="M4 6h16M4 12h11M4 18h7"/><path d="m16 15 3 3-3 3"/>',
+});
+let bmTap = null; // último botão tocado: o "•••" vira a âncora do menu
+TR.addEventListener('pointerdown', (ev) => { bmTap = { el: ev.target.closest && ev.target.closest('button'), t: Date.now() }; }, true);
+function bookMenuOpen(anchor, b) {
+  bqClose(); closeEd();
+  const e = b.e || lib().find((x) => normT(x.title) === normT(b.title)) || null, st = e ? e.status : null, t = (e || b).title;
+  const ri = e ? readingInfo(e) : null, pg = ri ? ri.now || 0 : 0, tot = ri && ri.total, rv = e && reviewOfLib(e); // mesmo cálculo do card (livro de meta usa as leituras da meta)
+  const sub = !e ? 'fora da sua estante'
+    : st === 'LENDO' ? `pág. ${pg}${tot ? ` de ${tot} · ${Math.round((pg / tot) * 100)}%` : ''}`
+    : st === 'LIDO' ? `lido${e.finishedAt ? ' em ' + String(e.finishedAt).slice(0, 4) : ''}${rv && rv.paws ? ' · ' + pawTxt(rv.paws) : ''}`
+    : { QUERO: 'na fila', HIBERNANDO: 'pausado', ABANDONEI: 'abandonado' }[st] + (pg && st !== 'QUERO' ? ` · pág. ${pg}` : '');
+  const reload = () => { const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw(); refresh(); };
+  const set = (s) => () => { setLibStatus(e, s); reload(); };
+  // aberto de dentro de uma estante criada pela pessoa: o fim do menu tira só dela
+  const ctxKey = anchor && anchor.closest ? ((anchor.closest('[data-shelf]') || {}).dataset || {}).shelf : null;
+  const inShelf = e && ctxKey && ctxKey.startsWith('sh:') ? (db.shelves || []).find((x) => x.id === ctxKey.slice(3) && (x.bookIds || []).includes(e.id)) : null;
+  const R = reading(), isCur = !!(R && e && R.e.id === e.id), lendo = lib().filter((x) => x.status === 'LENDO').length;
+  const toQueue = () => (pg > 0 ? paint('fila') : goQueue(true));
+  const goQueue = (keep) => {
+    bqClose(); setLibStatus(e, 'QUERO'); if (e.status !== 'QUERO') return;
+    if (!keep) { e.currentPage = 0; delete e.startedAt; save(); }
+    reload(); toast(keep ? `“${e.title}” voltou para Quero ler, guardando a pág. ${pg}` : `“${e.title}” voltou para Quero ler`);
+  };
+  // apagar progresso e avaliação: o livro continua na estante, como Quero ler; trechos e anotação ficam
+  const remove = () => {
+    bqClose();
+    if (e.link) return toast(`“${e.title}” faz parte de uma meta com prazo. Tire o livro da meta para apagar o progresso.`);
+    const hadReview = !!e.review;
+    e.currentPage = 0; e.readLog = []; delete e.review; delete e.startedAt; delete e.finishedAt; delete e.dateApprox; delete e.noDate;
+    e.status = 'QUERO'; if (T().currentId === e.id) T().currentId = null;
+    save(); if (hadReview) publishReview(e); // tira a avaliação publicada para os amigos
+    const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw();
+    refresh(); toast(`Progresso e avaliação de “${e.title}” apagados. Ele está em Quero ler.`);
+  };
+  const rateIt = ['paw', rv && rv.paws ? 'Minha avaliação' : 'Avaliar', () => rateForm(e, { logs: [] }, () => renderHome(todayISO())), rv && rv.paws ? pawTxt(rv.paws) : ''];
+  const canReset = !!(e && (pg > 0 || rv || (e.status !== 'QUERO') || (e.readLog || []).length));
+  // o que se faz o tempo todo fica à vista; o resto em grupos que abrem no lugar (um por vez)
+  // item: [ícone, texto, ação, detalhe, classe, fica aberto (abre outro passo do menu)]
+  const upd = () => { // mesma tela do antigo botão do card; para outro livro em andamento, abre para ele sem trocar o livro do Início
+    if (isCur) return S.madrugada ? wakeBear('upd') : editLeitura();
+    const tt = db.toca || (db.toca = {}), prev = tt.currentId; tt.currentId = e.id; try { editLeitura(); } finally { tt.currentId = prev; }
+  };
+  const fromCard = !!(anchor && anchor.closest && anchor.closest('.v3-now:not(.v3-next)')); // o card já mostra "Atualizar leitura"
+  const quick = []; // +10/+25/+50 saíram (decisão da Bia, 14/11)
+  const foco = ['clock', focusState() && isCur ? 'Voltar ao foco' : 'Foco', () => { if (!isCur) setCurrent(e.id); startFocus(); }];
+  const queueIt = ['queue', 'Voltar para Quero ler', toQueue, '', '', 1];
+  const top = !e ? [['plus', 'Adicionar à estante', () => addToLibrary(libItem(b)), 'escolha como está e em quais estantes']]
+    : st === 'QUERO' ? [['play', 'Começar a ler', () => startReading(e)], ['check', 'Já li', set('LIDO')]]
+    : st === 'LENDO' ? [['pen', 'Atualizar leitura', upd], foco, ['queue', 'Tirar de Lendo', toQueue, '', '', 1], rateIt]
+    : st === 'LIDO' ? [rateIt, ['redo', 'Ler de novo', () => startReread(e)]]
+    : st === 'HIBERNANDO' ? [['play', 'Retomar leitura', () => startReading(e)], rateIt]
+    : [['play', 'Tentar de novo', () => startReading(e)], rateIt];
+  const conversar = () => { const fr = SOC.fr.friends || []; if (!fr.length) return toast('Adicione amigos para conversar'); sheet(`Conversar sobre “${t}” com…`, fr.map((f) => [f.displayName, () => openChat(f.handle, { book: t })])); };
+  const mine = !!(e && lib().includes(e));
+  const resetIt = mine && canReset ? [['redo', 'Apagar progresso e avaliação', () => paint('del'), '', 'danger', 1]] : [];
+  // linha solta = { row: item }; grupo = { id, ic, label, items }
+  const groups = [
+    e && st === 'LENDO' && { id: 'st', ic: 'flag', label: 'Status', items: [['flag', 'Terminei', set('LIDO')], ['pause', 'Pausar', set('HIBERNANDO'), `guarda a pág. ${pg}`], ['x', 'Abandonar', set('ABANDONEI')],
+      ...(lendo > 1 ? [isCur ? ['swap', 'Trocar leitura do Início', () => swapReading()] : ['swap', 'Ler agora no Início', () => { readNow(e); reload(); }]] : []), ...resetIt] },
+    e && (st === 'HIBERNANDO' || st === 'ABANDONEI') && { id: 'st', ic: 'flag', label: 'Status', items: [queueIt, ...(st === 'HIBERNANDO' ? [['x', 'Abandonar', set('ABANDONEI')]] : []), ...resetIt] },
+    e && st === 'LIDO' && resetIt.length && { id: 'st', ic: 'flag', label: 'Status', items: resetIt },
+    e && st !== 'QUERO' && { id: 'tr', ic: 'quote', label: 'Trechos e anotação', items: [['quote', 'Salvar trecho', () => saveQuote(e)], ['note', 'Anotação', () => editNote(e), e.note || ''],
+      ...((e.quotes || []).length ? [['book', `Ver trechos (${e.quotes.length})`, () => openBookPage(e, 'trechos')]] : [])] },
+    { id: 'dt', ic: 'book', label: 'Detalhes do livro', items: [['book', 'Ver no catálogo', () => (e ? openBookPage(e) : openAnyBook(b.title, b.author, b.cover)), 'sinopse e ficha'],
+      ...(e ? [['pen', 'Corrigir total de páginas', () => fixPages(e), tot ? `${tot} pág.` : ''], ['swap', 'Trocar edição', () => changeEdition(e), 'capa, páginas e ISBN'],
+        ['note', 'Formato', () => askFormat((f) => { setFormat(e, f); save(); refresh(); }, `Como você lê “${e.title}”?`), fmtTxt(e)]] : [])] },
+    { row: ['shelves', 'Estantes', () => moveToShelf(e || addAs(b, 'QUERO'))] },
+    mine && inShelf && { row: ['x', `Tirar de “${inShelf.name}”`, () => { inShelf.bookIds = (inShelf.bookIds || []).filter((i) => i !== e.id); save(); reload(); toast(`“${e.title}” saiu de ${inShelf.name}`); }] },
+    { id: 'cp', ic: 'send', label: 'Compartilhar', items: [['send', 'Indicar a alguém', () => recommendToFriend(e || b)], ['chat', 'Conversar sobre', conversar]] },
+  ].filter(Boolean);
+  let openG = null;
+  const opt = (k, ic, label, small, cls = '') => `<button type="button" data-k="${k}" class="${cls}">${bsv(ic)}<span class="t">${label}${small ? `<small>${esc(small)}</small>` : ''}</span></button>`;
+  const backBtn = (to) => `<button type="button" data-k="back" data-to="${to}"><span class="r" style="margin:0">‹</span><span class="t">Voltar</span></button>`;
+  const m = document.createElement('div'); m.className = 'bkm'; m.setAttribute('role', 'menu');
+  const place = () => {
+    m.classList.remove('sheetlike'); m.style.left = m.style.top = '';
+    if (!anchor || !anchor.isConnected) { m.classList.add('sheetlike'); return; }
+    const r = anchor.getBoundingClientRect(), W = innerWidth, H = innerHeight, mh = m.offsetHeight, mw = m.offsetWidth;
+    let left = Math.min(Math.max(8, r.left), W - mw - 8), top2 = r.bottom + 6;
+    if (top2 + mh > H - 78) top2 = Math.max(8, r.top - mh - 6);
+    if (top2 + mh > H - 78) { m.classList.add('sheetlike'); return; }
+    m.style.left = left + 'px'; m.style.top = top2 + 'px';
+  };
+  const paint = (mode) => {
+    const all = [];
+    const btn = (a, extra = '') => { const i = all.push(a) - 1; return `<button type="button" data-i="${i}" class="${[a[4], extra].filter(Boolean).join(' ')}">${bsv(a[0])}<span class="t">${a[1]}${a[3] ? `<small>${esc(a[3])}</small>` : ''}</span></button>`; }; // seta só nos grupos
+    let h = `<div class="bkm-h">${cvh(t, (e || b).cover, '')}<div><b>${esc(t)}</b><small>${esc(sub)}</small></div></div>`;
+    if (mode === 'main') {
+      h += (quick.length ? `<div class="bkm-quick">${quick.map((n) => `<button type="button" data-q="${n}">+${n} pág.</button>`).join('')}</div>` : '')
+        + top.map((a, i) => btn(a, i === 0 ? 'main' : '')).join('')
+        + groups.map((g) => g.row ? btn(g.row) : `<button type="button" class="bkm-g${openG === g.id ? ' open' : ''}" data-g="${g.id}" aria-expanded="${openG === g.id}">${bsv(g.ic)}<span class="t">${g.label}</span><span class="r">${openG === g.id ? '‹' : '›'}</span></button>${openG === g.id ? `<div class="bkm-sub">${g.items.map((a) => btn(a)).join('')}</div>` : ''}`).join('');
+    } else if (mode === 'fila') {
+      h += `<div class="bkm-q">Manter a pág. ${pg} para quando voltar?<small>Os dias de leitura continuam nas suas estatísticas.</small></div>`
+        + opt('keep', 'check', `Manter a pág. ${pg}`, '', 'main') + opt('zero', 'redo', 'Começar do zero') + backBtn('main');
+    } else if (mode === 'del') {
+      h += `<div class="bkm-q">Apagar o progresso e a avaliação de “${esc(t)}”?<small>Saem a página, os dias de leitura, a nota e a avaliação. O livro continua na sua estante, como Quero ler; trechos e anotação ficam. Não dá para desfazer.</small></div>`
+        + opt('delok', 'redo', 'Apagar progresso e avaliação', '', 'danger') + backBtn('main');
+    }
+    m.innerHTML = h; paintCv(m);
+    m.querySelectorAll('[data-i]').forEach((x) => x.addEventListener('click', () => { const a = all[+x.dataset.i]; if (a[5]) return a[2](); bqClose(); a[2](); }));
+    m.querySelectorAll('[data-g]').forEach((x) => x.addEventListener('click', () => { openG = openG === x.dataset.g ? null : x.dataset.g; paint('main'); }));
+    m.querySelectorAll('[data-q]').forEach((x) => x.addEventListener('click', () => { bqClose(); const ri2 = readingInfo(e); logPage({ e, ...ri2 }, Math.min(ri2.total, ri2.now + Number(x.dataset.q))); }));
+    const on = (k, fn) => m.querySelector(`[data-k="${k}"]`)?.addEventListener('click', fn);
+    on('delok', remove); on('keep', () => goQueue(true)); on('zero', () => goQueue(false));
+    on('back', (ev) => paint(ev.currentTarget.dataset.to));
+    place();
+  };
+  TR.append(m); paint('main');
+}
+bookQuickMenu = bookMenuOpen;
+// sortear o próximo livro: na fila (Início) ou em qualquer estante; só entre os que ainda não foram lidos
+const drawable = (e) => e.status === 'QUERO' || e.status === 'HIBERNANDO';
+function sortQueue(lastId) { return sortShelf('QUERO', lastId); }
+function sortShelf(key, lastId) {
+  const q = shelfBooks(key).filter(drawable); if (!q.length) return toast('Nenhum livro para ler nesta estante');
+  const pool = q.length > 1 ? q.filter((x) => x.id !== lastId) : q, e = pool[Math.floor(Math.random() * pool.length)];
+  const where = key === 'QUERO' ? 'da fila' : `de ${shelfTitle(key)}`;
+  const ed = $('#editor'); ed.classList.add('compact');
+  ed.querySelector('.ed-body').innerHTML = `<div class="dd"><h3>O Bear sorteou</h3>
+    <div class="srt-bk">${cvh(e.title, e.cover, 'srt-cv')}<div><b>${esc(e.title)}</b><small>${esc(e.author || '')}${e.totalPages ? `${e.author ? ' · ' : ''}${e.totalPages} pág.` : ''}</small></div></div>
+    <button type="button" class="op main" id="srt-go"><b>Começar a ler</b></button>
+    <button type="button" class="op" id="srt-next"><b>Deixar como próxima leitura</b><small>fica em primeiro na fila</small></button>
+    ${q.length > 1 ? `<button type="button" class="op" id="srt-again"><b>Sortear de novo</b><small>entre os ${q.length} livros ${where} que você ainda não leu</small></button>` : ''}
+    <button type="button" class="cn" id="srt-x">Agora não</button></div>`;
+  paintCv(ed);
+  $('#srt-go', ed).addEventListener('click', () => { closeEd(); startReading(e); });
+  $('#srt-next', ed).addEventListener('click', () => { closeEd(); if (T().nextId !== e.id) setNext(e); refresh(); });
+  $('#srt-again', ed)?.addEventListener('click', () => sortShelf(key, e.id));
+  $('#srt-x', ed).addEventListener('click', closeEd);
+  ed.hidden = false;
+}
+// ---------- 4.4: Estante organizada por estantes ----------
+// "Minha biblioteca" (ALL) guarda todos os livros; as estantes criadas pela pessoa agrupam do jeito dela (um livro pode estar em várias).
+// O status (lendo, na fila, lido…) é do livro e aparece na capa; tirar de uma estante nunca apaga avaliação, nota ou trechos.
+const ST_ORDER = { LENDO: 0, QUERO: 1, LIDO: 2, HIBERNANDO: 3, ABANDONEI: 4 };
+const shelfTitle = (key) => (key === 'ALL' ? 'Minha biblioteca' : shelfName(key));
+// data de conclusão: lendo primeiro; depois lidos, pausados e abandonados pela data em que terminou ou mudou de status; a fila no fim
+const concDate = (e) => String(e.status === 'LIDO' ? e.finishedAt || e.statusAt || '' : e.statusAt || e.updatedAt || e.addedAt || '');
+const CONC_RANK = { LENDO: 0, LIDO: 1, HIBERNANDO: 1, ABANDONEI: 1, QUERO: 2 };
+{ const _sl = sortList; sortList = function (list, mode) {
+  if (mode !== 'conclusao') return _sl(list, mode);
+  return [...list].sort((a, b) => (CONC_RANK[a.status] ?? 3) - (CONC_RANK[b.status] ?? 3) || (a.status === 'QUERO' ? String(b.addedAt || '').localeCompare(String(a.addedAt || '')) : concDate(b).localeCompare(concDate(a))));
+}; }
+// guarda quando o status mudou (pausado e abandonado não têm data de término)
+{ const _sls = setLibStatus; setLibStatus = function (e, st) { const was = e.status, r = _sls.apply(this, arguments); if (e.status === st && was !== st) { e.statusAt = todayISO(); save(); } return r; }; }
+{ const _sb = shelfBooks; shelfBooks = function (key) { // Minha biblioteca: todos os livros, por data de conclusão (padrão)
+  if (key !== 'ALL') return _sb(key);
+  const pick = (T().shelfSort || {}).ALL; return sortList(lib(), pick && pick !== 'status' ? pick : 'conclusao');
+}; }
+{ const st = document.createElement('style'); st.textContent = `
+.es4-acts{display:grid;grid-template-columns:auto auto 1fr;gap:.5rem;margin:.2rem 0 1rem}
+.es4-acts button{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:800;font-size:.82rem;padding:0 .75rem;white-space:nowrap}
+.es4-acts button svg{width:17px;height:17px}.es4-acts .pri{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
+.es4 .es-h{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.es4 .es-t{display:flex;align-items:baseline;gap:.35rem;border:0;background:none;padding:0;font:inherit;color:var(--ink);min-height:36px}
+.es4 .es-t b{font-size:1rem}.es4 .es-t span{font-size:.8rem;color:var(--ink-2)}
+.es4-r{display:flex;align-items:center;gap:.9rem;flex:none}.es4-r .v3-link{display:inline-flex;align-items:center;gap:.3rem;min-height:36px}.es4-r svg{width:16px;height:16px}
+.es4 .es-row{display:flex;gap:.6rem;overflow-x:auto;scrollbar-width:none;padding:.15rem 0 .4rem}.es4 .es-row::-webkit-scrollbar{display:none}
+.es4 .es4-bk{flex:0 0 calc((100% - 1.8rem) / 4.3);min-width:0;display:flex;flex-direction:column;gap:.25rem} /* 4 capas e a ponta da 5ª: dá para ver que rola */
+.es4 .es4-bk .es-bk{position:relative;width:100%;border:0;padding:0;background:none}
+#shelflist .esv-grid{grid-template-columns:repeat(4,1fr)!important;gap:.75rem .5rem}#shelflist .esv-grid small{font-size:.66rem;line-height:1.2}
+.es4 .es4-bk .es-cv,.esv-grid .es-bk .esv-cv{position:relative}
+.es4-bk small,.esv-grid .es4-st{font-size:.68rem;color:var(--ink-2);font-weight:700;line-height:1.2}
+.es4-bar{position:absolute;left:6px;right:6px;bottom:6px;height:4px;border-radius:99px;background:rgba(255,255,255,.55);overflow:hidden}.es4-bar i{display:block;height:100%;background:var(--acc)}
+.es4-done{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#2e7d4f;color:#fff;font-size:.7rem;font-weight:900;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.es4-dim{opacity:.55}
+.es4-empty{margin:.1rem 0 1rem;font-size:.82rem;color:var(--ink-2)}
+.es4-hint{border:1px dashed var(--line);border-radius:14px;padding:.9rem;font-size:.84rem;color:var(--ink-2);margin:.4rem 0 1rem}
+.es4-hint b{color:var(--ink)}
+.add4-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem}.add4-seg button{min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:700;font-size:.86rem}
+.add4-seg button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
+.add4-lb{margin:.6rem 0 .1rem;font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.add4-sh{display:flex;align-items:center;gap:.6rem;min-height:44px;border:0;border-top:1px solid var(--line);background:none;width:100%;text-align:left;font:inherit;font-size:.9rem;color:var(--ink);padding:0 .2rem}
+.add4-sh i{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--ink-2);display:grid;place-items:center;font-style:normal;font-size:.75rem;flex:none}
+.add4-sh i{color:transparent}.add4-sh#ms-new i{color:var(--ink-2)} /* desmarcada = caixa vazia */
+.add4-sh.on i{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
+.fs-sh{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:48px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;font-weight:800;padding:0 .9rem;margin-bottom:.45rem}
+.fs-sh small{font-weight:400;color:var(--ink-2)}
+`; TR.append(st); }
+// rótulo e marca visual do status na capa
+const es4Mark = (e) => {
+  const p = e.status === 'LENDO' ? (readingInfo(e).total ? Math.min(100, Math.round((readingInfo(e).now / readingInfo(e).total) * 100)) : 0) : 0, rv = reviewOfLib(e);
+  return {
+    over: e.status === 'LENDO' ? `<span class="es4-bar"><i style="width:${p}%"></i></span>` : e.status === 'LIDO' ? '<span class="es4-done" aria-hidden="true">✓</span>' : '',
+    label: e.status === 'LENDO' ? `lendo · ${p}%` : e.status === 'LIDO' ? (rv && rv.paws ? `lido · ${pawTxt(rv.paws)}` : 'lido') : e.status === 'QUERO' ? (T().nextId === e.id ? 'próxima leitura' : 'quero ler') : e.status === 'HIBERNANDO' ? 'pausado' : 'abandonado',
+    dim: e.status === 'ABANDONEI',
+  };
+};
+drawEstante = function (box) {
+  const mine = db.shelves || [];
+  const row = (key) => {
+    const list = shelfBooks(key), n = list.filter(drawable).length;
+    return `<section class="es-sec es4" data-shelf="${esc(key)}"><div class="es-h"><button type="button" class="es-t" data-open="${esc(key)}"><b>${esc(shelfTitle(key))}</b><span>${list.length}</span></button>
+      <span class="es4-r">${n > 1 ? `<button type="button" class="v3-link" data-lot="${esc(key)}">${bsv('dice')}Sortear</button>` : ''}<button type="button" class="v3-link" data-open="${esc(key)}">Abrir estante ›</button></span></div>
+      ${list.length ? `<div class="es-row">${list.slice(0, 12).map((e) => { const m = es4Mark(e); return `<div class="es4-bk${m.dim ? ' es4-dim' : ''}"><button type="button" class="es-bk" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'es-cv')}${m.over}</button><small>${esc(m.label)}</small></div>`; }).join('')}</div>`
+        : `<p class="es4-empty">${key === 'ALL' ? 'Toque em “+ Adicionar livro” para começar.' : 'Estante vazia. Abra a estante e toque em ••• para adicionar livros.'}</p>`}</section>`;
+  };
+  box.innerHTML = `<div class="es4-acts"><button type="button" id="es4-new">+ Nova estante</button><button type="button" id="es4-find">${bsv('search')}Procurar</button><button type="button" class="pri" id="es4-add">+ Adicionar livro</button></div>
+    ${row('ALL')}${mine.map((s) => row('sh:' + s.id)).join('')}
+    ${mine.length ? '' : '<p class="es4-hint"><b>Organize do seu jeito.</b> Crie estantes como “Clássicos”, “Clube do livro” ou “Favoritos de 2026”. Um livro pode estar em várias, e tirar de uma estante não apaga nada dele.</p>'}`;
+  paintCv(box);
+  $('#es4-new', box).addEventListener('click', () => shelfNameForm());
+  $('#es4-find', box).addEventListener('click', () => openLibSearch({ label: 'Estante', fn: () => { $('#shelflist').hidden = true; } }));
+  $('#es4-add', box).addEventListener('click', () => goTab('buscar'));
+  $$('[data-open]', box).forEach((b) => b.addEventListener('click', () => openShelfV3(b.dataset.open)));
+  $$('[data-lot]', box).forEach((b) => b.addEventListener('click', () => sortShelf(b.dataset.lot)));
+};
+BI.search = '<circle cx="10.8" cy="10.8" r="6.3"/><path d="m15.5 15.5 4.5 4.5"/>';
+// lista completa: título certo para "Minha biblioteca", status em cada capa e o contexto da estante para o menu do livro
+{ const _os = openShelfV3; openShelfV3 = function (key) {
+  const r = _os.apply(this, arguments), v = $('#shelflist'), draw = S.listRedraw;
+  const fix = () => {
+    const b = v.querySelector('.sl-top b'); if (b) b.textContent = shelfTitle(key);
+    const g = v.querySelector('.esv-grid'); if (g) g.dataset.shelf = key;
+    const sel = v.querySelector('#esv-sort'); if (sel && key === 'ALL' && !(T().shelfSort || {}).ALL) sel.value = 'conclusao';
+    $$('.esv-grid .es-bk', v).forEach((x) => { const e = byId(x.dataset.id); if (!e || x.querySelector('.es4-st')) return; const m = es4Mark(e); x.querySelector('.esv-cv')?.insertAdjacentHTML('beforeend', m.over); x.querySelector('small')?.insertAdjacentHTML('afterend', `<small class="es4-st">${esc(m.label)}</small>`); if (m.dim) x.classList.add('es4-dim'); });
+    const bar = v.querySelector('.esv-bar'); if (bar && !bar.querySelector('[data-lot]') && shelfBooks(key).filter(drawable).length > 1) { bar.insertAdjacentHTML('beforeend', `<button type="button" class="v3-link" data-lot="${esc(key)}" style="display:inline-flex;align-items:center;gap:.3rem;min-height:36px">${bsv('dice')}Sortear</button>`); bar.querySelector('[data-lot]').addEventListener('click', () => sortShelf(key)); }
+  };
+  if (draw) { S.listRedraw = () => { draw(); fix(); }; }
+  fix(); return r;
+}; }
+// as estantes da pessoa: marcar e desmarcar à vontade (o livro pode estar em várias)
+moveToShelf = function (e) {
+  const mine = db.shelves || [];
+  const draw = () => {
+    const ed = $('#editor'); ed.classList.add('compact');
+    ed.querySelector('.ed-body').innerHTML = `<div class="dd"><h3>Estantes de “${esc(e.title)}”</h3><p>Ele está sempre em Minha biblioteca. Marque as outras onde quer que ele apareça.</p>
+      ${mine.map((s) => `<button type="button" class="add4-sh${(s.bookIds || []).includes(e.id) ? ' on' : ''}" data-s="${esc(s.id)}"><i>✓</i>${esc(s.name)}</button>`).join('')}
+      <button type="button" class="add4-sh" id="ms-new"><i>+</i>Nova estante</button>
+      <button type="button" class="op main" id="ms-ok"><b>Pronto</b></button></div>`;
+    $$('[data-s]', ed).forEach((b) => b.addEventListener('click', () => { const s = mine.find((x) => x.id === b.dataset.s); s.bookIds = (s.bookIds || []).includes(e.id) ? s.bookIds.filter((x) => x !== e.id) : [...(s.bookIds || []), e.id]; save(); draw(); }));
+    $('#ms-new', ed).addEventListener('click', () => { closeEd(); shelfNameForm(); });
+    $('#ms-ok', ed).addEventListener('click', () => { closeEd(); refresh(); const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw(); });
+    ed.hidden = false;
+  };
+  draw();
+};
+// adicionar livro: como está + em quais estantes, numa tela só
+{ const _atl = addToLibrary; addToLibrary = function (item, intoCase, direct, opt) {
+  const mine = db.shelves || [];
+  if (direct || !mine.length) return _atl.apply(this, arguments);
+  let st = 'QUERO'; const pick = new Set(intoCase ? [intoCase.id] : []);
+  const ed = $('#editor'); ed.classList.add('compact');
+  const draw = () => {
+    ed.querySelector('.ed-body').innerHTML = `<div class="dd"><h3>Onde guardar “${esc(item.title)}”?</h3>
+      <div class="add4-lb">Como está</div><div class="add4-seg">${[['QUERO', 'Quero ler'], ['LENDO', 'Lendo'], ['LIDO', 'Já li']].map(([k, n]) => `<button type="button" data-st="${k}" class="${st === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <div class="add4-lb">Em quais estantes (opcional)</div>
+      ${mine.map((s) => `<button type="button" class="add4-sh${pick.has(s.id) ? ' on' : ''}" data-s="${esc(s.id)}"><i>✓</i>${esc(s.name)}</button>`).join('')}
+      <button type="button" class="op main" id="add4-ok"><b>Guardar</b><small>sempre entra em Minha biblioteca</small></button><button type="button" class="cn" id="add4-x">Cancelar</button></div>`;
+    $$('[data-st]', ed).forEach((b) => b.addEventListener('click', () => { st = b.dataset.st; draw(); }));
+    $$('[data-s]', ed).forEach((b) => b.addEventListener('click', () => { pick.has(b.dataset.s) ? pick.delete(b.dataset.s) : pick.add(b.dataset.s); draw(); }));
+    $('#add4-x', ed).addEventListener('click', closeEd);
+    $('#add4-ok', ed).addEventListener('click', () => {
+      closeEd();
+      const done = (e) => { if (!e) return; mine.forEach((s) => { if (pick.has(s.id) && !(s.bookIds || []).includes(e.id)) s.bookIds = [...(s.bookIds || []), e.id]; }); save(); refresh(); };
+      if (st === 'LENDO') return askFormat((f) => done(_atl(item, null, 'LENDO', { fmt: f })));
+      if (st === 'LIDO') return askWhen(item.title, (w) => done(_atl(item, null, 'LIDO', { when: w })));
+      done(_atl(item, null, 'QUERO', {}));
+    });
+  };
+  draw(); ed.hidden = false;
+}; }
+// ---------- 4.4: cada estante é um bloco (nome, descrição, cor, lidos/livros, "+ Adicionar" e "•••" próprios) ----------
+const SH_COLORS = [['', 'Padrão'], ['#c8742e', 'Caramelo'], ['#3f8f5a', 'Verde'], ['#3b6ea8', 'Azul'], ['#7b5aa6', 'Roxo'], ['#a23b4a', 'Vinho'], ['#7a7066', 'Cinza']];
+const shelfObj = (key) => (key && key.startsWith('sh:') ? (db.shelves || []).find((x) => x.id === key.slice(3)) : null);
+{ const st = document.createElement('style'); st.textContent = `
+.es4-acts{grid-template-columns:1fr 1fr}
+.es4.es5{border:1.5px solid var(--sc,var(--line));border-radius:16px;padding:.75rem .75rem .55rem;margin:0 0 .9rem;background:color-mix(in srgb,var(--sc,transparent) 5%,var(--panel))}
+.es5 .es-h{align-items:flex-start}.es5 .es-t{flex-direction:column;align-items:flex-start;gap:.15rem;text-align:left;min-width:0}
+.es5 .es-t b{font-size:1rem;line-height:1.2}.es5 .es5-d{font-size:.78rem;color:var(--ink-2);font-weight:400;line-height:1.3}
+.es5-c{display:flex;gap:.35rem;margin:.35rem 0 .55rem}.es5-c span{font-size:.7rem;font-weight:800;padding:.15rem .5rem;border-radius:99px;background:color-mix(in srgb,var(--sc,var(--acc)) 16%,transparent);color:var(--ink)}
+.es5-r{display:flex;gap:.4rem;align-items:center;flex:none}
+.es5-add{min-height:36px;border-radius:10px;border:0;background:var(--sc,var(--acc));color:#fff;font:inherit;font-weight:800;font-size:.78rem;padding:0 .7rem}
+.es5-more{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:900;letter-spacing:.05em}
+.es5 .es-row{padding-bottom:.2rem}
+.shf-sw{display:flex;gap:.55rem;flex-wrap:wrap;margin:.2rem 0 .4rem}.shf-sw button{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);background:var(--c,var(--panel))}
+.shf-sw button.on{outline:3px solid var(--ink);outline-offset:2px}
+.shf-f label{display:block;font-size:.75rem;font-weight:800;color:var(--ink-2);margin:.55rem 0 .25rem}
+.shf-f input,.shf-f textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;font-size:.92rem;padding:.65rem .75rem}
+.shf-f textarea{min-height:64px;resize:vertical}.shf-f .cnt{display:block;text-align:right;font-size:.68rem;color:var(--ink-2);margin-top:.15rem}
+`; TR.append(st); }
+drawEstante = function (box) {
+  const mine = (db.shelves || []).slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+  const block = (key) => {
+    const s = shelfObj(key), list = shelfBooks(key), lidos = list.filter((e) => e.status === 'LIDO').length;
+    return `<section class="es-sec es4 es5" data-shelf="${esc(key)}" style="${s && s.color ? `--sc:${s.color}` : ''}">
+      <div class="es-h"><button type="button" class="es-t" data-open="${esc(key)}"><b>${s && s.pinned ? '📌 ' : ''}${esc(shelfTitle(key))}</b>${s && s.desc ? `<span class="es5-d">${esc(s.desc)}</span>` : key === 'ALL' ? '<span class="es5-d">Todos os seus livros</span>' : ''}</button>
+        <span class="es5-r"><button type="button" class="es5-add" data-add="${esc(key)}">+ Adicionar</button><button type="button" class="es5-more" data-more="${esc(key)}" aria-label="Opções da estante ${esc(shelfTitle(key))}">•••</button></span></div>
+      <div class="es5-c"><span>${plural(lidos, 'lido', 'lidos')}</span><span>${plural(list.length, 'livro', 'livros')}</span></div>
+      ${list.length ? `<div class="es-row">${list.slice(0, 12).map((e) => { const m = es4Mark(e); return `<div class="es4-bk${m.dim ? ' es4-dim' : ''}"><button type="button" class="es-bk" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'es-cv')}${m.over}</button><small>${esc(m.label)}</small></div>`; }).join('')}</div>`
+        : `<p class="es4-empty">${key === 'ALL' ? 'Toque em “+ Adicionar” para buscar seu primeiro livro.' : 'Estante vazia. Toque em “+ Adicionar”.'}</p>`}</section>`;
+  };
+  box.innerHTML = `<div class="es4-acts"><button type="button" id="es4-new">+ Nova estante</button><button type="button" id="es4-find">${bsv('search')}Procurar</button></div>
+    ${block('ALL')}${mine.map((s) => block('sh:' + s.id)).join('')}
+    ${mine.length ? '' : '<p class="es4-hint"><b>Organize do seu jeito.</b> Crie estantes como “Clássicos”, “Clube do livro” ou “Favoritos de 2026”. Um livro pode estar em várias, e tirar de uma estante não apaga nada dele.</p>'}`;
+  paintCv(box);
+  $('#es4-new', box).addEventListener('click', () => shelfEditForm());
+  $('#es4-find', box).addEventListener('click', () => openLibSearch({ label: 'Estante', fn: () => { $('#shelflist').hidden = true; } }));
+  $$('[data-open]', box).forEach((b) => b.addEventListener('click', () => openShelfV3(b.dataset.open)));
+  $$('[data-add]', box).forEach((b) => b.addEventListener('click', () => shelfAdd(b.dataset.add)));
+  $$('[data-more]', box).forEach((b) => b.addEventListener('click', () => shelfMenu4(b.dataset.more, b)));
+};
+// "+ Adicionar" de uma estante: livro novo (busca) ou livros que já estão em Minha biblioteca
+function shelfAdd(key) {
+  const s = shelfObj(key);
+  // busca numa folha por cima da Estante (não troca de aba); o livro escolhido já vem com esta estante marcada
+  const search = () => findBook(s ? `Adicionar a ${s.name}` : 'Adicionar livro', (it) => addToLibrary(it, s || null));
+  if (!s) return search();
+  sheet(`Adicionar a ${s.name}`, [['Buscar um livro novo', search], ['Escolher da Minha biblioteca', () => pickBooksFor(s, () => refresh())]]);
+}
+{ const _atl2 = addToLibrary; addToLibrary = function (item, intoCase, direct, opt) { // livro buscado a partir do "+ Adicionar" de uma estante já vem com ela marcada
+  const s = S.addTo && (db.shelves || []).find((x) => x.id === S.addTo); S.addTo = null;
+  return _atl2.call(this, item, intoCase || s || null, direct, opt);
+}; }
+// "•••" da estante: o que se usa sempre à vista; o raro em "Organização"
+function shelfMenu4(key, anchor) {
+  bqClose(); closeEd(); closePop();
+  const s = shelfObj(key), list = shelfBooks(key), n = list.filter(drawable).length;
+  const top = [['book', key === 'QUERO' ? 'Ver fila completa' : 'Abrir estante', () => openShelfV3(key)], ...(n ? [['dice', 'Sortear leitura', () => sortShelf(key), `entre ${plural(n, 'livro', 'livros')} que você ainda não leu`]] : []), ...(s ? [['pen', 'Editar estante', () => shelfEditForm(s), 'nome, descrição e cor']] : []),
+    ...(key === 'ALL' && lib().some((e) => !e.cover) ? [['search', 'Buscar capas que faltam', () => fillMissingCovers(true), plural(lib().filter((e) => !e.cover).length, 'livro sem capa', 'livros sem capa')]] : [])];
+  const curSort = (T().shelfSort || {})[key] || (key === 'ALL' ? 'conclusao' : sortKey(key));
+  const sorts = ES_SORTS.map(([k, t]) => ['', t, () => { T().shelfSort[key] = k; save(); refresh(); const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw(); toast(`Ordenado por ${t.toLowerCase()}`); }, '', k === curSort ? 'on' : '']);
+  const org = [
+    ...(s ? [['flag', s.pinned ? 'Desafixar do topo' : 'Fixar no topo', () => { s.pinned = !s.pinned; save(); refresh(); toast(s.pinned ? `${s.name} fica em primeiro` : `${s.name} voltou para a ordem normal`); }],
+      ['trash', 'Excluir estante', null, 'livros ficam em Minha biblioteca', 'danger', 1]] : [])];
+  // grupos que abrem no lugar: Ordenar livros (sempre) e Organização (só nas estantes da pessoa)
+  const m = document.createElement('div'); m.className = 'bkm'; m.setAttribute('role', 'menu'); let openG = null;
+  const paint = (mode) => {
+    const all = [], btn = (a, x = '') => { const i = all.push(a) - 1; return `<button type="button" data-i="${i}" class="${[a[4], x].filter(Boolean).join(' ')}">${a[0] ? bsv(a[0]) : ''}<span class="t">${a[1]}${a[3] ? `<small>${esc(a[3])}</small>` : ''}</span>${a[5] ? '<span class="r">›</span>' : ''}</button>`; };
+    const grp = (id, ic, label, items, small) => `<button type="button" class="bkm-g${openG === id ? ' open' : ''}" data-g="${id}" aria-expanded="${openG === id}">${bsv(ic)}<span class="t">${label}${small ? `<small>${esc(small)}</small>` : ''}</span><span class="r">${openG === id ? '‹' : '›'}</span></button>${openG === id ? `<div class="bkm-sub">${items.map((a) => btn(a)).join('')}</div>` : ''}`;
+    let h = `<div class="bkm-h"><div><b>${esc(key === 'QUERO' ? 'Na fila' : shelfTitle(key))}</b><small>${plural(list.length, 'livro', 'livros')}</small></div></div>`;
+    if (mode === 'del') h += `<div class="bkm-q">Excluir a estante “${esc(s.name)}”?<small>Os livros continuam em Minha biblioteca, com nota, avaliação e progresso.</small></div><button type="button" data-k="delok" class="danger">${bsv('trash')}<span class="t">Excluir estante</span></button><button type="button" data-k="back"><span class="r" style="margin:0">‹</span><span class="t">Voltar</span></button>`;
+    else h += top.map((a, i) => btn(a, i === 0 ? 'main' : '')).join('') + grp('so', 'queue', 'Ordenar livros', sorts, ES_SORTS.find((x) => x[0] === curSort)?.[1]) + (org.length ? grp('og', 'folder', 'Organização', org) : '');
+    m.innerHTML = h;
+    m.querySelectorAll('[data-i]').forEach((x) => x.addEventListener('click', () => { const a = all[+x.dataset.i]; if (a[1] === 'Excluir estante') return paint('del'); bqClose(); a[2](); }));
+    m.querySelectorAll('[data-g]').forEach((x) => x.addEventListener('click', () => { openG = openG === x.dataset.g ? null : x.dataset.g; paint('main'); }));
+    m.querySelector('[data-k="back"]')?.addEventListener('click', () => paint('main'));
+    m.querySelector('[data-k="delok"]')?.addEventListener('click', () => { bqClose(); db.shelves = (db.shelves || []).filter((x) => x !== s); save(); $('#shelflist').hidden = true; refresh(); toast('Estante excluída. Os livros continuam em Minha biblioteca.'); });
+    m.classList.remove('sheetlike'); m.style.left = m.style.top = '';
+    if (!anchor || !anchor.isConnected) { m.classList.add('sheetlike'); return; }
+    const r = anchor.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight;
+    let left = Math.min(Math.max(8, r.right - mw), innerWidth - mw - 8), tp = r.bottom + 6; if (tp + mh > innerHeight - 78) tp = Math.max(8, r.top - mh - 6);
+    if (tp + mh > innerHeight - 78) { m.classList.add('sheetlike'); return; } m.style.left = left + 'px'; m.style.top = tp + 'px';
+  };
+  TR.append(m); paint('main');
+}
+// capas que faltam (livros importados ou cadastrados à mão): procura a mesma obra com capa, preferindo edição em português
+let coverRun = false;
+async function fillMissingCovers(manual) {
+  if (coverRun) return manual && toast('Já estou procurando as capas');
+  const list = lib().filter((e) => !e.cover).slice(0, 80);
+  if (!list.length) return manual && toast('Todos os seus livros já têm capa');
+  coverRun = true; let n = 0; if (manual) toast(`Procurando capas para ${plural(list.length, 'livro', 'livros')}…`);
+  for (const e of list) {
+    try {
+      // pela bear-api: ela procura primeiro no cache catalog_books e só então no Google (com a chave do servidor, edições em português)
+      const tw = normT(e.title).split(' ').slice(0, 3).join(' '), au = String(e.author || '').split(',')[0], isbn = String(e.isbn || '').replace(/[^0-9Xx]/g, '');
+      let cover = null;
+      if (isbn.length === 10 || isbn.length === 13) { const b = await getJSON(`${catBase()}/v1/books/isbn/${isbn}`, 12000); if (b && b.cover_url) cover = b.cover_url; }
+      if (!cover) { const d = await getJSON(`${catBase()}/v1/books/search?limit=10&q=${encodeURIComponent(`${e.title} ${au}`.trim().slice(0, 120))}`, 12000); const hit = d && Array.isArray(d.items) && d.items.find((b) => b.cover_url && normT(b.title).startsWith(tw)); if (hit) cover = hit.cover_url; }
+      if (cover && !e.cover) { e.cover = String(cover).replace(/^http:/, 'https:'); n++; if (n % 5 === 0) { save(); refresh(); } }
+    } catch {}
+    await new Promise((r) => setTimeout(r, 700)); // sem pressa: não estoura o limite das buscas
+  }
+  coverRun = false; save(); refresh();
+  if (manual || n) toast(n ? `${plural(n, 'capa encontrada', 'capas encontradas')}${list.length - n ? ` · ${list.length - n} sem capa em português` : ''}` : 'Não encontrei capas em português para esses livros');
+}
+shelfMenu = (key, after, anchor) => shelfMenu4(key, anchor);
+// a Estante antiga (prateleiras de madeira) não abre mais: qualquer atalho antigo leva à Estante nova
+openCases = function () { $('#shelflist').hidden = true; if (S.tab !== 'estante') return goTab('estante'); S.listRedraw = null; drawTab(); }; // o "•••" de dentro da estante aberta usa o mesmo menu
+// criar e editar estante: nome, descrição (opcional) e cor
+function shelfEditForm(s) {
+  let color = (s && s.color) || '';
+  const ed = $('#editor'); ed.classList.add('compact');
+  const draw = () => {
+    ed.querySelector('.ed-body').innerHTML = `<div class="dd shf-f"><h3>${s ? 'Editar estante' : 'Nova estante'}</h3>
+      <label for="shf-n">Nome</label><input id="shf-n" maxlength="40" placeholder="Ex.: Clube do livro, Fantasia, Para reler" value="${esc(ed.dataset.n ?? (s ? s.name : ''))}">
+      <label for="shf-d">Descrição (opcional)</label><textarea id="shf-d" maxlength="150" placeholder="Ex.: Livros que quero ler ainda em 2026">${esc(ed.dataset.d ?? (s && s.desc ? s.desc : ''))}</textarea><span class="cnt" id="shf-c"></span>
+      <label>Cor</label><div class="shf-sw">${SH_COLORS.map(([c, nm]) => `<button type="button" data-c="${c}" class="${color === c ? 'on' : ''}" style="${c ? `--c:${c}` : ''}" aria-label="${nm}" title="${nm}"></button>`).join('')}</div>
+      <button type="button" class="op main" id="shf-ok"><b>${s ? 'Salvar' : 'Criar estante'}</b></button><button type="button" class="cn" id="shf-x">Cancelar</button></div>`;
+    const n = $('#shf-n', ed), d = $('#shf-d', ed), c = $('#shf-c', ed), cnt = () => { c.textContent = `${d.value.length}/150`; };
+    cnt(); d.addEventListener('input', cnt);
+    $$('[data-c]', ed).forEach((b) => b.addEventListener('click', () => { ed.dataset.n = n.value; ed.dataset.d = d.value; color = b.dataset.c; draw(); }));
+    $('#shf-x', ed).addEventListener('click', () => { delete ed.dataset.n; delete ed.dataset.d; closeEd(); });
+    $('#shf-ok', ed).addEventListener('click', () => {
+      const name = n.value.trim().slice(0, 40), desc = d.value.trim().slice(0, 150); if (!name) return toast('Dê um nome para a estante');
+      delete ed.dataset.n; delete ed.dataset.d; db.shelves = db.shelves || [];
+      const x = s || { id: uid(), name, bookIds: [] }; x.name = name; if (desc) x.desc = desc; else delete x.desc; if (color) x.color = color; else delete x.color;
+      if (!s) db.shelves.push(x);
+      save(); closeEd(); refresh(); const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw();
+      if (!s) toast(`Estante “${name}” criada. Toque em “+ Adicionar” para colocar livros.`);
+    });
+  };
+  draw(); ed.hidden = false; $('#shf-n', ed).focus();
+}
+shelfNameForm = (s) => shelfEditForm(s);
+drawLot = (key) => sortShelf(key); // o sorteio do menu da estante usa o mesmo sorteio novo
+// procurar: livros e também estantes pelo nome
+{ const _ols = openLibSearch; openLibSearch = function (from) {
+  const r = _ols.apply(this, arguments), v = $('#shelflist'), inp = $('#fs-q', v); if (!inp) return r;
+  inp.placeholder = 'Título, autor ou nome da estante';
+  const shelves = () => {
+    const box = $('#fs-list', v); if (!box) return; box.querySelector('.fs-shs')?.remove();
+    const nq = normT(inp.value || ''); if (!nq) return;
+    const hits = [{ key: 'ALL', name: 'Minha biblioteca' }, ...(db.shelves || []).map((s) => ({ key: 'sh:' + s.id, name: s.name }))].filter((s) => normT(s.name).includes(nq));
+    if (!hits.length) return;
+    box.insertAdjacentHTML('afterbegin', `<div class="fs-shs">${hits.map((s) => `<button type="button" class="fs-sh" data-open="${esc(s.key)}">${esc(s.name)}<small>${plural(shelfBooks(s.key).length, 'livro', 'livros')} · abrir estante ›</small></button>`).join('')}</div>`);
+    box.querySelector('.sl-empty')?.remove();
+    $$('.fs-sh', box).forEach((b) => b.addEventListener('click', () => openShelfV3(b.dataset.open)));
+  };
+  inp.addEventListener('input', shelves); shelves(); return r;
+}; }
+bookMenu = function (e) { const a = bmTap && Date.now() - bmTap.t < 1500 && bmTap.el && bmTap.el.isConnected ? bmTap.el : null; bookMenuOpen(a, { e, title: e.title, author: e.author, cover: e.cover }); };
+// ---------- 4.4: Leituras do ano por mês (Estatísticas e perfil) ----------
+// Capas estreitas, coladas como lombadas, agrupadas pelo mês em que o livro terminou; a barrinha no topo tem a cor da nota.
+const YS_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const pawColor = (p) => (!p ? '' : p >= 5 ? '#e0a526' : p >= 4 ? '#3f8f5a' : p >= 3 ? '#c8742e' : '#9a8f86');
+const ysItems = () => lib().filter((e) => e.status === 'LIDO' && e.finishedAt).map((e) => ({ id: e.id, t: e.title, a: e.author, c: e.cover, d: String(e.finishedAt), ap: e.dateApprox === 'year', p: (reviewOfLib(e) || {}).paws || 0, pg: Number(e.totalPages) || 0 }));
+{ const st = document.createElement('style'); st.textContent = `
+.ys{padding:.9rem .85rem .8rem;margin:.8rem 0;width:100%;min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden} /* rola só por dentro; nunca alarga a página */
+.ys-h{display:flex;justify-content:space-between;align-items:center;gap:.5rem}.ys-h>b{font-size:1rem;color:var(--ink)}
+.ys-y{display:flex;align-items:center;gap:.3rem;flex:none}.ys-y b{font-size:.85rem;min-width:2.6rem;text-align:center}
+.ys-y button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:900}.ys-y button:disabled{opacity:.3}
+.ys-row{display:flex;gap:.75rem;overflow-x:auto;scrollbar-width:none;padding:.1rem .1rem 0;border-bottom:7px solid #7a4e2c;border-radius:0 0 3px 3px;box-shadow:0 7px 8px -6px rgba(40,20,5,.45)}.ys-row::-webkit-scrollbar{display:none}
+.ys-g{flex:none;display:flex;flex-direction:column;gap:.4rem}
+.ys-m{align-self:flex-start;font-size:.68rem;font-weight:900;padding:.15rem .55rem;border-radius:99px;background:var(--acc);color:var(--on-acc,#fff)}
+.ys-bks{display:flex;gap:2px;align-items:flex-end}
+.ys-bk{position:relative;border:0;padding:0;background:none;width:40px;flex:none}
+.ys-bk .cv{width:40px!important;height:96px!important;border-radius:2px 3px 0 0!important;background-size:cover!important;background-position:center!important;box-shadow:inset -2px 0 3px rgba(0,0,0,.25)}
+.ys-bk .cv *{font-size:.42rem!important;line-height:1.05!important}
+.ys-bk.paw::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--pc);z-index:2;border-radius:2px 3px 0 0}
+.ys-leg{display:flex;flex-wrap:wrap;gap:.7rem;margin:.55rem 0 0;font-size:.68rem;color:var(--ink-2)}.ys-leg i{display:inline-block;width:12px;height:4px;border-radius:2px;vertical-align:middle;margin-right:.25rem}
+`; TR.append(st); }
+function yearShelfHTML(items, year, own) {
+  const years = [...new Set(items.map((x) => Number(String(x.d).slice(0, 4))).filter(Boolean))].sort((a, b) => b - a); if (!years.length) return '';
+  const y = years.includes(year) ? year : years[0], yi = years.indexOf(y);
+  const list = items.filter((x) => Number(String(x.d).slice(0, 4)) === y).sort((a, b) => String(a.d).localeCompare(String(b.d)));
+  const groups = []; for (let m = 1; m <= 12; m++) { const g = list.filter((x) => !x.ap && Number(String(x.d).slice(5, 7)) === m); if (g.length) groups.push([YS_MESES[m - 1], g]); }
+  const sem = list.filter((x) => x.ap || !String(x.d).slice(5, 7)); if (sem.length) groups.push(['Sem mês', sem]);
+  const pages = list.reduce((s, x) => s + (x.pg || 0), 0);
+  const bk = (x) => { const c = pawColor(x.p); return `<button type="button" class="es-bk ys-bk${c ? ' paw' : ''}" ${own && x.id ? `data-id="${esc(x.id)}"` : `data-book="${esc(x.t)}" data-author="${esc(x.a || '')}"`} title="${esc(x.t)}" aria-label="${esc(x.t)}" style="${c ? `--pc:${c}` : ''}">${cvh(x.t, x.c, 'ys-cv', 'font-size:.38rem;line-height:1.05')}</button>`; };
+  return `<section class="v3c ys"><div class="ys-h"><b>Leituras de ${y} por mês</b><span class="ys-y"><button type="button" data-ysy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><b>${y}</b><button type="button" data-ysy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></span></div>
+    <div class="es5-c"><span>${plural(list.length, 'livro', 'livros')}</span>${pages ? `<span>${pages.toLocaleString('pt-BR')} páginas</span>` : ''}</div>
+    <div class="ys-row">${groups.map(([n, g]) => `<div class="ys-g"><span class="ys-m">${n}</span><div class="ys-bks">${g.map(bk).join('')}</div></div>`).join('')}</div>
+    ${list.some((x) => x.p) ? `<div class="ys-leg"><span><i style="background:#e0a526"></i>5 patas</span><span><i style="background:#3f8f5a"></i>4 ou mais</span><span><i style="background:#c8742e"></i>3 ou mais</span><span><i style="background:#9a8f86"></i>abaixo de 3</span></div>` : ''}</section>`;
+}
+function mountYearShelf(root, at, items, own) {
+  const h = yearShelfHTML(items, S.ysYear || Number(todayISO().slice(0, 4)), own); if (!h || !at) return;
+  root.querySelector('.ys')?.remove(); at.insertAdjacentHTML('afterend', h); paintCv(root);
+  root.querySelectorAll('.ys [data-ysy]').forEach((b) => b.addEventListener('click', () => { if (!b.dataset.ysy) return; S.ysYear = Number(b.dataset.ysy); const sec = root.querySelector('.ys'), prev = sec.previousElementSibling; sec.remove(); mountYearShelf(root, prev, items, own); }));
+}
+// Estatísticas: logo depois do calendário / "Seu ano em detalhes"
+{ const _dt = drawTab; drawTab = function () { _dt(); if (S.tab !== 'progresso') return; const box = $('#lista'); if (box.querySelector('.ys')) return; mountYearShelf(box, box.querySelector('#pg-year') || box.querySelector('.pc'), ysItems(), true); }; }
+// perfil (o seu e o dos amigos que deixam a estante visível)
+{ const _fp = friendPage; friendPage = async function (h) {
+  const r = await _fp(h); const v = $('#shelflist'), d = S.fpData; if (v.hidden || !d || d.handle !== h) return r;
+  const items = d.self ? ysItems() : ((d.shelf && d.shelf.ano) || []).map((x) => ({ t: x.t, a: x.a, c: x.c, d: x.d, ap: !!x.ap, p: x.p || 0, pg: x.pg || 0 }));
+  mountYearShelf(v, v.querySelector('.yo-nums') || v.querySelector('.fr-common') || v.querySelector('.fr-acts') || v.querySelector('.yo-top'), items, !!d.self);
+  return r;
+}; }
+// resumo publicado: os lidos com data vão dentro de "estante" (mesma privacidade); capas só em link, para o resumo ficar leve
+publishSnapshot = async function () {
+  if (!connected() || !socialProfile) return;
+  libSync();
+  const L = db.library || [];
+  const mini = (e) => ({ title: e.title, author: e.author || null, cover: smallCover(e.cover) && e.cover.length < 25000 ? e.cover : null });
+  const reading = L.filter((e) => e.status === 'LENDO').slice(0, 3).map((e) => ({ ...mini(e), pct: readingInfo(e).pct }));
+  const counts = {}; for (const e of L) counts[e.status] = (counts[e.status] || 0) + 1;
+  const lidos = L.filter((e) => e.status === 'LIDO').sort((a, b) => (b.finishedAt || '').localeCompare(a.finishedAt || '')).slice(0, 12).map(mini);
+  const potinho = L.filter(isFav).slice(0, 12).map(mini);
+  const ano = L.filter((e) => e.status === 'LIDO' && e.finishedAt).sort((a, b) => String(b.finishedAt).localeCompare(String(a.finishedAt))).slice(0, 200)
+    .map((e) => ({ t: e.title, a: e.author || null, c: /^https:\/\//.test(e.cover || '') ? e.cover : null, d: String(e.finishedAt), ...(e.dateApprox === 'year' ? { ap: 1 } : {}), p: (reviewOfLib(e) || {}).paws || 0, pg: Number(e.totalPages) || 0 }));
+  const st = achState();
+  const snapshot = { reading, shelf: { counts, lidos, potinho, ano }, achievements: { won: st.filter((a) => a.done).map((a) => ({ k: a.reward, n: a.name, rare: !!a.rare })), total: st.length, room: { slots: {} } } };
+  try { await sapi('PUT', '/v1/me/snapshot', { snapshot }); } catch {}
+};
+// ---------- 4.4: "Editar perfil" e "Ajustes" separados no menu lateral (a mesma tela, cada um com a sua parte) ----------
+Object.assign(DI, { shelves: BI.shelves, pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>', user: '<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/>' });
+{ const _da = drawAjustes; drawAjustes = function (box) {
+  _da(box); const mode = S.ajMode; if (!mode) return;
+  const keep = mode === 'perfil' ? ['Perfil', 'Privacidade'] : ['Aparência', 'Conta e dados'];
+  box.querySelectorAll('.aj-g').forEach((g) => { if (keep.includes(g.textContent.trim())) return; const c = g.nextElementSibling; if (c && c.classList.contains('aj-card')) c.remove(); g.remove(); });
+  if (mode === 'sistema') box.querySelector('.aj-me')?.remove();
+  if (mode === 'perfil') { // sair, excluir conta e versão do app ficam só em Ajustes
+    const last = [...box.querySelectorAll('.aj-g')].pop(), lastCard = last && last.nextElementSibling;
+    if (lastCard) { let n = lastCard.nextElementSibling; while (n) { const nx = n.nextElementSibling; n.remove(); n = nx; } }
+  }
+  const h1 = box.querySelector('.v3-top h1'); if (h1) h1.textContent = mode === 'perfil' ? 'Editar perfil' : 'Ajustes';
+  if (mode === 'perfil' && socialProfile) { const g = [...box.querySelectorAll('.aj-g')].find((x) => x.textContent.trim() === 'Perfil'), card = g && g.nextElementSibling;
+    if (card && !box.querySelector('#aj-flair')) { card.insertAdjacentHTML('beforeend', '<button type="button" class="aj-row" id="aj-flair"><span><b>Moldura e selo</b><small>como sua foto aparece para os amigos</small></span>›</button>'); $('#aj-flair', box).addEventListener('click', flairSheet); } }
+}; }
+{ const _om = openMyProfile; openMyProfile = function () { S.ajMode = 'perfil'; return _om.apply(this, arguments); }; } // sem @usuário, "Ver meu perfil" cai em Editar perfil
+// ---------- 4.4: aba Perfil no menu inferior (o perfil como tela principal; sem @usuário, abre Editar perfil) ----------
+ICO.eu = DI.user;
+if (!TABS.some((t) => t[0] === 'eu')) TABS.push(['eu', 'Perfil', () => '']);
+const markEu = () => $$('#tabbar button').forEach((b) => b.classList.toggle('on', b.dataset.tab === 'eu'));
+{ const _gt = goTab; goTab = function (tab, fromBar) {
+  if (tab !== 'eu') { const r = _gt.apply(this, arguments); syncTopTitle(); setTimeout(syncTopTitle, 60); return r; }
+  if (connected() && socialProfile) { Promise.resolve(openMyProfile()).then(() => { if (!$('#shelflist').hidden) asTabRoot(); markEu(); syncTopTitle(); }); markEu(); return; }
+  S.ajMode = 'perfil'; _gt('perfil'); markEu();
+}; }
+drawTabbar();
+// ---------- 4.4: folha da leitura conjunta ("Lendo junto com…" no card do Início) ----------
+{ const st = document.createElement('style'); st.textContent = `
+.yo-fsh{display:flex;align-items:center;justify-content:space-between}.yo-ft{display:flex;align-items:baseline;gap:.35rem;border:0;background:none;padding:0;font:inherit;color:var(--ink);min-height:40px}.yo-ft span{font-size:.8rem;color:var(--ink-2)}
+.bd-r{display:grid;grid-template-columns:1fr auto;gap:.15rem .6rem;align-items:center;padding:.35rem 0}.bd-r b{font-size:.9rem;color:var(--ink)}.bd-r em{font-style:normal;font-size:.8rem;font-weight:800;color:var(--ink-2)}
+.bd-r i.mt-bar{grid-column:1/-1}
+`; TR.append(st); }
+function buddySheet(e, askLeave) {
+  const bm = (SOC.buddyMap || {})[e.id], b = bm && Array.isArray(bm.people) ? bm : (T().buddy || {})[e.id]; if (!b || !Array.isArray(b.people)) return toast('Esta leitura conjunta ainda não sincronizou. Tente de novo em instantes.');
+  const me = readingInfo(e), rows = [{ name: 'Você', pct: me.pct }, ...b.people.map((p) => ({ name: p.displayName, pct: p.pct || 0, handle: p.handle }))];
+  const ed = $('#editor'); ed.classList.add('compact');
+  const draw = (ask) => {
+    ed.querySelector('.ed-body').innerHTML = `<div class="dd"><h3>Lendo junto: ${esc(e.title)}</h3>
+      ${rows.map((r) => `<div class="bd-r"><b>${esc(r.name)}</b><em>${r.pct}%</em><i class="mt-bar"><i style="width:${r.pct}%"></i></i></div>`).join('')}
+      ${ask ? `<p>Sair da leitura conjunta de “${esc(e.title)}”? O livro e o seu progresso continuam; você só deixa de ver o andamento das outras pessoas.</p><button type="button" class="op" id="bd-leave-ok" style="color:#b3261e"><b>Sair da leitura conjunta</b></button><button type="button" class="cn" id="bd-back">Voltar</button>`
+        : `<button type="button" class="op main" id="bd-chat"><b>Conversar sobre o livro</b></button><button type="button" class="op" id="bd-leave" style="color:#b3261e"><b>Sair da leitura conjunta</b></button><button type="button" class="cn" id="bd-x">Fechar</button>`}</div>`;
+    $('#bd-x', ed)?.addEventListener('click', closeEd);
+    $('#bd-back', ed)?.addEventListener('click', () => draw(false));
+    $('#bd-leave', ed)?.addEventListener('click', () => draw(true));
+    $('#bd-marks', ed)?.addEventListener('click', () => { closeEd(); openBookPage(e, 'trechos'); });
+    $('#bd-chat', ed)?.addEventListener('click', () => { closeEd(); const ps = b.people.filter((p) => p.handle); if (ps.length === 1) return openChat(ps[0].handle, { book: e.title }); sheet(`Conversar sobre “${e.title}” com…`, ps.map((p) => [p.displayName, () => openChat(p.handle, { book: e.title })])); });
+    $('#bd-leave-ok', ed)?.addEventListener('click', async () => {
+      closeEd(); try { if (bm && bm.id) { const r = await sapi('POST', `/v1/buddies/${bm.id}/leave`); if (r.status >= 300) throw 0; } } catch { return toast('Não deu certo agora. Tente de novo em instantes.'); }
+      const B = { ...(T().buddy || {}) }; delete B[e.id]; T().buddy = B; if (SOC.buddyMap) delete SOC.buddyMap[e.id]; try { localStorage.setItem(BUD_KEY, JSON.stringify({ at: Date.now(), map: SOC.buddyMap || {} })); } catch {} save(); $('#shelflist').hidden = true; S.listRedraw = null; refresh(); toast('Você saiu da leitura conjunta');
+    });
+  };
+  draw(!!askLeave); ed.hidden = false;
+}
+TR.addEventListener('click', (ev) => { const h = ev.target.closest && ev.target.closest('#v3-bud'); if (!h) return; const R = reading(); if (R) openBuddyPage(R.e); });
+// ---------- 4.4: personalizar o Início (o que aparece e em que ordem) ----------
+const HOME_SECS = [['recs', 'Indicações para você'], ['tambem', 'Também lendo'], ['fila', 'Na fila'], ['meta', 'Meta do ano'], ['ano', 'Leituras do ano por mês'], ['conq', 'Próxima conquista']];
+const homePrefs = () => { const p = (db.prefs && db.prefs.home) || {}; const order = (p.order || []).filter((k) => HOME_SECS.some((x) => x[0] === k)); HOME_SECS.forEach(([k]) => { if (!order.includes(k)) order.push(k); }); return { order, off: p.off || ['ano', 'conq'] }; };
+{ const st = document.createElement('style'); st.textContent = `
+.hp-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:.5rem;align-items:center;min-height:48px;border-top:1px solid var(--line)}
+.hp-row b{font-size:.9rem;font-weight:600;color:var(--ink)}.hp-row.off b{color:var(--ink-2)}
+.hp-ck{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--ink-2);background:none;color:transparent;font-weight:900;padding:0}.hp-row:not(.off) .hp-ck{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
+.hp-mv{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:900}.hp-mv:disabled{opacity:.25}
+.hp-fixed{font-size:.8rem;color:var(--ink-2);padding:.4rem 0 .2rem}
+.hp-link{display:block;margin:.4rem auto 1.2rem;border:1px dashed var(--line);background:none;border-radius:12px;min-height:44px;padding:0 1rem;font:inherit;font-size:.84rem;font-weight:700;color:var(--ink-2)}
+.ini-conq{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:.7rem .85rem;margin:.2rem 0 1rem}
+`; TR.append(st); }
+function applyHomePrefs(box) {
+  const now = box.querySelector('.v3-now'); if (!now) return;
+  const parent = now.parentElement, { order, off } = homePrefs();
+  const grab = (k) => {
+    if (k === 'recs') { const h = box.querySelector('#rc-host'); return h ? [h] : []; }
+    if (k === 'tambem') { const sh = [...box.querySelectorAll('.v3-sh')].find((x) => /^Também lendo/.test(x.textContent.trim())); return sh ? [sh, sh.nextElementSibling].filter(Boolean) : []; }
+    if (k === 'fila') { const sh = box.querySelector('.yo-fsh'); return sh ? [sh, sh.nextElementSibling].filter(Boolean) : []; }
+    if (k === 'meta') { const m = box.querySelector('#ini-meta'); return m ? [m] : []; }
+    if (k === 'ano') { if (off.includes('ano')) return []; const w = document.createElement('div'); w.className = 'ini-ano'; parent.append(w); const a = document.createElement('div'); w.append(a); mountYearShelf(w, a, ysItems(), true); a.remove(); return [w]; }
+    if (k === 'conq') { if (off.includes('conq') || typeof nextAchievements !== 'function') return []; const nx = nextAchievements(1)[0]; if (!nx) return []; const w = document.createElement('div'); w.className = 'ini-conq'; w.innerHTML = `<div class="v3-sh" style="margin:0 0 .4rem"><b>Próxima conquista</b></div>${achRow(nx)}`; parent.append(w); return [w]; }
+    return [];
+  };
+  let at = now;
+  for (const k of order) { const els = grab(k); if (off.includes(k)) { els.forEach((x) => x.remove()); continue; } for (const x of els) { at.after(x); at = x; } }
+  // "Personalizar Início" fica só em Ajustes › Aparência (decisão da Bia, 14/11)
+  paintCv(box);
+}
+function homePrefsSheet() {
+  let { order, off } = homePrefs(); off = [...off];
+  const ed = $('#editor'); ed.classList.add('compact');
+  const draw = () => {
+    ed.querySelector('.ed-body').innerHTML = `<div class="dd"><h3>Personalizar Início</h3><p>Escolha o que aparece e a ordem.</p>
+      <div class="hp-fixed">Lendo agora fica sempre em primeiro.</div>
+      ${order.map((k, i) => `<div class="hp-row${off.includes(k) ? ' off' : ''}"><button type="button" class="hp-ck" data-k="${k}" aria-label="Mostrar ${HOME_SECS.find((x) => x[0] === k)[1]}">✓</button><b>${HOME_SECS.find((x) => x[0] === k)[1]}</b><button type="button" class="hp-mv" data-up="${i}" ${i ? '' : 'disabled'} aria-label="Subir">↑</button><button type="button" class="hp-mv" data-dn="${i}" ${i < order.length - 1 ? '' : 'disabled'} aria-label="Descer">↓</button></div>`).join('')}
+      <button type="button" class="op main" id="hp-ok"><b>Pronto</b></button></div>`;
+    $$('.hp-ck', ed).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; off = off.includes(k) ? off.filter((x) => x !== k) : [...off, k]; draw(); }));
+    $$('[data-up]', ed).forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.up; [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); }));
+    $$('[data-dn]', ed).forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.dn; [order[i + 1], order[i]] = [order[i], order[i + 1]]; draw(); }));
+    $('#hp-ok', ed).addEventListener('click', () => { db.prefs = { ...(db.prefs || {}), home: { order, off } }; save(); closeEd(); if (S.tab === 'inicio') drawTab(); toast('Início personalizado'); });
+  };
+  draw(); ed.hidden = false;
+}
+{ const _dt = drawTab; drawTab = function () { _dt(); if (S.tab === 'inicio') applyHomePrefs($('#lista')); }; }
+{ const _da2 = drawAjustes; drawAjustes = function (box) { _da2(box); if (S.ajMode === 'perfil') return; const g = [...box.querySelectorAll('.aj-g')].find((x) => x.textContent.trim() === 'Aparência'), card = g && g.nextElementSibling;
+  if (card && !box.querySelector('#aj-home')) { card.insertAdjacentHTML('beforeend', '<button type="button" class="aj-row" id="aj-home"><span><b>Personalizar Início</b><small>o que aparece e em que ordem</small></span>›</button>'); $('#aj-home', box).addEventListener('click', homePrefsSheet); } }; }
+
+// ---------- 4.4: tela própria da meta do ano ----------
+{ const st = document.createElement('style'); st.textContent = `
+.gp-top{display:flex;gap:1rem;align-items:center;margin:.4rem 0 .8rem}
+.gp-ring{width:104px;height:104px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--acc) calc(var(--p) * 1%),color-mix(in srgb,var(--line) 70%,transparent) 0);position:relative}
+.gp-ring::after{content:'';position:absolute;inset:9px;border-radius:50%;background:var(--bg,#f6ece1)}
+.gp-ring div{position:relative;z-index:1;text-align:center;line-height:1.05}.gp-ring b{font-size:1.5rem;color:var(--ink)}.gp-ring small{display:block;font-size:.72rem;color:var(--ink-2)}
+.gp-txt b{display:block;font-size:1rem;color:var(--ink);margin-bottom:.2rem}.gp-txt p{margin:.15rem 0;font-size:.84rem;color:var(--ink-2);line-height:1.35}
+.gp-btn{width:100%;min-height:44px;border-radius:12px;border:1px solid var(--acc);background:none;color:var(--acc);font:inherit;font-weight:800;margin:.2rem 0 .6rem}
+.gp-h{display:flex;justify-content:space-between;align-items:center;margin:1rem 0 .4rem}.gp-h b{font-size:1rem;color:var(--ink)}
+`; TR.append(st); }
+function openGoalPage(year) {
+  const v = $('#shelflist');
+  const draw = () => {
+    const today = todayISO(), cy = Number(today.slice(0, 4)), y = year || cy;
+    const lidos = lib().filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').startsWith(String(y))).sort((a, b) => String(b.finishedAt).localeCompare(String(a.finishedAt)));
+    const target = Number((db.yearGoals || {})[y]) || 0, done = lidos.length, pct = target ? Math.min(100, Math.round((done / target) * 100)) : 0;
+    const years = [...new Set([cy, ...Object.keys(db.yearGoals || {}).map(Number), ...lib().filter((e) => e.status === 'LIDO' && e.finishedAt).map((e) => Number(String(e.finishedAt).slice(0, 4)))])].filter(Boolean).sort((a, b) => b - a), yi = years.indexOf(y);
+    let lines = '';
+    if (!target) lines = y === cy ? '<p>Você ainda não definiu a meta deste ano.</p>' : '<p>Sem meta registrada neste ano.</p>';
+    else if (y < cy) lines = `<p>${done >= target ? 'Meta batida.' : `Faltaram ${plural(target - done, 'livro', 'livros')}.`}</p>`;
+    else {
+      const end = `${y}-12-31`, daysLeft = Math.max(1, between(today, end) + 1), daysGone = between(`${y}-01-01`, today) + 1, left = Math.max(0, target - done);
+      const proj = Math.floor((done / daysGone) * (daysGone + daysLeft - 1));
+      lines = done >= target ? '<p>Meta batida. Tudo o que vier agora é bônus.</p>'
+        : `<p>Faltam ${plural(left, 'livro', 'livros')} em ${plural(daysLeft, 'dia', 'dias')}.</p><p>No seu ritmo, você chega a ${proj}${proj >= target ? ' e bate a meta' : ''}. Para bater: 1 livro a cada ${Math.max(1, Math.floor(daysLeft / left))} dias.</p>`;
+    }
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Meta de ${y}</b><span class="ys-y"><button type="button" data-gy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><button type="button" data-gy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></span></div>
+      <div class="gp-top"><div class="gp-ring" style="--p:${pct}"><div><b>${done}</b><small>${target ? `de ${target}` : 'lidos'}</small></div></div><div class="gp-txt"><b>${target ? `${pct}% da meta` : `${plural(done, 'livro lido', 'livros lidos')}`}</b>${lines}</div></div>
+      ${y === cy ? `<button type="button" class="gp-btn" id="gp-edit">${target ? 'Mudar meta' : 'Definir meta'}</button>` : ''}
+      <div id="gp-ys"></div>
+      <div class="gp-h"><b>Lidos em ${y} · ${done}</b></div>
+      <div class="sl-list">${lidos.map((e) => slItem(e).replace('<i>›</i>', `<i>${esc(fmt(e.finishedAt))} ›</i>`)).join('') || '<p class="sl-empty">Nenhum livro terminado neste ano ainda.</p>'}</div>`;
+    paintCv(v);
+    S.ysYear = y; const a = $('#gp-ys', v); mountYearShelf(v, a, ysItems(), true); a.remove();
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; S.listRedraw = null; refresh(); });
+    $$('[data-gy]', v).forEach((b) => b.addEventListener('click', () => { if (!b.dataset.gy) return; year = Number(b.dataset.gy); draw(); }));
+    $('#gp-edit', v)?.addEventListener('click', () => { editMetas(); const ed = $('#editor'), wait = () => { if (!ed.hidden) return setTimeout(wait, 250); if (!v.hidden) draw(); }; setTimeout(wait, 250); });
+    $$('.sl-item', v).forEach((b) => b.addEventListener('click', () => openBook(b.dataset.id)));
+    syncTopTitle();
+  };
+  S.listRedraw = draw; S.navView = { t: 'goal', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot'); draw(); v.hidden = false; v.scrollTop = 0;
+}
+// ---------- 4.4: leitura conjunta aparece na hora (último estado guardado no aparelho) ----------
+const BUD_KEY = 'bear.budcache';
+try { const c = JSON.parse(localStorage.getItem(BUD_KEY) || 'null'); if (c && c.map && (!SOC.buddyMap || !Object.keys(SOC.buddyMap).length)) SOC.buddyMap = c.map; } catch {}
+{ const _mb = mapBuddies; mapBuddies = function () {
+  const before = JSON.stringify(SOC.buddyMap || {}); const r = _mb.apply(this, arguments);
+  try { localStorage.setItem(BUD_KEY, JSON.stringify({ at: Date.now(), map: SOC.buddyMap || {} })); } catch {}
+  if (JSON.stringify(SOC.buddyMap || {}) !== before && atHome() && $('#shelflist').hidden && S.tab === 'inicio') { const y = $('#lista').scrollTop; drawTab(); $('#lista').scrollTop = y; } // mostra já, sem esperar o resto da sincronização
+  return r;
+}; }
+// ---------- 4.4: página "Lendo junto" (atualizações só de quem lê junto, só deste livro) ----------
+// Usa o que a API já tem: progresso da leitura conjunta e os marcadores do livro (trecho, marco, reação, curtida).
+// Comentários e reações 🐾 😱 😭 dependem de tabelas novas na API (rodada "Lendo junto").
+{ const st = document.createElement('style'); st.textContent = `
+.bj-head{display:flex;gap:.8rem;align-items:center;margin:.3rem 0 .9rem}.bj-head .cv{width:52px;height:78px;border-radius:3px 6px 6px 3px;flex:none}
+.bj-head b{display:block;font-size:1rem;color:var(--ink)}.bj-head small{font-size:.8rem;color:var(--ink-2)}
+.bj-track{position:relative;height:44px;margin:.2rem .9rem 1rem}.bj-track::before{content:'';position:absolute;left:0;right:0;top:20px;height:5px;border-radius:99px;background:color-mix(in srgb,var(--line) 80%,transparent)}
+.bj-dot{position:absolute;top:6px;transform:translateX(-50%);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;font-weight:900;color:#fff;border:2px solid var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.25);background-size:cover}
+.bj-dot em{position:absolute;top:34px;font-style:normal;font-size:.62rem;font-weight:800;color:var(--ink-2);white-space:nowrap}
+.bj-sec{font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin:1.2rem 0 .4rem}
+.bj-it{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:.7rem .8rem;margin-bottom:.55rem}
+.bj-it header{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--ink)}.bj-it header small{margin-left:auto;color:var(--ink-2);font-size:.72rem}
+.bj-av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:.7rem;font-weight:900;flex:none}
+.bj-it p{margin:.45rem 0 .3rem;font-size:.9rem;line-height:1.45;color:var(--ink)}.bj-it p.q{font-style:italic}
+.bj-it footer{display:flex;gap:.6rem;align-items:center}.bj-like{min-height:36px;border:1px solid var(--line);border-radius:99px;background:none;color:var(--ink);font:inherit;font-size:.82rem;padding:0 .8rem}.bj-like.on{border-color:#d9472b;color:#d9472b}
+.bj-lock{width:100%;text-align:left;border:1px dashed var(--line);border-radius:10px;background:none;color:var(--ink-2);font:inherit;font-size:.82rem;padding:.6rem;margin:.45rem 0 .3rem}
+.bj-new{position:sticky;bottom:0;display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;padding:.6rem 0 .4rem;background:linear-gradient(transparent,var(--bg,#f6ece1) 30%)}
+.bj-new button{min-height:44px;border-radius:12px;border:1px solid var(--acc);background:var(--panel);color:var(--acc);font:inherit;font-weight:800;font-size:.82rem}
+.bj-empty{font-size:.86rem;color:var(--ink-2);text-align:center;padding:1rem .5rem}
+.bj-new2{grid-template-columns:repeat(2,1fr)}.bj-new1{grid-template-columns:1fr}
+.bj-rx{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem}.bj-rx button{min-height:34px;min-width:44px;border:1px solid var(--line);border-radius:99px;background:none;color:var(--ink);font:inherit;font-size:.82rem;padding:0 .6rem}.bj-rx button.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);font-weight:800}
+.bj-rx button{display:inline-flex;align-items:center;gap:.25rem}.bj-rx img{width:26px;height:26px;object-fit:contain;filter:saturate(.85)}.bj-rx button.on img{filter:none;transform:scale(1.08)}.bj-rx b{font-size:.8rem}
+.bj-ic{width:18px;height:18px;object-fit:contain;vertical-align:-4px;margin-right:.25rem}
+.bj-replies{border:0;background:none;color:var(--ink-2);font:inherit;font-size:.8rem;font-weight:700;padding:.45rem 0 0;min-height:36px}
+.bj-reply{border-left:3px solid color-mix(in srgb,var(--acc) 35%,transparent);padding:.35rem 0 .35rem .6rem;margin:.4rem 0}
+.bj-trash{width:36px;height:36px;margin-left:.2rem;border:0;border-radius:10px;background:none;color:var(--ink-2);display:grid;place-items:center;flex:none}.bj-trash svg{width:18px;height:18px}
+.bj-ask{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin:.45rem 0 .1rem;padding:.5rem .6rem;border-radius:10px;background:color-mix(in srgb,#b3261e 8%,transparent);font-size:.82rem;color:var(--ink)}.bj-ask span{flex:1 1 100%}.bj-ask button{min-height:36px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit;font-weight:700;padding:0 .8rem}.bj-ask .bj-ask-ok{border-color:#b3261e;background:#b3261e;color:#fff}
+.bj-compose{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg,#f6ece1) 22%);padding-top:.6rem}.bj-compose .bj-new{position:static;background:none;padding:.4rem 0 .2rem}
+.bj-send{display:grid;grid-template-columns:1fr auto;gap:.4rem}.bj-send input{min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;font-size:.9rem;padding:0 .75rem}.bj-send button{min-height:46px;border:0;border-radius:12px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;padding:0 1rem}.bj-th{border-top:1px solid var(--line);margin-top:.5rem;padding-top:.4rem}.bj-c{margin:.3rem 0;font-size:.86rem;color:var(--ink)}.bj-c b{font-weight:800}
+.bj-rep{display:grid;grid-template-columns:1fr auto;gap:.4rem;margin-top:.4rem}.bj-rep input{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--bg,#f6ece1);color:var(--ink);font:inherit;font-size:.86rem;padding:0 .6rem}.bj-rep button{min-height:40px;border:0;border-radius:10px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;padding:0 .8rem}
+`; TR.append(st); }
+function openBuddyPage(e) {
+  const bm = (SOC.buddyMap || {})[e.id], b = bm && Array.isArray(bm.people) ? bm : (T().buddy || {})[e.id];
+  if (!b || !Array.isArray(b.people)) return toast('Esta leitura conjunta ainda não sincronizou. Tente de novo em instantes.');
+  const v = $('#shelflist'), key = bookKey(e), rid = (bm && bm.id) || b.id, handles = new Set(b.people.map((p) => p.handle).filter(Boolean));
+  const opened = S.bjOpen || (S.bjOpen = new Set()), seenRv = S.bjSeen || (S.bjSeen = new Set());
+  let feed = null, talk = null, talkOff = false, mrx = {}, askDel = null; const threads = {}, openT = new Set(), openC = new Set();
+  const RX = [['like', 'Amei', 'ic_curtir'], ['paw', 'Patinha', 'deco_pegadas'], ['wow', 'Choque!', 'bear_running_books'], ['cry', 'Chorei', 'urso_chorando']]; // tipos no banco: like/paw/wow/cry
+  const myPage = () => { const ri = readingInfo(e); return e.status === 'LIDO' ? 1e9 : ri.now || 0; };
+  const posts = () => (SOC.feed || []).filter((p) => (p.mine || (p.user && handles.has(p.user.handle))) && normT(p.title || '') === normT(e.title));
+  const redraw = () => { if (!v.hidden && S.listRedraw === draw) draw(); };
+  const loadTalk = async () => {
+    try { const r = await sapi('GET', `/v1/buddies/${rid}/posts`); if (r.status === 200 && r.data) talk = r.data.items || []; else { talk = []; talkOff = r.status === 404 && !(r.data && r.data.error === 'NOT_FOUND'); } } catch { talk = []; }
+    redraw();
+  };
+  const load = async () => {
+    feed = []; redraw(); // 4.4: marcadores saíram do app; a página é conversa, progresso e avaliações
+  };
+  const loadThread = async (id) => { try { const r = await sapi('GET', `/v1/reviews/${id}/comments`); threads[id] = r.status === 200 && r.data ? r.data.items || [] : []; } catch { threads[id] = []; } redraw(); };
+  // barra de reações: comentários (todas pela tabela nova) e marcadores (♥ é a curtida antiga do marcador; 🐾 😱 😭 pela tabela nova)
+  const rxBar = (type, id, rx, likeOld) => `<div class="bj-rx">${RX.map(([k, name, img]) => {
+    const old = likeOld && k === 'like', n = old ? likeOld.likes || 0 : (rx.counts || {})[k] || 0, on = old ? !!likeOld.liked : (rx.mine || []).includes(k);
+    return `<button type="button" class="${on ? 'on' : ''}" data-rx="${type}|${esc(id)}|${k}" aria-pressed="${on}" aria-label="${name}${n ? ` (${n})` : ''}" title="${name}"><img src="img/${img}.webp" alt="">${n ? `<b>${n}</b>` : ''}</button>`; }).join('')}</div>`;
+  const lockedTalk = (c) => !c.mine && c.page && myPage() < c.page && !opened.has(c.id);
+  const av = (mine, who, handle) => `<span class="bj-av" style="background:${mine ? 'var(--acc)' : friendColor(handle || who)}">${esc(initial(who))}</span>`;
+  const draw = () => {
+    const me = readingInfo(e), h = drawHud(), ppl = [{ name: 'Você', pct: me.pct, me: true }, ...b.people.map((p) => ({ name: p.displayName, pct: Math.max(0, Math.min(100, p.pct || 0)), handle: p.handle }))];
+    const dot = (p) => `<span class="bj-dot" style="left:${p.pct}%;${p.me && h.ph ? `background-image:${cssUrl(h.ph)}` : `background-color:${p.me ? 'var(--acc)' : friendColor(p.handle || p.name)}`}" ${p.handle ? `data-avh="${esc(p.handle)}"` : ''} title="${esc(p.name)} · ${p.pct}%">${p.me && h.ph ? '' : esc(initial(p.name))}<em>${p.me ? 'Você' : esc(String(p.name).split(' ')[0])}</em></span>`;
+    const top = (talk || []).filter((c) => !c.parentId), replies = (id) => (talk || []).filter((c) => c.parentId === id);
+    const items = [...(feed || []).map((m) => ({ t: 'm', at: m.createdAt, m })), ...posts().map((p) => ({ t: 'p', at: p.updatedAt || p.createdAt, p })),
+      ...top.map((c) => ({ t: 'c', at: c.createdAt, c }))].sort((x, y) => String(y.at).localeCompare(String(x.at)));
+    const it = (m) => { const lock = mkLocked(m) && !opened.has(m.id), who = m.mine ? 'Você' : (m.user && m.user.displayName) || 'Alguém';
+      return `<article class="bj-it" data-m="${esc(m.id)}"><header>${av(m.mine, who, m.user && m.user.handle)}<b>${esc(String(who).split(' ')[0])}</b>&nbsp;· ${esc(m.kind === 'REACTION' ? 'Comentário' : MK_KIND[m.kind] || 'Atualização')}${m.page ? ` · pág. ${m.page}` : m.kind === 'MILESTONE' && m.pct != null ? ` · ${m.pct}%` : ''}<small>${esc(relTime(m.createdAt))}</small></header>
+        ${lock ? `<button type="button" class="bj-lock" data-open="${esc(m.id)}">${m.page ? `Você ainda não chegou à pág. ${m.page}` : 'Você ainda não terminou o livro'} · toque para ver</button>` : `<p class="${m.kind === 'QUOTE' ? 'q' : ''}">${m.kind === 'QUOTE' ? `“${esc(m.text)}”` : esc(m.text)}</p>`}
+        ${m.mine ? '' : rxBar('marker', m.id, mrx[m.id] || {}, m)}</article>`; };
+    const pit = (p) => { const rv = isReview(p), who = p.mine ? 'Você' : (p.user && p.user.displayName) || 'Alguém', hid = rv && p.text && !p.mine && !seenRv.has(p.id) && (p.spoiler || !iReadT(p.title));
+      const what = rv ? `avaliou${p.paws ? ' · ' + pawTxt(p.paws) : ''}` : p.kind === 'STARTED' ? 'começou a ler' : p.kind === 'FINISHED' ? 'terminou o livro' : `avançou${p.pages ? ` para a pág. ${Number(p.pages)}` : ''}`, th = threads[p.id];
+      return `<article class="bj-it" data-p="${esc(p.id)}"><header>${av(p.mine, who, p.user && p.user.handle)}<b>${esc(String(who).split(' ')[0])}</b>&nbsp;${esc(what)}<small>${esc(relTime(p.updatedAt || p.createdAt))}</small></header>
+        ${!rv && p.pct != null ? `<i class="mt-bar" style="margin:.45rem 0 .1rem"><i style="width:${Math.max(0, Math.min(100, Number(p.pct) || 0))}%"></i></i>` : ''}
+        ${rv && p.text ? (hid ? `<button type="button" class="bj-lock" data-seen="${esc(p.id)}">${p.spoiler ? 'Contém spoiler' : 'Você ainda não terminou o livro'} · toque para ver</button>` : `<p>${esc(p.text)}</p>`) : ''}
+        ${rv ? `<footer><button type="button" class="bj-like${p.liked ? ' on' : ''}" data-rlike="${esc(p.id)}" aria-label="Curtir">♥ ${p.likes || ''}</button><button type="button" class="bj-like" data-com="${esc(p.id)}"><img class="bj-ic" src="img/ic_comentar.webp" alt="">${p.comments ? plural(p.comments, 'comentário', 'comentários') : 'Comentar'}</button></footer>` : ''}
+        ${rv && openT.has(p.id) ? (hid ? '<p class="bj-empty">Os comentários aparecem quando você abrir a avaliação.</p>' : `<div class="bj-th">${th ? th.map((c) => `<p class="bj-c"><b>${esc(String((c.user && c.user.displayName) || c.displayName || 'Alguém').split(' ')[0])}</b> ${esc(c.text || '')}</p>`).join('') || '<p class="bj-empty">Ninguém comentou ainda.</p>' : '<p class="bj-empty">Carregando…</p>'}<form class="bj-rep" data-rep="${esc(p.id)}"><input maxlength="500" placeholder="Responder…" aria-label="Responder"><button type="submit">Enviar</button></form></div>`) : ''}</article>`; };
+    const cmt = (c, isReply) => { const who = c.mine ? 'Você' : (c.user && c.user.displayName) || 'Alguém', lock = lockedTalk(c), rs = isReply ? [] : replies(c.id), shown = openC.has(c.id);
+      return `<${isReply ? 'div class="bj-reply"' : 'article class="bj-it bj-cm"'} data-c="${esc(c.id)}"><header>${av(c.mine, who, c.user && c.user.handle)}<b>${esc(String(who).split(' ')[0])}</b>${c.page ? `&nbsp;· pág. ${c.page}` : ''}<small>${esc(relTime(c.createdAt))}</small>${c.mine ? `<button type="button" class="bj-trash" data-cdel="${esc(c.id)}" aria-label="Apagar comentário">${bsv('trash')}</button>` : ''}</header>
+        ${askDel === c.id ? `<div class="bj-ask"><span>Apagar este comentário?${isReply ? '' : ' As respostas saem junto.'}</span><button type="button" class="bj-ask-ok" data-cdelok="${esc(c.id)}">Apagar</button><button type="button" data-cdelx>Cancelar</button></div>` : ''}
+        ${lock ? `<button type="button" class="bj-lock" data-copen="${esc(c.id)}">Escrito na pág. ${c.page}, depois de onde você está · toque para ver</button>` : `<p>${esc(c.text)}</p>`}
+        ${rxBar('buddy_post', c.id, c.reactions || {})}
+        ${isReply ? '' : `<button type="button" class="bj-replies" data-thr="${esc(c.id)}"><img class="bj-ic" src="img/ic_comentar.webp" alt="">${rs.length ? (shown ? 'Esconder respostas' : plural(rs.length, 'resposta', 'respostas')) : 'Responder'}</button>
+        ${shown ? `<div class="bj-th">${rs.map((r) => cmt(r, true)).join('')}<form class="bj-rep" data-crep="${esc(c.id)}"><input maxlength="1000" placeholder="Responder…" aria-label="Responder"><button type="submit">Enviar</button></form></div>` : ''}`}
+      </${isReply ? 'div' : 'article'}>`; };
+    const card = (x) => (x.t === 'm' ? it(x.m) : x.t === 'p' ? pit(x.p) : cmt(x.c));
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Lendo junto</b><button type="button" class="es-dots" id="bj-more" aria-label="Opções da leitura conjunta">•••</button></div>
+      <div class="bj-head">${cvh(e.title, e.cover, '')}<div><b>${esc(e.title)}</b><small>${plural(ppl.length, 'pessoa', 'pessoas')} lendo junto</small></div></div>
+      <div class="bj-track">${ppl.map(dot).join('')}</div>
+      <div class="bj-sec">Conversa e atualizações</div>
+      ${feed === null || talk === null ? '<p class="bj-empty">Carregando…</p>' : items.length ? items.map(card).join('') : '<p class="bj-empty">Ainda não há nada por aqui. Comente sobre a leitura para começar a conversa.</p>'}
+      <div class="bj-compose">${talkOff ? '<p class="bj-empty" style="padding:.3rem 0">A conversa chega quando a nova versão da API for publicada.</p>' : `<form class="bj-send"><input id="bj-txt" maxlength="1000" placeholder="Comentar sobre a leitura… (pág. ${me.now || 0})" aria-label="Comentar sobre a leitura"><button type="submit">Enviar</button></form>`}</div>`;
+    paintCv(v); if (typeof paintAvatars === 'function') paintAvatars();
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; S.listRedraw = null; refresh(); });
+    $('#bj-more', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [
+      { label: 'Convidar mais pessoas', fn: () => inviteBuddy(e) },
+      0, { label: 'Sair da leitura conjunta', danger: true, fn: () => buddySheet(e, true) }]));
+    $$('[data-open]', v).forEach((x) => x.addEventListener('click', () => { opened.add(x.dataset.open); draw(); }));
+    $$('[data-copen]', v).forEach((x) => x.addEventListener('click', () => { opened.add(x.dataset.copen); draw(); }));
+    $$('[data-seen]', v).forEach((x) => x.addEventListener('click', () => { seenRv.add(x.dataset.seen); draw(); }));
+    $$('[data-thr]', v).forEach((x) => x.addEventListener('click', () => { const id = x.dataset.thr; openC.has(id) ? openC.delete(id) : openC.add(id); draw(); }));
+    $$('[data-rx]', v).forEach((x) => x.addEventListener('click', async () => {
+      const [type, id, k] = x.dataset.rx.split('|');
+      if (type === 'marker' && k === 'like') { const m = feed.find((y) => y.id === id); if (!m) return; m.liked = !m.liked; m.likes = Math.max(0, (m.likes || 0) + (m.liked ? 1 : -1)); draw(); try { await sapi(m.liked ? 'POST' : 'DELETE', `/v1/markers/${m.id}/like`); } catch {} return; }
+      const rx = type === 'marker' ? (mrx[id] || (mrx[id] = { counts: {}, mine: [] })) : (((talk || []).find((c) => c.id === id) || {}).reactions || null); if (!rx) return;
+      rx.counts = rx.counts || {}; rx.mine = rx.mine || []; const on = !rx.mine.includes(k);
+      rx.mine = on ? [...rx.mine, k] : rx.mine.filter((y) => y !== k); rx.counts[k] = Math.max(0, (rx.counts[k] || 0) + (on ? 1 : -1)); draw();
+      try { const r = await sapi(on ? 'POST' : 'DELETE', `/v1/reactions/${type}/${id}/${k}`); if (r.status >= 300) throw 0; } catch { toast('Não deu certo agora. Tente de novo em instantes.'); }
+    }));
+    const send = async (txt, parentId) => { const ri = readingInfo(e); const r = await sapi('POST', `/v1/buddies/${rid}/posts`, { body: txt, page: ri.now || null, pct: ri.pct ?? null, ...(parentId ? { parentId } : {}) }); if (r.status >= 300) throw 0; await loadTalk(); };
+    $('.bj-send', v)?.addEventListener('submit', async (ev) => { ev.preventDefault(); const inp = $('#bj-txt', v), txt = inp.value.trim(); if (!txt) return; inp.disabled = true; try { await send(txt); } catch { toast('Não deu certo agora. Tente de novo em instantes.'); inp.disabled = false; } });
+    $$('[data-crep]', v).forEach((fm) => fm.addEventListener('submit', async (ev) => { ev.preventDefault(); const inp = fm.querySelector('input'), txt = inp.value.trim(); if (!txt) return; inp.disabled = true; try { await send(txt, fm.dataset.crep); } catch { toast('Não deu certo agora. Tente de novo em instantes.'); inp.disabled = false; } }));
+    $$('[data-cdel]', v).forEach((x) => x.addEventListener('click', () => { askDel = x.dataset.cdel; draw(); }));
+    $$('[data-cdelx]', v).forEach((x) => x.addEventListener('click', () => { askDel = null; draw(); }));
+    $$('[data-cdelok]', v).forEach((x) => x.addEventListener('click', async () => { askDel = null; try { const r = await sapi('DELETE', `/v1/buddies/${rid}/posts/${x.dataset.cdelok}`); if (r.status >= 300) throw 0; toast('Comentário apagado'); } catch { toast('Não deu certo agora. Tente de novo em instantes.'); } await loadTalk(); }));
+    $$('[data-rlike]', v).forEach((x) => x.addEventListener('click', async () => { const p = posts().find((y) => y.id === x.dataset.rlike); if (!p) return; p.liked = !p.liked; p.likes = Math.max(0, (p.likes || 0) + (p.liked ? 1 : -1)); draw(); try { await sapi(p.liked ? 'POST' : 'DELETE', `/v1/reviews/${p.id}/like`); } catch {} }));
+    $$('[data-com]', v).forEach((x) => x.addEventListener('click', () => { const id = x.dataset.com; if (openT.has(id)) openT.delete(id); else { openT.add(id); if (!threads[id]) loadThread(id); } draw(); }));
+    $$('[data-rep]', v).forEach((fm) => fm.addEventListener('submit', async (ev) => { ev.preventDefault(); const inp = fm.querySelector('input'), txt = inp.value.trim(); if (!txt) return; inp.disabled = true;
+      try { const r = await sapi('POST', `/v1/reviews/${fm.dataset.rep}/comments`, { text: txt }); if (r.status >= 300) throw 0; const p = posts().find((y) => y.id === fm.dataset.rep); if (p) p.comments = (p.comments || 0) + 1; await loadThread(fm.dataset.rep); } catch { toast('Não deu certo agora. Tente de novo em instantes.'); inp.disabled = false; } }));
+    $$('.bj-new [data-k]', v).forEach((x) => x.addEventListener('click', () => {
+      const tt = db.toca || (db.toca = {}), prev = tt.currentId; tt.currentId = e.id; try { composeMarker(x.dataset.k); } finally { tt.currentId = prev; }
+      const wait = () => { if (TR.querySelector('.mk-ed') || !$('#editor').hidden) return setTimeout(wait, 400); feed = null; draw(); load(); }; setTimeout(wait, 600);
+    }));
+    syncTopTitle();
+  };
+  S.listRedraw = draw; S.navView = { t: 'buddy', a: [e.id] }; closeEd(); v.classList.remove('feedview', 'tabroot'); draw(); v.hidden = false; v.scrollTop = 0; load(); loadTalk();
+}
+// ---------- 4.4: marcadores saíram do app (14/11). "Meus trechos" (privado) continua. ----------
+earsRow = function () { return ''; };
+bookMarkersHTML = function () { return ''; };
+composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
+// se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
+{ const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
