@@ -9481,7 +9481,22 @@ return { refresh, home, screen, library, poll, atHome, achievements: () => { hom
 { const _open = open; open = function () { htab = 'desafios'; if (Toca && Toca.atHome()) Toca.screen(); return _open.apply(this, arguments); }; } // “‹ Metas” do desafio sempre volta para Metas
 })();
 </script>
-<script>if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+<script>if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  /* 4.4: o service worker avisa quando guardou uma versão nova do app */
+  navigator.serviceWorker.addEventListener('message', (ev) => {
+    if (!ev.data || ev.data.type !== 'bear-update' || document.getElementById('bear-update')) return;
+    const bar = document.createElement('button');
+    bar.id = 'bear-update';
+    bar.type = 'button';
+    bar.textContent = 'Nova versão disponível · Atualizar';
+    bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));z-index:2147483647;' +
+      'font:600 14px system-ui,sans-serif;padding:10px 18px;border:0;border-radius:999px;background:#5a3a22;color:#f6ece1;' +
+      'box-shadow:0 6px 18px rgba(0,0,0,.25);max-width:calc(100vw - 32px);white-space:nowrap;cursor:pointer';
+    bar.addEventListener('click', () => location.reload());
+    document.body.appendChild(bar);
+  });
+}
 </script>
 </body>
 </html>
