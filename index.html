@@ -7153,7 +7153,7 @@ const fmtDM = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7);
     const nx = nextBook() || lib().filter((e) => e.status === 'QUERO').sort((a, b) => String(b.addedAt || '').localeCompare(String(a.addedAt || '')))[0];
     if (!nx) return _nc();
     return `<section class="v3c v3-now v3-next">${cvh(nx.title, nx.cover, 'v3-cv')}<div><span class="v3-k">${nextBook() ? 'Sua próxima leitura' : 'Da sua lista Quero ler'}</span><b class="v3-ttl">${esc(nx.title)}</b><span class="v3-au">${esc(nx.author || '')}</span>
-      <div class="v3-next-b"><button type="button" class="v3-pri" id="v3-start" data-id="${esc(nx.id)}">Começar a ler</button><button type="button" id="v3-cta">Buscar outro</button></div></div></section>`;
+      <div class="v3-next-b"><button type="button" class="v3-pri" id="v3-start" data-id="${esc(nx.id)}">Começar a ler</button><button type="button" id="v3-sort">Sortear</button><button type="button" id="v3-cta">Buscar</button></div></div></section>`;
   }
   let html = _nc(); const days = paceDays(R);
   if (days) html = html.replace(/No seu ritmo, <b>[^<]*<\/b>/, `No seu ritmo, termina em <b>${days === 1 ? '1 dia' : `${days} dias`}</b>`);
@@ -10079,6 +10079,18 @@ TR.addEventListener('click', (ev) => {
   };
   new MutationObserver(() => { const d = TR.querySelector('.drw'); if (d) fix(d); }).observe(TR, { childList: true });
 }
+// --- 18_proxima.js ---
+// Início sem leitura em andamento: "Sortear" ao lado de Começar a ler / Buscar outro, e os três botões menores numa linha.
+{ const st = document.createElement('style'); st.textContent = `
+.v3-next .v3-next-b{flex-wrap:nowrap!important;gap:.35rem!important;margin-top:.55rem!important}
+.v3-next .v3-next-b button{height:32px!important;min-height:0!important;padding:0 .7rem!important;font-size:.76rem!important;border-radius:99px!important;white-space:nowrap;width:auto!important;flex:none}
+`; TR.append(st); }
+TR.addEventListener('click', (ev) => {
+  if (!(ev.target.closest && ev.target.closest('#v3-sort'))) return;
+  ev.stopPropagation();
+  if (lib().filter((e) => e.status === 'QUERO').length < 2) return toast('Coloque pelo menos 2 livros em Quero ler para sortear');
+  sortShelf('QUERO');
+});
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
