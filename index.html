@@ -9635,6 +9635,12 @@ TR.addEventListener('click', (ev) => {
 .es4-bk > small,.es-bk > small,.sl-item b,.ys-bk + small,.car small,.v3-q small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis}
 .fs-res b,.fs-it b,.srch-it b,.res-it b,.bk-res b{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 `; TR.append(st); }
+// --- 06_estante.js ---
+// Página da estante (rodada 2): ordenar e sortear ficam só no "•••" do topo (padrão do app); a barra mostra só a contagem.
+{ const st = document.createElement('style'); st.textContent = `
+.esv-bar #esv-sort,.esv-bar [data-lot]{display:none!important}
+.es4-r [data-lot]{display:none!important}
+`; TR.append(st); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
