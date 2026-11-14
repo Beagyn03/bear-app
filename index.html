@@ -9368,7 +9368,7 @@ try { const c = JSON.parse(localStorage.getItem(BUD_KEY) || 'null'); if (c && c.
 .bj-empty{font-size:.86rem;color:var(--ink-2);text-align:center;padding:1rem .5rem}
 .bj-new2{grid-template-columns:repeat(2,1fr)}.bj-new1{grid-template-columns:1fr}
 .bj-rx{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem}.bj-rx button{min-height:34px;min-width:44px;border:1px solid var(--line);border-radius:99px;background:none;color:var(--ink);font:inherit;font-size:.82rem;padding:0 .6rem}.bj-rx button.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);font-weight:800}
-.bj-rx button{display:inline-flex;align-items:center;gap:.25rem}.bj-rx img{width:26px;height:26px;object-fit:contain;filter:saturate(.85)}.bj-rx button.on img{filter:none;transform:scale(1.08)}.bj-rx b{font-size:.8rem}
+.bj-rx button{display:inline-flex;align-items:center;gap:.25rem}.bj-rx img{width:30px;height:30px;object-fit:contain}.bj-rx button.on img{filter:none;transform:scale(1.08)}.bj-rx b{font-size:.8rem}
 .bj-ic{width:18px;height:18px;object-fit:contain;vertical-align:-4px;margin-right:.25rem}
 .bj-replies{border:0;background:none;color:var(--ink-2);font:inherit;font-size:.8rem;font-weight:700;padding:.45rem 0 0;min-height:36px}
 .bj-reply{border-left:3px solid color-mix(in srgb,var(--acc) 35%,transparent);padding:.35rem 0 .35rem .6rem;margin:.4rem 0}
@@ -9384,7 +9384,7 @@ function openBuddyPage(e) {
   const v = $('#shelflist'), key = bookKey(e), rid = (bm && bm.id) || b.id, handles = new Set(b.people.map((p) => p.handle).filter(Boolean));
   const opened = S.bjOpen || (S.bjOpen = new Set()), seenRv = S.bjSeen || (S.bjSeen = new Set());
   let feed = null, talk = null, talkOff = false, mrx = {}, askDel = null; const threads = {}, openT = new Set(), openC = new Set();
-  const RX = [['like', 'Amei', 'ic_curtir'], ['paw', 'Patinha', 'deco_pegadas'], ['wow', 'Choque!', 'bear_running_books'], ['cry', 'Chorei', 'urso_chorando']]; // tipos no banco: like/paw/wow/cry
+  const RX = [['like', 'Amei', 'rx_amei'], ['paw', 'Haha', 'rx_haha'], ['wow', 'Choque!', 'rx_choque'], ['cry', 'Chorei', 'rx_chorei']]; /* GIFs da Bia (14/11): parado (_p) e anima ao tocar */ // tipos no banco: like/paw/wow/cry
   const myPage = () => { const ri = readingInfo(e); return e.status === 'LIDO' ? 1e9 : ri.now || 0; };
   const posts = () => (SOC.feed || []).filter((p) => (p.mine || (p.user && handles.has(p.user.handle))) && normT(p.title || '') === normT(e.title));
   const redraw = () => { if (!v.hidden && S.listRedraw === draw) draw(); };
@@ -9399,7 +9399,7 @@ function openBuddyPage(e) {
   // barra de reações: comentários (todas pela tabela nova) e marcadores (♥ é a curtida antiga do marcador; 🐾 😱 😭 pela tabela nova)
   const rxBar = (type, id, rx, likeOld) => `<div class="bj-rx">${RX.map(([k, name, img]) => {
     const old = likeOld && k === 'like', n = old ? likeOld.likes || 0 : (rx.counts || {})[k] || 0, on = old ? !!likeOld.liked : (rx.mine || []).includes(k);
-    return `<button type="button" class="${on ? 'on' : ''}" data-rx="${type}|${esc(id)}|${k}" aria-pressed="${on}" aria-label="${name}${n ? ` (${n})` : ''}" title="${name}"><img src="img/${img}.webp" alt="">${n ? `<b>${n}</b>` : ''}</button>`; }).join('')}</div>`;
+    return `<button type="button" class="${on ? 'on' : ''}" data-rx="${type}|${esc(id)}|${k}" aria-pressed="${on}" aria-label="${name}${n ? ` (${n})` : ''}" title="${name}"><img src="img/${img}${S.rxAnim === type + '|' + id + '|' + k ? '' : '_p'}.webp" alt="">${n ? `<b>${n}</b>` : ''}</button>`; }).join('')}</div>`;
   const lockedTalk = (c) => !c.mine && c.page && myPage() < c.page && !opened.has(c.id);
   const av = (mine, who, handle) => `<span class="bj-av" style="background:${mine ? 'var(--acc)' : friendColor(handle || who)}">${esc(initial(who))}</span>`;
   const draw = () => {
@@ -9582,7 +9582,7 @@ openGoalPage = function (year) {
 // Sorteio animado: o urso gira os livros (img/sorteio_gira.webp) e depois aparece segurando a carta com a capa sorteada (img/sorteio_fim.webp).
 // A capa entra no retângulo da carta (medido no quadro final do GIF: 52–91% na horizontal, 29–85% na vertical).
 { const st = document.createElement('style'); st.textContent = `
-.srt-stage{position:relative;width:min(240px,64vw);aspect-ratio:1;margin:.2rem auto .6rem;border-radius:22px;overflow:hidden;background:#000}
+.srt-stage{position:relative;width:min(240px,64vw);aspect-ratio:1;margin:0 auto .4rem}
 .srt-stage img.srt-a{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .srt-card{position:absolute;left:53.6%;top:30.6%;width:36.2%;height:52.4%;border-radius:4px 7px 7px 4px;overflow:hidden;opacity:0;transform:scale(.6) rotate(-6deg);transition:opacity .35s ease,transform .45s cubic-bezier(.2,1.4,.4,1)}
 .srt-card .cv{width:100%!important;height:100%!important;border-radius:0!important;font-size:.5rem}
@@ -9599,11 +9599,11 @@ openGoalPage = function (year) {
     _ss(key, lastId);
     const ed = $('#editor'); if (ed.hidden) return;
     const bk = ed.querySelector('.srt-bk'); if (!bk) return;
-    const title = bk.querySelector('b')?.textContent || '', cov = bk.querySelector('.cv, .srt-cv');
+    const cov = [...bk.children].find((c) => !c.querySelector('b') && c.tagName !== 'B'); // a capa (desenhada ou imagem); o texto fica
     const stage = document.createElement('div'); stage.className = 'srt-stage';
     const img = document.createElement('img'); img.className = 'srt-a'; img.alt = ''; stage.append(img);
-    const card = document.createElement('div'); card.className = 'srt-card'; if (cov) { card.append(cov.cloneNode(true)); cov.remove(); } stage.append(card);
-    bk.before(stage);
+    const card = document.createElement('div'); card.className = 'srt-card'; if (cov) { card.append(cov.cloneNode(true)); bk.querySelectorAll(':scope > :not(div), :scope > .cv, :scope > .srt-cv').forEach((n) => n.remove()); cov.remove(); } stage.append(card);
+    bk.before(stage); try { paintCv(card); } catch {}
     const rest = [...ed.querySelectorAll('.dd > *')].filter((n) => n !== stage && n.tagName !== 'H3');
     const h3 = ed.querySelector('.dd > h3'); const h3t = h3 ? h3.textContent : '';
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -9617,6 +9617,24 @@ openGoalPage = function (year) {
   };
   drawLot = (key) => sortShelf(key);
 }
+// --- 04_reacoes.js ---
+// Reações com os GIFs da Bia: ficam paradas e animam por ~2 s quando a pessoa toca (antes da ação, na captura do clique).
+TR.addEventListener('click', (ev) => {
+  const b = ev.target.closest && ev.target.closest('[data-rx]'); if (!b) return;
+  const key = b.dataset.rx; S.rxAnim = key;
+  const img = b.querySelector('img'); if (img) img.src = img.src.replace('_p.webp', '.webp');
+  clearTimeout(S.rxAnimT);
+  S.rxAnimT = setTimeout(() => { S.rxAnim = null; TR.querySelectorAll('[data-rx] img').forEach((i) => { if (!/_p\.webp$/.test(i.src)) i.src = i.src.replace(/\.webp$/, '_p.webp'); }); }, 2200);
+}, true);
+// --- 05_capas.js ---
+// Capas (rodada 2): "lido" vira uma fitinha de marcador verde na borda de cima (não cobre o título da capa);
+// títulos longos ficam em até 2 linhas com reticências nas listas e na busca.
+{ const st = document.createElement('style'); st.textContent = `
+.es4-done{top:0!important;right:9px!important;width:13px!important;height:21px!important;border-radius:0!important;font-size:0!important;color:transparent!important;
+  background:linear-gradient(90deg,#24693f,#2e8a52 45%,#24693f)!important;box-shadow:none!important;clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%)}
+.es4-bk > small,.es-bk > small,.sl-item b,.ys-bk + small,.car small,.v3-q small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis}
+.fs-res b,.fs-it b,.srch-it b,.res-it b,.bk-res b{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+`; TR.append(st); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
