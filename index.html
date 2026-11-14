@@ -10170,6 +10170,73 @@ TR.addEventListener('click', (ev) => {
     return r;
   };
 }
+// --- 20_trechos.js ---
+// Meus trechos (rodada 2): adicionar, editar, apagar, copiar, ver o livro e usar como frase do perfil.
+{ const st = document.createElement('style'); st.textContent = `
+.qt-bar{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;margin-bottom:.6rem}
+.qt-bar .qt-search{margin:0}
+.qt-new{height:44px;border:0;border-radius:12px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;font-size:.86rem;padding:0 .9rem;white-space:nowrap}
+.qt-it{position:relative}.qt-it .qt-bio{display:inline-block;margin-left:.4rem;font-size:.66rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:var(--acc)}
+.qt-form{display:grid;gap:.5rem}.qt-form label{font-size:.78rem;font-weight:800;color:var(--ink-2)}
+.qt-form textarea,.qt-form select,.qt-form input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;font-size:.92rem;padding:.6rem .7rem}
+.qt-form textarea{min-height:6rem;resize:vertical}
+.qt-form .qt-btns{display:grid;grid-template-columns:auto 1fr;gap:.5rem;margin-top:.3rem}.qt-form .qt-btns button{height:44px;border-radius:12px;font:inherit;font-weight:800;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:0 1rem}.qt-form .qt-btns .ok{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
+.qt-form .cnt{font-size:.72rem;color:var(--ink-2);text-align:right;margin-top:-.3rem}
+`; TR.append(st); }
+{
+  const bioOf = (x) => { const tail = ` — ${x.e.title}`, room = 160 - tail.length - 2; const t = x.t.length > room ? x.t.slice(0, Math.max(10, room - 1)).trim() + '…' : x.t; return `“${t}”${tail}`.slice(0, 160); };
+  const setBio = async (bio) => { T().bio = bio; save(); refresh(); if (connected() && socialProfile) { const r = await sapi('PUT', '/v1/me/bio', { bio }); toast(r.status === 200 ? 'Agora é a frase do seu perfil' : 'Frase salva só neste aparelho por enquanto'); } else toast('Agora é a frase do seu perfil'); };
+  // folha de criar/editar: x = { e, i } para editar; sem x = novo
+  const form = (x, after) => {
+    const ed = $('#editor'); ed.classList.add('compact');
+    const books = lib().filter((e) => e.status !== 'QUERO').sort((a, b) => (a.status === 'LENDO' ? -1 : 0) - (b.status === 'LENDO' ? -1 : 0) || String(a.title).localeCompare(String(b.title), 'pt-BR'));
+    if (!x && !books.length) return toast('Adicione um livro primeiro');
+    const q = x ? x.e.quotes[x.i] : null;
+    ed.querySelector('.ed-body').innerHTML = `<div class="dd qt-form"><h3>${x ? 'Editar trecho' : 'Novo trecho'}</h3>
+      ${x ? `<p style="margin:0;font-size:.82rem">${esc(x.e.title)}</p>` : `<label for="qf-b">Livro</label><select id="qf-b">${books.map((e) => `<option value="${esc(e.id)}">${esc(e.title)}${e.status === 'LENDO' ? ' (lendo)' : ''}</option>`).join('')}</select>`}
+      <label for="qf-t">Trecho</label><textarea id="qf-t" maxlength="1000" placeholder="Copie a frase do jeito que está no livro">${esc(q ? q.t : '')}</textarea><span class="cnt" id="qf-c"></span>
+      <label for="qf-p">Página (opcional)</label><input id="qf-p" type="number" min="1" inputmode="numeric" value="${q && q.p ? esc(q.p) : ''}">
+      <div class="qt-btns"><button type="button" id="qf-x">Cancelar</button><button type="button" class="ok" id="qf-ok">Salvar</button></div></div>`;
+    const t = $('#qf-t', ed), c = $('#qf-c', ed), cnt = () => { c.textContent = `${t.value.length}/1000`; }; cnt(); t.addEventListener('input', cnt);
+    $('#qf-x', ed).addEventListener('click', closeEd);
+    $('#qf-ok', ed).addEventListener('click', () => {
+      const txt = t.value.trim(); if (!txt) return toast('Escreva o trecho'); const p = Number($('#qf-p', ed).value) || null;
+      if (x) { x.e.quotes[x.i] = { ...x.e.quotes[x.i], t: txt, p }; }
+      else { const e = byId($('#qf-b', ed).value); if (!e) return; e.quotes = [...(e.quotes || []), { t: txt, p, at: new Date().toISOString() }]; }
+      save(); closeEd(); toast(x ? 'Trecho atualizado' : 'Trecho salvo'); after && after();
+    });
+    ed.hidden = false; setTimeout(() => t.focus(), 50);
+  };
+  openAllQuotes = function () {
+    const v = $('#shelflist'); let q = '';
+    const all = () => lib().flatMap((e) => (e.quotes || []).map((x, i) => ({ e, i, t: x.t, p: x.p, at: x.at || '' }))).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const drawList = () => {
+      const n = normT(q), bio = (T().bio || '').trim(), list = all().filter((x) => !n || normT(x.t).includes(n) || normT(x.e.title).includes(n) || normT(x.e.author || '').includes(n));
+      v.querySelector('.qt-list').innerHTML = list.length ? list.map((x, k) => `<button type="button" class="qt-it" data-k="${k}"><q>${esc(x.t)}</q><small>${esc(x.e.title)}${x.p ? ` · pág. ${x.p}` : ''}${bio && bio === bioOf(x) ? '<span class="qt-bio">frase do perfil</span>' : ''}</small></button>`).join('')
+        : `<p class="sl-empty">${all().length ? 'Nenhum trecho com esse texto.' : 'Toque em “+ Novo” para guardar uma frase de um livro. Também dá para salvar pelo menu do livro (Trechos e anotação).'}</p>`;
+      $$('.qt-it', v).forEach((b) => b.addEventListener('click', () => {
+        const x = list[Number(b.dataset.k)]; if (!x) return; const isBio = bio && bio === bioOf(x);
+        popMenu(b, [
+          { label: 'Editar', fn: () => form(x, drawList) },
+          { label: isBio ? 'Tirar da frase do perfil' : 'Usar na frase do perfil', sub: isBio ? 'volta para a frase automática' : 'até 160 letras, com o nome do livro', fn: () => setBio(isBio ? '' : bioOf(x)).then(drawList) },
+          { label: 'Copiar', fn: async () => { try { await navigator.clipboard.writeText(`“${x.t}” — ${x.e.title}${x.e.author ? `, ${x.e.author}` : ''}`); toast('Trecho copiado'); } catch { toast('Não consegui copiar'); } } },
+          { label: 'Ver o livro', fn: () => openBookPage(x.e, 'trechos') },
+          0,
+          { label: 'Apagar trecho', danger: true, fn: () => sheetList('Apagar este trecho?', [{ label: 'Apagar', danger: true, fn: () => { x.e.quotes.splice(x.i, 1); save(); toast('Trecho apagado'); drawList(); } }]) },
+        ]);
+      }));
+    };
+    const draw = () => {
+      v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Meus trechos</b><span></span></div>
+        <div class="qt-bar"><input type="search" class="fs-input qt-search" id="qt-q" placeholder="Buscar por texto, livro ou autor" value="${esc(q)}" autocomplete="off"><button type="button" class="qt-new" id="qt-new">+ Novo</button></div><div class="qt-list"></div>`;
+      v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+      $('#qt-q', v).addEventListener('input', (ev) => { q = ev.target.value; drawList(); });
+      $('#qt-new', v).addEventListener('click', () => form(null, drawList));
+      drawList(); syncTopTitle();
+    };
+    S.listRedraw = draw; closeEd(); v.classList.remove('feedview', 'tabroot'); draw(); v.hidden = false; v.scrollTop = 0;
+  };
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
