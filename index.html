@@ -10058,6 +10058,27 @@ TR.addEventListener('click', (ev) => {
 { // "Mais de X" ganha "Ver tudo ›"
   new MutationObserver(() => { TR.querySelectorAll('.v3-sh').forEach((h) => { const b = h.querySelector('b'); if (!b || h.querySelector('.au-more') || !/^Mais de /.test(b.textContent)) return; const nm = b.textContent.replace(/^Mais de /, ''); h.insertAdjacentHTML('beforeend', '<button type="button" class="au-more">Ver tudo ›</button>'); h.querySelector('.au-more').addEventListener('click', () => openAuthorPage(nm)); }); }).observe(TR, { childList: true, subtree: true });
 }
+// --- 17_menu_lateral.js ---
+// Menu lateral revisado: sai o que já está na barra de baixo ou no ••• do perfil (Estantes, Editar perfil);
+// entra "Meta do ano" ao lado das metas com prazo; "Encontrar leitores" vai para Buscar › Leitores (mesma tela da aba).
+// (o botão do topo guarda a função original do menu; por isso o ajuste é feito quando o menu aparece na tela)
+{
+  const fix = (d) => {
+    if (d.dataset.r2) return; d.dataset.r2 = 1;
+    d.querySelector('[data-go="cols"]')?.remove();
+    const prof = d.querySelector('[data-go="prof"]');
+    if (prof && socialProfile) { const g = prof.previousElementSibling; prof.remove(); if (g && g.classList.contains('drw-g') && g.textContent.trim() === 'Você') g.remove(); }
+    const goals = d.querySelector('[data-go="goals"]');
+    if (goals) {
+      const y = new Date().getFullYear(), t = Number((db.yearGoals || {})[y]) || 0, n = lib().filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').startsWith(String(y))).length;
+      goals.insertAdjacentHTML('beforebegin', `<button type="button" class="drw-it" data-go="yeargoal">${dsv('target')}Meta do ano<small>${t ? `${n} de ${t}` : 'definir'}</small></button>`);
+      d.querySelector('[data-go="yeargoal"]').addEventListener('click', (ev) => { ev.stopImmediatePropagation(); closeDrawer(); openGoalPage(); setTimeout(syncTopTitle, 80); setTimeout(syncTopTitle, 400); });
+    }
+    const people = d.querySelector('[data-go="people"]');
+    if (people) people.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); closeDrawer(); goTab('buscar'); setTimeout(() => { const b = [...TR.querySelectorAll('button')].find((x) => x.offsetParent && x.textContent.trim() === 'Leitores'); if (b) b.click(); }, 250); }, true);
+  };
+  new MutationObserver(() => { const d = TR.querySelector('.drw'); if (d) fix(d); }).observe(TR, { childList: true });
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
