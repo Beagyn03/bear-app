@@ -9526,6 +9526,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 .gp-yb svg{width:14px;height:14px}
 .gp-acts{display:flex;align-items:center;gap:.4rem;margin-left:auto}
 .gp-more{width:40px;height:36px;border:1px solid var(--line);border-radius:99px;background:var(--panel);color:var(--ink);font:inherit;font-weight:900;letter-spacing:.05em}
+.gp-page{min-width:0;max-width:100%}.gp-page .ys{width:100%;min-width:0;overflow:hidden}
 .gp-page .ys .ys-y{display:none}
 .gp-page .gp-h{margin-top:1rem}
 `; TR.append(st); }
@@ -9545,7 +9546,7 @@ openGoalPage = function (year) {
       lines = done >= target ? '<p>Meta batida. Tudo o que vier agora é bônus.</p>'
         : `<p>Faltam ${plural(left, 'livro', 'livros')} em ${plural(daysLeft, 'dia', 'dias')}.</p><p>No seu ritmo, você chega a ${proj}${proj >= target ? ' e bate a meta' : ''}. Para bater: 1 livro a cada ${Math.max(1, Math.floor(daysLeft / left))} dias.</p>`;
     }
-    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Meta de ${y}</b><span class="gp-acts">${years.length > 1 ? `<button type="button" class="gp-yb" id="gp-y" aria-label="Escolher ano">${y}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>` : ''}<button type="button" class="gp-more" id="gp-more" aria-label="Mais opções da meta">•••</button></span></div><div class="gp-page">
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Meta</b><span class="gp-acts">${years.length > 1 ? `<button type="button" class="gp-yb" id="gp-y" aria-label="Escolher ano">${y}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>` : ''}<button type="button" class="gp-more" id="gp-more" aria-label="Mais opções da meta">•••</button></span></div><div class="gp-page">
       <div class="gp-top"><div class="gp-ring" style="--p:${pct}"><div><b>${done}</b><small>${target ? `de ${target}` : 'lidos'}</small></div></div><div class="gp-txt"><b>${target ? `${pct}% da meta` : `${plural(done, 'livro lido', 'livros lidos')}`}</b>${lines}</div></div>
       <div id="gp-ys"></div>
       <div class="gp-h"><b>Lidos · ${done}</b></div>
@@ -9580,11 +9581,11 @@ openGoalPage = function (year) {
 };
 // --- 03_sorteio.js ---
 // Sorteio animado: o urso gira os livros (img/sorteio_gira.webp) e depois aparece segurando a carta com a capa sorteada (img/sorteio_fim.webp).
-// A capa entra no retângulo da carta (medido no quadro final do GIF: 64–89% na horizontal, 35–65% na vertical; GIF "Urso fofo sorteia livro roxo").
+// A capa entra no retângulo da carta (medido no quadro final do GIF: 52–91% na horizontal, 29–85% na vertical; GIF "animação sorteio" sem o fundo preto).
 { const st = document.createElement('style'); st.textContent = `
 .srt-stage{position:relative;width:min(240px,64vw);aspect-ratio:1;margin:0 auto .4rem}
 .srt-stage img.srt-a{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.srt-card{position:absolute;left:66.3%;top:34.6%;width:22.4%;height:31%;border-radius:3px;--sk:skewX(-10.8deg);overflow:hidden;opacity:0;transform:var(--sk) scale(.6);transition:opacity .35s ease,transform .45s cubic-bezier(.2,1.4,.4,1)}
+.srt-card{position:absolute;left:53.6%;top:30.6%;width:36.2%;height:52.4%;border-radius:4px 7px 7px 4px;--sk:rotate(0deg);overflow:hidden;opacity:0;transform:var(--sk) scale(.6);transition:opacity .35s ease,transform .45s cubic-bezier(.2,1.4,.4,1)}
 .srt-card .cv{width:100%!important;height:100%!important;border-radius:0!important;font-size:.42rem;background-size:cover!important;background-position:center!important}
 .srt-stage.done .srt-card{opacity:1;transform:var(--sk)}
 .srt-stage ~ .srt-bk .srt-cv{display:none}.srt-stage ~ .srt-bk{justify-content:center;text-align:center}
@@ -9613,7 +9614,7 @@ openGoalPage = function (year) {
     if (h3) h3.textContent = 'Sorteando…';
     img.src = await src('sorteio_gira.webp');
     const token = (S.srtTok = (S.srtTok || 0) + 1);
-    setTimeout(() => { if (S.srtTok === token && !ed.hidden) finish(); }, 1200);
+    setTimeout(() => { if (S.srtTok === token && !ed.hidden) finish(); }, 1150);
   };
   drawLot = (key) => sortShelf(key);
 }
@@ -9728,6 +9729,45 @@ TR.addEventListener('click', (ev) => {
     const wait = (n) => { if (!ed.hidden) return n > 0 && setTimeout(() => wait(n - 1), 200); if (connected() && socialProfile) goTab('eu'); }; setTimeout(() => wait(25), 300);
   }, true);
 }
+// --- 09_notif.js ---
+// Notificações viram tela (não folha): topo com "‹ Voltar", notificações e, embaixo, as novidades recentes dos amigos.
+{ const st = document.createElement('style'); st.textContent = `
+#editor.ntpage{top:calc(env(safe-area-inset-top,0px) + 3.2rem)!important;bottom:calc(3.4rem + env(safe-area-inset-bottom,0px))!important;background:var(--bg)!important;align-items:stretch!important;z-index:35!important}
+#editor.ntpage .ed-body{width:min(560px,100%)!important;max-height:none!important;height:100%!important;border-radius:0!important;border:0!important;box-shadow:none!important;background:var(--bg)!important;padding:.7rem 1rem 1.2rem!important;align-content:start;animation:none!important}
+#editor.ntpage .ed-body > h3,.nt-top b{display:none}#editor.ntpage .ed-body::before,#editor.ntpage .ed-body::after{display:none!important}
+.nt-top{display:flex;align-items:center;gap:.6rem}.nt-top b{font-size:1.05rem;color:var(--ink)}
+.nt-sec{font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin:.9rem 0 .1rem}
+.nt-fd{display:flex;gap:.6rem;align-items:center;width:100%;text-align:left;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);font:inherit;font-size:.86rem;padding:.6rem .7rem}
+.nt-fd .av{flex:none}.nt-fd span{flex:1;min-width:0;line-height:1.35}.nt-fd small{display:block;color:var(--ink-2);font-size:.74rem;margin-top:.1rem}
+.nt-all{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.86rem;min-height:40px;justify-self:start}
+`; TR.append(st); }
+{
+  const ed = $('#editor');
+  const KIND = { STARTED: 'começou a ler', PROGRESS: 'avançou em', FINISHED: 'terminou', PAUSED: 'pausou', ABANDONED: 'abandonou' };
+  const decorate = () => {
+    if (!ed.classList.contains('ntpage') || ed.hidden) return;
+    const body = ed.querySelector('.ed-body'); if (!body || body.querySelector('.nt-top')) return;
+    body.insertAdjacentHTML('afterbegin', '<div class="nt-top"><button type="button" class="sl-back" id="nt-back">‹ Voltar</button><b>Notificações</b></div>');
+    $('#nt-back', body).addEventListener('click', closeEd);
+    const gt = $('#g-t'); if (gt) gt.textContent = 'Notificações';
+    body.querySelector('#nt-close')?.remove();
+    const items = ((SOC.feed && SOC.feed.items) || SOC.feed || []).filter((x) => x && !x.mine).slice(0, 15);
+    if (Array.isArray(items) && items.length) {
+      const line = (x) => { const who = (x.user && x.user.displayName) || ''; const t = `<b>${esc(x.title || '')}</b>`;
+        const what = x.type === 'review' ? `avaliou ${t}${x.paws ? ` · ${pawTxt(x.paws)}` : ''}` : `${KIND[x.kind] || 'atualizou'} ${t}${x.kind === 'PROGRESS' && x.pct ? ` · ${x.pct}%` : ''}`;
+        return `<button type="button" class="nt-fd" data-fid="${esc(x.id)}"><span class="av sm" data-avh="${esc((x.user && x.user.handle) || '')}" style="background:${friendColor((x.user && x.user.handle) || who)}">${esc(initial(who))}</span><span><b>${esc(String(who).split(' ')[0])}</b> ${what}<small>${esc(relTime(x.updatedAt))}</small></span></button>`; };
+      body.insertAdjacentHTML('beforeend', `<div class="nt-sec">Novidades dos amigos</div>${items.map(line).join('')}<button type="button" class="nt-all" id="nt-all">Ver todas as novidades ›</button>`);
+      $$('.nt-fd', body).forEach((b) => b.addEventListener('click', () => { closeEd(); openNovidades(b.dataset.fid); }));
+      $('#nt-all', body).addEventListener('click', () => { closeEd(); openNovidades(); });
+      try { paintAvatars(); } catch {}
+    }
+  };
+  // fechou (hidden ligado) = sai do modo tela, mesmo que outra folha abra logo em seguida
+  new MutationObserver((recs) => { if (recs.some((r) => r.type === 'attributes' && r.target === ed && r.oldValue === null)) ed.classList.remove('ntpage'); if (ed.hidden) { if (ed.classList.contains('ntpage')) { ed.classList.remove('ntpage'); try { syncTopTitle(); } catch {} } } else decorate(); }).observe(ed, { attributes: true, attributeOldValue: true, attributeFilter: ['hidden'], childList: true, subtree: true });
+  const _on = openNotif;
+  openNotif = function () { ed.classList.add('ntpage'); const r = _on.apply(this, arguments); decorate(); return r; };
+}
+{ const gt = $('#g-t'); if (gt) new MutationObserver(() => { const ed = $('#editor'); if (ed && !ed.hidden && ed.classList.contains('ntpage') && gt.textContent !== 'Notificações') gt.textContent = 'Notificações'; }).observe(gt, { childList: true, characterData: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
