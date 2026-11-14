@@ -4029,6 +4029,8 @@ Toca = (() => {
 const A = {"rugbox_lib": [22.352941176470587, 71.97265625, 55.947712418300654, 16.30859375], "rugbox_sala": [22.483660130718953, 71.97265625, 52.549019607843135, 16.30859375], "rugbox_esc": [22.483660130718953, 71.97265625, 55.947712418300654, 16.30859375], "urso_lendo": "img/urso_lendo.webp", "urso_tedio": "img/urso_tedio.webp", "bear_sleep": "img/bear_sleep.webp", "ic_foco": "img/ic_foco.webp", "ic_terminei": "img/ic_terminei.webp", "ic_pausar": "img/ic_pausar.webp", "ic_abandonei": "img/ic_abandonei.webp", "ic_atualizar": "img/ic_atualizar.webp", "ic_trocar": "img/ic_trocar.webp", "ic_config": "img/ic_config.webp", "ic_procurar": "img/ic_procurar.webp", "ic_editar": "img/ic_editar.webp", "ic_vertodos": "img/ic_vertodos.webp", "ic_curtir": "img/ic_curtir.webp", "ic_comentar": "img/ic_comentar.webp", "ic_spoiler": "img/ic_spoiler.webp", "ic_instalar": "img/ic_instalar.webp", "ic_perfil": "img/ic_perfil.webp", "ic_privacidade": "img/ic_privacidade.webp", "ic_meta": "img/ic_meta.webp", "ic_sequencia": "img/ic_sequencia.webp", "ic_acordar": "img/ic_acordar.webp", "ic_adicionar": "img/ic_adicionar.webp", "mn_hoje": "img/mn_hoje.webp", "mn_estantes": "img/mn_estantes.webp", "mn_novidades": "img/mn_novidades.webp", "mn_notificacoes": "img/mn_notificacoes.webp", "mn_desafios": "img/mn_desafios.webp", "mn_numeros": "img/mn_numeros.webp", "mn_conquistas": "img/mn_conquistas.webp", "mn_foco": "img/mn_foco.webp", "mn_perfil": "img/mn_perfil.webp", "mn_toca": "img/mn_toca.webp", "mn_meta": "img/mn_meta.webp", "mn_lista": "img/mn_lista.webp"};
 const IC = (n, cls = 'ico') => `<img class="${cls}" src="${A['ic_' + n]}" alt="" aria-hidden="true">`; // ícones temáticos
 const MN = (n, cls = 'ico') => `<img class="${cls}" src="${A['mn_' + n]}" alt="" aria-hidden="true">`; // ícones de menu (medalhas)
+/* 4.4: imagens da Toca antiga que saíram do app viram um pixel transparente (antes geravam pedidos a 'undefined') */
+Object.setPrototypeOf(A, new Proxy({}, { get: (t, k) => (typeof k === 'string' && /^(bg_|wide_|tall_|rug_|bear_|chair_|bed|abajur|lamp)/.test(k) ? 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' : undefined) }));
 const BEAR_PEEK = A.bear_peek, CHAIR_EMPTY = A.chair_empty, BEAR_SLEEP = A.bear_sleep, BED = A.bed;
 const host = document.getElementById('toca-host');
 const TR = host.attachShadow({ mode: 'open' });
@@ -4057,7 +4059,7 @@ const TR = host.attachShadow({ mode: 'open' });
   TR.append(...w.childNodes);
   const wr = TR.querySelector('.wrap'), bl = document.createElement('div'); bl.id = 'bleed'; bl.setAttribute('aria-hidden', 'true'); TR.insertBefore(bl, wr);
   // versões largas (computador): a arte larga fica atrás e a original continua por cima no miolo, para as peças recortadas encaixarem
-  [['r-lib', 'lib'], ['r-sala', 'sala'], ['r-esc', 'esc']].forEach(([id, k]) => { const r = TR.getElementById(id); r.style.setProperty('--wide', `url(${A['wide_' + k]})`); r.style.setProperty('--tall', `url(${A['tall_' + k]})`); r.style.setProperty('--core', `url(${A['bg_' + k]})`); });
+  [['r-lib', 'lib'], ['r-sala', 'sala'], ['r-esc', 'esc']].forEach(([id, k]) => { const r = TR.getElementById(id); for (const [v, p] of [['--wide', 'wide_'], ['--tall', 'tall_'], ['--core', 'bg_']]) if (A[p + k]) r.style.setProperty(v, `url(${A[p + k]})`); /* 4.4: sem url(undefined) */ });
   wr.prepend(TR.querySelector('.hud')); wr.append(TR.querySelector('.nav')); }
 
 const S = { page: {}, estante: 0, lampOverride: null, madrugada: false, noite: false };
@@ -4352,7 +4354,7 @@ function drawLib() {
   const bar = el('span', 'estbar', `left:50%;top:${Y(118)};transform:translateX(-50%);z-index:22`); r.append(bar);
   // quando o Bear está hibernando no quarto, ele não aparece espiando a biblioteca
   if (!S.madrugada) {
-    const peek = el('img', 'peek2 layer', `right:0;top:${Y(640)};width:${X(122)};z-index:19`); peek.src = BEAR_PEEK; peek.alt = ''; r.append(peek);
+    const peek = el('img', 'peek2 layer', `right:0;top:${Y(640)};width:${X(122)};z-index:19`); peek.alt = ''; if (BEAR_PEEK) { peek.src = BEAR_PEEK; r.append(peek); } /* 4.4: imagem da Toca antiga que não existe mais */
     // pálpebras para piscar, nas posições dos olhos do desenho
     const lids = el('span', 'layer peek2', `right:0;top:${Y(640)};width:${X(122)};aspect-ratio:552/1024;z-index:19`);
     lids.append(el('i', 'plid', 'left:45.8%;top:42.2%;width:14.4%;height:7.6%'), el('i', 'plid', 'left:86.8%;top:35.6%;width:13%;height:6.8%'));
@@ -5153,7 +5155,7 @@ function drawSala() {
   { const i = el('img', 'layer lamp-off', `left:7.32%;top:24.02%;width:50.72%;height:38.96%;transition:opacity .45s;opacity:${lampOn ? 0 : 1}`); i.src = A['abajur-apagado']; i.alt = ''; r.append(i); }
   if (feedNew()) { const i = el('img', 'layer', `left:85.10%;top:77.64%;width:10.07%;height:4.79%`); i.src = A['celular-aceso']; i.alt = ''; r.append(i); }
   const jan = (S.noite ? 'janela-noite-' : 'janela-dia-') + (notif ? 'carta' : 'sem');
-  const w = el('img', 'layer', `left:0;top:26.95%;width:22.22%;height:23.44%`); w.src = A[jan]; w.alt = ''; r.append(w);
+  const w = el('img', 'layer', `left:0;top:26.95%;width:22.22%;height:23.44%`); w.alt = ''; if (A[jan]) { w.src = A[jan]; r.append(w); }
   // fotos das amigas
   const shown = framedFriends();
   FRAMES.forEach(([x0, y0, x1, y1], i) => { const f = shown[i];
@@ -5169,7 +5171,7 @@ function drawSala() {
   if (S.madrugada) {
     // o Bear foi dormir no quarto: poltrona vazia no mesmo lugar e tamanho do urso na poltrona
     r.append(el('i', 'layer', `left:${bx - bw / 2 + 2}%;top:calc(${base}% - 1.2%);width:${bw - 4}%;height:2.4%;border-radius:50%;background:radial-gradient(closest-side,rgba(25,12,4,.55),transparent);z-index:14`));
-    const ch = el('img', 'layer', `left:${bx - bw / 2}%;top:calc(${base}% - ${bw * 765 / 1024}%);width:${bw}%;z-index:15`); ch.src = CHAIR_EMPTY; ch.alt = ''; r.append(ch);
+    const ch = el('img', 'layer', `left:${bx - bw / 2}%;top:calc(${base}% - ${bw * 765 / 1024}%);width:${bw}%;z-index:15`); ch.alt = ''; if (CHAIR_EMPTY) { ch.src = CHAIR_EMPTY; r.append(ch); }
     r.append(el('span', 'bubble bored', `left:${bx}%;top:calc(${base}% - ${bw * 765 / 1024}% - 1%)`, `💤 Hibernando há ${hibTime()}`));
     // assento vazio: tocar leva ao Quarto e abre o cartão de acordar
     hot(r, 'Ver o Bear dormindo', 273, 622, 473, 852, () => { go(2); setTimeout(askWake, 650); }, false);
@@ -5360,7 +5362,7 @@ function drawEsc() {
     r.append(el('i', 'layer', `left:${X(cx - bw * 0.48)};top:${Y(base - 18)};width:${X(bw * 0.96)};height:${Y(30)};border-radius:50%;background:radial-gradient(closest-side,rgba(25,12,4,.55),transparent);z-index:2`));
     const k = bw / 279, sw = 277 * k, sh = sw * 267 / 360, left = cx - bw / 2, top = (base - bh) - 4 * k;
     if (S.madrugada) {
-      const bed = el('img', 'layer bedimg', `left:${X(left)};top:${Y(top)};width:${X(sw)};z-index:3`); bed.src = BEAR_SLEEP; bed.alt = ''; r.append(bed);
+      const bed = el('img', 'layer bedimg', `left:${X(left)};top:${Y(top)};width:${X(sw)};z-index:3`); bed.alt = ''; if (BEAR_SLEEP) { bed.src = BEAR_SLEEP; r.append(bed); }
       r.append(el('span', 'zzz layer', `left:${X(left + sw * 0.86)};top:${Y(top - 8)}`, 'z'));
       // sonho do Bear: nuvem à direita da caminha
       const hx = left + sw * 0.69, hy = top + sh * 0.26, dw = 236;
@@ -5369,7 +5371,7 @@ function drawEsc() {
       hot(r, `Hibernando há ${hibTime()}`, cx - bw / 2, base - bh, cx + bw / 2, base, askWake, true, 'bottom:auto;top:-4%;left:40%');
     } else { // caminha vazia: mesma arte, sem o urso, mesmo encaixe
       clearTimeout(dreamT); dreamNow = () => {};
-      const bed = el('img', 'layer bedimg', `left:${X(left)};top:${Y(top)};width:${X(sw)};z-index:3`); bed.src = BED; bed.alt = ''; r.append(bed);
+      const bed = el('img', 'layer bedimg', `left:${X(left)};top:${Y(top)};width:${X(sw)};z-index:3`); bed.alt = ''; if (BED) { bed.src = BED; r.append(bed); }
       hot(r, 'Caminha do Bear', cx - bw / 2, base - bh, cx + bw / 2, base, () => openPaused(), true, 'bottom:auto;top:-4%;left:40%');
     } }
   // plaquinha “Conquistas N/T ⚙” em cima da vitrine
