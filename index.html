@@ -2384,6 +2384,7 @@ async function publishSnapshot() {
   const potinho = lib.filter(isFav).slice(0, 12).map(mini);
   const st = achState();
   const snapshot = { reading, shelf: { counts, lidos, potinho }, achievements: { won: st.filter(a => a.done).map(a => ({ k: a.reward, n: a.name, rare: !!a.rare })), total: st.length, room: { slots: {} } } };
+  try { if (typeof profShelvesSnap === 'function') profShelvesSnap(snapshot); } catch (err) { console.warn('estantes do perfil', err); }
   try { await sapi('PUT', '/v1/me/snapshot', { snapshot }); } catch {}
 }
 function avatarFor(name) { return el('span', { class: 'avatar soc-av', text: (name || '?').charAt(0).toUpperCase(), 'aria-hidden': 'true' }); }
@@ -2543,7 +2544,7 @@ async function socialSettingsSheet() {
   const form = el('form', { class: 'form pv2' }, [el('h3', { text: 'Amigos e privacidade' }),
     el('div', { class: 'pv2-2' }, [el('label', { text: 'Nome' }, [name]), el('label', { text: '@usuário' }, [handle])]),
     el('div', { class: 'group', text: 'Seus amigos veem' }),
-    ck('reading', 'Lendo agora'), ck('shelf', 'Biblioteca e melhores avaliados'), ck('achievements', 'Conquistas'), ck('reviews', 'Avaliações'),
+    ck('reading', 'Lendo agora'), ck('shelf', 'Estantes'), ck('achievements', 'Conquistas'), ck('reviews', 'Avaliações'),
     el('div', { class: 'group', text: 'Qualquer pessoa vê' }), ck('public', 'Avaliações públicas (Descobrir e sua página)'),
     msg, el('div', { class: 'pv2-btns' }, [el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }), el('button', { type: 'submit', class: 'primary', text: 'Salvar' })])]);
   form.addEventListener('submit', async (ev) => { ev.preventDefault();
@@ -9210,6 +9211,7 @@ publishSnapshot = async function () {
     .map((e) => ({ t: e.title, a: e.author || null, c: /^https:\/\//.test(e.cover || '') ? e.cover : null, d: String(e.finishedAt), ...(e.dateApprox === 'year' ? { ap: 1 } : {}), p: (reviewOfLib(e) || {}).paws || 0, pg: Number(e.totalPages) || 0 }));
   const st = achState();
   const snapshot = { reading, shelf: { counts, lidos, potinho, ano }, achievements: { won: st.filter((a) => a.done).map((a) => ({ k: a.reward, n: a.name, rare: !!a.rare })), total: st.length, room: { slots: {} } } };
+  try { if (typeof profShelvesSnap === 'function') profShelvesSnap(snapshot); } catch (err) { console.warn('estantes do perfil', err); }
   try { await sapi('PUT', '/v1/me/snapshot', { snapshot }); } catch {}
 };
 // ---------- 4.4: "Editar perfil" e "Ajustes" separados no menu lateral (a mesma tela, cada um com a sua parte) ----------
@@ -9493,6 +9495,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -10339,7 +10342,7 @@ if (!ES_SORTS.some((x) => x[0] === 'prioridade')) ES_SORTS.splice(1, 0, ['priori
 { const _ys = yearShelfHTML; yearShelfHTML = function () {
   const h = _ys.apply(this, arguments); if (!h) return h;
   return h.replace(/(class="es-bk ys-bk paw ys-5"[^>]*>)/g, '$1<span class="ys-sp a">✦</span><span class="ys-sp b">✦</span><span class="ys-sp c">✦</span>')
-    .replace(/<div class="ys-leg">[\s\S]*?<\/div>/, '<div class="ys-leg"><span class="ys-5l"><i class="ys-5i"></i>5 patas</span><span><i class="ys-mi ouro"></i>4,5 ouro</span><span><i class="ys-mi prata"></i>4 prata</span><span><i class="ys-mi bronze"></i>3 bronze</span><span><i class="ys-mi ferro"></i>ferro</span></div>');
+    .replace(/<div class="ys-leg">[\s\S]*?<\/div>/, '<div class="ys-leg"><span class="ys-5l"><i class="ys-5i"></i>5 patas</span><span><i class="ys-mi ouro"></i>4,5 patas</span><span><i class="ys-mi prata"></i>4 patas</span><span><i class="ys-mi bronze"></i>3 patas</span><span><i class="ys-mi ferro"></i>menos de 3</span></div>');
 }; }
 // Medalhas abaixo do 5 (escolha da Bia, 15/11): ouro 4,5 · prata 4 · bronze 3 a 3,5 · ferro abaixo de 3.
 // Faixa metálica no topo; ouro e prata com contorno e reflexo lento, bronze só contorno leve, ferro discreto.
@@ -10398,6 +10401,122 @@ if (!ES_SORTS.some((x) => x[0] === 'prioridade')) ES_SORTS.splice(1, 0, ['priori
       [0, 400, 1000].forEach((ms) => setTimeout(mk, ms));
     }, 750);
   }
+}
+// --- 26_estantes_perfil.js ---
+// Estantes no perfil (pedido da Bia, 15/11): em "Amigos e privacidade", "Escolher estantes" expande uma lista para ligar/desligar
+// e ordenar as prateleiras que aparecem no perfil. Vai no resumo publicado (snapshot.shelf.show + snapshot.shelf.extra), sem mudar a API.
+// Padrão (sem escolha): Melhores avaliados + Lidos recentes, como antes.
+{ const st = document.createElement('style'); st.textContent = `
+.sheet .pv2 details.pv2-sh{margin:-.1rem 0 .1rem 1.9rem;border:1px solid var(--line,#e5d9c8);border-radius:12px;background:var(--panel,#fffaf2)}
+.sheet .pv2 details.pv2-sh summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:38px;padding:0 .7rem;font-size:.84rem;font-weight:800}
+.sheet .pv2 details.pv2-sh summary::-webkit-details-marker{display:none}
+.sheet .pv2 details.pv2-sh summary::after{content:'›';font-size:1.1rem;transition:transform .15s}.sheet .pv2 details.pv2-sh[open] summary::after{transform:rotate(90deg)}
+.sheet .pv2 details.pv2-sh summary small{font-weight:600;opacity:.7;margin-left:auto;margin-right:.5rem}
+.sheet .pv2 .pv2-shl{display:grid;padding:0 .4rem .4rem .7rem;max-height:13rem;overflow:auto}
+.sheet .pv2 .pv2-shr{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:.4rem;min-height:36px;font-size:.84rem}
+.sheet .pv2 .pv2-shr small{opacity:.65;font-weight:600}
+.sheet .pv2 .pv2-shr button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line,#e5d9c8);background:transparent;color:inherit;font:inherit;font-weight:900;padding:0;margin:0}
+.sheet .pv2 .pv2-shr button:disabled{opacity:.25}
+`; document.head.append(st); }
+const PROF_SH_DEFAULT = ['MELHORES', 'LIDOS'];
+const profShelfOpts = () => {
+  const L = lib(), n = (f) => L.filter(f).length;
+  const base = [['MELHORES', 'Melhores avaliados', n((e) => e.status === 'LIDO' && ((reviewOfLib(e) || {}).paws || 0) >= 4.5)], ['LIDOS', 'Lidos recentes', n((e) => e.status === 'LIDO')],
+    ['LENDO', 'Lendo', n((e) => e.status === 'LENDO')], ['QUERO', 'Quero ler', n((e) => e.status === 'QUERO')], ['FAV', shelfName('FAV'), n((e) => isFav(e))], ['ABANDONEI', 'Abandonados', n((e) => e.status === 'ABANDONEI')]];
+  const mine = (db.shelves || []).map((s) => ['sh:' + s.id, s.name || 'Estante', (s.bookIds || []).filter((id) => L.some((e) => e.id === id)).length]);
+  return [...base, ...mine];
+};
+const profShelfBooks = (key) => {
+  const L = lib(), by = (k) => (a, b) => String(b[k] || '').localeCompare(String(a[k] || ''));
+  if (key === 'LENDO') return L.filter((e) => e.status === 'LENDO');
+  if (key === 'QUERO') return L.filter((e) => e.status === 'QUERO').sort((a, b) => ((a.prio || 2) - (b.prio || 2)) || by('addedAt')(a, b));
+  if (key === 'FAV') return L.filter((e) => isFav(e));
+  if (key === 'ABANDONEI') return L.filter((e) => e.status === 'ABANDONEI').sort(by('addedAt'));
+  if (key.startsWith('sh:')) { const s = (db.shelves || []).find((x) => x.id === key.slice(3)); return s ? (s.bookIds || []).map((id) => L.find((e) => e.id === id)).filter(Boolean) : []; }
+  return [];
+};
+const profShelfShow = () => { const p = db.prefs && db.prefs.profShelves; const ok = new Set(profShelfOpts().map((o) => o[0])); return (Array.isArray(p) ? p : PROF_SH_DEFAULT).filter((k) => ok.has(k)); };
+// entra no resumo publicado (chamado por publishSnapshot)
+function profShelvesSnap(snapshot) {
+  const show = profShelfShow(), names = Object.fromEntries(profShelfOpts().map((o) => [o[0], o[1]]));
+  const mini = (e) => ({ title: e.title, author: e.author || null, cover: e.cover && !/^data:/.test(e.cover) && e.cover.length < 600 ? e.cover : null });
+  snapshot.shelf.show = show;
+  snapshot.shelf.extra = show.filter((k) => !PROF_SH_DEFAULT.includes(k)).slice(0, 8).map((k) => ({ key: k, name: names[k], books: profShelfBooks(k).slice(0, 12).map(mini) }));
+}
+// "Amigos e privacidade": lista expansível
+{ const _ss = socialSettingsSheet; socialSettingsSheet = async function () {
+  const r = await _ss.apply(this, arguments);
+  const form = document.querySelector('body > .sheet form.pv2'); if (!form || form.querySelector('.pv2-sh')) return r;
+  const shelfCk = [...form.querySelectorAll('.ck-row')].find((x) => /^Estantes/.test(x.textContent.trim())); if (!shelfCk) return r;
+  let sel = profShelfShow(); const opts = profShelfOpts();
+  const det = document.createElement('details'); det.className = 'pv2-sh';
+  const draw = () => {
+    const order = [...sel, ...opts.map((o) => o[0]).filter((k) => !sel.includes(k))];
+    det.innerHTML = `<summary>Escolher estantes<small>${sel.length ? sel.length + (sel.length === 1 ? ' no perfil' : ' no perfil') : 'nenhuma'}</small></summary><div class="pv2-shl">${order.map((k) => { const o = opts.find((x) => x[0] === k); const on = sel.includes(k), i = sel.indexOf(k);
+      return `<label class="pv2-shr"><input type="checkbox" data-k="${esc(k)}" ${on ? 'checked' : ''}><span>${esc(o[1])} <small>${o[2]}</small></span><button type="button" data-up="${esc(k)}" aria-label="Subir" ${on && i > 0 ? '' : 'disabled'}>↑</button><button type="button" data-dn="${esc(k)}" aria-label="Descer" ${on && i < sel.length - 1 ? '' : 'disabled'}>↓</button></label>`; }).join('')}</div>`;
+    det.querySelectorAll('input[data-k]').forEach((i) => i.addEventListener('change', () => { const k = i.dataset.k; sel = i.checked ? [...sel, k] : sel.filter((x) => x !== k); draw(); det.open = true; }));
+    det.querySelectorAll('[data-up],[data-dn]').forEach((b) => b.addEventListener('click', (ev) => { ev.preventDefault(); const k = b.dataset.up || b.dataset.dn, i = sel.indexOf(k), j = b.dataset.up ? i - 1 : i + 1; if (i < 0 || j < 0 || j >= sel.length) return; [sel[i], sel[j]] = [sel[j], sel[i]]; draw(); det.open = true; }));
+  };
+  draw(); shelfCk.after(det);
+  const sync = () => { det.hidden = !shelfCk.querySelector('input').checked; }; shelfCk.querySelector('input').addEventListener('change', sync); sync();
+  form.addEventListener('submit', () => { db.prefs = { ...(db.prefs || {}), profShelves: sel }; save(); publishSnapshot(); setTimeout(() => { const v = $('#shelflist'); if (v && !v.hidden && v.classList.contains('mine-page')) openMyProfile(); }, 600); });
+  return r;
+}; }
+// perfil (próprio e de amigo): mostra só as estantes escolhidas, na ordem escolhida
+{ const _fp = friendPage; friendPage = async function (h) {
+  const r = await _fp.apply(this, arguments); const v = $('#shelflist'), d = S.fpData; if (v.hidden || !d || d.handle !== h || !d.shelf) return r;
+  const show = d.self ? profShelfShow() : d.shelf.show; if (!Array.isArray(show)) return r;
+  const heads = [...v.querySelectorAll('.v3-sh')];
+  const grab = (re) => { const hd = heads.find((x) => re.test(x.textContent.trim())); if (!hd) return null; const nx = hd.nextElementSibling; const frag = [hd]; if (nx && !nx.classList.contains('v3-sh')) frag.push(nx); return frag; };
+  const parts = { MELHORES: grab(/^Melhores avaliados/), LIDOS: grab(/^Lidos recentes/) };
+  const anchor = heads.find((x) => /^Avaliações/.test(x.textContent.trim())) || v.querySelector('.sl-empty');
+  const ins = (nodes) => nodes.forEach((n) => (anchor ? anchor.before(n) : v.querySelector('.sl-body').append(n)));
+  Object.values(parts).forEach((p) => p && p.forEach((n) => n.remove()));
+  const strip = (arr) => `<div class="es-row">${arr.map((b) => `<button type="button" class="es-bk" data-book="${esc(b.title)}" data-author="${esc(b.author || '')}">${cvh(b.title, b.cover, 'es-cv')}</button>`).join('')}</div>`;
+  const extra = d.self ? show.filter((k) => !PROF_SH_DEFAULT.includes(k)).map((k) => ({ key: k, name: (profShelfOpts().find((o) => o[0] === k) || [])[1], books: profShelfBooks(k).slice(0, 12).map((e) => ({ title: e.title, author: e.author, cover: e.cover })) })) : (d.shelf.extra || []);
+  for (const k of show) {
+    if (parts[k]) { ins(parts[k]); continue; }
+    const x = extra.find((y) => y.key === k); if (!x || !x.books.length) continue;
+    const t = document.createElement('template'); t.innerHTML = `<div class="v3-sh"><b>${esc(x.name || 'Estante')}</b></div>${strip(x.books)}`; ins([...t.content.childNodes]);
+  }
+  return r;
+}; }
+// --- 27_nota_capas.js ---
+// Nota em todas as capas do app (pedido da Bia, 15/11), no mesmo jeito das Leituras por mês:
+// 5 patas = contorno dourado com brilho furta-cor, reflexo e estrelinhas; 4,5 ouro; 4 prata; 3 a 3,5 bronze; abaixo de 3 ferro.
+// Vale para qualquer capa de um livro que você leu e avaliou (pela sua nota), em qualquer tela. As Leituras por mês já têm o próprio.
+{ const st = document.createElement('style'); st.textContent = `
+.cv.rt{position:relative}
+.cv.rt-5{box-shadow:0 0 0 2px #f6c94a,0 0 10px 1px rgba(246,201,74,.6)!important}
+.cv.rt-ouro{box-shadow:0 0 0 1.5px #d4a520,0 0 7px rgba(212,165,32,.4)!important}
+.cv.rt-prata{box-shadow:0 0 0 1.5px #b9c1c8,0 0 6px rgba(185,193,200,.45)!important}
+.cv.rt-bronze{box-shadow:0 0 0 1.5px #b0703a!important}
+.cv.rt-ferro{box-shadow:0 0 0 1.5px #6b7177!important}
+.cv.rt-5::before,.cv.rt-ouro::before,.cv.rt-prata::before{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.5) 50%,transparent 62%);background-size:250% 100%;animation:ys5Shine 3.4s ease-in-out infinite}
+.cv.rt-ouro::before,.cv.rt-prata::before{background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.3) 50%,transparent 58%);background-size:250% 100%;animation-duration:5.5s}
+.cv.rt-prata::before{animation-delay:1.5s}
+.cv.rt-5 .rt-sp{position:absolute;z-index:3;pointer-events:none;line-height:1;font-size:10px;color:#ffd75e;text-shadow:0 0 4px rgba(255,215,94,.95);animation:ys5Tw 1.8s ease-in-out infinite}
+.cv.rt-5 .rt-sp.a{top:3px;right:4px}.cv.rt-5 .rt-sp.b{top:16%;left:5px;font-size:7px;animation-delay:.6s;color:#ffb3dc}.cv.rt-5 .rt-sp.c{bottom:18%;right:5px;font-size:7px;animation-delay:1.2s;color:#cfe9ff}
+@keyframes ys5Shine{0%,55%{background-position:150% 0}100%{background-position:-100% 0}}
+@keyframes ys5Tw{0%,100%{opacity:.15;transform:scale(.6) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(20deg)}}
+@media (prefers-reduced-motion:reduce){.cv.rt::before,.cv.rt .rt-sp{animation:none}}
+`; TR.append(st); }
+{
+  let map = null, at = 0;
+  const rates = () => { // título normalizado → sua nota (só livros lidos e avaliados); refeito no máximo a cada 1,5 s
+    if (map && Date.now() - at < 1500) return map; map = new Map(); at = Date.now();
+    try { for (const e of lib()) { if (e.status !== 'LIDO') continue; const p = (reviewOfLib(e) || {}).paws || 0; if (p) map.set(normT(e.title), p); } } catch {}
+    return map;
+  };
+  const tier = (p) => (p >= 5 ? '5' : p >= 4.5 ? 'ouro' : p >= 4 ? 'prata' : p >= 3 ? 'bronze' : p ? 'ferro' : '');
+  const _cvh = cvh;
+  cvh = function (title, coverUrl, cls = '', style = '') {
+    const h = _cvh.apply(this, arguments);
+    if (/\bys-cv\b/.test(cls || '')) return h; // Leituras por mês: já tem o destaque dela
+    const t = tier(rates().get(normT(title || '')) || 0); if (!t) return h;
+    const sp = t === '5' ? '<span class="rt-sp a">✦</span><span class="rt-sp b">✦</span><span class="rt-sp c">✦</span>' : '';
+    return h.replace('<span class="cv ', `<span class="cv rt rt-${t} `).replace(/<\/span>$/, sp + '</span>');
+  };
 }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
