@@ -9507,6 +9507,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10160,10 +10161,11 @@ TR.addEventListener('click', (ev) => {
     const goals = d.querySelector('[data-go="goals"]');
     if (goals) {
       const y = new Date().getFullYear(), t = Number((db.yearGoals || {})[y]) || 0, n = lib().filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').startsWith(String(y))).length;
-      goals.insertAdjacentHTML('beforebegin', `<button type="button" class="drw-it" data-go="yeargoal">${dsv('target')}Meta do ano<small>${t ? `${n} de ${t}` : 'definir'}</small></button>`);
-      d.querySelector('[data-go="yeargoal"]').addEventListener('click', (ev) => { ev.stopImmediatePropagation(); closeDrawer(); openGoalPage(); setTimeout(syncTopTitle, 80); setTimeout(syncTopTitle, 400); });
+      // Meta do ano e Metas com prazo numa tela só (15/11)
+      goals.innerHTML = `${dsv('target')}Metas<small>${t ? `${n} de ${t} em ${y}` : (db.goals || []).length ? plural(db.goals.length, 'meta', 'metas') : 'definir'}</small>`;
     }
-    const people = d.querySelector('[data-go="people"]');
+    d.querySelector('[data-go="people"]')?.remove(); // Encontrar leitores fica dentro de Amigos (15/11)
+    const people = null;
     if (people) people.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); closeDrawer(); goTab('buscar'); setTimeout(() => { const b = [...TR.querySelectorAll('button')].find((x) => x.offsetParent && x.textContent.trim() === 'Leitores'); if (b) b.click(); }, 250); }, true);
   };
   new MutationObserver(() => { const d = TR.querySelector('.drw'); if (d) fix(d); }).observe(TR, { childList: true });
@@ -10826,10 +10828,16 @@ function openGoalNew() {
         <p>Peso de cada dia: 1 é um dia normal, 2 é o dobro, 0,5 é metade e 0 é folga.</p>
         <div class="nm-wk">${wk.map((x, i) => `<label>${days[i] || ''}<input type="text" inputmode="decimal" data-w="${i}" value="${esc(x.value)}"></label>`).join('')}</div>
       </div>
+      ${(db.shelves || []).length ? `<div class="nm-sh"><b style="font-size:.86rem">Livros da meta</b>
+        <label><input type="radio" name="src" value="" checked> Escolher os livros depois</label>
+        <label><input type="radio" name="src" value="sh"> Usar uma estante</label>
+        <select name="shelf" disabled>${db.shelves.map((s) => `<option value="${esc(s.id)}">${esc(s.name)} (${(s.bookIds || []).length})</option>`).join('')}</select>
+        <small>Com estante, a meta acompanha: livro que entra na estante entra na meta, e o que sai, sai.</small></div>` : ''}
       <button type="submit" class="nm-ok">Criar meta</button>
       <button type="button" class="nm-no" id="nm-no">Cancelar</button>
     </form>`;
   const f = $('#nm-f', v), back = () => $('.sl-back', v).click();
+  $$('input[name=src]', v).forEach((r) => r.addEventListener('change', () => { if (f.elements.shelf) f.elements.shelf.disabled = !$('input[name=src][value=sh]', v).checked; }));
   f.elements.plan.addEventListener('change', () => { $('#nm-plan', v).hidden = !f.elements.plan.checked; });
   $('#nm-no', v).addEventListener('click', back);
   v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
@@ -10842,7 +10850,10 @@ function openGoalNew() {
     F.plan.checked = E.plan.checked; F.tolerancePages.value = E.tol.value || '0';
     $$('[data-w]', v).forEach((x) => { const t = wk[+x.dataset.w]; if (t) t.value = x.value; });
     S.nav.st = []; S.nav.cur = null; v.hidden = true; screen('desafios');
+    const useSh = E.shelf && !E.shelf.disabled ? E.shelf.value : null, n0 = (db.goals || []).length;
     if (fg.requestSubmit) fg.requestSubmit(); else fg.dispatchEvent(new Event('submit', { cancelable: true }));
+    const g = (db.goals || []).length > n0 ? db.goals[db.goals.length - 1] : null;
+    if (g && useSh) { g.shelfId = useSh; syncGoalShelf(g); save(); setTimeout(() => { try { open(g); setGMode('meta'); } catch {} toast('Meta criada com os livros da estante'); }, 120); }
   });
   S.listRedraw = null; S.navView = { t: 'goalnew', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); v.hidden = false; v.scrollTop = 0; syncTopTitle();
   setTimeout(() => { try { f.elements.name.focus(); } catch {} }, 60);
@@ -10897,6 +10908,7 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .gs-bk b{font-size:.88rem;display:block}.gs-bk small{font-size:.76rem;color:var(--ink-2)}
 .gs-bk button{border:0;background:none;color:var(--ink-2);font-size:1.2rem;width:36px;height:36px}
 .gs-add{width:100%;height:42px;border-radius:12px;border:1.5px dashed var(--line);background:none;color:var(--ink);font:inherit;font-weight:800}
+.gs-hist{display:grid;gap:.35rem;border:1px solid var(--line);border-radius:14px;padding:.75rem;background:var(--panel);margin-top:.9rem}.gs-hist b{font-size:.92rem}.gs-hist small{font-size:.8rem;color:var(--ink-2)}
 .gs-btns{position:sticky;bottom:0;display:grid;gap:.3rem;padding:.8rem 0 .4rem;background:linear-gradient(transparent,var(--bg) 30%)}
 .gs-ok{height:46px;border-radius:12px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:800;font-size:1rem}
 .gs-ok:disabled{opacity:.5}
@@ -10920,12 +10932,14 @@ function openTaste(first, prof) {
       <div class="gs-h">Livros que você amou <small style="font-weight:600;opacity:.7">(até 5)</small></div>
       <div class="gs-bks">${books.map((b, i) => `<div class="gs-bk">${cvh(b.title, b.cover)}<span><b>${esc(b.title)}</b><small>${esc(b.author || '')}</small></span><button type="button" data-rm="${i}" aria-label="Tirar ${esc(b.title)}">×</button></div>`).join('')}
         ${books.length < 5 ? '<button type="button" class="gs-add" id="gs-add">+ Adicionar livro</button>' : ''}</div>
+      ${first ? `<div class="gs-hist"><b>Já usa outro app de leitura?</b><small>Traga seus livros lidos do Goodreads, Skoob, StoryGraph ou de uma planilha. Se preferir, faça depois em Menu › Montar histórico.</small><button type="button" class="gs-add" id="gs-hist">Trazer meu histórico</button></div>` : ''}
       <div class="gs-btns"><button type="button" class="gs-ok" id="gs-ok"${sel.size || books.length ? '' : ' disabled'}>Salvar</button><button type="button" class="gs-skip" id="gs-skip">${first ? 'Agora não' : 'Cancelar'}</button></div>`;
     paintCv(v);
     const back = v.querySelector('.sl-back'); if (back) back.addEventListener('click', () => { v.hidden = true; });
     $$('.gs-ch', v).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; sel.has(k) ? sel.delete(k) : sel.add(k); b.classList.toggle('on', sel.has(k)); b.setAttribute('aria-pressed', sel.has(k)); $('#gs-ok', v).disabled = !(sel.size || books.length); }));
     $$('[data-rm]', v).forEach((b) => b.addEventListener('click', () => { books.splice(+b.dataset.rm, 1); draw(); }));
     $('#gs-add', v)?.addEventListener('click', () => searchSheet({ title: 'Um livro que você amou', onPick: (it) => { if (it && it.title && !books.some((x) => normT(x.title) === normT(it.title))) books.push({ title: String(it.title).slice(0, 200), author: it.author || null, cover: typeof it.cover === 'string' && /^https:/.test(it.cover) ? it.cover : null }); draw(); } }));
+    $('#gs-hist', v)?.addEventListener('click', () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, ...(sel.size || books.length ? { taste: { genres: [...sel], books, at: new Date().toISOString() } } : {}) }; save(); v.hidden = true; try { goTab('inicio'); } catch {} setTimeout(() => openHistory(), 80); });
     $('#gs-skip', v).addEventListener('click', () => { if (first) { db.prefs = { ...(db.prefs || {}), tasteAsked: 1 }; save(); } done(); });
     $('#gs-ok', v).addEventListener('click', () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, taste: { genres: [...sel], books, at: new Date().toISOString() } }; save(); try { localStorage.removeItem('bear.pv'); } catch {} toast('Gostos salvos'); done(); });
   };
@@ -11430,6 +11444,91 @@ function segPaint() {
   const host = box.querySelector('#rd-host'); if (host) host.hidden = !rede;
   if (rede) { paintRede(); if (!S.rd.at || Date.now() - S.rd.at > 60000) rdLoad(); }
 }
+// --- 37_metas.js ---
+// Metas (15/11): Meta do ano e Metas com prazo numa tela só. Meta com prazo pode usar uma estante: os livros da estante
+// viram os livros da meta e a meta acompanha a estante (entrou na estante, entra na meta; saiu, sai). A meta do ano pode
+// contar só os livros de uma estante (db.yearGoalShelf[ano]); sem estante, conta todo livro terminado no ano.
+const libStatusToGoal = (s) => s === 'LIDO' ? 'CONCLUIDO' : s === 'LENDO' ? 'LENDO' : 'NAO_INICIADO';
+function syncGoalShelf(g) { // devolve true se mudou algo
+  if (!g || !g.shelfId) return false;
+  const sh = (db.shelves || []).find((s) => s.id === g.shelfId); if (!sh) return false;
+  const ids = new Set(sh.bookIds || []), L = lib(); let changed = false;
+  const before = g.books.length; g.books = g.books.filter((b) => !b.fromShelf || ids.has(b.libId)); if (g.books.length !== before) changed = true;
+  for (const id of sh.bookIds || []) {
+    const e = L.find((x) => x.id === id); if (!e) continue;
+    const has = g.books.find((b) => b.libId === id || normT(b.title) === normT(e.title));
+    if (has) { if (!has.libId) { has.libId = id; changed = true; } if (has.fromShelf && !has.totalPages && e.totalPages) { has.totalPages = e.totalPages; changed = true; } continue; }
+    g.books.push({ id: uid(), libId: id, fromShelf: true, title: e.title, author: e.author || null, totalPages: Number(e.totalPages) || 0, initialPage: e.status === 'LIDO' ? Number(e.totalPages) || 0 : e.status === 'LENDO' ? Math.min(Number(e.totalPages) || 0, Number(libProgress(e)) || 0) : 0, order: g.books.length + 1, status: libStatusToGoal(e.status), ...(e.cover ? { cover: e.cover } : {}) });
+    changed = true;
+  }
+  return changed;
+}
+function syncAllGoalShelves() { let ch = false; for (const g of db.goals || []) if (syncGoalShelf(g)) ch = true; if (ch) save(); }
+// meta do ano por estante
+{ const _yi = yearInfo; yearInfo = function () {
+  const r = _yi.apply(this, arguments); const sid = (db.yearGoalShelf || {})[r.y]; if (!sid || !r.target) return r;
+  const sh = (db.shelves || []).find((s) => s.id === sid); if (!sh) return r;
+  const ids = new Set(sh.bookIds || []), done = lib().filter((e) => ids.has(e.id) && e.status === 'LIDO' && (e.finishedAt || '').startsWith(r.y)).length;
+  return { ...r, done, shelf: sh.name };
+}; }
+{ const st = document.createElement('style'); st.textContent = `
+.mt-y{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:.8rem .9rem;display:grid;gap:.5rem;margin:.2rem 0 1rem}
+.mt-y h3{margin:0;font-size:1rem;display:flex;justify-content:space-between;align-items:baseline}.mt-y h3 small{font-size:.8rem;color:var(--ink-2);font-weight:700}
+.mt-y .mt-big{font-size:1.6rem;font-weight:900}.mt-y .mt-big small{font-size:.9rem;font-weight:700;color:var(--ink-2)}
+.mt-y i.mt-bar{display:block;height:8px;border-radius:4px;background:var(--line);overflow:hidden}.mt-y i.mt-bar i{display:block;height:100%;background:var(--acc);border-radius:4px}
+.mt-y p{margin:0;font-size:.82rem;color:var(--ink-2)}
+.mt-btns{display:flex;gap:.4rem;flex-wrap:wrap}
+.mt-btns button{border:1px solid var(--line);background:none;border-radius:999px;min-height:36px;padding:0 .8rem;font:inherit;font-weight:800;font-size:.8rem;color:var(--ink)}
+.mt-btns button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.mt-h{font-weight:900;font-size:1rem;margin:.4rem 0 .5rem}
+.gl-it .gl-sh{font-size:.72rem;font-weight:800;color:var(--acc)}
+.nm-sh{display:grid;gap:.45rem;border:1px solid var(--line);border-radius:12px;padding:.65rem;background:var(--panel)}
+.nm-sh label{display:flex!important;align-items:center;gap:.5rem!important;font-size:.86rem}
+.nm-sh input[type=radio]{width:18px;height:18px;flex:none;margin:0}
+.nm-sh select{font:inherit;height:42px;border:1px solid var(--line);border-radius:10px;background:var(--bg,#fff);color:var(--ink);padding:0 .5rem;width:100%}
+.nm-sh small{font-size:.76rem;color:var(--ink-2);font-weight:600}
+`; TR.append(st); }
+function yearShelfSheet(y) {
+  const shs = (db.shelves || []).filter((s) => (s.bookIds || []).length || true), cur = (db.yearGoalShelf || {})[y];
+  const set = (id) => { db.yearGoalShelf = { ...(db.yearGoalShelf || {}) }; if (id) db.yearGoalShelf[y] = id; else delete db.yearGoalShelf[y]; save(); try { renderHome(todayISO()); } catch {} if (S.listRedraw) S.listRedraw(); };
+  sheet(`O que conta na meta de ${y}`, [[`${cur ? '' : '✓ '}Todo livro terminado no ano`, () => set(null)], ...shs.map((s) => [`${cur === s.id ? '✓ ' : ''}Só a estante “${s.name}”`, () => set(s.id)])]);
+}
+openGoalsV4 = function () { // a tela "Metas"
+  const v = $('#shelflist');
+  const draw = () => {
+    syncAllGoalShelves();
+    const gs = db.goals || [], today = todayISO(), Y = yearInfo(), pct = Y.target ? Math.min(100, Math.round((Y.done / Y.target) * 100)) : 0;
+    const left = Y.target ? Math.max(0, Y.target - Y.done) : 0;
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Metas</b><span></span></div>
+      <section class="mt-y">
+        <h3>Meta do ano ${Y.y}${Y.shelf ? `<small>estante “${esc(Y.shelf)}”</small>` : ''}</h3>
+        ${Y.target ? `<div class="mt-big">${Y.done} <small>de ${Y.target} livros</small></div><i class="mt-bar"><i style="width:${pct}%"></i></i>
+          <p>${left ? `Faltam ${plural(left, 'livro', 'livros')}${Y.expected != null ? Y.done >= Y.expected ? ' · você está em dia' : ` · o esperado até hoje era ${Y.expected}` : ''}` : 'Meta batida!'}</p>`
+          : `<p>Quantos livros você quer ler em ${Y.y}? Contam os livros que você terminar.</p>`}
+        <div class="mt-btns">${Y.target ? '<button type="button" id="mt-ver">Ver detalhes</button><button type="button" id="mt-adj">Ajustar</button>' : '<button type="button" class="pri" id="mt-adj">Definir meta do ano</button>'}${Y.target && (db.shelves || []).length ? '<button type="button" id="mt-sh">O que conta</button>' : ''}</div>
+      </section>
+      <div class="mt-h">Metas com prazo</div>
+      <button type="button" class="fl-add" id="gl-new">+ Nova meta com prazo</button>
+      ${gs.length ? gs.map((g) => { const tot = g.books.reduce((a, b) => a + (b.totalPages || 0), 0), dn = g.books.reduce((a, b) => a + pagesOf(g, b), 0), p = tot ? Math.round((dn / tot) * 100) : 0;
+          const lf = g.targetDate ? Math.ceil((new Date(g.targetDate) - new Date(today)) / 86400000) : null, perDay = lf > 0 ? Math.ceil(Math.max(0, tot - dn) / lf) : null;
+          const sh = g.shelfId && (db.shelves || []).find((s) => s.id === g.shelfId);
+          return `<button type="button" class="gl-it" data-g="${esc(g.id)}"><span class="gl-row"><b>${esc(g.name)}</b><small>${p}%</small></span><i><i style="width:${p}%"></i></i>
+            <span class="gl-row"><small>${plural(g.books.length, 'livro', 'livros')} · ${dn} de ${tot} pág.</small><small>${lf == null ? '' : lf > 0 ? `${lf} dias · ${perDay} pág./dia` : lf === 0 ? 'termina hoje' : 'prazo passou'}</small></span>${sh ? `<span class="gl-sh">Estante “${esc(sh.name)}”</span>` : ''}</button>`; }).join('')
+        : '<p class="sl-empty">Uma meta com prazo é uma lista de livros com data para terminar. Pode ser uma estante inteira. O Bear calcula quantas páginas por dia você precisa ler.</p>'}`;
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    $('#mt-adj', v).addEventListener('click', () => setYearGoal(Y.y));
+    $('#mt-ver', v)?.addEventListener('click', () => openGoalPage());
+    $('#mt-sh', v)?.addEventListener('click', () => yearShelfSheet(Y.y));
+    $$('.gl-it', v).forEach((b) => b.addEventListener('click', () => { const g = (db.goals || []).find((x) => x.id === b.dataset.g); v.hidden = true; screen('desafios'); if (g) setTimeout(() => open(g), 60); }));
+    paintCv(v);
+  };
+  S.listRedraw = draw; S.navView = { t: 'goals', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle();
+};
+{ const _o = openGoalsV4; openGoalsV4 = function () { navEnter(() => openGoalsV4()); S.nav.depth++; try { return _o.apply(this, arguments); } finally { S.nav.depth--; } }; }
+// meta do ano salva: a tela de Metas aberta se atualiza
+{ const _sy = setYearGoal; setYearGoal = function () { const r = _sy.apply(this, arguments); const obs = new MutationObserver(() => { if (!document.querySelector('.yg-sheet')) { obs.disconnect(); const v = $('#shelflist'); if (S.navView && S.navView.t === 'goals' && !v.hidden && S.listRedraw) S.listRedraw(); } }); obs.observe(document.body, { childList: true }); return r; }; }
+// abrir uma meta ligada à estante já traz os livros novos
+{ const _op = open; open = function (g) { try { if (syncGoalShelf(g)) save(); } catch {} return _op.apply(this, arguments); }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
