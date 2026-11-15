@@ -2515,7 +2515,7 @@ async function friendPage(handle) {
   const parts = [el('div', { class: 'fp-head' }, [(() => { const s = avatarFor(d.displayName, d.handle); s.classList.add('fp-av'); return s; })(), el('div', {}, [el('h3', { text: d.displayName }), el('span', { class: 'hint', text: `@${d.handle}` })])])];
   if (d.reading) parts.push(...sec('Lendo agora', d.reading.length ? d.reading.map(b => el('div', { class: 'fp-read' }, [mini(b), el('div', {}, [el('b', { text: b.title }), el('span', { class: 'hint', text: `${b.pct || 0}%` })])])) : [el('p', { class: 'hint', text: 'Nada no momento.' })]));
   if (d.shelf) { const c = d.shelf.counts || {}; parts.push(...sec('Estante', [el('p', { class: 'hint', text: `${c.LIDO || 0} lidos · ${c.QUERO || 0} quero ler · ${c.LENDO || 0} lendo` }),
-    ...((d.shelf.potinho || []).length ? [el('b', { class: 'fp-sub', text: 'Prateleira do coração' }), el('div', { class: 'car' }, d.shelf.potinho.map(mini))] : []),
+    ...((d.shelf.potinho || []).length ? [el('b', { class: 'fp-sub', text: 'Melhores avaliados' }), el('div', { class: 'car' }, d.shelf.potinho.map(mini))] : []),
     ...((d.shelf.lidos || []).length ? [el('b', { class: 'fp-sub', text: 'Lidos recentes' }), el('div', { class: 'car' }, d.shelf.lidos.map(mini))] : [])])); }
   if (d.achievements) parts.push(...sec(`Conquistas · ${(d.achievements.won || []).length}/${d.achievements.total || 0}`, [el('div', { class: 'cantinho mini' }, [el('div', { class: 'cantinho-shelf' },
     (d.achievements.won || []).length ? d.achievements.won.filter(a => DECO_IMG[a.k]).map(a => { const x = decoEl(a.k); x.classList.add('trophy'); if (a.rare) x.classList.add('rare'); x.title = a.n; return x; }) : [el('span', { class: 'cantinho-empty', text: 'Nenhuma conquista ainda.' })])])]));
@@ -2540,12 +2540,12 @@ async function socialSettingsSheet() {
   const name = el('input', { value: prof.displayName, maxlength: '40' }), handle = el('input', { value: prof.handle, maxlength: '20', autocapitalize: 'none' });
   const ck = (k, t) => { const i = el('input', { type: 'checkbox', ...(pv[k] ? { checked: '' } : {}), onchange: (ev) => { pv[k] = ev.target.checked; } }); return el('label', { class: 'ck-row' }, [i, el('span', { text: t })]); };
   const msg = el('p', { class: 'hint' });
-  const form = el('form', { class: 'form' }, [el('h3', { text: 'Amigos e privacidade' }),
-    el('label', { text: 'Nome' }, [name]), el('label', { text: '@usuário' }, [handle]),
-    el('div', { class: 'group', text: 'O que seus amigos veem na sua página' }),
-    ck('reading', 'O que estou lendo agora'), ck('shelf', 'Minha biblioteca (lidos e Prateleira do coração)'), ck('achievements', 'Minhas conquistas'), ck('reviews', 'Minhas avaliações (também nas Novidades)'),
-    el('div', { class: 'group', text: 'Fora dos amigos' }), ck('public', 'Avaliações públicas: qualquer pessoa do app pode ver em Descobrir e na sua página'),
-    msg, el('button', { type: 'submit', class: 'primary', text: 'Salvar' }), el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close })]);
+  const form = el('form', { class: 'form pv2' }, [el('h3', { text: 'Amigos e privacidade' }),
+    el('div', { class: 'pv2-2' }, [el('label', { text: 'Nome' }, [name]), el('label', { text: '@usuário' }, [handle])]),
+    el('div', { class: 'group', text: 'Seus amigos veem' }),
+    ck('reading', 'Lendo agora'), ck('shelf', 'Biblioteca e melhores avaliados'), ck('achievements', 'Conquistas'), ck('reviews', 'Avaliações'),
+    el('div', { class: 'group', text: 'Qualquer pessoa vê' }), ck('public', 'Avaliações públicas (Descobrir e sua página)'),
+    msg, el('div', { class: 'pv2-btns' }, [el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }), el('button', { type: 'submit', class: 'primary', text: 'Salvar' })])]);
   form.addEventListener('submit', async (ev) => { ev.preventDefault();
     const r = await sapi('PUT', '/v1/me/profile', { handle: handle.value.trim().replace(/^@/, '').toLowerCase(), displayName: name.value.trim(), privacy: pv });
     if (r.status === 409) { msg.textContent = 'Esse @usuário já existe'; return; } if (r.status !== 200) { msg.textContent = (r.data && r.data.issues && r.data.issues[0] && r.data.issues[0].message) || 'Não consegui salvar'; return; }
@@ -2554,6 +2554,15 @@ async function socialSettingsSheet() {
   document.body.append(wrap);
 }
 
+{ const st = document.createElement('style'); st.textContent = `
+.sheet .pv2{gap:.45rem!important}.sheet .pv2 h3{margin:0 0 .2rem!important}
+.sheet .pv2 .pv2-2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}.sheet .pv2 .pv2-2 label{margin:0;min-width:0}.sheet .pv2 .pv2-2 input{width:100%;box-sizing:border-box;min-width:0}
+.sheet .pv2 .group{margin:.45rem 0 0!important;padding:0!important}
+.sheet .pv2 .ck-row{min-height:38px;margin:0!important;padding:.15rem 0!important;align-items:center}
+.sheet .pv2 .hint:empty{display:none}
+.sheet .pv2 .pv2-btns{position:sticky;bottom:0;display:grid;grid-template-columns:1fr 2fr;gap:.5rem;padding:.6rem 0 .2rem;margin-top:.3rem;background:inherit}
+.sheet .pv2 .pv2-btns button{margin:0!important;width:100%}
+`; document.head.append(st); }
 const HANG = new Set(['lanterna', 'colmeia', 'luzinhas', 'heras', 'balao']);
 
 // ============ Feed: atualizações de leitura ============
@@ -7585,7 +7594,7 @@ friendPage = async function (handle) {
     ${common.length ? `<p class="fr-common">Vocês dois leram ${common.slice(0, 3).map((b) => esc(b.title)).join(', ')}${common.length > 3 ? ` e mais ${common.length - 3}` : ''}</p>` : ''}
     ${d.reading ? `<div class="v3-sh"><b>Lendo agora</b></div>${d.reading.length ? d.reading.map((b) => `<div class="fr-read" data-book="${esc(b.title)}" data-author="${esc(b.author || '')}" role="button" tabindex="0">${cvh(b.title, b.cover, '')}<div><b>${esc(b.title)}</b><small>${Number(b.pct) || 0}% lido</small><i class="v3-bar"><i style="width:${Math.max(0, Math.min(100, Number(b.pct) || 0))}%"></i></i></div></div>`).join('') : '<p class="v3-empty">Nada no momento.</p>'}` : ''}
     ${d.achievements ? `<section class="v3c"><div class="v3-sh" style="margin:0 0 .5rem"><b>Conquistas · ${won.length} de ${d.achievements.total || 0}</b></div>${won.filter((a) => DECO_IMG[a.k]).length ? `<div class="v3-shelf">${won.filter((a) => DECO_IMG[a.k]).slice(0, 12).map((a) => `<span class="v3-trophy${a.rare ? ' rare' : ''}" title="${esc(a.n)}"><img src="${DECO_IMG[a.k]}" alt="${esc(a.n)}"></span>`).join('')}</div>` : '<p class="v3-empty" style="margin:0">Nenhuma conquista ainda.</p>'}</section>` : ''}
-    ${d.shelf && (d.shelf.potinho || []).length ? `<div class="v3-sh"><b>Prateleira do coração</b></div>${strip(d.shelf.potinho)}` : ''}
+    ${d.shelf && (d.shelf.potinho || []).length ? `<div class="v3-sh"><b>Melhores avaliados</b></div>${strip(d.shelf.potinho)}` : ''}
     ${d.shelf && (d.shelf.lidos || []).length ? `<div class="v3-sh"><b>Lidos recentes</b></div>${strip(d.shelf.lidos)}` : ''}
     ${d.reviews ? `<div class="v3-sh"><b>Avaliações</b></div><div class="fr-revs" id="fr-revs">${d.reviews.length ? '' : '<p class="v3-empty">Nenhuma avaliação ainda.</p>'}</div>` : ''}
     ${fechado ? `<p class="sl-empty">${esc(d.displayName)} preferiu manter a página fechada.</p>` : ''}`);
@@ -9485,6 +9494,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -9760,7 +9770,8 @@ TR.addEventListener('click', (ev) => {
     const cell = (n, t, go) => `<button type="button" ${go ? `data-go="${go}"` : 'disabled'}><b>${n}</b><small>${t}</small></button>`;
     if (nums) {
       nums.innerHTML = cell(c.LIDO || 0, (c.LIDO || 0) === 1 ? 'lido' : 'lidos', 'lidos') + cell(c.QUERO || 0, 'quero ler', 'fila') + cell(nf, nf === 1 ? 'amigo' : 'amigos', 'amigos') + cell(won, won === 1 ? 'conquista' : 'conquistas', 'conq');
-      const go = { lidos: () => { v.hidden = true; goTab('estante'); setTimeout(() => openShelfV3('LIDO'), 150); }, fila: () => { v.hidden = true; goTab('estante'); setTimeout(() => openShelfV3('QUERO'), 150); }, amigos: () => openFriendsV3(), conq: () => openAchList() };
+      const mark = () => { const t = v.querySelector('.sl-top b'); S.meBack = t ? t.textContent.trim() : null; };
+      const go = { lidos: () => { v.hidden = true; goTab('estante'); setTimeout(() => { openShelfV3('LIDO'); mark(); }, 150); }, fila: () => { v.hidden = true; goTab('estante'); setTimeout(() => { openShelfV3('QUERO'); mark(); }, 150); }, amigos: () => { openFriendsV3(); mark(); }, conq: () => { openAchList(); mark(); } };
       $$('[data-go]', nums).forEach((b) => b.addEventListener('click', () => go[b.dataset.go]()));
     }
     return r;
@@ -9771,6 +9782,14 @@ TR.addEventListener('click', (ev) => {
     const wait = (n) => { if (!ed.hidden) return n > 0 && setTimeout(() => wait(n - 1), 200); if (connected() && socialProfile) goTab('eu'); }; setTimeout(() => wait(25), 300);
   }, true);
 }
+// Lidos / Quero ler / Amigos / Conquistas abertos pelo perfil: Voltar volta para o perfil
+// (antes escondia a lista e caía no que estava por baixo: a aba Estante ou o Editar perfil)
+TR.addEventListener('click', (ev) => {
+  if (ev.target.closest && ev.target.closest('#tabbar')) { S.meBack = null; return; }
+  const b = ev.target.closest && ev.target.closest('#shelflist .sl-back'); if (!b || !S.meBack) return;
+  const t = b.closest('.sl-top')?.querySelector('b'), ok = t && t.textContent.trim() === S.meBack; if (!ok) return;
+  S.meBack = null; ev.stopImmediatePropagation(); ev.preventDefault(); $('#shelflist').hidden = true; goTab('eu');
+}, true);
 // --- 09_notif.js ---
 // Notificações viram tela (não folha): topo com "‹ Voltar", notificações e, embaixo, as novidades recentes dos amigos.
 { const st = document.createElement('style'); st.textContent = `
@@ -10280,6 +10299,44 @@ if (!ES_SORTS.some((x) => x[0] === 'prioridade')) ES_SORTS.splice(1, 0, ['priori
 // "lido" sem nota também mostra as patinhas (vazias), como na referência
 { const fixEmpty = () => TR.querySelectorAll('#shelflist .esv-grid small.es4-st').forEach((s) => { if (s.dataset.pw || s.textContent.trim() !== 'lido') return; s.dataset.pw = 1; s.innerHTML = paws5(0); });
   new MutationObserver(fixEmpty).observe(TR, { childList: true, subtree: true }); }
+// --- 23_cinco_patas.js ---
+// Leituras por mês: livro de 5 patas ganha destaque próprio — faixa furta-cor que brilha e estrelinhas piscando em cima da capa.
+{ const st = document.createElement('style'); st.textContent = `
+.ys-bk.ys-5::before{height:5px!important;background:linear-gradient(90deg,#f6c94a,#ff8fc8,#b78cff,#6fd3ff,#f6c94a)!important;background-size:300% 100%!important;animation:ys5Flow 3s linear infinite;box-shadow:0 0 6px rgba(255,190,90,.9)}
+.ys-bk.ys-5 .cv{box-shadow:0 0 0 1.5px #f6c94a,0 0 10px 1px rgba(246,201,74,.55)!important}
+.ys-bk.ys-5::after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);background-size:250% 100%;animation:ys5Shine 3.2s ease-in-out infinite;border-radius:2px 4px 0 0}
+.ys-bk .ys-sp{position:absolute;z-index:4;pointer-events:none;color:#ffd75e;font-size:11px;line-height:1;text-shadow:0 0 4px rgba(255,215,94,.95);animation:ys5Tw 1.8s ease-in-out infinite}
+.ys-bk ..ys-bk .ys-sp.b{top:-4px;left:-4px;font-size:8px;animation-delay:.6s;color:#ffb3dc}.ys-bk .ys-sp.c{top:18px;right:-5px;font-size:7px;animation-delay:1.2s;color:#cfe9ff}
+.ys-row{padding-top:12px!important}.ys-bk .ys-sp.a{top:-11px;right:-4px}
+@keyframes ys5Flow{to{background-position:300% 0}}
+@keyframes ys5Shine{0%,55%{background-position:150% 0}100%{background-position:-100% 0}}
+@keyframes ys5Tw{0%,100%{opacity:.15;transform:scale(.6) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(20deg)}}
+.ys-leg i.ys-5i{background:linear-gradient(90deg,#f6c94a,#ff8fc8,#b78cff,#6fd3ff)!important;box-shadow:0 0 4px rgba(246,201,74,.8)}
+.ys-leg .ys-5l{font-weight:800;color:var(--ink)}.ys-leg .ys-5l::after{content:' ✦';color:#e0a526}
+@media (prefers-reduced-motion:reduce){.ys-bk.ys-5::before,.ys-bk.ys-5::after,.ys-bk .ys-sp{animation:none}.ys-bk .ys-sp{opacity:.9}}
+`; TR.append(st); }
+{ const _ys = yearShelfHTML; yearShelfHTML = function () {
+  const h = _ys.apply(this, arguments); if (!h) return h;
+  return h.replace(/class="es-bk ys-bk paw"([^>]*?)style="--pc:#e0a526">/g, 'class="es-bk ys-bk paw ys-5"$1style="--pc:#e0a526"><span class="ys-sp a">✦</span><span class="ys-sp b">✦</span><span class="ys-sp c">✦</span>')
+    .replace('<span><i style="background:#e0a526"></i>5 patas</span>', '<span class="ys-5l"><i class="ys-5i"></i>5 patas</span>');
+}; }
+// --- 24_estante_lift.js ---
+// Prateleiras da Estante: barra de progresso (lendo) e barra de lido no topo da capa, e o livro sai para a frente ao passar o dedo/mouse,
+// igual às Leituras por mês.
+{ const st = document.createElement('style'); st.textContent = `
+.es4 .es-row{padding-top:14px!important;margin-top:-8px}
+.es4 .es-bk .es4-bar,.es4 .es-bk .es4-done{top:6px!important;bottom:auto!important}
+.es4 .es4-bk > .es-bk{position:relative;transition:transform .18s cubic-bezier(.2,1.3,.4,1),filter .18s;transform-origin:50% 100%;will-change:transform}
+.es4 .es4-bk > .es-bk:hover,.es4 .es4-bk > .es-bk:focus-visible,.es4 .es4-bk > .es-bk.ys-up{transform:translateY(-10px) scale(1.08);z-index:3;filter:drop-shadow(0 8px 10px rgba(0,0,0,.35))}
+.es4 .es4-bk{position:relative}.es4 .es4-bk:has(.ys-up){z-index:3}
+`; TR.append(st); }
+{ // no celular: arrastar o dedo pela prateleira levanta o livro embaixo do dedo (só deslize vertical curto; rolar a prateleira continua normal)
+  let last = null; const sel = '.es4 .es4-bk > .es-bk';
+  const up = (b) => { if (last === b) return; last && last.classList.remove('ys-up'); last = b; b && b.classList.add('ys-up'); };
+  TR.addEventListener('touchstart', (ev) => { const b = ev.target.closest && ev.target.closest(sel); if (b) up(b); }, { passive: true });
+  TR.addEventListener('touchmove', (ev) => { if (!last) return; const t = ev.touches[0]; const n = t && TR.elementFromPoint(t.clientX, t.clientY); const b = n && n.closest && n.closest(sel); up(b || null); }, { passive: true });
+  TR.addEventListener('touchend', () => setTimeout(() => up(null), 250), { passive: true });
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
