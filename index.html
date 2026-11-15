@@ -9484,6 +9484,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10004,6 +10005,13 @@ manualBookSheet = function (onPick) {
 .ys-y button{width:28px!important;height:28px!important;border-radius:99px!important;font-size:.8rem!important;padding:0!important;line-height:1}
 .ys-y b{font-size:.9rem}
 .ys-h > b{font-size:1rem}
+`; TR.append(st); }
+// livros do mesmo mês um pouco sobrepostos (cabe mais na prateleira); o de cima ganha sombra na borda esquerda
+{ const st = document.createElement('style'); st.textContent = `
+.ys-bks{gap:0!important}
+.ys-bk + .ys-bk{margin-left:-20px}
+.ys-bk + .ys-bk .cv{box-shadow:-4px 0 6px -2px rgba(0,0,0,.45),inset -2px 0 3px rgba(0,0,0,.25)!important}
+.ys-row{gap:.55rem!important}
 `; TR.append(st); }
 // --- 14_duplicado.js ---
 // Livro que já está na biblioteca não entra duplicado sem perguntar: lido → "Ler de novo" (releitura no mesmo livro, nota e
