@@ -9501,6 +9501,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10575,6 +10576,117 @@ function profShelvesSnap(snapshot) {
     S.listRedraw = draw; S.navView = null; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0;
   }
 }
+// --- 29_conquistas_dias.js ---
+// Conquistas de registro (segunda rodada, ok da Bia 15/11): contavam cada atualização, até correções, e dava para ganhar
+// atualizando várias vezes no mesmo dia. Agora contam DIAS diferentes em que a leitura avançou (páginas > 0).
+// Quem já tinha ganho (já avisado em prefs.achSeen) continua com a conquista.
+ACHIEVEMENTS.filter((a) => a.m === 'regs').forEach((a) => { a.desc = a.goal === 1 ? 'Avançar a leitura em 1 dia' : `Avançar a leitura em ${a.goal} dias diferentes`; });
+{ const _am = achMetrics; achMetrics = function () {
+  const M = _am.apply(this, arguments);
+  try { const days = new Set(); for (const x of readingEvents()) if (x.pages > 0 && x.date) days.add(String(x.date).slice(0, 10)); M.regs = days.size; } catch {}
+  return M;
+}; }
+{ const _as = achState; achState = function () {
+  const st = _as.apply(this, arguments), seen = new Set((db.prefs && db.prefs.achSeen) || []);
+  return st.map((a) => (a.m === 'regs' && !a.done && seen.has(a.id) ? { ...a, done: true, cur: a.goal } : a));
+}; }
+// --- 30_estatisticas.js ---
+// Estatísticas novas (segunda rodada, proposta aprovada pela Bia): um seletor de ano no topo e tudo daquele ano.
+// Sai: card de meta, calendário, quadrados zerados e gráficos de registro. Entra: resumo com comparação ao ano anterior,
+// livros por mês, Leituras por mês, notas, gêneros, autores, formatos, tamanho e abandonos; hábito só quando há registro.
+{ const st = document.createElement('style'); st.textContent = `
+.sx-yr{display:flex;align-items:center;justify-content:center;gap:.6rem;margin:.1rem 0 .8rem}.sx-yr b{font-size:1.15rem;min-width:3.2rem;text-align:center;color:var(--ink)}
+.sx-yr button{width:34px;height:34px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:900;padding:0}.sx-yr button:disabled{opacity:.3}
+.sx-sum{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.8rem}
+.sx-sum .pg-st em{display:block;font-style:normal;font-size:.7rem;font-weight:800;margin-top:.15rem;color:var(--ink-2)}.sx-sum .pg-st em.up{color:#2e8a52}.sx-sum .pg-st em.dn{color:#b4532a}
+.sx-c{margin-bottom:.8rem}.sx-c h3{margin:0 0 .6rem;font-size:.95rem;color:var(--ink)}
+.sx-bars{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:96px}
+.sx-bars div{display:grid;grid-template-rows:auto 1fr auto;justify-items:center;height:100%;font-size:.6rem;color:var(--ink-2);font-weight:800}
+.sx-bars i{align-self:end;width:100%;max-width:18px;border-radius:5px 5px 2px 2px;background:var(--acc);min-height:2px}.sx-bars i.z{background:var(--line)}
+.sx-rows{display:grid;gap:.45rem}
+.sx-row{display:grid;grid-template-columns:minmax(0,7.5rem) 1fr auto;gap:.5rem;align-items:center;font-size:.8rem;color:var(--ink);font-weight:700}
+.sx-row span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sx-row .tr{height:9px;border-radius:99px;background:color-mix(in srgb,var(--line) 70%,transparent);overflow:hidden}.sx-row .tr i{display:block;height:100%;border-radius:99px;background:var(--acc)}
+.sx-row b{font-size:.78rem;min-width:1.4rem;text-align:right}
+.sx-row .tr i.m5{background:linear-gradient(90deg,#f6c94a,#ff8fc8,#b78cff,#6fd3ff)}.sx-row .tr i.mo{background:linear-gradient(90deg,#a87a12,#f7dc6f,#c9971c)}.sx-row .tr i.mp{background:linear-gradient(90deg,#8d959c,#eef2f5,#a9b1b8)}.sx-row .tr i.mb{background:linear-gradient(90deg,#7a4419,#d9935a,#9a5a26)}.sx-row .tr i.mf{background:linear-gradient(90deg,#3d4146,#8a9096,#4d5257)}
+.sx-note{font-size:.76rem;color:var(--ink-2);margin:.55rem 0 0}
+.sx-two{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}
+#lista:has(.sx-yr) .ys .ys-y > button,#lista:has(.sx-yr) .ys .ys-y > b{display:none}
+.sx-empty{text-align:center;color:var(--ink-2);font-size:.88rem;padding:1.4rem .5rem}
+`; TR.append(st); }
+drawProgresso = function (box) {
+  const L = lib(), cur = Number(todayISO().slice(0, 4));
+  const yOf = (e) => Number(String(e.finishedAt || '').slice(0, 4));
+  const read = L.filter((e) => e.status === 'LIDO' && e.finishedAt);
+  const years = [...new Set([cur, ...read.map(yOf).filter(Boolean)])].sort((a, b) => b - a);
+  let y = S.stY && years.includes(S.stY) ? S.stY : cur; S.stY = y;
+  const fin = read.filter((e) => yOf(e) === y), prev = read.filter((e) => yOf(e) === y - 1);
+  const paws = (e) => (reviewOfLib(e) || {}).paws || 0;
+  const pagesOfList = (arr) => arr.reduce((s, e) => s + (Number(e.totalPages) || 0), 0);
+  const pg = pagesOfList(fin), pgPrev = pagesOfList(prev);
+  const rated = fin.filter((e) => paws(e)), avg = rated.length ? rated.reduce((s, e) => s + paws(e), 0) / rated.length : 0;
+  const cmp = (a, b) => { if (y === cur && !b) return ''; if (!b) return ''; const d = a - b; return d === 0 ? `<em>igual a ${y - 1}</em>` : `<em class="${d > 0 ? 'up' : 'dn'}">${d > 0 ? '+' : ''}${d.toLocaleString('pt-BR')} vs ${y - 1}</em>`; };
+  const stat = (v, t, s = '') => `<div class="pg-st"><b>${v}</b><small>${t}</small>${s}</div>`;
+  const longest = fin.reduce((m, e) => ((Number(e.totalPages) || 0) > (Number(m && m.totalPages) || 0) ? e : m), null);
+  const row = (label, n, max, cls = '') => `<div class="sx-row"><span title="${esc(label)}">${esc(label)}</span><span class="tr"><i class="${cls}" style="width:${max && n ? Math.max(4, Math.round((n / max) * 100)) : 0}%"></i></span><b>${n}</b></div>`;
+  const top = (arr, n = 5) => Object.entries(arr.reduce((m, k) => { if (k) m[k] = (m[k] || 0) + 1; return m; }, {})).sort((a, b) => b[1] - a[1]).slice(0, n);
+  // livros por mês
+  const perM = Array.from({ length: 12 }, (_, i) => fin.filter((e) => !e.dateApprox && Number(String(e.finishedAt).slice(5, 7)) === i + 1).length), maxM = Math.max(1, ...perM);
+  const ML = ['j', 'f', 'm', 'a', 'm', 'j', 'j', 'a', 's', 'o', 'n', 'd'];
+  // notas
+  const tiers = [['5 patas', (p) => p >= 5, 'm5'], ['4,5 patas', (p) => p >= 4.5 && p < 5, 'mo'], ['4 patas', (p) => p >= 4 && p < 4.5, 'mp'], ['3 a 3,5', (p) => p >= 3 && p < 4, 'mb'], ['menos de 3', (p) => p > 0 && p < 3, 'mf']];
+  const tierN = tiers.map(([l, f, c]) => [l, rated.filter((e) => f(paws(e))).length, c]), maxT = Math.max(1, ...tierN.map((x) => x[1]));
+  // gêneros, autores, formatos, tamanho
+  const gen = top(fin.map((e) => e.genre)), maxG = gen.length ? gen[0][1] : 1;
+  const aut = top(fin.flatMap((e) => String(e.author || '').split(',').map((a) => a.trim()).filter(Boolean))).filter((x) => x[1] > 1 || fin.length <= 6), maxA = aut.length ? aut[0][1] : 1;
+  const FMT = { FISICO: 'Físico', EBOOK: 'E-book', AUDIO: 'Audiolivro' };
+  const fmt = top(fin.map((e) => FMT[e.format || 'FISICO'] || 'Outro'), 3), maxF = fmt.length ? fmt[0][1] : 1;
+  const withP = fin.filter((e) => Number(e.totalPages) > 0);
+  const size = [['Até 200 páginas', withP.filter((e) => e.totalPages <= 200).length], ['201 a 400 páginas', withP.filter((e) => e.totalPages > 200 && e.totalPages <= 400).length], ['Mais de 400', withP.filter((e) => e.totalPages > 400).length]], maxS = Math.max(1, ...size.map((x) => x[1]));
+  // abandonos do ano (pela data em que parou, quando houver)
+  const abY = L.filter((e) => e.status === 'ABANDONEI' && Number(String(e.abandonedAt || e.stoppedAt || e.updatedAt || e.addedAt || '').slice(0, 4)) === y).length;
+  // hábito: só se houver registro de páginas no ano
+  let hab = '';
+  try {
+    const by = pagesByDay(), days = Object.keys(by).filter((d) => d.startsWith(String(y)) && by[d] > 0).sort();
+    if (days.length) {
+      let best = 0, run = 0, pv = null; for (const d of days) { run = pv && between(pv, d) === 1 ? run + 1 : 1; best = Math.max(best, run); pv = d; }
+      const tot = days.reduce((s, d) => s + by[d], 0), wk = [0, 0, 0, 0, 0, 0, 0]; days.forEach((d) => { wk[new Date(d + 'T12:00:00').getDay()] += by[d]; });
+      const WD = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'], fav = wk.indexOf(Math.max(...wk));
+      hab = `<section class="v3c sx-c"><h3>Hábito de leitura</h3><div class="sx-two">${stat(plural(days.length, 'dia', 'dias'), 'com leitura registrada')}${stat(plural(best, 'dia', 'dias'), 'maior sequência')}${stat(Math.round(tot / days.length), 'páginas por dia lido')}${stat(WD[fav], 'dia em que mais lê')}</div></section>`;
+    }
+  } catch {}
+  const yi = years.indexOf(y);
+  box.innerHTML = `<header class="v3-top"><h1>Estatísticas</h1><div class="v3-acts"><button type="button" class="v3-bell" id="v3-bell" aria-label="Notificações">${MN('notificacoes', 'ico-g')}${unread() ? `<u>${unread() > 9 ? '9+' : unread()}</u>` : ''}</button></div></header>
+    <div class="sx-yr"><button type="button" data-sy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><b>${y}</b><button type="button" data-sy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></div>
+    ${fin.length ? `
+    <div class="sx-sum">${stat(fin.length, fin.length === 1 ? 'livro lido' : 'livros lidos', cmp(fin.length, prev.length))}${stat(pg.toLocaleString('pt-BR'), 'páginas lidas', cmp(pg, pgPrev))}${stat(avg ? avg.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : '—', 'nota média', avg ? paws5(Math.round(avg * 2) / 2) : '')}${stat(longest && longest.totalPages ? Number(longest.totalPages).toLocaleString('pt-BR') : '—', 'páginas no mais longo', longest && longest.totalPages ? `<em>${esc(longest.title)}</em>` : '')}</div>
+    <div id="sx-ys"></div>
+    <section class="v3c sx-c"><h3>Livros por mês</h3><div class="sx-bars">${perM.map((n, i) => `<div><span>${n || ''}</span><i class="${n ? '' : 'z'}" style="height:${n ? Math.max(8, Math.round((n / maxM) * 100)) : 2}%"></i><span>${ML[i]}</span></div>`).join('')}</div></section>
+    ${rated.length ? `<section class="v3c sx-c"><h3>Suas notas</h3><div class="sx-rows">${tierN.map(([l, n, c]) => row(l, n, maxT, c)).join('')}</div>${fin.length - rated.length ? `<p class="sx-note">${plural(fin.length - rated.length, 'livro', 'livros')} sem nota.</p>` : ''}</section>` : ''}
+    ${gen.length ? `<section class="v3c sx-c"><h3>Gêneros</h3><div class="sx-rows">${gen.map(([k, n]) => row(k, n, maxG)).join('')}</div></section>` : ''}
+    ${aut.length ? `<section class="v3c sx-c"><h3>Autores mais lidos</h3><div class="sx-rows">${aut.map(([k, n]) => row(k, n, maxA)).join('')}</div></section>` : ''}
+    <section class="v3c sx-c"><h3>Formato e tamanho</h3><div class="sx-rows">${fmt.map(([k, n]) => row(k, n, maxF)).join('')}</div>${withP.length ? `<div class="sx-rows" style="margin-top:.7rem">${size.map(([k, n]) => row(k, n, maxS)).join('')}</div>` : ''}</section>
+    ${abY ? `<section class="v3c sx-c"><h3>Abandonados</h3><p class="sx-note" style="margin:0">${plural(abY, 'livro abandonado', 'livros abandonados')} em ${y}. Tudo bem largar o que não está bom.</p></section>` : ''}
+    ${hab}` : `<p class="sx-empty">Nenhum livro terminado em ${y} ainda.${hab ? '' : ' Quando você marcar um livro como lido, os números aparecem aqui.'}</p>${hab}`}`;
+  $('#v3-bell', box)?.addEventListener('click', openNotif);
+  $$('[data-sy]', box).forEach((b) => b.addEventListener('click', () => { if (!b.dataset.sy) return; S.stY = Number(b.dataset.sy); S.ysYear = S.stY; drawProgresso(box); }));
+  const a = $('#sx-ys', box); if (a) { S.ysYear = y; mountYearShelf(box, a, ysItems(), true); a.remove(); }
+  paintCv(box);
+};
+// --- 31_brilho_cor_nota.js ---
+// Ajustes da Bia (15/11): a faixa da nota nas Leituras por mês vira a mesma barrinha das outras telas (arredondada, dentro da capa, no topo);
+// só 5 patas e ouro brilham (prata, bronze e ferro ficam quietos); o reflexo tem a cor da nota (dourado no ouro, furta-cor no 5).
+{ const st = document.createElement('style'); st.textContent = `
+.ys-bk.paw::before{top:6px!important;left:6px!important;right:6px!important;height:4px!important;border-radius:99px!important;z-index:3!important;box-shadow:0 0 0 1px rgba(255,255,255,.5)!important}
+.ys-bk.ys-5::before{box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 6px rgba(255,190,90,.9)!important}
+.ys-bk.ys-ouro::before{box-shadow:0 0 0 1px rgba(255,255,255,.5),0 0 5px rgba(212,165,32,.8)!important}
+.ys-bk.ys-prata::before,.ys-bk.ys-bronze::before,.ys-bk.ys-ferro::before{animation:none!important}
+.ys-bk.ys-prata::after,.cv.rt-prata::before{content:none!important;animation:none!important}
+.ys-bk.ys-prata .cv,.cv.rt-prata{box-shadow:0 0 0 1.5px #b9c1c8!important}
+.ys-bk.ys-5::after,.cv.rt-5::before{background:linear-gradient(115deg,transparent 34%,rgba(255,214,110,.55) 44%,rgba(255,150,210,.5) 50%,rgba(150,200,255,.5) 56%,transparent 66%)!important;background-size:250% 100%!important}
+.ys-bk.ys-ouro::after,.cv.rt-ouro::before{background:linear-gradient(115deg,transparent 40%,rgba(255,210,80,.55) 50%,transparent 60%)!important;background-size:250% 100%!important}
+`; TR.append(st); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
