@@ -9495,6 +9495,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10319,6 +10320,20 @@ if (!ES_SORTS.some((x) => x[0] === 'prioridade')) ES_SORTS.splice(1, 0, ['priori
   const h = _ys.apply(this, arguments); if (!h) return h;
   return h.replace(/class="es-bk ys-bk paw"([^>]*?)style="--pc:#e0a526">/g, 'class="es-bk ys-bk paw ys-5"$1style="--pc:#e0a526"><span class="ys-sp a">✦</span><span class="ys-sp b">✦</span><span class="ys-sp c">✦</span>')
     .replace('<span><i style="background:#e0a526"></i>5 patas</span>', '<span class="ys-5l"><i class="ys-5i"></i>5 patas</span>');
+}; }
+// 4 patas ou mais: destaque menor que o das 5 — faixa verde com brilho suave, contorno leve e um reflexo mais lento, sem estrelinhas.
+{ const st = document.createElement('style'); st.textContent = `
+.ys-bk.ys-4::before{height:5px!important;background:linear-gradient(90deg,#3f8f5a,#7fd39a,#3f8f5a)!important;background-size:200% 100%!important;animation:ys5Flow 4s linear infinite;box-shadow:0 0 5px rgba(90,190,120,.7)}
+.ys-bk.ys-4 .cv{box-shadow:0 0 0 1px rgba(63,143,90,.75),0 0 7px rgba(63,143,90,.35)!important}
+.ys-bk.ys-4::after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.3) 50%,transparent 60%);background-size:250% 100%;animation:ys5Shine 5.5s ease-in-out infinite;border-radius:2px 4px 0 0}
+.ys-leg i.ys-4i{background:linear-gradient(90deg,#3f8f5a,#7fd39a)!important;box-shadow:0 0 3px rgba(90,190,120,.7)}
+.ys-leg{gap:.2rem .6rem!important;font-size:.64rem!important}
+@media (prefers-reduced-motion:reduce){.ys-bk.ys-4::before,.ys-bk.ys-4::after{animation:none}}
+`; TR.append(st); }
+{ const _ys4 = yearShelfHTML; yearShelfHTML = function () {
+  const h = _ys4.apply(this, arguments); if (!h) return h;
+  return h.replace(/class="es-bk ys-bk paw"([^>]*?)style="--pc:#3f8f5a">/g, 'class="es-bk ys-bk paw ys-4"$1style="--pc:#3f8f5a">')
+    .replace('<i style="background:#3f8f5a"></i>', '<i class="ys-4i"></i>');
 }; }
 // --- 24_estante_lift.js ---
 // Prateleiras da Estante: barra de progresso (lendo) e barra de lido no topo da capa, e o livro sai para a frente ao passar o dedo/mouse,
