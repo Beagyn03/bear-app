@@ -9506,6 +9506,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11063,6 +11064,372 @@ function addDrawerOut() {
   }
 }
 TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closest('#g-av')) setTimeout(addDrawerOut, 0); });
+// --- 36_rede.js ---
+// Rede (15/11, API 017): Comunidade ganha a aba "Rede" (a rede toda: posts sobre livros e avaliações públicas)
+// ao lado de "Amigos" (o que já existia). Post: comentário, trecho, pergunta ou indicação; foto; spoiler por página,
+// % ou final, liberado sozinho para quem já leu até ali. Curtir, responder, ocultar, silenciar livro, denunciar e bloquear.
+{ const st = document.createElement('style'); st.textContent = `
+.rd-seg{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:.2rem;margin:.1rem 0 .8rem}
+.rd-seg button{border:0;background:none;border-radius:999px;height:36px;font:inherit;font-weight:800;font-size:.88rem;color:var(--ink-2)}
+.rd-seg button.on{background:var(--acc);color:#fff}
+#lista.rd-on > *:not(.rd-seg):not(#rd-host):not(.gtop-sp){display:none!important}
+#rd-host{display:grid;gap:.7rem}
+.rd-new{display:grid;grid-template-columns:auto 1fr;gap:.6rem;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:.75rem .85rem;color:var(--ink);font:inherit}
+.rd-new b{display:block;font-size:.95rem}.rd-new small{font-size:.8rem;color:var(--ink-2)}
+.rd-new i{width:38px;height:38px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-style:normal;font-size:1.3rem;font-weight:800}
+.rd-opts{display:flex;gap:.4rem;flex-wrap:wrap}
+.rd-opt{border:1px dashed var(--line);background:none;color:var(--ink-2);border-radius:999px;min-height:32px;padding:0 .7rem;font:inherit;font-weight:700;font-size:.76rem}
+.rd-opt.on{border-style:solid;border-color:var(--acc);color:var(--acc);background:var(--panel)}
+.rd-card{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:.75rem .8rem .4rem;color:var(--ink)}
+.rd-card header{display:grid;grid-template-columns:auto 1fr auto auto;gap:.5rem;align-items:center}
+.rd-who{min-width:0;border:0;background:none;padding:0;text-align:left;font:inherit;color:var(--ink)}
+.rd-who b{display:block;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rd-who small{font-size:.74rem;color:var(--ink-2)}
+.rd-kind{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--acc)}
+.rd-more{border:0;background:none;color:var(--ink-2);font-weight:900;width:36px;height:36px;font-size:1rem}
+.rd-book{display:grid;grid-template-columns:auto 1fr;gap:.55rem;align-items:center;width:100%;border:0;background:none;padding:.5rem 0 .2rem;text-align:left;font:inherit;color:var(--ink)}
+.rd-book .cv{width:34px;height:50px;border-radius:2px 5px 5px 2px;font-size:.45rem}
+.rd-book b{font-size:.84rem;display:block}.rd-book small{font-size:.74rem;color:var(--ink-2)}
+.rd-body{position:relative;padding:.25rem 0 .2rem}
+.rd-body p{margin:.25rem 0;white-space:pre-wrap;word-break:break-word;font-size:.93rem;line-height:1.4}
+.rd-q{margin:.35rem 0;padding:.5rem .7rem;border-left:3px solid var(--acc);background:var(--bg,#fff);border-radius:0 10px 10px 0;font-style:italic;font-size:.92rem;white-space:pre-wrap}
+.rd-q small{display:block;font-style:normal;font-weight:700;color:var(--ink-2);font-size:.74rem;margin-top:.2rem}
+.rd-rec{display:grid;grid-template-columns:1fr auto 1fr;gap:.4rem;align-items:center;margin:.35rem 0;font-size:.78rem}
+.rd-rec > span{display:grid;justify-items:center;gap:.25rem;text-align:center}.rd-rec .cv{width:56px;height:82px;border-radius:2px 6px 6px 2px;font-size:.5rem}
+.rd-rec em{font-style:normal;font-weight:900;color:var(--acc);font-size:1.2rem}
+.rd-fe{display:flex;flex-wrap:wrap;gap:.3rem;margin:.3rem 0}.rd-fe span{display:inline-flex;align-items:center;gap:.25rem;font-size:.74rem;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:.1rem .5rem}
+.rd-fe img{width:16px;height:16px}
+.rd-paws{font-size:.8rem;font-weight:800;color:var(--acc)}
+.rd-img img{display:block;width:100%;max-height:360px;object-fit:cover;border-radius:12px;margin:.35rem 0}
+.rd-img:empty{height:0}
+.rd-body.spoil > *:not(.rd-veil){filter:blur(8px);user-select:none;pointer-events:none}
+.rd-body.spoil .rd-img img{max-height:140px}
+.rd-veil{position:absolute;inset:0;z-index:2;display:grid;place-content:center;justify-items:center;gap:.2rem;text-align:center;border:0;border-radius:12px;background:rgba(245,236,224,.6);color:var(--ink);font:inherit;padding:.5rem;min-height:72px}
+.rd-veil b{font-size:.86rem}.rd-veil small{font-size:.76rem;color:var(--ink-2)}.rd-veil u{font-size:.78rem;font-weight:800;color:var(--acc);text-decoration:none}
+.rd-body.spoil{min-height:80px}
+.rd-card footer{display:flex;gap:.2rem;margin-top:.2rem;border-top:1px solid var(--line);padding-top:.15rem}
+.rd-card footer button{border:0;background:none;color:var(--ink-2);font:inherit;font-weight:800;font-size:.8rem;min-height:40px;padding:0 .6rem;border-radius:10px}
+.rd-card footer button.on{color:#c2410c}
+.rd-empty{text-align:center;color:var(--ink-2);font-size:.88rem;padding:1rem .5rem}
+.rd-moreb{border:1px solid var(--line);background:var(--panel);border-radius:12px;height:42px;font:inherit;font-weight:800;color:var(--ink)}
+.rd-rep{border-top:1px solid var(--line);padding:.6rem 0;display:grid;grid-template-columns:auto 1fr auto;gap:.5rem;align-items:start}
+.rd-rep p{margin:.15rem 0 0;font-size:.9rem;white-space:pre-wrap;word-break:break-word}
+.rd-rep .rd-body.spoil{min-height:56px}
+.rd-form{position:sticky;bottom:0;display:grid;gap:.4rem;background:var(--bg);padding:.6rem 0 .3rem;border-top:1px solid var(--line)}
+.rd-form textarea,.rdc textarea,.rdc input[type=number],.rdc input[type=text]{font:inherit;font-size:.95rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:.6rem .7rem;width:100%;min-width:0;resize:vertical}
+.rd-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.8rem;color:var(--ink-2)}
+.rd-send{height:42px;border-radius:12px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:800;padding:0 1.1rem}
+.rd-send:disabled{opacity:.5}
+.rdc{display:grid;gap:.75rem;padding-bottom:1rem}
+.rdc-k{display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem}
+.rdc-k button{border:1.5px solid var(--line);background:var(--panel);border-radius:12px;min-height:54px;font:inherit;font-weight:800;font-size:.76rem;color:var(--ink);display:grid;place-items:center;gap:.1rem;padding:.3rem .2rem}
+.rdc-k button span{font-size:1.1rem}
+.rdc-k button.on{border-color:var(--acc);color:var(--acc)}
+.rdc-l{font-size:.84rem;font-weight:800}
+.rdc-bk{display:grid;grid-template-columns:auto 1fr auto;gap:.6rem;align-items:center;border:1px solid var(--line);border-radius:12px;padding:.45rem .55rem;background:var(--panel)}
+.rdc-bk .cv{width:36px;height:54px;border-radius:2px 5px 5px 2px;font-size:.45rem}.rdc-bk b{font-size:.88rem;display:block}.rdc-bk small{font-size:.76rem;color:var(--ink-2)}
+.rdc-bk button,.rdc-pick{border:1px solid var(--line);background:none;border-radius:999px;font:inherit;font-weight:800;font-size:.78rem;color:var(--ink);min-height:36px;padding:0 .75rem}
+.rdc-pick{width:100%;border-style:dashed;border-radius:12px;min-height:46px}
+.rdc-cnt{font-size:.74rem;color:var(--ink-2);text-align:right}.rdc-cnt.over{color:#b3412e;font-weight:800}
+.rdc-chips{display:flex;flex-wrap:wrap;gap:.35rem}
+.rdc-chips button{border:1.5px solid var(--line);background:var(--panel);border-radius:999px;min-height:36px;padding:0 .75rem;font:inherit;font-weight:700;font-size:.8rem;color:var(--ink);display:inline-flex;align-items:center;gap:.25rem}
+.rdc-chips button img{width:18px;height:18px}
+.rdc-chips button.on{border-color:var(--acc);background:var(--acc);color:#fff}
+.rdc-sp{display:grid;gap:.45rem;border:1px solid var(--line);border-radius:12px;padding:.65rem;background:var(--panel)}
+.rdc-sp label{display:flex;align-items:center;gap:.5rem;font-size:.86rem;font-weight:700}
+.rdc-sp input[type=radio],.rdc-sp input[type=checkbox]{width:18px;height:18px;flex:none}
+.rdc-sp input[type=number]{width:90px;height:38px;padding:0 .5rem}
+.rdc-ph img{display:block;max-width:100%;max-height:220px;border-radius:12px}
+.rdc-go{height:48px;border-radius:12px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:800;font-size:1rem}
+.rdc-go:disabled{opacity:.5}
+.rdm-it{border:1px solid var(--line);border-radius:14px;padding:.6rem;display:grid;gap:.4rem;background:var(--panel)}
+.rdm-it .rd-row button{border:1px solid var(--line);background:none;border-radius:999px;min-height:36px;padding:0 .8rem;font:inherit;font-weight:800}
+`; TR.append(st); }
+
+S.rd = S.rd || { items: [], more: false, busy: false, at: 0, admin: false };
+S.comSeg = S.comSeg || 'rede';
+const RD_KINDS = [['comment', 'Comentário', '💬'], ['quote', 'Trecho', '❝'], ['question', 'Pergunta', '?'], ['rec', 'Indicação', '➜']];
+const rdPrefs = () => { const p = db.prefs || {}; return { mute: p.rdMute || [], hide: p.rdHide || [], hideReading: !!p.rdHideReading }; };
+const rdSetPref = (k, v) => { db.prefs = { ...(db.prefs || {}), [k]: v }; save(); };
+const myBookByKey = (k) => k ? lib().find((e) => normT(e.title) === k) : null;
+function rdSpoil(it) { // null = pode mostrar; senão o aviso
+  if (!it.spoiler || it.mine || (S.rdOpen && S.rdOpen.has(it.type + it.id))) return null;
+  const sp = it.spoiler, e = myBookByKey(it.book && it.book.key);
+  const where = sp.kind === 'page' ? `até a pág. ${sp.at}` : sp.kind === 'pct' ? `até ${sp.at}% do livro` : sp.kind === 'end' ? 'conta o final' : '';
+  let note = '';
+  if (e) {
+    if (e.status === 'LIDO') return null;
+    const pg = Number(libProgress(e)) || 0, tot = Number(e.totalPages) || 0;
+    if (sp.kind === 'page' && pg >= sp.at) return null;
+    if (sp.kind === 'pct' && tot && (pg / tot) * 100 >= sp.at) return null;
+    if (e.status === 'LENDO' && pg) note = `Você está na pág. ${pg}`;
+  }
+  return { label: `Spoiler${it.book ? ` de ${it.book.title}` : ''}${where ? ' · ' + where : ''}`, note };
+}
+const pawsTxt = (p) => p ? `${String(p).replace('.', ',')} ${p === 1 ? 'pata' : 'patas'}` : '';
+function rdCardHTML(it, i, opts = {}) {
+  const kind = it.type === 'review' ? 'Avaliação' : (RD_KINDS.find((k) => k[0] === it.kind) || [, ''])[1];
+  const sp = rdSpoil(it), u = it.user || {};
+  const fe = (it.feelings || []).length ? `<div class="rd-fe">${it.feelings.map((k) => qtFeel(k)).join('')}</div>` : '';
+  const body = `${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
+    ${it.text ? `<p>${esc(it.text)}</p>` : ''}
+    ${it.book2 ? `<div class="rd-rec"><span>${cvh(it.book.title, it.book.cover)}<b>${esc(it.book.title)}</b></span><em>➜</em><span>${cvh(it.book2.title, it.book2.cover)}<b>${esc(it.book2.title)}</b></span></div>` : ''}
+    ${fe}${it.paws ? `<div class="rd-paws">${pawsTxt(it.paws)}</div>` : ''}${it.hasImage ? `<div class="rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
+  return `<article class="rd-card" data-i="${i}">
+    <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
+      <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
+      <span class="rd-kind">${esc(kind)}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
+    ${it.book && !it.book2 ? `<button type="button" class="rd-book">${cvh(it.book.title, it.book.cover)}<span><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small></span></button>` : ''}
+    <div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>
+    ${opts.noFoot ? '' : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" aria-pressed="${!!it.liked}">${it.liked ? '♥' : '♡'} ${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button></footer>`}
+  </article>`;
+}
+async function rdLoadImages(root) {
+  S.rdImg = S.rdImg || {};
+  for (const n of $$('[data-img]', root)) {
+    const id = n.dataset.img; if (n.dataset.done) continue; n.dataset.done = '1';
+    if (!S.rdImg[id]) { try { const r = await sapi('GET', `/v1/posts/${id}/image`); if (r.status === 200 && r.data && /^data:image\//.test(r.data.image)) S.rdImg[id] = r.data.image; } catch {} }
+    if (S.rdImg[id]) { const im = document.createElement('img'); im.alt = 'Foto do post'; im.src = S.rdImg[id]; n.append(im); }
+  }
+}
+function rdBind(root, list, after) { // liga os botões dos cartões
+  $$('.rd-card', root).forEach((c) => {
+    const it = list[+c.dataset.i]; if (!it) return;
+    c.querySelector('.rd-veil')?.addEventListener('click', () => { (S.rdOpen = S.rdOpen || new Set()).add(it.type + it.id); after(); });
+    c.querySelector('.rd-who')?.addEventListener('click', () => { if (it.user && it.user.handle) friendPage(it.user.handle); });
+    c.querySelector('.rd-book')?.addEventListener('click', () => openAnyBook(it.book.title, it.book.author, it.book.cover));
+    c.querySelector('.rd-more')?.addEventListener('click', () => rdMenu(it, after));
+    c.querySelector('.rd-like')?.addEventListener('click', async (ev) => {
+      const b = ev.currentTarget, on = !it.liked; it.liked = on; it.likes = Math.max(0, (it.likes || 0) + (on ? 1 : -1));
+      b.classList.toggle('on', on); b.textContent = `${on ? '♥' : '♡'} ${it.likes || ''}`;
+      const base = it.type === 'review' ? `/v1/reviews/${it.id}/like` : `/v1/posts/${it.id}/like`;
+      try { const r = await sapi(on ? 'POST' : 'DELETE', base); if (r.status >= 300) throw 0; } catch { toast('Não consegui agora'); }
+    });
+    c.querySelector('.rd-rp')?.addEventListener('click', () => openRdThread(it));
+  });
+  paintCv(root); rdLoadImages(root);
+}
+function rdVisible(items) {
+  const P = rdPrefs(), reading = new Set(lib().filter((e) => e.status === 'LENDO').map((e) => normT(e.title)));
+  return items.filter((it) => !P.hide.includes(it.type + it.id) && !(it.book && P.mute.includes(it.book.key)) && !(P.hideReading && !it.mine && it.book && reading.has(it.book.key)));
+}
+async function rdLoad(more) {
+  if (!connected() || !socialProfile || S.rd.busy) return; S.rd.busy = true;
+  const before = more && S.rd.items.length ? S.rd.items[S.rd.items.length - 1].createdAt : null;
+  try {
+    const r = await sapi('GET', '/v1/rede' + (before ? '?before=' + encodeURIComponent(before) : ''));
+    if (r.status === 200 && r.data) { const seen = new Set(more ? S.rd.items.map((x) => x.type + x.id) : []); const neu = (r.data.items || []).filter((x) => !seen.has(x.type + x.id));
+      S.rd.items = more ? [...S.rd.items, ...neu] : neu; S.rd.more = !!r.data.more && neu.length > 0; S.rd.admin = !!r.data.admin; S.rd.at = Date.now(); S.rd.err = false; }
+    else S.rd.err = true;
+  } catch { S.rd.err = true; } finally { S.rd.busy = false; }
+  paintRede();
+}
+const RD_PROMPTS = ['Que página te pegou hoje?', 'Qual personagem você levaria para casa?', 'Um trecho que você não esquece', 'Que livro você indicaria para quem amou o último que leu?', 'Que final te deixou sem chão?', 'Pergunte à rede o que ler depois'];
+function paintRede() {
+  const host = $('#lista #rd-host'); if (!host) return;
+  if (!connected() || !socialProfile) { host.innerHTML = `<p class="rd-empty">Entre na sua conta para ver e postar na Rede.</p>`; return; }
+  const P = rdPrefs(), list = rdVisible(S.rd.items), pr = RD_PROMPTS[Math.floor(Date.now() / 3600000) % RD_PROMPTS.length];
+  host.innerHTML = `<button type="button" class="rd-new" id="rd-new"><i>+</i><span><b>${esc(pr)}</b><small>Comentário, trecho, pergunta ou indicação</small></span></button>
+    <div class="rd-opts"><button type="button" class="rd-opt${P.hideReading ? ' on' : ''}" id="rd-hr" aria-pressed="${P.hideReading}">Esconder livros que estou lendo</button>${S.rd.admin ? '<button type="button" class="rd-opt" id="rd-mod">Denúncias</button>' : ''}</div>
+    ${list.length ? list.map((it, i) => rdCardHTML(it, i)).join('') : `<p class="rd-empty">${S.rd.busy || !S.rd.at ? 'Carregando a Rede…' : S.rd.err ? 'Não consegui carregar agora. Tente de novo em instantes.' : 'Ainda não tem nada aqui. Que tal começar a conversa?'}</p>`}
+    ${S.rd.more ? '<button type="button" class="rd-moreb" id="rd-moreb">Ver mais</button>' : ''}`;
+  $('#rd-new', host).addEventListener('click', () => openRdComposer());
+  $('#rd-hr', host).addEventListener('click', () => { rdSetPref('rdHideReading', !rdPrefs().hideReading); paintRede(); });
+  $('#rd-mod', host)?.addEventListener('click', openRdMod);
+  $('#rd-moreb', host)?.addEventListener('click', () => rdLoad(true));
+  rdBind(host, list, paintRede);
+}
+function rdMenu(it, after) {
+  const u = it.user || {}, items = [];
+  if (it.mine || S.rd.admin) items.push([it.mine ? 'Apagar' : 'Apagar (moderação)', async () => {
+    if (!confirm('Apagar este post?')) return;
+    const r = it.type === 'review' ? (it.mine ? await sapi('DELETE', `/v1/reviews/${encodeURIComponent(it.libId)}`) : await sapi('POST', `/v1/admin/review/${it.id}/remove`)) : await sapi('DELETE', `/v1/posts/${it.id}`);
+    if (r.status < 300) { S.rd.items = S.rd.items.filter((x) => !(x.type === it.type && x.id === it.id)); toast('Apagado'); after(); } else toast('Não consegui apagar agora');
+  }, 'danger']);
+  if (!it.mine) {
+    items.push(['Ocultar este post', () => { rdSetPref('rdHide', [...rdPrefs().hide, it.type + it.id].slice(-300)); toast('Post ocultado'); after(); }]);
+    if (it.book) items.push([`Silenciar “${it.book.title}”`, () => { rdSetPref('rdMute', [...new Set([...rdPrefs().mute, it.book.key])].slice(-200)); toast('Você não verá mais posts deste livro'); after(); }]);
+    items.push(['Denunciar', () => sheet('Por que denunciar?', [['Spoiler sem aviso', 'spoiler'], ['Ofensa ou ataque', 'ofensa'], ['Spam ou propaganda', 'spam'], ['Outro motivo', 'outro']].map(([t, k]) => [t, async () => {
+      const r = await sapi('POST', `/v1/report/${it.type}/${it.id}`, { reason: k }); toast(r.status < 300 ? 'Denúncia enviada. Obrigado!' : 'Não consegui enviar agora');
+      if (r.status < 300) { rdSetPref('rdHide', [...rdPrefs().hide, it.type + it.id].slice(-300)); after(); } }]))]);
+    if (u.handle) items.push([`Bloquear @${u.handle}`, async () => {
+      if (!confirm(`Bloquear @${u.handle}? Vocês deixam de ver os posts um do outro e a amizade é desfeita.`)) return;
+      const r = await sapi('POST', `/v1/blocks/${encodeURIComponent(u.handle)}`);
+      if (r.status < 300) { S.rd.items = S.rd.items.filter((x) => !(x.user && x.user.handle === u.handle)); toast(`@${u.handle} bloqueado`); after(); } else toast('Não consegui agora');
+    }, 'danger']);
+  }
+  if (it.book) items.push(['Ver o livro', () => openAnyBook(it.book.title, it.book.author, it.book.cover)]);
+  sheet(it.type === 'review' ? 'Avaliação' : 'Post', items);
+}
+// ---------- fio de respostas ----------
+function openRdThread(it) {
+  const v = $('#shelflist'); let reps = null, busy = false;
+  const isRev = it.type === 'review';
+  const load = async () => {
+    try { const r = await sapi('GET', isRev ? `/v1/reviews/${it.id}/comments` : `/v1/posts/${it.id}/replies`); reps = r.status === 200 && r.data ? (r.data.items || []).map((x) => ({ type: 'reply', ...x, user: x.user || {}, createdAt: x.createdAt })) : []; } catch { reps = []; }
+    draw();
+  };
+  const repHTML = (x, i) => { const sp = x.spoiler && !x.mine && !(S.rdOpen && S.rdOpen.has('reply' + x.id)) ? rdSpoil({ ...x, type: 'reply', book: it.book, spoiler: x.spoiler }) : null;
+    return `<div class="rd-rep" data-r="${i}"><span class="av sm" data-avh="${esc(x.user.handle || '')}" style="background:${friendColor(x.user.handle || '')}">${esc(initial(x.user.displayName))}</span>
+      <div><b style="font-size:.84rem">${esc(x.user.displayName || '')}</b> <small style="color:var(--ink-2);font-size:.74rem">@${esc(x.user.handle || '')} · ${esc(relTime(x.createdAt))}</small>
+      <div class="rd-body${sp ? ' spoil' : ''}"><p>${esc(x.text || '')}</p>${sp ? `<button type="button" class="rd-veil" data-ro="${i}"><b>${esc(sp.label)}</b><u>Mostrar mesmo assim</u></button>` : ''}</div></div>
+      ${x.canDelete ? `<button type="button" class="rd-more" data-del="${i}" aria-label="Apagar resposta">×</button>` : '<span></span>'}</div>`; };
+  const draw = () => {
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Conversa</b><span></span></div>
+      ${rdCardHTML(it, 0, { noFoot: true })}
+      <div>${reps === null ? '<p class="rd-empty">Carregando respostas…</p>' : reps.length ? reps.map(repHTML).join('') : '<p class="rd-empty">Ninguém respondeu ainda.</p>'}</div>
+      <form class="rd-form" id="rd-f"><textarea id="rd-t" rows="2" maxlength="${isRev ? 500 : 280}" placeholder="Responder…"></textarea>
+        <div class="rd-row">${isRev ? '<span></span>' : '<label style="display:flex;gap:.35rem;align-items:center"><input type="checkbox" id="rd-sp"> Minha resposta tem spoiler</label>'}<button type="submit" class="rd-send">Enviar</button></div></form>`;
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    rdBind(v, [it], draw);
+    $$('[data-ro]', v).forEach((b) => b.addEventListener('click', () => { (S.rdOpen = S.rdOpen || new Set()).add('reply' + reps[+b.dataset.ro].id); draw(); }));
+    $$('[data-del]', v).forEach((b) => b.addEventListener('click', async () => { const x = reps[+b.dataset.del]; if (!confirm('Apagar esta resposta?')) return;
+      const r = await sapi('DELETE', isRev ? `/v1/comments/${x.id}` : `/v1/posts/${x.id}`); if (r.status < 300) { reps.splice(+b.dataset.del, 1); it.replies = Math.max(0, (it.replies || 1) - 1); draw(); } }));
+    $('#rd-f', v).addEventListener('submit', async (ev) => {
+      ev.preventDefault(); if (busy) return; const t = $('#rd-t', v).value.trim(); if (!t) return;
+      busy = true; const sp = !isRev && $('#rd-sp', v).checked;
+      try {
+        const r = await sapi('POST', isRev ? `/v1/reviews/${it.id}/comments` : `/v1/posts/${it.id}/replies`, isRev ? { text: t } : { text: t, ...(sp ? { spoiler: { kind: it.spoiler && it.spoiler.kind !== 'yes' ? it.spoiler.kind === 'end' ? 'end' : 'yes' : 'yes' } } : {}) });
+        if (r.status === 403) toast('Só amigos podem responder avaliações'); else if (r.status >= 300) toast('Não consegui enviar agora');
+        else { it.replies = (it.replies || 0) + 1; await load(); }
+      } catch { toast('Não consegui enviar agora'); } finally { busy = false; }
+    });
+    paintCv(v);
+  };
+  S.listRedraw = draw; S.navView = { t: 'rdthread', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle(); load();
+}
+{ const _o = openRdThread; openRdThread = function () { navEnter(() => openRdThread(...arguments)); S.nav.depth++; try { return _o.apply(this, arguments); } finally { S.nav.depth--; } }; }
+// ---------- postar ----------
+const RD_SPOIL_RE = /\b(morre|morreu|morrem|mata|matou|assassin[oa] (é|era)|no final|o final|final (é|foi)|descobre que|revela que|reviravolta|plot twist|termina com|acaba com|no fim)\b/i;
+function rdPlaceholder(k, b) {
+  const t = b ? `“${b.title}”` : 'esse livro';
+  return k === 'quote' ? 'O que esse trecho fez com você?' : k === 'question' ? (b ? `Pergunte à rede sobre ${t}` : 'Alguém leu…? Me indiquem um…') : k === 'rec' ? 'Por que quem gostou de um vai gostar do outro?' : `O que ${t} te fez sentir?`;
+}
+function rdPickBook(title, onPick) {
+  const L = lib().filter((e) => e.title), byS = (s) => L.filter((e) => e.status === s);
+  const opts = [...byS('LENDO'), ...byS('LIDO').slice(-8).reverse(), ...byS('QUERO_LER').slice(0, 4)].slice(0, 12);
+  const asBook = (e) => ({ title: String(e.title).slice(0, 200), author: e.author ? String(e.author).slice(0, 120) : null, cover: smallCoverOk(e.cover) });
+  sheet(title, [...opts.map((e) => [`${e.title}${e.status === 'LENDO' ? ' · lendo' : ''}`, () => onPick(asBook(e))]),
+    ['Buscar outro livro…', () => searchSheet({ title, onPick: (it) => onPick({ title: String(it.title).slice(0, 200), author: it.author ? String(it.author).slice(0, 120) : null, cover: smallCoverOk(it.cover) }) })]]);
+}
+const smallCoverOk = (c) => (typeof c === 'string' && (/^https:\/\//.test(c) || (/^data:image\/(jpeg|png|webp);base64,/.test(c) && c.length <= 60000))) ? c : null;
+function rdShrink(file) { // foto: no máximo 1280 px, JPEG, até ~300 KB
+  return new Promise((res, rej) => { const fr = new FileReader(); fr.onerror = rej; fr.onload = () => { const im = new Image(); im.onerror = rej; im.onload = () => {
+    let w = im.width, h = im.height; const m = Math.max(w, h); if (m > 1280) { w = Math.round(w * 1280 / m); h = Math.round(h * 1280 / m); }
+    const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h);
+    let q = 0.82, out = c.toDataURL('image/jpeg', q); while (out.length > 390000 && q > 0.4) { q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+    if (out.length > 390000) { const c2 = document.createElement('canvas'); c2.width = Math.round(w * .7); c2.height = Math.round(h * .7); c2.getContext('2d').drawImage(c, 0, 0, c2.width, c2.height); out = c2.toDataURL('image/jpeg', .7); }
+    res(out); }; im.src = fr.result; }; fr.readAsDataURL(file); });
+}
+function openRdComposer(pre = {}) {
+  const v = $('#shelflist');
+  const R = Object.assign({ kind: 'comment', book: null, book2: null, text: '', quote: '', page: '', feelings: [], paws: null, image: null, vis: 'public', sp: false, spk: 'page', spat: '' }, pre);
+  let busy = false;
+  const draw = () => {
+    const cur = $('#rdc-t', v); if (cur) R.text = cur.value; const q = $('#rdc-q', v); if (q) R.quote = q.value; const pg = $('#rdc-pg', v); if (pg) R.page = pg.value; const sa = $('#rdc-spat', v); if (sa) R.spat = sa.value;
+    const bk = (b, id, lbl) => b ? `<div class="rdc-bk">${cvh(b.title, b.cover)}<span><b>${esc(b.title)}</b><small>${esc(b.author || '')}</small></span><button type="button" data-pick="${id}">Trocar</button></div>`
+      : `<button type="button" class="rdc-pick" data-pick="${id}">+ ${lbl}</button>`;
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Compartilhar</b><span></span></div>
+      <div class="rdc">
+        <div class="rdc-k" role="group" aria-label="Tipo de post">${RD_KINDS.map(([k, n, ic]) => `<button type="button" data-k="${k}" class="${R.kind === k ? 'on' : ''}" aria-pressed="${R.kind === k}"><span>${ic}</span>${n}</button>`).join('')}</div>
+        <div class="rdc-l">${R.kind === 'rec' ? 'Se você gostou de…' : R.kind === 'question' ? 'Sobre qual livro? (opcional)' : 'Livro'}</div>${bk(R.book, 1, 'Escolher livro')}
+        ${R.kind === 'rec' ? `<div class="rdc-l">…leia</div>${bk(R.book2, 2, 'Escolher o livro indicado')}` : ''}
+        ${R.kind === 'quote' ? `<label class="rdc-l">Trecho<textarea id="rdc-q" rows="3" maxlength="600" placeholder="Copie aqui a frase do livro">${esc(R.quote)}</textarea></label>
+          <label class="rdc-l" style="display:flex;align-items:center;gap:.5rem">Página <input type="number" id="rdc-pg" min="1" inputmode="numeric" style="width:110px" value="${esc(R.page)}"></label>` : ''}
+        <div><textarea id="rdc-t" rows="4" maxlength="320" placeholder="${esc(rdPlaceholder(R.kind, R.book))}">${esc(R.text)}</textarea><div class="rdc-cnt" id="rdc-c"></div></div>
+        ${R.kind !== 'question' ? `<div class="rdc-l">O que você sentiu? <small style="font-weight:600;opacity:.7">(até 3)</small></div><div class="rdc-chips" id="rdc-fe">${QT_FEELS.map((y) => qtFeel(y[0], 'rdf', R.feelings.includes(y[0]))).join('')}</div>` : ''}
+        ${R.kind === 'comment' ? `<div class="rdc-l">Sua nota <small style="font-weight:600;opacity:.7">(opcional)</small></div><div class="rdc-chips" id="rdc-pw">${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-pw="${n}" class="${R.paws === n ? 'on' : ''}">${n} ${n === 1 ? 'pata' : 'patas'}</button>`).join('')}</div>` : ''}
+        <div class="rdc-ph">${R.image ? `<img src="${R.image}" alt="Foto escolhida"><button type="button" class="rdc-pick" id="rdc-rmph" style="margin-top:.4rem">Tirar a foto</button>` : `<button type="button" class="rdc-pick" id="rdc-addph">+ Adicionar foto</button>`}<input type="file" id="rdc-file" accept="image/*" hidden></div>
+        <div class="rdc-sp">
+          <label><input type="checkbox" id="rdc-sp"${R.sp ? ' checked' : ''}> Tem spoiler</label>
+          ${R.sp ? `<label><input type="radio" name="spk" value="page"${R.spk === 'page' ? ' checked' : ''}> Até a página <input type="number" id="rdc-spat" min="1" inputmode="numeric" value="${R.spk === 'page' ? esc(R.spat) : ''}"${R.spk === 'page' ? '' : ' disabled'}></label>
+            <label><input type="radio" name="spk" value="pct"${R.spk === 'pct' ? ' checked' : ''}> Até <input type="number" id="rdc-spat2" min="1" max="100" inputmode="numeric" value="${R.spk === 'pct' ? esc(R.spat) : ''}"${R.spk === 'pct' ? '' : ' disabled'}>% do livro</label>
+            <label><input type="radio" name="spk" value="end"${R.spk === 'end' ? ' checked' : ''}> Conta o final</label>
+            <label><input type="radio" name="spk" value="yes"${R.spk === 'yes' ? ' checked' : ''}> Tem spoiler, não sei dizer até onde</label>
+            <small style="color:var(--ink-2);font-size:.76rem">Quem ainda não chegou nesse ponto vê o post embaçado. Quem já leu vê normal.</small>` : ''}
+        </div>
+        <div class="rdc-chips" role="group" aria-label="Quem vê">${[['public', 'Toda a rede'], ['friends', 'Só amigos']].map(([k, n]) => `<button type="button" data-vis="${k}" class="${R.vis === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+        <button type="button" class="rdc-go" id="rdc-go">Publicar</button>
+      </div>`;
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    const t = $('#rdc-t', v), cnt = $('#rdc-c', v), go = $('#rdc-go', v);
+    const upd = () => { const n = t.value.length; cnt.textContent = `${n}/280`; cnt.classList.toggle('over', n > 280); go.disabled = n > 280; };
+    t.addEventListener('input', upd); upd();
+    $$('[data-k]', v).forEach((b) => b.addEventListener('click', () => { R.kind = b.dataset.k; if (R.kind === 'question') R.feelings = []; if (R.kind !== 'comment') R.paws = null; draw(); }));
+    $$('[data-pick]', v).forEach((b) => b.addEventListener('click', () => rdPickBook(b.dataset.pick === '2' ? 'Livro indicado' : 'Escolha o livro', (bk) => { if (b.dataset.pick === '2') R.book2 = bk; else R.book = bk; draw(); })));
+    $$('#rdc-fe [data-fe]', v).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.fe; if (R.feelings.includes(k)) R.feelings = R.feelings.filter((x) => x !== k); else if (R.feelings.length < 3) R.feelings.push(k); else return toast('Até 3 sentimentos'); draw(); }));
+    $$('[data-pw]', v).forEach((b) => b.addEventListener('click', () => { const n = +b.dataset.pw; R.paws = R.paws === n ? null : n; draw(); }));
+    $$('[data-vis]', v).forEach((b) => b.addEventListener('click', () => { R.vis = b.dataset.vis; draw(); }));
+    $('#rdc-sp', v).addEventListener('change', (ev) => { R.sp = ev.target.checked; draw(); });
+    $$('input[name=spk]', v).forEach((b) => b.addEventListener('change', () => { R.spk = b.value; R.spat = ''; draw(); }));
+    $('#rdc-spat2', v)?.addEventListener('input', (ev) => { R.spat = ev.target.value; });
+    $('#rdc-addph', v)?.addEventListener('click', () => $('#rdc-file', v).click());
+    $('#rdc-rmph', v)?.addEventListener('click', () => { R.image = null; draw(); });
+    $('#rdc-file', v).addEventListener('change', async (ev) => { const f = ev.target.files && ev.target.files[0]; if (!f) return; try { R.image = await rdShrink(f); draw(); } catch { toast('Não consegui usar essa foto'); } });
+    go.addEventListener('click', () => publish(false));
+    paintCv(v);
+  };
+  const publish = async (skipCheck) => {
+    if (busy) return; const t = $('#rdc-t', v); R.text = t.value.trim(); const q = $('#rdc-q', v); if (q) R.quote = q.value.trim(); const pg = $('#rdc-pg', v); if (pg) R.page = pg.value;
+    const sa = $('#rdc-spat', v); if (sa && !sa.disabled) R.spat = sa.value;
+    if (R.kind !== 'question' && !R.book) return toast('Escolha o livro');
+    if (R.kind === 'rec' && !R.book2) return toast('Escolha o livro indicado');
+    if (R.kind === 'quote' && !R.quote) return toast('Escreva o trecho');
+    if (!R.text && !R.quote && !R.image && !R.book2) return toast('Escreva alguma coisa');
+    if (R.text.length > 280) return toast('Use até 280 letras');
+    if (!skipCheck && !R.sp && RD_SPOIL_RE.test(`${R.text} ${R.quote}`)) return sheet('Isso conta algo da história?', [['Sim, marcar como spoiler', () => { R.sp = true; R.spk = 'yes'; draw(); toast('Ajuste até onde vai o spoiler e publique'); }], ['Não, publicar assim', () => publish(true)]]);
+    let spoiler = null;
+    if (R.sp) { const n = Math.round(Number(R.spat)); spoiler = (R.spk === 'page' || R.spk === 'pct') && n > 0 ? { kind: R.spk, at: R.spk === 'pct' ? Math.min(100, n) : n } : { kind: R.spk === 'end' ? 'end' : 'yes' }; }
+    const body = { kind: R.kind, text: R.text, visibility: R.vis, feelings: R.feelings, ...(R.book ? { book: R.book } : {}), ...(R.kind === 'rec' ? { book2: R.book2 } : {}),
+      ...(R.kind === 'quote' ? { quote: R.quote.slice(0, 600), ...(Number(R.page) > 0 ? { page: Math.round(Number(R.page)) } : {}) } : {}), ...(R.paws ? { paws: R.paws } : {}), ...(spoiler ? { spoiler } : {}), ...(R.image ? { image: R.image } : {}) };
+    busy = true; const go = $('#rdc-go', v); if (go) { go.disabled = true; go.textContent = 'Publicando…'; }
+    try {
+      const r = await sapi('POST', '/v1/posts', body);
+      if (r.status === 201) { toast('Publicado na Rede'); S.nav.st = []; S.nav.cur = null; v.hidden = true; S.comSeg = 'rede'; if (S.tab !== 'comunidade') goTab('comunidade'); else drawTab(); rdLoad(); return; }
+      toast(r.status === 409 ? 'Crie seu @usuário primeiro' : r.status === 413 ? 'A foto ficou grande demais' : 'Não consegui publicar agora');
+    } catch { toast('Não consegui publicar agora'); }
+    busy = false; if (go) { go.disabled = false; go.textContent = 'Publicar'; }
+  };
+  if (!connected() || !socialProfile) return toast('Entre na sua conta para postar');
+  S.listRedraw = draw; S.navView = { t: 'rdnew', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle();
+}
+{ const _o = openRdComposer; openRdComposer = function () { navEnter(() => openRdComposer(...arguments)); S.nav.depth++; try { return _o.apply(this, arguments); } finally { S.nav.depth--; } }; }
+// ---------- moderação ----------
+async function openRdMod() {
+  const v = $('#shelflist'); let items = null;
+  const draw = () => {
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Denúncias</b><span></span></div>
+      ${items === null ? '<p class="rd-empty">Carregando…</p>' : items.length ? items.map((it, i) => `<div class="rdm-it">${rdCardHTML({ ...it, spoiler: null }, i, { noFoot: true })}
+        <div class="rd-row"><span>${esc(it.reports.map((r) => `${r.reason} (${r.n})`).join(', '))}${it.hidden ? ' · fora do ar' : ''}</span><span style="display:flex;gap:.3rem"><button type="button" data-keep="${i}">Manter</button><button type="button" data-rm="${i}" style="color:#b3412e">Remover</button></span></div></div>`).join('') : '<p class="rd-empty">Nenhuma denúncia para revisar.</p>'}`;
+    v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+    const act = async (i, a) => { const it = items[i]; const r = await sapi('POST', `/v1/admin/${it.type === 'review' ? 'review' : 'post'}/${it.id}/${a}`); if (r.status < 300) { items.splice(i, 1); draw(); toast(a === 'keep' ? 'Mantido no ar' : 'Removido'); } else toast('Não consegui agora'); };
+    $$('[data-keep]', v).forEach((b) => b.addEventListener('click', () => act(+b.dataset.keep, 'keep')));
+    $$('[data-rm]', v).forEach((b) => b.addEventListener('click', () => act(+b.dataset.rm, 'remove')));
+    paintCv(v); rdLoadImages(v);
+  };
+  S.listRedraw = draw; S.navView = { t: 'rdmod', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle();
+  try { const r = await sapi('GET', '/v1/admin/reports'); items = r.status === 200 && r.data ? r.data.items || [] : []; } catch { items = []; }
+  draw();
+}
+// ---------- abas Rede / Amigos na Comunidade ----------
+{ const _dt = drawTab; drawTab = function () {
+  const r = _dt.apply(this, arguments); const box = $('#lista');
+  if (S.tab !== 'comunidade') { box.classList.remove('rd-on'); return r; }
+  if (!box.querySelector('.rd-seg')) {
+    const sp = box.querySelector('.gtop-sp');
+    const html = `<div class="rd-seg" role="tablist"><button type="button" data-seg="rede" role="tab">Rede</button><button type="button" data-seg="amigos" role="tab">Amigos</button></div><div id="rd-host"></div>`;
+    if (sp) sp.insertAdjacentHTML('afterend', html); else box.insertAdjacentHTML('afterbegin', html);
+    $$('[data-seg]', box).forEach((b) => b.addEventListener('click', () => { S.comSeg = b.dataset.seg; segPaint(); }));
+  }
+  segPaint();
+  return r;
+}; }
+function segPaint() {
+  const box = $('#lista'); if (!box || S.tab !== 'comunidade') return;
+  const rede = S.comSeg === 'rede'; box.classList.toggle('rd-on', rede);
+  $$('[data-seg]', box).forEach((b) => { const on = b.dataset.seg === S.comSeg; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  const host = box.querySelector('#rd-host'); if (host) host.hidden = !rede;
+  if (rede) { paintRede(); if (!S.rd.at || Date.now() - S.rd.at > 60000) rdLoad(); }
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
