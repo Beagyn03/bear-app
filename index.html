@@ -9502,6 +9502,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -9512,7 +9513,10 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
     let n = 0;
     if (S.tab && S.tab !== 'inicio') n++;
     const v = $('#shelflist'); if (v && !v.hidden && !v.classList.contains('tabroot')) n++;
-    if (vis($('#editor'))) n++;
+    const ed = $('#editor'); if (ed && !ed.hidden) n++;
+    if (TR.querySelector('.bkm')) n++;
+    if (v && !v.hidden && v.classList.contains('mine-page') && v.classList.contains('tabroot')) n++;
+    if (TR.querySelector('#sx-back') || ((S.tab === 'perfil') && TR.querySelector('#aj-back'))) n++;
     if (TR.querySelector('.drw')) n++;
     if (TR.querySelector('.pop')) n++;
     if (document.querySelector('body > .sheet')) n++;
@@ -9522,9 +9526,13 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
   const closeTop = () => {
     if (TR.querySelector('.pop')) return closePop();
     const sh = [...document.querySelectorAll('body > .sheet')].pop(); if (sh) return sh.remove();
-    if (vis($('#editor'))) return closeEd();
+    if (TR.querySelector('.bkm')) return bqClose();
+    const ed = $('#editor'); if (ed && !ed.hidden) { const nb = ed.querySelector('#nt-back'); return nb ? nb.click() : closeEd(); }
     if (TR.querySelector('.drw')) return closeDrawer();
-    const back = [...TR.querySelectorAll('.sl-back')].find(vis); if (back) return back.click();
+    const lv = $('#shelflist'); const back = (lv && !lv.hidden && lv.querySelector('.sl-back')) || [...TR.querySelectorAll('.sl-back')].find(vis); if (back && vis(back)) return back.click();
+    if (lv && !lv.hidden && lv.classList.contains('mine-page')) return goTab('inicio');
+    const sx = TR.querySelector('#sx-back'); if (sx && vis(sx)) return sx.click();
+    const aj = S.tab === 'perfil' && TR.querySelector('#aj-back'); if (aj) return aj.click();
     if (S.tab && S.tab !== 'inicio') return goTab('inicio');
   };
   let pushed = 0, skip = 0, t = 0;
@@ -9777,7 +9785,7 @@ TR.addEventListener('click', (ev) => {
     const cell = (n, t, go) => `<button type="button" ${go ? `data-go="${go}"` : 'disabled'}><b>${n}</b><small>${t}</small></button>`;
     if (nums) {
       nums.innerHTML = cell(c.LIDO || 0, (c.LIDO || 0) === 1 ? 'lido' : 'lidos', 'lidos') + cell(c.QUERO || 0, 'quero ler', 'fila') + cell(nf, nf === 1 ? 'amigo' : 'amigos', 'amigos') + cell(won, won === 1 ? 'conquista' : 'conquistas', 'conq');
-      const mark = () => { const t = v.querySelector('.sl-top b'); S.meBack = t ? t.textContent.trim() : null; };
+      const mark = () => { const N = S.nav; if (N && !N.st.length) N.st.push({ fn: () => goTab('eu'), tab: 'eu' }); };
       const go = { lidos: () => { v.hidden = true; goTab('estante'); setTimeout(() => { openShelfV3('LIDO'); mark(); }, 150); }, fila: () => { v.hidden = true; goTab('estante'); setTimeout(() => { openShelfV3('QUERO'); mark(); }, 150); }, amigos: () => { openFriendsV3(); mark(); }, conq: () => { openAchList(); mark(); } };
       $$('[data-go]', nums).forEach((b) => b.addEventListener('click', () => go[b.dataset.go]()));
     }
@@ -10551,6 +10559,7 @@ function profShelvesSnap(snapshot) {
     return r;
   };
   function openYearPage(items, own, year) {
+    navEnter(() => openYearPage(items, own, year));
     const v = $('#shelflist');
     const fromMe = !v.hidden && v.classList.contains('mine-page'), fromFriend = !fromMe && !v.hidden && S.fpData && S.fpData.handle ? S.fpData.handle : null;
     const years = [...new Set(items.map((x) => Number(String(x.d).slice(0, 4))).filter(Boolean))].sort((a, b) => b - a);
@@ -10687,6 +10696,98 @@ drawProgresso = function (box) {
 .ys-bk.ys-5::after,.cv.rt-5::before{background:linear-gradient(115deg,transparent 34%,rgba(255,214,110,.55) 44%,rgba(255,150,210,.5) 50%,rgba(150,200,255,.5) 56%,transparent 66%)!important;background-size:250% 100%!important}
 .ys-bk.ys-ouro::after,.cv.rt-ouro::before{background:linear-gradient(115deg,transparent 40%,rgba(255,210,80,.55) 50%,transparent 60%)!important;background-size:250% 100%!important}
 `; TR.append(st); }
+// --- 32_navegacao.js ---
+// Voltar sempre para a tela de onde veio (auditoria de 15/11): pilha de páginas do #shelflist.
+// Cada página interna aberta por cima de outra guarda a anterior; o "‹ Voltar" (e o voltar do celular, que clica nele)
+// reabre a anterior em vez de só esconder a lista (que mostrava a aba de baixo ou um conteúdo velho).
+// Tela de Ajustes/Editar perfil e Estatísticas (abertas pelo menu lateral ou pelo perfil) voltam para a origem.
+S.nav = { st: [], cur: null, depth: 0, restoring: false, hidAt: 0, ntAt: 0, bar: 0, origin: null };
+function navEnter(fn, tab) {
+  const N = S.nav; if (N.depth > 0) return; N.flush && N.flush();
+  const entry = { fn, tab: tab || S.tab };
+  if (N.restoring) { N.cur = entry; return; }
+  const v = $('#shelflist'), vis = !!(v && !v.hidden), recent = Date.now() - N.hidAt < 140;
+  if (Date.now() - N.bar < 400) N.st = [];
+  else if ((vis || recent) && N.cur) N.st.push(N.cur);
+  else N.st = [];
+  if (Date.now() - N.ntAt < 140 && typeof openNotif === 'function') N.st.push({ fn: () => openNotif(), tab: S.tab, nt: 1 });
+  if (N.st.length > 30) N.st.splice(0, N.st.length - 30);
+  N.cur = entry;
+}
+function navBack() { // volta uma página; false se não havia para onde
+  const N = S.nav, e = N.st.pop(); if (!e) return false;
+  N.restoring = true;
+  try { if (e.nt) { const v = $('#shelflist'); if (v) v.hidden = true; e.fn(); N.cur = null; return true; } if (e.tab && e.tab !== S.tab && e.tab !== 'eu') goTab(e.tab); e.fn(); } catch (err) { console.warn('voltar', err); }
+  finally { N.restoring = false; }
+  return true;
+}
+function navToProfileEntry() { return { fn: () => goTab('eu'), tab: 'eu' }; }
+{ // envolve quem abre página no #shelflist
+  const wrap = (get, set, mk) => { const o = get(); if (typeof o !== 'function') return; set(function (...a) {
+    navEnter(mk(a)); const N = S.nav; N.depth++;
+    let r; try { r = o.apply(this, a); } catch (err) { N.depth--; throw err; }
+    if (r && typeof r.then === 'function') r.then(() => { N.depth--; }, () => { N.depth--; }); else N.depth--;
+    return r; }); };
+  // cada linha: lê e reatribui a função pelo nome (são declarações do arquivo)
+  wrap(() => friendPage, (f) => { friendPage = f; }, (a) => () => friendPage(...a));
+  wrap(() => openMyProfile, (f) => { openMyProfile = f; }, () => () => goTab('eu'));
+  wrap(() => openBookPage, (f) => { openBookPage = f; }, (a) => () => openBookPage(...a));
+  wrap(() => openShelfV3, (f) => { openShelfV3 = f; }, (a) => () => openShelfV3(...a));
+  wrap(() => openStatusList, (f) => { openStatusList = f; }, (a) => () => openStatusList(...a));
+  wrap(() => openAchList, (f) => { openAchList = f; }, () => () => openAchList());
+  wrap(() => openAllQuotes, (f) => { openAllQuotes = f; }, () => () => openAllQuotes());
+  wrap(() => openHistory, (f) => { openHistory = f; }, () => () => openHistory());
+  wrap(() => openPeopleSearch, (f) => { openPeopleSearch = f; }, () => () => openPeopleSearch());
+  wrap(() => openFriendsV3, (f) => { openFriendsV3 = f; }, () => () => openFriendsV3());
+  wrap(() => openThreads, (f) => { openThreads = f; }, () => () => openThreads());
+  wrap(() => openChat, (f) => { openChat = f; }, (a) => () => openChat(...a));
+  wrap(() => openNovidades, (f) => { openNovidades = f; }, (a) => () => openNovidades(...a));
+  wrap(() => openGoalsV4, (f) => { openGoalsV4 = f; }, () => () => openGoalsV4());
+  wrap(() => openGoalPage, (f) => { openGoalPage = f; }, (a) => () => openGoalPage(...a));
+  wrap(() => openAuthorPage, (f) => { openAuthorPage = f; }, (a) => () => openAuthorPage(...a));
+  wrap(() => openCatalog, (f) => { openCatalog = f; }, () => () => openCatalog());
+}
+{ // marca quando a lista some e quando as Notificações fecham (para quem fecha e abre outra no mesmo toque)
+  const v = $('#shelflist'), ed = $('#editor');
+  let was = v && !v.hidden; const chk = () => { const now = !v.hidden; if (was && !now) S.nav.hidAt = Date.now(); was = now; };
+  const mo = new MutationObserver(chk); mo.observe(v, { attributes: true, attributeFilter: ['hidden'] });
+  S.nav.flush = () => { if (mo.takeRecords().length) chk(); }; // a lista pode ter sumido neste mesmo toque
+  let edNt = false; const chkEd = () => { if (!ed.hidden) { edNt = ed.classList.contains('ntpage'); return; } if (edNt) { S.nav.ntAt = Date.now(); edNt = false; } };
+  const mo2 = new MutationObserver(chkEd); mo2.observe(ed, { attributes: true, attributeFilter: ['hidden', 'class'] });
+  const f1 = S.nav.flush; S.nav.flush = () => { f1(); if (mo2.takeRecords().length) chkEd(); };
+}
+// menu de baixo: começa do zero
+TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closest('#tabbar')) { S.nav.st = []; S.nav.cur = null; S.nav.origin = null; S.nav.bar = Date.now(); } }, true);
+// "‹ Voltar" das páginas internas
+TR.addEventListener('click', (ev) => {
+  const b = ev.target.closest && ev.target.closest('#shelflist .sl-back'); if (!b || b.dataset.own) return;
+  if (!S.nav.st.length) { S.nav.cur = null; return; } // nada guardado: comportamento de antes
+  ev.stopImmediatePropagation(); ev.preventDefault(); navBack();
+}, true);
+// Ajustes/Editar perfil e Estatísticas: lembram de onde vieram
+{ const _gt = goTab; goTab = function (tab, fromBar) {
+  S.nav.flush && S.nav.flush();
+  if ((tab === 'perfil' || tab === 'progresso') && !fromBar && !S.nav.restoring && S.tab !== tab) {
+    const v = $('#shelflist'), open = (v && !v.hidden) || Date.now() - S.nav.hidAt < 400;
+    const onMe = v && v.classList.contains('mine-page') && open;
+    S.nav.origin = { tab: S.tab, page: onMe ? navToProfileEntry() : open ? S.nav.cur : null, st: open ? [...S.nav.st] : [] };
+  }
+  return _gt.apply(this, arguments);
+}; }
+function navBackOrigin() {
+  const o = S.nav.origin; S.nav.origin = null; if (!o) return goTab('inicio');
+  S.nav.restoring = true;
+  try { if (o.tab && o.tab !== 'perfil' && o.tab !== 'progresso') goTab(o.tab); else goTab('inicio'); if (o.page) { S.nav.st = o.st || []; o.page.fn(); } }
+  catch (err) { console.warn('voltar', err); } finally { S.nav.restoring = false; }
+}
+TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('#aj-back'); if (!b || !S.nav.origin) return; ev.stopImmediatePropagation(); ev.preventDefault(); navBackOrigin(); }, true);
+// Estatísticas aberta pelo menu lateral: ganha "‹ Voltar"
+{ const st = document.createElement('style'); st.textContent = `.sx-back{border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:800;font-size:.86rem;border-radius:99px;height:36px;padding:0 .8rem;margin:0 0 .4rem}`; TR.append(st); }
+{ const _dp = drawProgresso; drawProgresso = function (box) {
+  const r = _dp.apply(this, arguments);
+  if (S.nav.origin && !box.querySelector('.sx-back')) { box.insertAdjacentHTML('afterbegin', '<button type="button" class="sx-back" id="sx-back">‹ Voltar</button>'); $('#sx-back', box).addEventListener('click', navBackOrigin); }
+  return r;
+}; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
