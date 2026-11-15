@@ -2366,7 +2366,7 @@ async function publishReview(b) {
     if (!socialProfile) return; // sem @usuário ainda: publica tudo ao criar
     const rv = b.review;
     if (!rv || rv.share === false) { await sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`); return; }
-    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler });
+    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler, ...(rv.spoiler && rv.spoilerKind ? { spoilerKind: rv.spoilerKind, ...(rv.spoilerAt ? { spoilerAt: rv.spoilerAt } : {}) } : {}) });
   } catch {}
 }
 async function publishAllReviews() { libSync(); for (const e of (db.library || [])) if (e.review && e.review.share !== false) await publishReview(e); }
@@ -3256,6 +3256,12 @@ function rateForm(b, g, after) {
   const resenha = el('textarea', { name: 'resenha', maxlength: '2000', rows: '3', placeholder: 'O que você achou? (opcional)' }); resenha.value = r.texto || '';
   const shareCk = el('input', { type: 'checkbox', ...(r.share === false ? {} : { checked: '' }) });
   const spoilCk = el('input', { type: 'checkbox', ...(r.spoiler ? { checked: '' } : {}) });
+  // até onde vai o spoiler (15/11): quem já passou desse ponto na Rede vê a avaliação sem embaçar
+  const spKind = el('select', { 'aria-label': 'Até onde vai o spoiler' }, [['yes', 'Não sei dizer até onde'], ['page', 'Até a página…'], ['pct', 'Até uma parte do livro (%)'], ['end', 'Conta o final']].map(([v, t]) => el('option', { value: v, text: t, ...((r.spoilerKind || 'yes') === v ? { selected: '' } : {}) })));
+  const spAt = el('input', { type: 'number', min: '1', inputmode: 'numeric', placeholder: 'nº', value: r.spoilerAt ? String(r.spoilerAt) : '', style: 'width:90px' });
+  const spBox = el('div', { style: 'display:flex;gap:.5rem;align-items:center;margin:.2rem 0 .4rem' }, [spKind, spAt]);
+  const spSync = () => { spBox.hidden = !spoilCk.checked; spAt.hidden = !(spKind.value === 'page' || spKind.value === 'pct'); spAt.max = spKind.value === 'pct' ? '100' : '100000'; };
+  spoilCk.addEventListener('change', spSync); spKind.addEventListener('change', spSync); spSync(); setTimeout(() => { const lb = spoilCk.closest('label'), row = lb && (lb.parentElement && lb.parentElement.classList.contains('ck-line') ? lb.parentElement : lb); if (row && row.isConnected) row.after(spBox); }, 0);
   const [ds, de] = bookDates(g || current, b);
   const dStart = el('input', { type: 'date', name: 'ini', value: ds || '' }), dEnd = el('input', { type: 'date', name: 'fim', value: de || '' });
   const form = el('form', { class: 'form' }, [
@@ -3267,6 +3273,7 @@ function rateForm(b, g, after) {
     el('div', { class: 'ck-line' }, [el('label', { class: 'ck-row' }, [spoilCk, el('span', { text: 'Tem spoiler' })]),
       (() => { const tip = el('span', { class: 'tip-pop', hidden: '', text: 'Quem abrir sua avaliação vê o texto borrado e precisa confirmar antes de ler.' });
         return el('span', { class: 'tip-wrap' }, [el('button', { type: 'button', class: 'tip-btn', 'aria-label': 'O que é isso?', title: 'Quem abrir sua avaliação vê o texto borrado e precisa confirmar antes de ler.', text: '?', onclick: () => { tip.hidden = !tip.hidden; } }), tip]); })()]),
+    spBox,
     el('div', { class: 'lbl', text: 'Me deixou de ressaca literária?' }), yn, // "Em uma frase" saiu do formulário: a resenha já cobre; a frase antiga continua guardada
     el('label', { class: 'ck-row' }, [shareCk, el('span', { text: 'Compartilhar com meus amigos' })]),
     el('button', { type: 'submit', class: 'primary', text: 'Salvar ficha' }),
@@ -3274,6 +3281,7 @@ function rateForm(b, g, after) {
   ]);
   form.addEventListener('submit', (e) => {
     e.preventDefault(); r.frase = frase.value.trim(); r.texto = resenha.value.trim(); r.share = shareCk.checked; r.spoiler = spoilCk.checked;
+    if (r.spoiler) { const n = Math.round(Number(spAt.value)); r.spoilerKind = spKind.value; if ((spKind.value === 'page' || spKind.value === 'pct') && n > 0) r.spoilerAt = spKind.value === 'pct' ? Math.min(100, n) : n; else { delete r.spoilerAt; if (spKind.value === 'page' || spKind.value === 'pct') r.spoilerKind = 'yes'; } } else { delete r.spoilerKind; delete r.spoilerAt; }
     if (!r.texto) delete r.texto;
     if (dStart.value && dEnd.value && dStart.value > dEnd.value) return toast('O início precisa ser antes do fim');
     if (b.before) { if (dStart.value) b.readFrom = dStart.value; if (dEnd.value) b.readTo = dEnd.value; }
@@ -9496,6 +9504,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
