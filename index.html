@@ -3785,7 +3785,8 @@ function connectSheet(gate) {
       if (!register && accName && !(db.profile && db.profile.name)) { NAME = accName; try { localStorage.setItem('bear.profile', JSON.stringify({ name: accName })); } catch {} db.profile = { ...(db.profile || {}), name: accName }; save(); }
       if (register) { NAME = newName; try { localStorage.setItem('bear.profile', JSON.stringify({ name: newName })); } catch {} db.profile = { ...(db.profile || {}), name: newName }; save(); }
       syncMeta.version = syncMeta.version || 0; saveMeta();
-      close(); toast('Conectado'); paintAvatar(); pull();
+      close(); toast(register ? 'Conta criada' : 'Conectado'); paintAvatar(); pull();
+      if (register) { try { if (typeof window.bearAfterRegister === 'function') window.bearAfterRegister(newName, email); } catch (err) { console.warn(err); } }
     } catch { msg.textContent = 'Sem conexão com a API. Confira o endereço e a internet.'; }
   }
   const wrap = gate
@@ -9503,6 +9504,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10788,6 +10790,190 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
   if (S.nav.origin && !box.querySelector('.sx-back')) { box.insertAdjacentHTML('afterbegin', '<button type="button" class="sx-back" id="sx-back">‹ Voltar</button>'); $('#sx-back', box).addEventListener('click', navBackOrigin); }
   return r;
 }; }
+// --- 33_nova_meta.js ---
+// "+ Nova meta" (15/11): abre uma página própria no padrão novo, com "‹ Voltar" para Metas com prazo,
+// em vez da tela antiga com "Nenhuma meta... toque em Nova meta" em cima do formulário.
+// Os campos são copiados para o formulário original (#f-goal), que continua criando a meta.
+{ const st = document.createElement('style'); st.textContent = `
+.nm-f{display:grid;gap:.75rem;margin-top:.3rem}
+.nm-f label{display:grid;gap:.3rem;font-size:.86rem;font-weight:700}
+.nm-f input[type=text],.nm-f input[type=date],.nm-f input[type=number]{font:inherit;font-size:1rem;height:44px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:0 .7rem;width:100%;min-width:0}
+.nm-2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.nm-ck{display:flex!important;grid-template-columns:none;align-items:flex-start;gap:.55rem!important;font-weight:700}
+.nm-ck input{margin-top:.2rem;width:18px;height:18px;flex:none}
+.nm-plan{display:grid;gap:.6rem;border:1px solid var(--line);border-radius:12px;padding:.7rem;background:var(--panel)}
+.nm-plan p{margin:0;font-size:.8rem;opacity:.75;font-weight:600}
+.nm-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:.3rem}
+.nm-wk label{font-size:.72rem;text-align:center;gap:.2rem}
+.nm-wk input{font:inherit;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--bg,#fff);color:var(--ink);text-align:center;width:100%;min-width:0;padding:0}
+.nm-ok{height:46px;border-radius:12px;border:0;background:var(--acc);color:#fff;font-weight:800;font-size:1rem}
+.nm-no{height:40px;border:0;background:none;color:var(--ink);font-weight:700;opacity:.75}
+`; TR.append(st); }
+function openGoalNew() {
+  const v = $('#shelflist'), fg = document.querySelector('#f-goal'); if (!fg) return newChallenge();
+  const F = fg.elements, wk = [...document.querySelectorAll('#week input')];
+  const days = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+  v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Nova meta</b><span></span></div>
+    <form class="nm-f" id="nm-f" novalidate>
+      <label>Nome <input type="text" name="name" maxlength="80" placeholder="Fim de ano 2026" required></label>
+      <div class="nm-2"><label>Começa em <input type="date" name="startDate" value="${esc(F.startDate.value || todayISO())}"></label>
+        <label>Termina em <input type="date" name="targetDate" value="${esc(F.targetDate.value)}"></label></div>
+      <label class="nm-ck"><input type="checkbox" name="plan"><span>Calcular quantas páginas ler por dia para terminar no prazo</span></label>
+      <div class="nm-plan" id="nm-plan" hidden>
+        <label>Margem de folga (páginas) <input type="number" name="tol" min="0" value="${esc(F.tolerancePages.value || '10')}"></label>
+        <p>Peso de cada dia: 1 é um dia normal, 2 é o dobro, 0,5 é metade e 0 é folga.</p>
+        <div class="nm-wk">${wk.map((x, i) => `<label>${days[i] || ''}<input type="text" inputmode="decimal" data-w="${i}" value="${esc(x.value)}"></label>`).join('')}</div>
+      </div>
+      <button type="submit" class="nm-ok">Criar meta</button>
+      <button type="button" class="nm-no" id="nm-no">Cancelar</button>
+    </form>`;
+  const f = $('#nm-f', v), back = () => $('.sl-back', v).click();
+  f.elements.plan.addEventListener('change', () => { $('#nm-plan', v).hidden = !f.elements.plan.checked; });
+  $('#nm-no', v).addEventListener('click', back);
+  v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+  f.addEventListener('submit', (ev) => {
+    ev.preventDefault(); const E = f.elements, name = E.name.value.trim();
+    if (!name) { toast('Dê um nome para a meta'); return E.name.focus(); }
+    if (!E.startDate.value || !E.targetDate.value) return toast('Escolha as duas datas');
+    if (E.targetDate.value < E.startDate.value) return toast('A data final precisa ser depois da inicial');
+    F.name.value = name; F.startDate.value = E.startDate.value; F.targetDate.value = E.targetDate.value;
+    F.plan.checked = E.plan.checked; F.tolerancePages.value = E.tol.value || '0';
+    $$('[data-w]', v).forEach((x) => { const t = wk[+x.dataset.w]; if (t) t.value = x.value; });
+    S.nav.st = []; S.nav.cur = null; v.hidden = true; screen('desafios');
+    if (fg.requestSubmit) fg.requestSubmit(); else fg.dispatchEvent(new Event('submit', { cancelable: true }));
+  });
+  S.listRedraw = null; S.navView = { t: 'goalnew', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); v.hidden = false; v.scrollTop = 0; syncTopTitle();
+  setTimeout(() => { try { f.elements.name.focus(); } catch {} }, 60);
+}
+{ const _o = openGoalNew; openGoalNew = function () { navEnter(() => openGoalNew()); S.nav.depth++; try { return _o.apply(this, arguments); } finally { S.nav.depth--; } }; }
+// o botão da lista de metas abre a página nova
+TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('#shelflist #gl-new'); if (!b) return; ev.stopImmediatePropagation(); ev.preventDefault(); openGoalNew(); }, true);
+// --- 34_cadastro_gostos.js ---
+// Cadastro (15/11): conta nova já sai com @usuário (sem cair em Editar perfil) e o Bear pergunta gêneros e livros
+// favoritos. Os gostos ficam em db.prefs.taste e alimentam "Para você" no Início (Google Livros, sem mudar a API).
+const TASTE_G = [['romance', 'Romance', 'subject:romance'], ['fantasia', 'Fantasia', 'subject:fantasy'], ['ficcao', 'Ficção científica', 'subject:"science fiction"'],
+  ['suspense', 'Suspense', 'subject:thriller'], ['policial', 'Policial e mistério', 'subject:mystery'], ['terror', 'Terror', 'subject:horror'],
+  ['historico', 'Romance histórico', 'subject:"historical fiction"'], ['classicos', 'Clássicos', 'subject:classics'], ['ya', 'Jovem adulto', 'subject:"young adult"'],
+  ['nacional', 'Literatura brasileira', 'subject:"literatura brasileira"'], ['poesia', 'Poesia', 'subject:poetry'], ['hq', 'HQ e mangá', 'subject:comics'],
+  ['biografia', 'Biografias', 'subject:biography'], ['autoajuda', 'Autoajuda', 'subject:"self-help"'], ['negocios', 'Negócios', 'subject:business'], ['ciencia', 'Ciência', 'subject:science']];
+const TASTE_OL = {"romance":"romance","fantasia":"fantasy","ficcao":"science_fiction","suspense":"thriller","policial":"mystery","terror":"horror","historico":"historical_fiction","classicos":"classic_literature","ya":"young_adult_fiction","nacional":"brazilian_literature","poesia":"poetry","hq":"comics","biografia":"biography","autoajuda":"self-help","negocios":"business","ciencia":"science"};
+const tasteOf = () => (db.prefs && db.prefs.taste) || null;
+// ---------- @usuário automático ----------
+function handleBase(name, email) {
+  const clean = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9_.]+/g, '').replace(/^[._]+|[._]+$/g, '');
+  let b = clean(name); if (b.length < 3) b = clean(String(email || '').split('@')[0]); if (b.length < 3) b = 'leitor' + b;
+  return b.slice(0, 16);
+}
+async function autoHandle(name, email) {
+  try {
+    if (socialProfile === undefined) await loadProfile(); if (socialProfile) return socialProfile;
+    const base = handleBase(name, email), disp = String(name || '').trim().slice(0, 40) || base;
+    for (let i = 0; i < 6; i++) {
+      const h = i ? (base.slice(0, 16) + Math.floor(100 + Math.random() * 9000)).slice(0, 20) : base;
+      const r = await sapi('PUT', '/v1/me/profile', { handle: h, displayName: disp });
+      if (r.status === 200 && r.data && r.data.handle) { socialProfile = r.data; try { renderProfile(); } catch {} try { paintGtop(); } catch {} return socialProfile; }
+      if (r.status !== 409) break;
+    }
+  } catch (err) { console.warn('perfil automático', err); }
+  return null;
+}
+function afterRegister(name, email) { // chamado pelo cadastro, depois do login
+  try { sessionStorage.removeItem('bear.onMe'); } catch {}
+  setTimeout(async () => { const p = await autoHandle(name, email); try { goTab('inicio'); } catch {} openTaste(true, p); }, 50);
+}
+// ---------- página "O que você gosta de ler?" ----------
+{ const st = document.createElement('style'); st.textContent = `
+.gs-t{font-size:1.35rem;margin:.2rem 0 .3rem;color:var(--ink)}
+.gs-intro{margin:.1rem 0 .7rem;font-size:.9rem;color:var(--ink-2);font-weight:600}
+.gs-h{font-weight:800;font-size:.95rem;margin:.6rem 0 .4rem}
+.gs-chips{display:flex;flex-wrap:wrap;gap:.4rem}
+.gs-ch{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:700;font-size:.86rem;border-radius:99px;min-height:38px;padding:0 .85rem}
+.gs-ch.on{border-color:var(--acc);background:var(--acc);color:#fff}
+.gs-bks{display:grid;gap:.4rem}
+.gs-bk{display:grid;grid-template-columns:38px 1fr auto;gap:.6rem;align-items:center;border:1px solid var(--line);border-radius:12px;padding:.4rem .5rem;background:var(--panel)}
+.gs-bk .cv{width:38px;height:56px;border-radius:5px;font-size:.5rem}
+.gs-bk b{font-size:.88rem;display:block}.gs-bk small{font-size:.76rem;color:var(--ink-2)}
+.gs-bk button{border:0;background:none;color:var(--ink-2);font-size:1.2rem;width:36px;height:36px}
+.gs-add{width:100%;height:42px;border-radius:12px;border:1.5px dashed var(--line);background:none;color:var(--ink);font:inherit;font-weight:800}
+.gs-btns{position:sticky;bottom:0;display:grid;gap:.3rem;padding:.8rem 0 .4rem;background:linear-gradient(transparent,var(--bg) 30%)}
+.gs-ok{height:46px;border-radius:12px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:800;font-size:1rem}
+.gs-ok:disabled{opacity:.5}
+.gs-skip{height:40px;border:0;background:none;color:var(--ink);font:inherit;font-weight:700;opacity:.75}
+.pv-row{display:flex;gap:.6rem;overflow-x:auto;padding:.2rem 0 .5rem;scrollbar-width:none}.pv-row::-webkit-scrollbar{display:none}
+.pv-bk{flex:0 0 92px;border:0;background:none;padding:0;text-align:left;color:var(--ink);font:inherit}
+.pv-bk .cv{width:92px;height:136px;border-radius:7px;display:block}
+.pv-bk b{display:block;font-size:.78rem;line-height:1.2;margin-top:.3rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pv-bk small{display:block;font-size:.7rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv-ask{display:grid;grid-template-columns:1fr auto;gap:.6rem;align-items:center;width:100%;text-align:left;border:1px solid var(--line);border-radius:14px;padding:.75rem .85rem;background:var(--panel);color:var(--ink);font:inherit;margin:.2rem 0 .6rem}
+.pv-ask b{display:block;font-size:.92rem}.pv-ask small{font-size:.8rem;color:var(--ink-2)}
+.pv-msg{font-size:.84rem;color:var(--ink-2);margin:.2rem 0 .6rem}
+`; TR.append(st); }
+function openTaste(first, prof) {
+  const v = $('#shelflist'), t0 = tasteOf() || {}, sel = new Set(t0.genres || []), books = [...(t0.books || [])];
+  const draw = () => {
+    v.querySelector('.sl-body').innerHTML = `<div class="sl-top">${first ? '<span></span>' : '<button type="button" class="sl-back">‹ Voltar</button>'}<b>O que você gosta de ler?</b><span></span></div>
+      ${first ? '<h2 class="gs-t">O que você gosta de ler?</h2>' : ''}<p class="gs-intro">${first ? `${prof ? `Sua conta está pronta, você é <b>@${esc(prof.handle)}</b> (dá para trocar em Editar perfil). ` : 'Sua conta está pronta. '}` : ''}Conte seus gêneros e livros favoritos e o Bear indica leituras para você.</p>
+      <div class="gs-h">Gêneros</div>
+      <div class="gs-chips">${TASTE_G.map(([k, n]) => `<button type="button" class="gs-ch${sel.has(k) ? ' on' : ''}" data-k="${k}" aria-pressed="${sel.has(k)}">${esc(n)}</button>`).join('')}</div>
+      <div class="gs-h">Livros que você amou <small style="font-weight:600;opacity:.7">(até 5)</small></div>
+      <div class="gs-bks">${books.map((b, i) => `<div class="gs-bk">${cvh(b.title, b.cover)}<span><b>${esc(b.title)}</b><small>${esc(b.author || '')}</small></span><button type="button" data-rm="${i}" aria-label="Tirar ${esc(b.title)}">×</button></div>`).join('')}
+        ${books.length < 5 ? '<button type="button" class="gs-add" id="gs-add">+ Adicionar livro</button>' : ''}</div>
+      <div class="gs-btns"><button type="button" class="gs-ok" id="gs-ok"${sel.size || books.length ? '' : ' disabled'}>Salvar</button><button type="button" class="gs-skip" id="gs-skip">${first ? 'Agora não' : 'Cancelar'}</button></div>`;
+    paintCv(v);
+    const back = v.querySelector('.sl-back'); if (back) back.addEventListener('click', () => { v.hidden = true; });
+    $$('.gs-ch', v).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; sel.has(k) ? sel.delete(k) : sel.add(k); b.classList.toggle('on', sel.has(k)); b.setAttribute('aria-pressed', sel.has(k)); $('#gs-ok', v).disabled = !(sel.size || books.length); }));
+    $$('[data-rm]', v).forEach((b) => b.addEventListener('click', () => { books.splice(+b.dataset.rm, 1); draw(); }));
+    $('#gs-add', v)?.addEventListener('click', () => searchSheet({ title: 'Um livro que você amou', onPick: (it) => { if (it && it.title && !books.some((x) => normT(x.title) === normT(it.title))) books.push({ title: String(it.title).slice(0, 200), author: it.author || null, cover: typeof it.cover === 'string' && /^https:/.test(it.cover) ? it.cover : null }); draw(); } }));
+    $('#gs-skip', v).addEventListener('click', () => { if (first) { db.prefs = { ...(db.prefs || {}), tasteAsked: 1 }; save(); } done(); });
+    $('#gs-ok', v).addEventListener('click', () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, taste: { genres: [...sel], books, at: new Date().toISOString() } }; save(); try { localStorage.removeItem('bear.pv'); } catch {} toast('Gostos salvos'); done(); });
+  };
+  const done = () => { if (!first && S.nav.st.length) return navBack(); v.hidden = true; try { if (S.tab === 'inicio') drawTab(); else goTab('inicio'); } catch {} };
+  S.listRedraw = draw; S.navView = { t: 'taste', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle();
+}
+{ const _o = openTaste; openTaste = function (first) { if (first) { S.nav.st = []; S.nav.cur = null; return _o.apply(this, arguments); } navEnter(() => openTaste()); S.nav.depth++; try { return _o.apply(this, arguments); } finally { S.nav.depth--; } }; }
+// ---------- "Para você" no Início ----------
+async function tasteRecs() {
+  const t = tasteOf(); if (!t) return [];
+  const key = JSON.stringify([t.genres, (t.books || []).map((b) => b.title)]), day = todayISO();
+  try { const c = JSON.parse(localStorage.getItem('bear.pv') || 'null'); if (c && c.key === key && c.day === day && Array.isArray(c.items)) return c.items; } catch {}
+  const qs = [];
+  for (const k of t.genres || []) { const g = TASTE_G.find((x) => x[0] === k); if (g) qs.push(g[2]); }
+  for (const b of t.books || []) { const a = String(b.author || '').split(',')[0].trim(); if (a) qs.push(`inauthor:"${a}"`); }
+  if (!qs.length) return [];
+  const G = 'https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=20&langRestrict=pt&q=';
+  let lists = await Promise.all(qs.slice(0, 8).map((q) => getJSON(G + encodeURIComponent(q), 8000).then(fromGoogle).catch(() => [])));
+  if (lists.flat().filter((x) => x && x.coverUrl).length < 6) { // Google sem resposta (limite): Open Library como reserva
+    const O = 'https://openlibrary.org/search.json?limit=20&fields=title,author_name,cover_i&', ol = (d) => ((d && d.docs) || []).map((x) => ({ title: x.title, author: (x.author_name || [])[0] || null, coverUrl: x.cover_i ? `https://covers.openlibrary.org/b/id/${x.cover_i}-M.jpg` : null }));
+    const oq = [...(t.genres || []).map((k) => TASTE_OL[k] && 'subject=' + encodeURIComponent(TASTE_OL[k])), ...(t.books || []).map((b) => { const a = String(b.author || '').split(',')[0].trim(); return a && 'author=' + encodeURIComponent(a); })].filter(Boolean).slice(0, 8);
+    lists = lists.concat(await Promise.all(oq.map((q) => getJSON(O + q, 9000).then(ol).catch(() => []))));
+  }
+  const mine = new Set([...(lib() || []).map((e) => normT(e.title || '')), ...(t.books || []).map((b) => normT(b.title))]), seen = new Set(), out = [];
+  const side = /\b(box|kit|colecao|resumo|guia|edicao comentada|livro de colorir)\b/;
+  for (let i = 0; out.length < 18 && i < 20; i++) for (const L of lists) { const it = L[i]; if (!it || !it.title || !it.coverUrl) continue; const n = normT(it.title.split(':')[0]); if (!n || seen.has(n) || mine.has(n) || side.test(n)) continue; seen.add(n); out.push({ title: it.title.split(':')[0].trim(), author: it.author, coverUrl: it.coverUrl }); if (out.length >= 18) break; }
+  if (out.length) { try { localStorage.setItem('bear.pv', JSON.stringify({ key, day, items: out })); } catch {} }
+  return out;
+}
+function paintForYou(box) {
+  if (!box || box.querySelector('#pv-host')) return;
+  const t = tasteOf(), host = document.createElement('div'); host.id = 'pv-host';
+  const at = box.querySelector('.v3-colA') || box; at.append(host);
+  if (!t || !((t.genres || []).length || (t.books || []).length)) {
+    host.innerHTML = `<button type="button" class="pv-ask" id="pv-ask"><span><b>Receba indicações de leitura</b><small>Conte seus gêneros e livros favoritos</small></span>›</button>`;
+    $('#pv-ask', host).addEventListener('click', () => openTaste()); return;
+  }
+  host.innerHTML = `<div class="v3-sh"><b>Para você</b><button type="button" class="v3-link" id="pv-edit">Seus gostos ›</button></div><p class="pv-msg">Buscando indicações…</p>`;
+  $('#pv-edit', host).addEventListener('click', () => openTaste());
+  tasteRecs().then((items) => {
+    if (!host.isConnected) return;
+    const sh = host.querySelector('.v3-sh').outerHTML;
+    host.innerHTML = sh + (items.length ? `<div class="pv-row">${items.map((it, i) => `<button type="button" class="pv-bk" data-i="${i}">${cvh(it.title, it.coverUrl)}<b>${esc(it.title)}</b><small>${esc(it.author || '')}</small></button>`).join('')}</div>`
+      : `<p class="pv-msg">${navigator.onLine === false ? 'Sem internet agora.' : 'Não achei indicações agora. Tente mais tarde ou ajuste seus gostos.'}</p>`);
+    paintCv(host); $('#pv-edit', host).addEventListener('click', () => openTaste());
+    $$('.pv-bk', host).forEach((b) => b.addEventListener('click', () => { const it = items[+b.dataset.i]; bookQuickMenu(b.querySelector('.cv') || b, { title: it.title, author: it.author }); }));
+  });
+}
+{ const _dt = drawTab; drawTab = function () { const r = _dt.apply(this, arguments); try { if (S.tab === 'inicio') paintForYou($('#lista')); } catch (err) { console.warn('para você', err); } return r; }; }
+window.bearAfterRegister = (n, e) => afterRegister(n, e);
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
