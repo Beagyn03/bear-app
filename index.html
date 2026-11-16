@@ -9590,6 +9590,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12160,7 +12161,7 @@ function editTop5() {
 }; }
 // --- 45_avaliacao_pagina.js ---
 // Avaliação em página inteira (Bia, 16/11): capa no topo, título, autor, status, datas de início e de conclusão,
-// depois as patas, a resenha (campo grande) e as demais opções; Salvar fixo embaixo.
+// depois as patas, a resenha (campo grande) e as demais opções; Salvar fixo embaixo. "Até onde vai o spoiler" sai: o app usa o progresso.
 { const st = document.createElement('style'); st.textContent = `
 .sheet.rt-full{align-items:stretch!important;justify-content:stretch!important;padding:0!important;background:var(--bg)!important;backdrop-filter:none!important}
 .sheet.rt-full > .box{position:fixed!important;inset:0!important;max-width:none!important;width:100%!important;max-height:none!important;height:100dvh!important;border-radius:0!important;margin:0!important;overflow-y:auto!important;padding:0 1rem calc(5.5rem + env(safe-area-inset-bottom))!important;background:var(--bg)!important;box-shadow:none!important;animation:none!important}
@@ -12197,6 +12198,11 @@ function editTop5() {
     if (nota) (dates || hd).after(nota);
     const ta = form.querySelector('textarea'), tl = ta && ta.closest('label');
     if (tl) { const lb = document.createElement('div'); lb.className = 'rtf-lb'; lb.textContent = 'Resenha'; tl.before(lb); ta.rows = 8; ta.placeholder = 'O que você achou? Conte do seu jeito (opcional)'; }
+    // até onde vai o spoiler: o app já sabe (livro lido = até o final; lendo = até a página atual), não pergunta
+    const spSel = form.querySelector('select[aria-label="Até onde vai o spoiler"]');
+    if (spSel) { const box = spSel.parentElement, num = box.querySelector('input[type=number]'); box.style.setProperty('display', 'none', 'important');
+      const pg = libE ? (() => { try { return libProgress(libE) || 0; } catch { return 0; } })() : 0;
+      if (stK === 'LIDO' || stK === 'CONCLUIDO') spSel.value = 'end'; else if (pg > 0 && num) { spSel.value = 'page'; num.value = String(pg); } else spSel.value = 'yes'; }
     try { paintCv(wrap); } catch {}
     wrap.querySelector('.box').scrollTop = 0;
   } catch (err) { console.warn('avaliação em página', err); }
