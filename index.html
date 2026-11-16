@@ -2354,7 +2354,7 @@ async function loadProfile() {
 }
 const relTime = (iso) => { const d = (Date.now() - new Date(iso).getTime()) / 60000; if (d < 1) return 'agora'; if (d < 60) return `${Math.floor(d)} min`; if (d < 1440) return `${Math.floor(d / 60)} h`; const n = Math.floor(d / 1440); return n < 7 ? `${n} d` : new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }); };
 const smallCover = (c) => (c && (/^https:\/\//.test(c) || (c.startsWith('data:image') && c.length < 60000)) ? c : null);
-function reviewText(rv) { return [rv.frase ? `“${rv.frase}”` : null, rv.texto || null, (rv.mel || []).length ? rv.mel.map(t => `${melEmoji(t)} ${melName(t)}`).join('  ') : null, rv.ressaca ? 'me deixou de ressaca literária' : null].filter(Boolean).join('\n\n'); }
+function reviewText(rv) { return [rv.frase ? `“${rv.frase}”` : null, rv.texto || null, (rv.mel || []).length ? rv.mel.map(t => `${melEmoji(t)} ${melName(t)}`).join('  ') : null, rv.ressaca === 'curou' ? 'curou minha ressaca literária' : rv.ressaca ? 'me deu ressaca literária' : null].filter(Boolean).join('\n\n'); }
 // Publica (ou tira) a avaliação no feed das amigas
 async function publishReview(b) {
   if (!connected()) return;
@@ -2366,7 +2366,7 @@ async function publishReview(b) {
     if (!socialProfile) return; // sem @usuário ainda: publica tudo ao criar
     const rv = b.review;
     if (!rv || rv.share === false) { await sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`); return; }
-    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler, ...(rv.spoiler && rv.spoilerKind ? { spoilerKind: rv.spoilerKind, ...(rv.spoilerAt ? { spoilerAt: rv.spoilerAt } : {}) } : {}) });
+    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler, ressaca: rv.ressaca === 'curou' ? 'curou' : rv.ressaca ? 'deu' : null, ...(rv.spoiler && rv.spoilerKind ? { spoilerKind: rv.spoilerKind, ...(rv.spoilerAt ? { spoilerAt: rv.spoilerAt } : {}) } : {}) });
   } catch {}
 }
 async function publishAllReviews() { libSync(); for (const e of (db.library || [])) if (e.review && e.review.share !== false) await publishReview(e); }
@@ -3234,6 +3234,7 @@ const pawFill = (r, i) => Math.max(0, Math.min(1, r - (i - 1)));
 const paws = (r) => el('span', { class: 'paws', role: 'img', 'aria-label': `${fmtR(r)} de 5` }, [1,2,3,4,5].map(i => paw(pawFill(r, i))));
 function rateForm(b, g, after) {
   const r = Object.assign({ paws: 0, mel: [], frase: '', ressaca: null }, b.review || {});
+  if (r.ressaca === true) r.ressaca = 'deu'; else if (r.ressaca !== 'deu' && r.ressaca !== 'curou') r.ressaca = null; // antes era Sim/Não
   r.mel = [...r.mel].map(t => ({ 'shippei forte': 'shippei', 'ódio do protagonista': 'raiva' })[t] || t);
   const close = () => wrap.remove();
   const pawRow = el('div', { class: 'rate-paws' }), pawLbl = el('span', { class: 'paw-lbl' });
@@ -3249,7 +3250,7 @@ function rateForm(b, g, after) {
     return c;
   }));
   const yn = el('div', { class: 'yn' });
-  const drawYn = () => yn.replaceChildren(...[['Sim', true], ['Não', false]].map(([t, v]) => el('button', { type: 'button', class: r.ressaca === v ? 'on' : '', text: t, 'aria-pressed': String(r.ressaca === v),
+  const drawYn = () => yn.replaceChildren(...[['Me deu ressaca', 'deu'], ['Curou minha ressaca', 'curou']].map(([t, v]) => el('button', { type: 'button', class: r.ressaca === v ? 'on' : '', text: t, 'aria-pressed': String(r.ressaca === v),
     onclick: () => { r.ressaca = r.ressaca === v ? null : v; drawYn(); } })));
   const frase = el('input', { name: 'frase', maxlength: '140', placeholder: 'Ex.: me destruiu e eu agradeço', value: r.frase });
   const resenha = el('textarea', { name: 'resenha', maxlength: '2000', rows: '3', placeholder: 'O que você achou? (opcional)' }); resenha.value = r.texto || '';
@@ -3273,7 +3274,7 @@ function rateForm(b, g, after) {
       (() => { const tip = el('span', { class: 'tip-pop', hidden: '', text: 'Quem abrir sua avaliação vê o texto borrado e precisa confirmar antes de ler.' });
         return el('span', { class: 'tip-wrap' }, [el('button', { type: 'button', class: 'tip-btn', 'aria-label': 'O que é isso?', title: 'Quem abrir sua avaliação vê o texto borrado e precisa confirmar antes de ler.', text: '?', onclick: () => { tip.hidden = !tip.hidden; } }), tip]); })()]),
     spBox,
-    el('div', { class: 'lbl', text: 'Me deixou de ressaca literária?' }), yn, // "Em uma frase" saiu do formulário: a resenha já cobre; a frase antiga continua guardada
+    el('div', { class: 'lbl', text: 'Ressaca literária' }), yn, // "Em uma frase" saiu do formulário: a resenha já cobre; a frase antiga continua guardada
     el('label', { class: 'ck-row' }, [shareCk, el('span', { text: 'Compartilhar com meus amigos' })]),
     el('button', { type: 'submit', class: 'primary', text: 'Salvar ficha' }),
     el('button', { type: 'button', class: 'cancel', text: 'Agora não', onclick: close }),
@@ -3322,7 +3323,7 @@ function renderLidos(g) {
   }
 }
 function reviewLine(rv) {
-  const parts = [...(rv.mel.length ? [rv.mel.map(melEmoji).join(' ')] : []), ...(rv.ressaca ? ['ressaca literária'] : []), ...(rv.frase ? [`“${rv.frase}”`] : [])];
+  const parts = [...(rv.mel.length ? [rv.mel.map(melEmoji).join(' ')] : []), ...(rv.ressaca === 'curou' ? ['curou a ressaca'] : rv.ressaca ? ['deu ressaca'] : []), ...(rv.frase ? [`“${rv.frase}”`] : [])];
   return el('div', { class: 's rv' }, [...(rv.paws ? [paws(rv.paws)] : []), ...(parts.length ? [el('span', { text: parts.join(' · ') })] : [])]);
 }
 // Menu de ações do livro (folha que sobe do rodapé)
@@ -9598,6 +9599,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -9983,7 +9985,7 @@ TR.addEventListener('click', (ev) => {
       const spoil = form.querySelector('.ck-line'), share = [...form.querySelectorAll(':scope > .ck-row')].pop();
       if (spoil && share) { const row = document.createElement('div'); row.className = 'rt-opts'; spoil.before(row); row.append(spoil, share); }
       const yn = form.querySelector('.yn'), ylbl = yn && yn.previousElementSibling;
-      if (yn && ylbl) { const row = document.createElement('div'); row.className = 'rt-ress'; ylbl.textContent = 'Ressaca literária?'; ylbl.before(row); row.append(ylbl, yn); }
+      if (yn && ylbl) { const row = document.createElement('div'); row.className = 'rt-ress'; ylbl.textContent = 'Ressaca literária'; ylbl.before(row); row.append(ylbl, yn); }
       const ok = form.querySelector('button[type=submit]'), no = form.querySelector('button.cancel');
       if (ok && no) { const row = document.createElement('div'); row.className = 'rt-btns'; ok.before(row); row.append(no, ok); ok.textContent = 'Salvar'; }
     } catch (err) { console.error('ficha', err); }
@@ -12202,6 +12204,7 @@ function editTop5() {
 .rv-c{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:.5rem .75rem}.rv-c small{color:var(--ink-2)}.rv-c p{margin:.2rem 0 0;white-space:pre-line}
 .rtf-st.st-lido,.rtf-st.st-concluido{background:#2f8a52!important;border-color:#2f8a52!important;color:#fff!important}
 .rtf-lb{font-weight:800;font-size:.9rem;margin:.4rem 0 -.2rem}
+.sheet.rt-full .rt-ress .yn{flex-wrap:wrap}.sheet.rt-full .rt-ress .yn button{padding:0 .85rem!important;font-size:.84rem}
 .sheet.rt-full .rt-btns{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:.55rem 1rem calc(.55rem + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);max-width:none;margin:0;display:flex!important;justify-content:flex-end;gap:.5rem}
 .sheet.rt-full .rt-btns button{min-height:40px!important;height:40px!important;padding:0 1.2rem!important;font-size:.92rem!important;width:auto!important;flex:none!important;border-radius:12px!important;margin:0!important}
 .sheet.rt-full .rt-btns .primary{min-width:120px}
@@ -12228,7 +12231,7 @@ function editTop5() {
       view.innerHTML = (rv.paws ? '<div class="rv-paws">' + esc(pawTxt(rv.paws)) + '</div>' : '')
         + '<div class="rv-dates"><div><small>Comecei em</small><b>' + (ds ? fmt(ds) : '—') + '</b></div><div><small>Terminei em</small><b>' + (de ? fmt(de) : '—') + '</b></div></div>'
         + (rv.texto ? '<p class="rv-txt">' + esc(rv.texto) + '</p>' : rv.frase ? '<p class="rv-txt">' + esc(rv.frase) + '</p>' : '')
-        + '<div class="rv-tags">' + [rv.spoiler ? 'Tem spoiler' : '', rv.share === false ? 'Privada (só você vê)' : 'Visível para os outros', rv.ressaca === true ? 'Me deixou de ressaca' : ''].filter(Boolean).map((t) => '<span>' + t + '</span>').join('') + '</div>';
+        + '<div class="rv-tags">' + [rv.spoiler ? 'Tem spoiler' : '', rv.share === false ? 'Privada (só você vê)' : 'Visível para os outros', rv.ressaca === 'curou' ? 'Curou minha ressaca' : rv.ressaca ? 'Me deu ressaca' : ''].filter(Boolean).map((t) => '<span>' + t + '</span>').join('') + '</div>';
       hd.after(view);
       // embaixo da avaliação: trechos (e anotação) do livro e os comentários que a avaliação recebeu
       const qs = libE ? [...(libE.quotes || [])].sort((a, z) => (a.p || 99999) - (z.p || 99999)) : [];
@@ -12291,6 +12294,72 @@ function editTop5() {
     if (!e) { try { sessionStorage.removeItem(K); } catch {} return; }
     try { rateForm(e, { logs: [] }, () => renderHome(todayISO())); if (c.ed) setTimeout(() => document.querySelector('.sheet.rt-full .rtf-ed')?.click(), 50); } catch (err) { console.warn('reabrir avaliação', err); }
   }, 1800);
+}
+// --- 46_ressaca.js ---
+// Ressaca literária (Bia, 16/11): na avaliação a pessoa diz se o livro DEU ou CUROU a ressaca.
+// Página do livro (Sobre) mostra o termômetro com os votos de todo mundo; na Buscar, atalhos para os livros que curam e que dão ressaca.
+S.rsBook = S.rsBook || {};
+{ const st = document.createElement('style'); st.textContent = `
+.rs-term{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.75rem .85rem;margin:0 0 .8rem;display:grid;gap:.45rem}
+.rs-term .rs-h{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}.rs-term .rs-h b{font-size:.95rem}.rs-term .rs-h small{font-size:.75rem;color:var(--ink-2);font-weight:700}
+.rs-bar{position:relative;height:14px;border-radius:99px;overflow:hidden;background:var(--line);display:flex}
+.rs-bar i{display:block;height:100%}.rs-bar .c{background:linear-gradient(90deg,#2f8a52,#5cc184)}.rs-bar .d{background:linear-gradient(90deg,#b0558f,#7b3fb3)}
+.rs-leg{display:flex;justify-content:space-between;font-size:.8rem;font-weight:800}.rs-leg .c{color:#2f8a52}.rs-leg .d{color:#9b4bb0}
+.rs-empty{font-size:.82rem;color:var(--ink-2);margin:0}
+.rs-link{justify-self:start;border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.82rem;padding:0}
+.rs-chips{display:flex;gap:.45rem;flex-wrap:wrap;margin:.6rem 0 .2rem}
+.rs-chips button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.45rem .9rem;font:inherit;font-weight:800;font-size:.86rem}
+.rs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:.8rem .6rem;margin-top:.6rem}
+.rs-list .es-bk{display:flex;flex-direction:column;gap:.25rem;align-items:center;border:0;background:none;padding:0;color:var(--ink);font:inherit}
+.rs-list .cv{width:96px;height:144px;border-radius:4px 7px 7px 4px}.rs-list small{font-size:.74rem;font-weight:800;text-align:center;color:var(--ink-2)}
+`; TR.append(st); }
+const rsKey = (t) => normT(String(t || '').split(/[:(]/)[0]);
+async function rsBookData(title) {
+  const k = rsKey(title), c = S.rsBook[k]; if (c && Date.now() - c.at < 10 * 60000) return c.d;
+  if (!connected()) return null;
+  try { const r = await sapi('GET', '/v1/ressaca/book?title=' + encodeURIComponent(String(title).slice(0, 200))); if (r.status !== 200 || !r.data) return null; S.rsBook[k] = { d: r.data, at: Date.now() }; return r.data; } catch { return null; }
+}
+function rsTermHTML(d) {
+  const c = d.curou || 0, de = d.deu || 0, n = c + de;
+  if (!n) return '<div class="rs-h"><b>Ressaca literária</b></div><p class="rs-empty">Ninguém votou ainda. Ao avaliar, conte se esse livro deu ou curou a sua ressaca.</p>';
+  const pc = Math.round(c / n * 100);
+  return '<div class="rs-h"><b>Ressaca literária</b><small>' + plural(n, 'voto', 'votos') + '</small></div>'
+    + '<div class="rs-bar" role="img" aria-label="' + c + ' disseram que curou, ' + de + ' que deu ressaca"><i class="c" style="width:' + pc + '%"></i><i class="d" style="width:' + (100 - pc) + '%"></i></div>'
+    + '<div class="rs-leg"><span class="c">Cura ressaca · ' + c + '</span><span class="d">Dá ressaca · ' + de + '</span></div>'
+    + '<button type="button" class="rs-link" data-rsk="' + (c >= de ? 'curou' : 'deu') + '">' + (c >= de ? 'Mais livros que curam ressaca ›' : 'Mais livros que dão ressaca ›') + '</button>';
+}
+async function openRessacaList(kind) {
+  const v = $('#shelflist'); closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page');
+  const title = kind === 'curou' ? 'Curam ressaca' : 'Dão ressaca';
+  const shell = (body) => { v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back" data-own="1">‹ Voltar</button><b>' + title + '</b><span></span></div>' + body;
+    v.querySelector('.sl-back').addEventListener('click', () => { try { openCatalog(); } catch { v.hidden = true; } }); };
+  shell('<p class="sl-empty">Carregando…</p>'); v.hidden = false; v.scrollTop = 0;
+  let items = []; try { const r = await sapi('GET', '/v1/ressaca?kind=' + kind); items = r.status === 200 && r.data ? r.data.items || [] : []; } catch {}
+  const intro = kind === 'curou' ? '<p class="hint" style="margin:.2rem 0 0">Livros que os leitores do B.E.A.R disseram que curaram a ressaca literária.</p>' : '<p class="hint" style="margin:.2rem 0 0">Livros que deixaram os leitores do B.E.A.R de ressaca literária.</p>';
+  shell(intro + (items.length ? '<div class="rs-list">' + items.map((b) => '<button type="button" class="es-bk" data-book="' + esc(b.title) + '" data-author="' + esc(b.author || '') + '">' + cvh(b.title, b.cover, 'es-cv') + '<small>' + esc(b.title) + '<br>' + plural(b.n, 'voto', 'votos') + '</small></button>').join('') + '</div>'
+    : '<p class="sl-empty">Ainda não tem votos suficientes. Quando as pessoas avaliarem dizendo se o livro deu ou curou a ressaca, eles aparecem aqui.</p>'));
+  try { paintCv(v); } catch {}
+}
+{ const _ob = openBookPage; openBookPage = function (e) { S.rsTitle = e && e.title; return _ob.apply(this, arguments); }; }
+{ const v = $('#shelflist'); let tm = 0;
+  const fill = async () => {
+    const body = v.querySelector('.sl-body'); if (!body || v.hidden) return;
+    const sec = body.querySelector('.bp-sec');
+    if (sec && S.rsTitle && !body.querySelector('.rs-term')) {
+      const box = document.createElement('div'); box.className = 'rs-term'; box.innerHTML = '<div class="rs-h"><b>Ressaca literária</b></div><p class="rs-empty">Carregando…</p>'; sec.before(box);
+      const t = S.rsTitle, d = await rsBookData(t);
+      if (!box.isConnected || t !== S.rsTitle) return;
+      if (!d) { box.remove(); return; }
+      box.innerHTML = rsTermHTML(d);
+      box.querySelector('.rs-link')?.addEventListener('click', (ev) => openRessacaList(ev.currentTarget.dataset.rsk));
+    }
+    const form = body.querySelector('.ct-form');
+    if (form && connected() && !body.querySelector('.rs-chips')) {
+      const ch = document.createElement('div'); ch.className = 'rs-chips'; ch.innerHTML = '<button type="button" data-rsk="curou">Curam ressaca</button><button type="button" data-rsk="deu">Dão ressaca</button>'; form.after(ch);
+      ch.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => openRessacaList(b.dataset.rsk)));
+    }
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(fill, 60); }).observe(v, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
 }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
