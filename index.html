@@ -2542,9 +2542,9 @@ async function socialSettingsSheet() {
   const ck = (k, t) => { const i = el('input', { type: 'checkbox', ...(pv[k] ? { checked: '' } : {}), onchange: (ev) => { pv[k] = ev.target.checked; } }); return el('label', { class: 'ck-row' }, [i, el('span', { text: t })]); };
   const msg = el('p', { class: 'hint' });
   const form = el('form', { class: 'form pv2' }, [el('h3', { text: 'O que aparece no meu perfil' }),
-    el('div', { class: 'group', text: 'Seus amigos veem' }),
+    el('div', { class: 'group', text: 'Quem vê' }), ck('public', 'Perfil público: qualquer pessoa vê o que está marcado abaixo'), el('p', { class: 'hint', style: 'margin:-.2rem 0 .3rem', text: 'Desligado, só seus amigos veem. Seu nome e @ aparecem na busca de qualquer jeito.' }), el('div', { class: 'group', text: 'O que aparece' }),
     ck('reading', 'Lendo agora'), ck('shelf', 'Estantes'), ck('achievements', 'Conquistas'), ck('reviews', 'Avaliações'),
-    el('div', { class: 'group', text: 'Qualquer pessoa vê' }), ck('public', 'Avaliações públicas (Descobrir e sua página)'),
+    
     msg, el('div', { class: 'pv2-btns' }, [el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }), el('button', { type: 'submit', class: 'primary', text: 'Salvar' })])]);
   form.addEventListener('submit', async (ev) => { ev.preventDefault();
     const r = await sapi('PUT', '/v1/me/profile', { handle: prof.handle, displayName: prof.displayName, privacy: pv });
@@ -7726,7 +7726,7 @@ function openPeopleSearch() {
   const v = $('#shelflist'); let q = '', res = null, busy = false, token = 0, tm = 0;
   const drawList = () => {
     const box = v.querySelector('.ps-list'); if (!box) return;
-    box.innerHTML = busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '<p class="sl-empty">Digite o @ ou o nome. Pelo nome, só aparece quem deixou o perfil aberto.</p>' : !res.length ? '<p class="sl-empty">Ninguém encontrado.</p>'
+    box.innerHTML = busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '<p class="sl-empty">Digite o nome ou o @ de quem você procura.</p>' : !res.length ? '<p class="sl-empty">Ninguém encontrado.</p>'
       : res.map((x) => `<button type="button" class="ps-it" data-h="${esc(x.handle)}"><span class="av" data-avh="${esc(x.handle)}" style="background:${friendColor(x.handle)}">${esc(initial(x.displayName))}</span><span><b>${esc(x.displayName)}</b><small>@${esc(x.handle)}${x.bio ? ' · ' + esc(x.bio) : ''}</small></span>${x.isFriend ? '<em>amigos</em>' : '<i class="ps-ch">›</i>'}</button>${!x.isFriend && !(socialProfile && socialProfile.handle === x.handle) ? `<button type="button" class="ps-add" data-add="${esc(x.handle)}">${(S.psSent || {})[x.handle] ? 'Pedido enviado' : 'Adicionar'}</button>` : ''}`).join('');
     $$('.ps-add', v).forEach((b) => b.addEventListener('click', async (ev) => { ev.stopPropagation(); if (b.disabled) return; b.disabled = true; const h = b.dataset.add; const q = await sapi('POST', '/v1/friends/requests', { handle: h }); if (q.status < 300) { S.psSent = S.psSent || {}; S.psSent[h] = 1; b.textContent = q.data && q.data.status === 'ACCEPTED' ? 'Amigos!' : 'Pedido enviado'; } else { b.disabled = false; toast('Não deu certo agora'); } })); S.psNames = S.psNames || {}; (res || []).forEach((x) => { S.psNames[x.handle] = x.displayName; }); $$('.ps-it', v).forEach((b) => b.addEventListener('click', () => friendPage(b.dataset.h)));
     paintAvatars();
