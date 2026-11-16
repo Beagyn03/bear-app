@@ -9632,6 +9632,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12756,7 +12757,11 @@ function myStatsSnap() {
   const r = await _fp.apply(this, arguments); const v = $('#shelflist'), d = S.fpData;
   try {
     if (v.hidden || !d || d.self || d.handle !== h) return r;
-    const s = d.shelf && d.shelf.stats, nums = v.querySelector('.yo-nums'); if (!s || !nums) return r;
+    const nums = v.querySelector('.yo-nums'); if (!nums || !d.shelf) return r;
+    // resumo antigo (sem stats): monta com o que existe — contagens, leituras com data (páginas e notas) e avaliações visíveis
+    const s = d.shelf.stats || (() => { const c = d.shelf.counts || {}, ano = d.shelf.ano || [], rated = ano.filter((x) => x.p), big = ano.reduce((m, x) => ((x.pg || 0) > ((m && m.pg) || 0) ? x : m), null);
+      return { lidos: c.LIDO || ano.length, paginas: ano.reduce((t, x) => t + (x.pg || 0), 0), nota: rated.length ? Math.round(rated.reduce((t, x) => t + x.p, 0) / rated.length * 10) / 10 : null,
+        resenhas: (d.reviews || []).filter((x) => String(x.text || '').trim()).length, quero: c.QUERO || 0, aband: c.ABANDONEI || 0, maior: big && big.pg ? { p: big.pg, t: big.t } : null, meta: null }; })();
     const k = (n) => Number(n || 0).toLocaleString('pt-BR');
     const cell = (n, t, extra = '') => `<button type="button" disabled><b>${n}</b><small>${t}</small>${extra}</button>`;
     const pct = s.meta ? Math.min(100, Math.round(s.meta.feitos / s.meta.alvo * 100)) : 0;
