@@ -7484,7 +7484,7 @@ function importCSV() {
       if (dm) { const [y, mo, da] = dm[1].length === 4 ? [dm[1], dm[2], dm[3]] : [dm[3], dm[2], dm[1]]; return { d: `${y}-${String(mo).padStart(2, '0')}-${String(da).padStart(2, '0')}` }; } return ym && Number(ym[1]) <= Y ? { y: Number(ym[1]) } : 'unknown'; };
     for (const r of rows.slice(1, 3001)) {
       const title = String(r[cT] || '').trim().slice(0, 200); if (!title) continue;
-      const author = cA >= 0 ? String(r[cA] || '').trim().slice(0, 120) : '', isbn = cI >= 0 ? String(r[cI] || '').replace(/\D/g, '') : '';
+      const author = cA >= 0 ? String(r[cA] || '').replace(/\s+/g, ' ').trim().slice(0, 120) : '', isbn = cI >= 0 ? String(r[cI] || '').replace(/\D/g, '') : '';
       const tMain = (x) => normT(String(x || '').split(/[:(]/)[0]), aLast = (x) => normT(String(x || '').split(',')[0]).split(' ').filter(Boolean).pop() || '';
       const had = lib().find((e) => (isbn && e.isbn === isbn) || (tMain(e.title) === tMain(title) && (!e.author || !author || normT(String(e.author).split(',')[0]) === normT(author.split(',')[0]) || aLast(e.author) === aLast(author))));
       if (had) { // já estava na estante: atualiza o status pelo arquivo e completa o que falta (nota, páginas), sem sobrescrever o que a pessoa já preencheu
@@ -9612,6 +9612,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10762,7 +10763,7 @@ drawProgresso = function (box) {
   const pieHTML = (parts) => { const tot = parts.reduce((a, x) => a + x[1], 0) || 1; let acc = 0; const segs = parts.filter((x) => x[1]).map(([, n, c]) => { const a0 = acc; acc += n / tot * 360; return `${c} ${a0.toFixed(1)}deg ${acc.toFixed(1)}deg`; }).join(','); return `<div class="pie" style="background:conic-gradient(${segs || 'var(--line) 0 360deg'})"><span>${tot}</span></div><ul class="pie-l">${parts.filter((x) => x[1]).map(([l, n, c]) => `<li><i style="background:${c}"></i>${esc(l)}<b>${n}</b></li>`).join('')}</ul>`; };
   // autores e editoras: 5 primeiros + Outros
   const CAT = ['#c46f2b', '#4f97d1', '#4fae78', '#b78cff', '#e2b53e', '#a9b3bc'];
-  const pieTop = (vals) => { const t = top(vals, 999), head = t.slice(0, 5), rest = t.slice(5).reduce((a, x) => a + x[1], 0); return [...head, ...(rest ? [['Outros', rest]] : [])].map(([k, n], i) => [k, n, CAT[i % CAT.length]]); };
+  const pieTop = (vals0) => { const nm = new Map(); const vals = vals0.map((x) => { const v = String(x).replace(/\s+/g, ' ').trim(), k = normT(v); if (!nm.has(k)) nm.set(k, v); return nm.get(k); }); const t = top(vals, 999), head = t.slice(0, 5), rest = t.slice(5).reduce((a, x) => a + x[1], 0); return [...head, ...(rest ? [['Outros', rest]] : [])].map(([k, n], i) => [k, n, CAT[i % CAT.length]]); };
   const autP = pieTop(fin.map((e) => String(e.author || '').split(',')[0].trim()).filter(Boolean));
   const pubOf = (e) => String(e.publisher || (e.meta && e.meta.pub) || '').trim();
   const pubP = pieTop(fin.map(pubOf).filter(Boolean)), noPub = fin.filter((e) => !pubOf(e)).length;
@@ -12520,6 +12521,8 @@ function openFixReads(filter) {
   } catch (err) { console.warn('completar leituras', err); }
   return r;
 }; }
+// autores importados com espaços repetidos ("Mark     Miller") viram um nome só (16/11)
+setTimeout(() => { try { let n = 0; for (const e of lib()) { if (e.author && /\s{2,}|^\s|\s$/.test(e.author)) { e.author = e.author.replace(/\s+/g, ' ').trim(); n++; } } if (n) save(); } catch {} }, 2000);
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
