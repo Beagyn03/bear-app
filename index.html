@@ -4928,8 +4928,8 @@ function openBookPage(e, tab = 'sobre') {
         <section class="bp-card"><div class="bp-row"><span>Ajustes do livro</span></div>
           <button type="button" class="bp-adj" data-a="fmt"><span>Formato</span><b>${esc(fmtTxt(e))}</b><i>›</i></button>
           <button type="button" class="bp-adj" data-a="pages"><span>Total de páginas</span><b>${e.totalPages || '—'}</b><i>›</i></button>
-          <button type="button" class="bp-adj" data-a="edition"><span>Trocar edição</span><b>capa, páginas e ISBN</b><i>›</i></button>
-          <button type="button" class="bp-adj" data-a="rmlib" style="color:#b3261e"><span>Tirar da Minha biblioteca</span><b>adicionado por engano</b><i>›</i></button></section>
+          <button type="button" class="bp-adj" data-a="edition"><span>Edição</span><b>Trocar</b><i>›</i></button>
+          <button type="button" class="bp-adj" data-a="rmlib" style="color:#b3261e"><span>Biblioteca</span><b>Tirar daqui</b><i>›</i></button></section>
         <div class="bp-row" style="margin:1rem .1rem .4rem"><span>Meus trechos</span></div>${(() => {
       const qs = [...(e.quotes || [])].map((q, i) => ({ ...q, i })).sort((a, b) => (a.p || 99999) - (b.p || 99999));
       return `${e.note ? `<section class="bp-card"><div class="bp-row"><span>Anotação</span><button type="button" class="bp-link" data-a="note">Editar</button></div><p class="bq-note">${esc(e.note)}</p></section>` : ''}
@@ -7866,7 +7866,7 @@ function decorateBookPage(v) {
   const tabOn = (v.querySelector('.bp-tabs button.on') || {}).textContent || '', title = (v.querySelector('.bp-ht h2') || {}).textContent || '', author = (v.querySelector('.bp-ht small') || {}).textContent || '';
   if (!title) return;
   const net = S.bookNet[normT(title).slice(0, 200)], chips = v.querySelector('.bp-chips');
-  if (chips && net && net.avg != null && !chips.querySelector('.bp-net')) chips.insertAdjacentHTML('beforeend', `<span class="bp-chip bp-net" title="Média das notas de quem avaliou no B.E.A.R">média da rede ${pawTxt(net.avg)} · ${net.count} ${net.count === 1 ? 'nota' : 'notas'}</span>`);
+  if (chips && net && net.avg != null && !chips.querySelector('.bp-net')) chips.insertAdjacentHTML('beforeend', `<span class="bp-chip bp-net" title="Média das notas de quem avaliou no B.E.A.R">média da rede ${pawTxt(net.avg)} · ${net.count} ${net.count === 1 ? 'avaliação' : 'avaliações'}</span>`);
   if (net === undefined && connected() && socialProfile) bookNetHTML({ title }); // busca a média já no topo
   if (/^Sobre/.test(tabOn) && !v.querySelector('.au-row')) { const sec = v.querySelector('.sl-body'); const h = authorStripHTML({ title, author }); if (h) { sec.insertAdjacentHTML('beforeend', h); paintCv(v); } }
 }
@@ -9549,6 +9549,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -11418,10 +11419,10 @@ function rdCardHTML(it, i, opts = {}) {
   const kind = it.type === 'review' ? 'Avaliação' : (RD_KINDS.find((k) => k[0] === it.kind) || [, ''])[1];
   const sp = rdSpoil(it), u = it.user || {};
   const fe = (it.feelings || []).length ? `<div class="rd-fe">${it.feelings.map((k) => qtFeel(k)).join('')}</div>` : '';
-  const body = `${it.paws ? `<div class="rd-paws">${pawsTxt(it.paws)}</div>` : ''}${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
+  const body = `${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
     ${it.text ? `<p>${esc(it.text)}</p>` : ''}
     ${it.book2 ? `<div class="rd-rec"><span>${cvh(it.book.title, it.book.cover)}<b>${esc(it.book.title)}</b></span><em>➜</em><span>${cvh(it.book2.title, it.book2.cover)}<b>${esc(it.book2.title)}</b></span></div>` : ''}
-    ${fe}${it.hasImage ? `<div class="rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
+    ${fe}${it.paws ? `<div class="rd-paws">${pawsTxt(it.paws)}</div>` : ''}${it.hasImage ? `<div class="rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
   return `<article class="rd-card" data-i="${i}">
     <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
       <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
@@ -12580,7 +12581,7 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       if (F.semSp) list = list.filter((x) => x.mine || !(x.spoiler || x.spoilerKind));
       list.sort((a, z) => new Date(z.createdAt) - new Date(a.createdAt)); // por ordem de postagem (mais recente primeiro)
       const total = mineLocal.length + data.revs.length + data.posts.length;
-      sec.innerHTML = '<div class="br-top"><div class="br-avg">' + (data.avg != null ? '<b>' + esc(pawTxt(data.avg)) + '</b><small>média de ' + plural(data.count, 'nota', 'notas') + '</small>' : '<small>Ainda sem notas da rede</small>') + '</div><button type="button" class="rd-new2">+ Comentar</button></div>'
+      sec.innerHTML = '<div class="br-top"><div class="br-avg">' + (data.avg != null ? '<b>' + esc(pawTxt(data.avg)) + '</b><small>média de ' + plural(data.count, 'nota', 'notas') + '</small>' : '<small>Ainda sem avaliações</small>') + '</div><button type="button" class="rd-new2">+ Comentar</button></div>'
         + (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['com', 'Comentários']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
           + '<select data-n aria-label="Filtrar por nota"><option value="">Todas as notas</option><option value="5">Nota 5</option><option value="4">4 e 4,5</option><option value="3">3 e 3,5</option><option value="2">Abaixo de 3</option></select>'
           + '<button type="button" data-sp class="' + (F.semSp ? 'on' : '') + '">Sem spoiler</button></div>' : '')
@@ -12598,6 +12599,16 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(fill, 80); }).observe(v, { childList: true, subtree: true });
 }
+// --- 50_livro_compacto.js ---
+// Página do livro (Bia, 16/11): "Ajustes do livro" compacto em duas colunas (rótulo pequeno em cima, valor embaixo), para ocupar menos tela.
+{ const st = document.createElement('style'); st.textContent = `
+.bp-card:has(> .bp-adj){display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+.bp-card:has(> .bp-adj) > .bp-row{grid-column:1/-1;margin-bottom:.1rem}
+.bp-card > .bp-adj{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center;gap:0 .3rem;min-height:0;padding:.45rem .6rem;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:.72rem;font-weight:800;color:var(--ink-2)}
+.bp-card > .bp-adj span{grid-column:1;grid-row:1}.bp-card > .bp-adj b{grid-column:1;grid-row:2;margin:0;font-size:.84rem;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-card > .bp-adj i{grid-column:2;grid-row:1 / span 2}
+.bp-card > .bp-adj[data-a="rmlib"] b{color:inherit;opacity:.8;font-weight:700}
+`; TR.append(st); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
