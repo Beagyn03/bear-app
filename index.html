@@ -1637,7 +1637,7 @@ function renderHome(today) {
   const st = $('#home-stats'); st.replaceChildren(el('div', { class: 'panel' }, [el('h2', { text: `Seu ${y}` }), el('div', { class: 'stats' }, [
     el('div', {}, [el('b', { text: String(booksY) }), el('span', { text: booksY === 1 ? 'livro lido' : 'livros lidos' })]),
     el('div', {}, [el('b', { text: pagesY.toLocaleString('pt-BR') }), el('span', { text: 'páginas' })]),
-    el('div', {}, [el('b', { text: avg }), el('span', { text: 'média de patas' })]),
+    el('div', {}, [el('b', { text: avg }), el('span', { text: 'nota média' })]),
   ]), ...(fLine ? [fLine] : [])]));
   $('#home-ygoal').replaceChildren(el('div', { class: 'panel' }, [el('h2', { text: `Meta de livros de ${y}` }), yg]));
   renderProfile();
@@ -2317,7 +2317,7 @@ function renderDash() {
     avgDur && ['Tempo médio por livro', `${avgDur} ${avgDur === 1 ? 'dia' : 'dias'} do início ao fim`],
     longest && ['Livro mais longo', `${longest.title} (${longest.totalPages} págs)`],
     topAuthor && ['Autor da toca', `${topAuthor[0]} · ${topAuthor[1]} ${topAuthor[1] === 1 ? 'livro' : 'livros'}`],
-    avgPaws && ['Nota média', `${avgPaws.toFixed(1).replace('.', ',')} patas em ${rated.length} ${rated.length === 1 ? 'livro' : 'livros'}`],
+    avgPaws && ['Nota média', `nota ${avgPaws.toFixed(1).replace('.', ',')} em ${rated.length} ${rated.length === 1 ? 'livro' : 'livros'}`],
     Object.keys(fmts).length && ['Formatos', Object.entries(fmts).map(([k, n]) => `${n} ${k.toLowerCase()}`).join(' · ')],
   ].filter(Boolean);
   const factsP = el('div', { class: 'panel' }, [el('h2', { text: 'Curiosidades' }),
@@ -3223,7 +3223,7 @@ const melName = (t) => MEL_LABEL[t] || t;
 const MEL = MEL_E.map(m => m[1]);
 const MEL_OLD = { 'ódio do protagonista': '😡', 'shippei forte': '💘' };
 const melEmoji = (t) => (MEL_E.find(m => m[1] === t) || [MEL_OLD[t] || '🍯'])[0];
-const fmtR = (r) => `${String(r).replace('.', ',')} ${r === 1 ? 'pata' : 'patas'}`;
+const fmtR = (r) => `nota ${String(r).replace('.', ',')}`;
 let pawN = 0;
 function paw(f) {
   const id = 'pw' + (pawN++), s = document.createElement('span');
@@ -3239,7 +3239,7 @@ function rateForm(b, g, after) {
   const close = () => wrap.remove();
   const pawRow = el('div', { class: 'rate-paws' }), pawLbl = el('span', { class: 'paw-lbl' });
   const drawPaws = () => {
-    pawRow.replaceChildren(...[1,2,3,4,5].map(i => el('button', { type: 'button', 'aria-label': `${i} ${i === 1 ? 'pata' : 'patas'}`,
+    pawRow.replaceChildren(...[1,2,3,4,5].map(i => el('button', { type: 'button', 'aria-label': `nota ${i}`,
       onclick: () => { r.paws = r.paws === i ? i - 0.5 : i; drawPaws(); } }, [paw(pawFill(r.paws, i))])));
     pawLbl.textContent = r.paws ? fmtR(r.paws) : 'toque 2× = meia';
   };
@@ -6109,7 +6109,7 @@ function heartShelf() {
   const favs = lib().filter((e) => isFav(e)).sort((a, b) => String(b.finishedAt || '').localeCompare(String(a.finishedAt || ''))).slice(0, 12);
   return `<div class="v3-sh"><b>Prateleira do coração</b>${favs.length ? '<button type="button" class="v3-link" id="v3-favs">Editar ›</button>' : ''}</div>
     ${favs.length ? `<div class="v3-heart">${favs.map((e) => `<button type="button" class="v3-hb" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'v3-hcv')}</button>`).join('')}</div>`
-      : '<p class="v3-empty">Os livros que você avaliar com 5 patas aparecem aqui.</p>'}`;
+      : '<p class="v3-empty">Os livros que você avaliar com nota 5 aparecem aqui.</p>'}`;
 }
 function drawInicio(box) {
   const h = drawHud(), hr = new Date().getHours(), hello = hr < 5 ? 'Boa noite' : hr < 12 ? 'Bom dia' : hr < 18 ? 'Boa tarde' : 'Boa noite', n = unread();
@@ -7261,7 +7261,7 @@ async function shareYear() {
   txt(String(d.lidos.length), 90, 560, 150, acc, 900); txt(d.lidos.length === 1 ? 'livro lido' : 'livros lidos', 90, 630, 46, '#e6cfae', 700);
   txt(d.pages.toLocaleString('pt-BR'), 600, 560, 110, '#fff3dc', 900); txt('páginas', 600, 630, 46, '#e6cfae', 700);
   let y = 780; const row = (k, v) => { if (!v) return; txt(k, 90, y, 34, '#c9b096', 700); txt(v.length > 34 ? v.slice(0, 33) + '…' : v, 90, y + 52, 46, '#fff3dc', 800); y += 140; };
-  row('Média das notas', d.avg != null ? `${String(Math.round(d.avg * 2) / 2).replace('.', ',')} patas` : '');
+  row('Média das notas', d.avg != null ? `nota ${String(Math.round(d.avg * 2) / 2).replace('.', ',')}` : '');
   row('Autor mais lido', d.autor ? d.autor[0] : ''); row('Livro mais longo', d.longo ? `${d.longo.title}` : '');
   txt('Be A Reader', 90, 1280, 40, acc, 900);
   const img = ART && ART.bear_celebrating; if (img) await new Promise((ok) => { const im = new Image(); im.onload = () => { g.drawImage(im, 700, 960, 320, 320); ok(); }; im.onerror = ok; im.src = img; });
@@ -9236,7 +9236,7 @@ function yearShelfHTML(items, year, own) {
   return `<section class="v3c ys"><div class="ys-h"><b>Leituras por mês</b><span class="ys-y"><button type="button" data-ysy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><b>${y}</b><button type="button" data-ysy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></span></div>
     <div class="es5-c"><span>${plural(list.length, 'livro', 'livros')}</span>${pages ? `<span>${pages.toLocaleString('pt-BR')} páginas</span>` : ''}</div>
     <div class="ys-row">${groups.map(([n, g]) => `<div class="ys-g"><span class="ys-m">${n}</span><div class="ys-bks">${g.map(bk).join('')}</div></div>`).join('')}</div>
-    ${list.some((x) => x.p) ? `<div class="ys-leg"><span><i style="background:#e0a526"></i>5 patas</span><span><i style="background:#3f8f5a"></i>4 ou mais</span><span><i style="background:#c8742e"></i>3 ou mais</span><span><i style="background:#9a8f86"></i>abaixo de 3</span></div>` : ''}</section>`;
+    ${list.some((x) => x.p) ? `<div class="ys-leg"><span><i style="background:#e0a526"></i>Nota 5</span><span><i style="background:#3f8f5a"></i>4 ou mais</span><span><i style="background:#c8742e"></i>3 ou mais</span><span><i style="background:#9a8f86"></i>abaixo de 3</span></div>` : ''}</section>`;
 }
 function mountYearShelf(root, at, items, own) {
   const h = yearShelfHTML(items, S.ysYear || Number(todayISO().slice(0, 4)), own); if (!h || !at) return;
@@ -9800,7 +9800,7 @@ TR.addEventListener('click', (ev) => {
 .pw5{color:#c8742e}
 `; TR.append(st); }
 const pawSvg = () => `<svg viewBox="0 0 24 24" aria-hidden="true">${BI.paw}</svg>`;
-const paws5 = (n) => `<span class="pw5" role="img" aria-label="${String(n).replace('.', ',')} patas">${[1, 2, 3, 4, 5].map((i) => n >= i ? `<i>${pawSvg()}</i>` : n >= i - 0.5 ? `<i class="h">${pawSvg()}${pawSvg()}</i>` : `<i class="o">${pawSvg()}</i>`).join('')}</span>`;
+const paws5 = (n) => `<span class="pw5" role="img" aria-label="nota ${String(n).replace('.', ',')}">${[1, 2, 3, 4, 5].map((i) => n >= i ? `<i>${pawSvg()}</i>` : n >= i - 0.5 ? `<i class="h">${pawSvg()}${pawSvg()}</i>` : `<i class="o">${pawSvg()}</i>`).join('')}</span>`;
 { // legendas "lido · 🐾 4,5" → patinhas; "lido" sem nota fica "lido"
   const fix = (root) => root.querySelectorAll('small.es4-st, .es4-bk small, .au-grid small').forEach((s) => {
     if (s.dataset.pw) return; const m = s.textContent.trim().match(/^lido\s*·\s*\D*?(\d+(?:,\d)?)\s*$/); if (!m) return;
@@ -11416,7 +11416,7 @@ function rdSpoil(it) { // null = pode mostrar; senão o aviso
   }
   return { label: `Spoiler${it.book ? ` de ${it.book.title}` : ''}${where ? ' · ' + where : ''}`, note };
 }
-const pawsTxt = (p) => p ? `${String(p).replace('.', ',')} ${p === 1 ? 'pata' : 'patas'}` : '';
+const pawsTxt = (p) => p ? `nota ${String(p).replace('.', ',')}` : '';
 function readerPctOf(title) { const e = lib().find((x) => normT(x.title) === normT(title || '')); if (!e) return null; if (e.status === 'LIDO') return 100; try { const p = Math.round(readingInfo(e).pct || 0); return p > 0 ? Math.min(100, p) : (e.status === 'LENDO' ? 0 : null); } catch { return null; } }
 const readerPctTxt = (p) => (p == null ? '' : p >= 100 ? 'terminou o livro' : p <= 0 ? 'começando o livro' : `em ${p}% do livro`);
 function rdCardHTML(it, i, opts = {}) {
@@ -11590,7 +11590,7 @@ function openRdComposer(pre = {}) {
           <label class="rdc-l" style="display:flex;align-items:center;gap:.5rem">Página <input type="number" id="rdc-pg" min="1" inputmode="numeric" style="width:110px" value="${esc(R.page)}"></label>` : ''}
         <div><textarea id="rdc-t" rows="4" maxlength="320" placeholder="${esc(rdPlaceholder(R.kind, R.book))}">${esc(R.text)}</textarea><div class="rdc-cnt" id="rdc-c"></div></div>
         ${R.kind !== 'question' ? `<div class="rdc-l">O que você sentiu? <small style="font-weight:600;opacity:.7">(até 3)</small></div><div class="rdc-chips" id="rdc-fe">${QT_FEELS.map((y) => qtFeel(y[0], 'rdf', R.feelings.includes(y[0]))).join('')}</div>` : ''}
-        ${R.kind === 'comment' ? `<div class="rdc-l">Sua nota <small style="font-weight:600;opacity:.7">(opcional)</small></div><div class="rdc-chips" id="rdc-pw">${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-pw="${n}" class="${R.paws === n ? 'on' : ''}">${n} ${n === 1 ? 'pata' : 'patas'}</button>`).join('')}</div>` : ''}
+        ${R.kind === 'comment' ? `<div class="rdc-l">Sua nota <small style="font-weight:600;opacity:.7">(opcional)</small></div><div class="rdc-chips" id="rdc-pw">${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-pw="${n}" class="${R.paws === n ? 'on' : ''}">${n}</button>`).join('')}</div>` : ''}
         <div class="rdc-ph">${R.image ? `<img src="${R.image}" alt="Foto escolhida"><button type="button" class="rdc-pick" id="rdc-rmph" style="margin-top:.4rem">Tirar a foto</button>` : `<button type="button" class="rdc-pick" id="rdc-addph">+ Adicionar foto</button>`}<input type="file" id="rdc-file" accept="image/*" hidden></div>
         <div class="rdc-sp">
           <label><input type="checkbox" id="rdc-sp"${R.sp ? ' checked' : ''}> Tem spoiler</label>
