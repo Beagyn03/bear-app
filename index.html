@@ -3742,6 +3742,7 @@ function connectSheet(gate) {
     submitBtn.textContent = creating ? 'Criar conta' : 'Entrar';
     switchBtn.textContent = creating ? 'Já tenho conta: entrar' : 'Não tenho conta: criar uma';
     form.querySelector('input[name=password]').setAttribute('autocomplete', creating ? 'new-password' : 'current-password');
+    { const ei = form.querySelector('input[name=email]'); ei.type = creating ? 'email' : 'text'; ei.setAttribute('autocomplete', creating ? 'email' : 'username'); const lb = ei.closest('label'); if (lb && lb.firstChild && lb.firstChild.nodeType === 3) lb.firstChild.textContent = creating ? 'E-mail' : 'E-mail ou @usuário'; }
     msg.textContent = '';
   } });
   if (connected()) {
@@ -3763,7 +3764,7 @@ function connectSheet(gate) {
       el('p', { class: 'hint', text: gate ? 'Sua estante, suas metas e seu ritmo de leitura, com o Bear acompanhando cada página.' : 'Entre com a mesma conta em cada aparelho para ver os mesmos dados.' }),
       nameField,
       handleField,
-      field('E-mail', 'email', { type: 'email', value: apiCfg.email || '', autocomplete: 'email', required: '' }),
+      field('E-mail ou @usuário', 'email', { type: 'text', inputmode: 'email', autocapitalize: 'none', spellcheck: 'false', value: apiCfg.email || '', autocomplete: 'username', required: '' }),
       field('Senha (8 ou mais caracteres)', 'password', { type: 'password', autocomplete: 'current-password', minlength: '8', required: '' }),
       msg,
       submitBtn,
@@ -3777,7 +3778,8 @@ function connectSheet(gate) {
     const f = new FormData(form);
     const api = String(apiCfg.api || DEFAULT_API).trim().replace(/\/+$/, ''), email = String(f.get('email') || '').trim(), password = String(f.get('password') || '');
     if (!/^https:\/\//.test(api) && !/^http:\/\/(localhost|127\.0\.0\.1)/.test(api)) { msg.textContent = 'O endereço precisa começar com https://'; return; }
-    if (!email || password.length < 8) { msg.textContent = 'Preencha e-mail e senha (8 ou mais caracteres).'; return; }
+    if (!email || password.length < 8) { msg.textContent = register ? 'Preencha e-mail e senha (8 ou mais caracteres).' : 'Preencha e-mail (ou @usuário) e senha.'; return; }
+    if (register && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.textContent = 'Informe um e-mail válido.'; return; }
     const newName = String(f.get('name') || '').trim().slice(0, 40);
     if (register && !newName) { msg.textContent = 'Diga como o Bear deve te chamar.'; return; }
     const newHandle = hClean(f.get('handle'));
@@ -3791,12 +3793,13 @@ function connectSheet(gate) {
       }
       const r = await fetch(api + '/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
       const d = await r.json().catch(() => null);
-      if (r.status !== 200 || !d || !d.token) { msg.textContent = r.status === 401 ? 'E-mail ou senha incorretos.' : r.status === 429 ? 'Muitas tentativas. Espere 1 minuto.' : 'Não consegui entrar.'; return; }
+      if (r.status !== 200 || !d || !d.token) { msg.textContent = r.status === 401 ? 'Usuário ou senha incorretos.' : r.status === 400 && !email.includes('@') ? 'Esse @usuário não parece certo. Tente com o e-mail.' : r.status === 429 ? 'Muitas tentativas. Espere 1 minuto.' : 'Não consegui entrar.'; return; }
       let owner = null; try { owner = localStorage.getItem('bear.owner'); } catch {}
       if (register) { try { Object.keys(localStorage).filter((k) => /^bear\./.test(k) && k !== API_CFG).forEach((k) => localStorage.removeItem(k)); sessionStorage.clear(); } catch {} resetLocal(); localOwnerKnown = true; } // conta nova: começa do zero (15/11)
-      else if (owner && owner.toLowerCase() !== email.toLowerCase()) resetLocal(); // aparelho usado por outra conta
-      try { localStorage.setItem('bear.owner', email); } catch {}
-      apiCfg = { api, email, token: d.token }; saveCfg();
+      const acct = String((d.user && d.user.email) || email).toLowerCase(); // entrou com @: guarda o e-mail real da conta
+      if (!register && owner && owner.toLowerCase() !== acct) resetLocal(); // aparelho usado por outra conta
+      try { localStorage.setItem('bear.owner', acct); } catch {}
+      apiCfg = { api, email: acct, token: d.token }; saveCfg();
       socialStats = {}; try { localStorage.removeItem('bear.socialStats'); localStorage.removeItem('bear.socialStatsOwner'); localStorage.removeItem('bear.toca.local'); } catch {} // conta nova na sessão: nada da anterior
       // Ao entrar, usa o primeiro nome da conta se este aparelho ainda não tem nome definido.
       const accName = String((d.user && d.user.name) || '').trim().split(/\s+/)[0];
