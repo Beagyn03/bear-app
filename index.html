@@ -7483,7 +7483,7 @@ function importCSV() {
     const whenOfRow = (r) => { const raw = cD >= 0 ? String(r[cD] || '').trim() : '', dm = raw.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/) || raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/), ym = raw.match(/\b(19\d\d|20\d\d)\b/);
       if (dm) { const [y, mo, da] = dm[1].length === 4 ? [dm[1], dm[2], dm[3]] : [dm[3], dm[2], dm[1]]; return { d: `${y}-${String(mo).padStart(2, '0')}-${String(da).padStart(2, '0')}` }; } return ym && Number(ym[1]) <= Y ? { y: Number(ym[1]) } : 'unknown'; };
     for (const r of rows.slice(1, 3001)) {
-      const title = String(r[cT] || '').trim().slice(0, 200); if (!title) continue;
+      const title = String(r[cT] || '').replace(/\s+/g, ' ').trim().slice(0, 200); if (!title) continue;
       const author = cA >= 0 ? String(r[cA] || '').replace(/\s+/g, ' ').trim().slice(0, 120) : '', isbn = cI >= 0 ? String(r[cI] || '').replace(/\D/g, '') : '';
       const tMain = (x) => normT(String(x || '').split(/[:(]/)[0]), aLast = (x) => normT(String(x || '').split(',')[0]).split(' ').filter(Boolean).pop() || '';
       const had = lib().find((e) => (isbn && e.isbn === isbn) || (tMain(e.title) === tMain(title) && (!e.author || !author || normT(String(e.author).split(',')[0]) === normT(author.split(',')[0]) || aLast(e.author) === aLast(author))));
@@ -7515,7 +7515,7 @@ function importCSV() {
       const e = addToLibrary({ title, author: author || null, totalPages: pages, isbn: isbn || null }, null, status, { when: status === 'LIDO' ? when : null, quiet: true, paws: status === 'LIDO' && paws ? paws : 0,
         fmt: /kindle/.test(bind) ? { format: 'EBOOK', device: 'Kindle' } : /kobo/.test(bind) ? { format: 'EBOOK', device: 'Kobo' } : /ebook|e book|nook|digital/.test(bind) ? { format: 'EBOOK' } : /audio|audible/.test(bind) ? { format: 'AUDIO' } : null });
       if (status === 'LENDO') e.startedAt = todayISO();
-      { const ad = cAd >= 0 ? dOf(r[cAd]) : null; if (ad && ad <= todayISO()) e.addedAt = ad; const nt = cN >= 0 ? String(r[cN] || '').trim().slice(0, 2000) : ''; if (nt && !e.note) e.note = nt; const pb = cPub >= 0 ? String(r[cPub] || '').trim().slice(0, 120) : ''; if (pb && !e.publisher) e.publisher = pb; }
+      { const ad = cAd >= 0 ? dOf(r[cAd]) : null; if (ad && ad <= todayISO()) e.addedAt = ad; const nt = cN >= 0 ? String(r[cN] || '').trim().slice(0, 2000) : ''; if (nt && !e.note) e.note = nt; const pb = cPub >= 0 ? String(r[cPub] || '').replace(/\s+/g, ' ').trim().slice(0, 120) : ''; if (pb && !e.publisher) e.publisher = pb; }
       const tx = revOf(r); if (tx && status === 'LIDO') e.review = { ...(e.review || {}), texto: tx, ...(spOf(r) ? { spoiler: true } : {}) };
       if (cX >= 0) for (const name of String(r[cX] || '').split(/[,;]/).map((x) => x.trim()).filter((x) => x && !/^(read|to-read|currently-reading|lidos?|quero ler|lendo)$/i.test(x)).slice(0, 5)) {
         let s = shelfOf.get(normT(name)); if (!s) { db.shelves = db.shelves || []; s = { id: uid(), name: name.slice(0, 40), bookIds: [] }; db.shelves.push(s); shelfOf.set(normT(name), s); } s.bookIds.push(e.id);
@@ -9553,6 +9553,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -12521,8 +12522,12 @@ function openFixReads(filter) {
   } catch (err) { console.warn('completar leituras', err); }
   return r;
 }; }
-// autores importados com espaços repetidos ("Mark     Miller") viram um nome só (16/11)
-setTimeout(() => { try { let n = 0; for (const e of lib()) { if (e.author && /\s{2,}|^\s|\s$/.test(e.author)) { e.author = e.author.replace(/\s+/g, ' ').trim(); n++; } } if (n) save(); } catch {} }, 2000);
+// Textos com espaços sobrando ("Mark     Miller", " Título ") viram um só, venham de onde vierem (16/11):
+// ao adicionar qualquer livro (busca, importação, catálogo, estante) e nos livros já salvos (título, autor, editora).
+const tidyTxt = (x) => (typeof x === 'string' ? x.replace(/\s+/g, ' ').trim() : x);
+{ const _atlT = addToLibrary; addToLibrary = function (item) { if (item && typeof item === 'object') { if (item.title) item.title = tidyTxt(item.title); if (item.author) item.author = tidyTxt(item.author); if (item.publisher) item.publisher = tidyTxt(item.publisher); } const e = _atlT.apply(this, arguments); try { if (e) { e.title = tidyTxt(e.title); if (e.author) e.author = tidyTxt(e.author); } } catch {} return e; }; }
+const tidyAll = () => { try { let n = 0; const bad = /\s{2,}|^\s|\s$/; for (const e of lib()) for (const k of ['title', 'author', 'publisher']) { if (typeof e[k] === 'string' && bad.test(e[k])) { e[k] = tidyTxt(e[k]); n++; } } for (const g of (db.goals || [])) for (const b of (g.books || [])) for (const k of ['title', 'author']) { if (typeof b[k] === 'string' && bad.test(b[k])) { b[k] = tidyTxt(b[k]); n++; } } if (n) save(); } catch {} };
+setTimeout(tidyAll, 2000); setInterval(tidyAll, 60000);
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
