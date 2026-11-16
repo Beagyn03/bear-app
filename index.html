@@ -8714,7 +8714,7 @@ function foldCommunity(box) {
 // 4.4: telas principais (as abas de baixo) mostram só a marca; telas internas mostram o próprio título
 function syncTopTitle() { const v = $('#shelflist'), t = $('#g-t'); if (!t) return; const put = (x, brand) => { t.textContent = x; t.classList.toggle('g-brand', !!brand); };
   const back = v && !v.hidden && v.querySelector('.sl-top .sl-back'), inner = back && back.offsetParent !== null && !v.classList.contains('tabroot'); // tem "‹ Voltar" = tela interna
-  if (inner) { const b = v.querySelector('.sl-top > b'); if (b && b.textContent.trim()) return put(b.textContent.trim()); }
+  if (inner) { const b = v.querySelector('.sl-top > b'); if (b && b.textContent.trim()) return put(b.textContent.trim()); if (v.querySelector('.bp-hero')) return put('Livro'); return put('B·E·A·R', true); } // tela interna sem título: nunca o nome da aba de baixo
   put(S.tab === 'perfil' ? (S.ajMode === 'perfil' ? 'Editar perfil' : 'Ajustes') : S.tab === 'progresso' ? 'Estatísticas' : 'B·E·A·R', S.tab !== 'perfil' && S.tab !== 'progresso'); }
 TR.addEventListener('click', () => setTimeout(syncTopTitle, 90));
 { const _pg = paintGtop; paintGtop = function () { _pg(); syncTopTitle(); }; }
