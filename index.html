@@ -9228,7 +9228,7 @@ function yearShelfHTML(items, year, own) {
   const groups = []; for (let m = 1; m <= 12; m++) { const g = list.filter((x) => !x.ap && Number(String(x.d).slice(5, 7)) === m); if (g.length) groups.push([YS_MESES[m - 1], g]); }
   const sem = list.filter((x) => x.ap || !String(x.d).slice(5, 7)); if (sem.length) groups.push(['Sem mês', sem]);
   const pages = list.reduce((s, x) => s + (x.pg || 0), 0);
-  const bk = (x) => { const c = pawColor(x.p); return `<button type="button" class="es-bk ys-bk${c ? ' paw' : ''}${x.p >= 5 ? ' ys-5' : x.p >= 4 ? ' ys-ouro' : x.p >= 3 ? ' ys-prata' : x.p ? ' ys-bronze' : ''}" ${own && x.id ? `data-id="${esc(x.id)}"` : `data-book="${esc(x.t)}" data-author="${esc(x.a || '')}"`} title="${esc(x.t)}" aria-label="${esc(x.t)}" style="${c ? `--pc:${c}` : ''}">${cvh(x.t, x.c, 'ys-cv', 'font-size:.38rem;line-height:1.05')}</button>`; };
+  const bk = (x) => { const c = pawColor(x.p); return `<button type="button" class="es-bk ys-bk${c ? ' paw' : ''}${x.p >= 5 ? ' ys-5' : x.p >= 4 ? ' ys-ouro' : x.p >= 3 ? ' ys-prata' : x.p ? ' ys-bronze' : ''}" ${own && x.id ? `data-id="${esc(x.id)}"` : `data-book="${esc(x.t)}" data-author="${esc(x.a || '')}"`} title="${esc(x.t)}" aria-label="${esc(x.t)}" style="${c ? `--pc:${c}` : ''}">${cvh(x.t, x.c, 'ys-cv', 'font-size:.38rem;line-height:1.05')}${x.p ? `<span class="ys-mk" aria-hidden="true"><b>${String(x.p).replace('.', ',')}</b></span>` : ''}</button>`; };
   return `<section class="v3c ys"><div class="ys-h"><b>Leituras por mês</b><span class="ys-y"><button type="button" data-ysy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><b>${y}</b><button type="button" data-ysy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></span></div>
     <div class="es5-c"><span>${plural(list.length, 'livro', 'livros')}</span>${pages ? `<span>${pages.toLocaleString('pt-BR')} páginas</span>` : ''}</div>
     <div class="ys-row">${groups.map(([n, g]) => `<div class="ys-g"><span class="ys-m">${n}</span><div class="ys-bks">${g.map(bk).join('')}</div></div>`).join('')}</div>
@@ -9546,6 +9546,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -10793,6 +10794,26 @@ drawProgresso = function (box) {
 .ys-leg .ys-lt{font-weight:800;color:var(--ink)}
 .ys-bk.ys-5::after{content:""!important;position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.6) 50%,transparent 65%)!important;background-size:250% 100%!important;animation:ys5Shine 3.2s ease-in-out infinite!important;border-radius:2px 4px 0 0}
 @media (prefers-reduced-motion:reduce){.ys-bk.ys-5::before,.ys-bk.ys-5::after,.ys-bk.paw::before,.ys-bk.ys-ouro::after,.ys-bk.ys-prata::after{animation:none!important}}
+`; TR.append(st); }
+// Marca-página de urso (16/11): fitinha saindo do topo da capa e cabeça de urso com a nota, na cor da faixa (5 furta-cor, ouro, prata, bronze).
+{ const st = document.createElement('style'); st.textContent = `
+.ys-bk.paw::before{display:none!important}
+.ys-mk{position:absolute;top:-6px;left:8px;width:22px;height:38px;z-index:5;pointer-events:none;filter:drop-shadow(0 1.5px 1.5px rgba(0,0,0,.4))}
+.ys-mk::before{content:"";position:absolute;left:7px;top:0;width:8px;height:22px;background:var(--mk);background-size:100% 100%,220% 100%;clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.ys-mk b{position:absolute;left:1px;bottom:0;width:20px;height:18px;border-radius:50% 50% 46% 46%;background:var(--mk);background-size:100% 100%,220% 100%;font:900 8.5px/19px Nunito,system-ui,sans-serif;letter-spacing:-.2px;text-align:center;color:var(--mkt,#2b2018);text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.ys-mk b::before,.ys-mk b::after{content:"";position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--mk);background-size:100% 100%,220% 100%;z-index:-1}
+.ys-mk b::before{left:0}.ys-mk b::after{right:0}
+.ys-bk.ys-ouro .ys-mk{--mk:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 55%,rgba(0,0,0,.2)),linear-gradient(90deg,#9c7314,#e9c45a 25%,#fff3b8 40%,#c9971c 60%,#f7dc6f 80%,#9c7314)}
+.ys-bk.ys-prata .ys-mk{--mk:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%,rgba(0,0,0,.2)),linear-gradient(90deg,#7c858d,#cfd6dc 25%,#ffffff 40%,#9aa3ab 60%,#e9eef2 80%,#7c858d)}
+.ys-bk.ys-bronze .ys-mk{--mk:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0) 55%,rgba(0,0,0,.25)),linear-gradient(90deg,#74401a,#c98448 25%,#f3c08e 40%,#94562a 60%,#d99a62 80%,#74401a);--mkt:#fff8ef}
+.ys-bk.ys-bronze .ys-mk b{text-shadow:0 1px 1px rgba(0,0,0,.45)}
+.ys-bk.ys-5 .ys-mk{--mk:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 60%),linear-gradient(90deg,#f6c94a,#ff8fc8,#b78cff,#6fd3ff,#f6c94a);--mkt:#fff;filter:drop-shadow(0 0 4px rgba(255,190,90,.9)) drop-shadow(0 1.5px 1.5px rgba(0,0,0,.35))}
+.ys-bk.ys-5 .ys-mk b{text-shadow:0 1px 2px rgba(80,30,90,.7)}
+.ys-bk.ys-5 .ys-mk::before,.ys-bk.ys-5 .ys-mk b,.ys-bk.ys-5 .ys-mk b::before,.ys-bk.ys-5 .ys-mk b::after{animation:ysMkFlow 3s linear infinite}
+@keyframes ysMkFlow{to{background-position:0 0,220% 0}}
+.ys-row{padding-top:14px!important}.ys-g{gap:.85rem!important}
+.ys-bk .ys-sp.a{top:-12px!important;right:-3px!important}
+@media (prefers-reduced-motion:reduce){.ys-bk.ys-5 .ys-mk *,.ys-bk.ys-5 .ys-mk::before{animation:none!important}}
 `; TR.append(st); }
 // --- 32_navegacao.js ---
 // Voltar sempre para a tela de onde veio (auditoria de 15/11): pilha de páginas do #shelflist.
