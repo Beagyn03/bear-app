@@ -9618,6 +9618,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10513,7 +10514,7 @@ if (!ES_SORTS.some((x) => x[0] === 'prioridade')) ES_SORTS.splice(1, 0, ['priori
 // ainda não carregou e a aba Perfil cai no Editar perfil/Ajustes). Guarda "estava no perfil" e reabre depois que o perfil carrega.
 {
   const KEY = 'bear.onMe';
-  const onMe = () => { const v = $('#shelflist'); return !!(v && !v.hidden && v.classList.contains('mine-page')); };
+  const onMe = () => { const v = $('#shelflist'); return !!(v && !v.hidden && v.classList.contains('mine-page') && v.querySelector('.yo-top')); }; // só o perfil mesmo (a estante aberta a partir dele herda a classe)
   const mark = () => { try { sessionStorage.setItem(KEY, JSON.stringify({ on: onMe(), at: Date.now() })); } catch {} };
   addEventListener('pagehide', mark); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') mark(); }); setInterval(mark, 3000);
   let saved = null; try { saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch {}
