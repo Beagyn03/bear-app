@@ -9620,6 +9620,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12631,6 +12632,7 @@ setTimeout(async () => {
 { const G = 'linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 55%,rgba(0,0,0,.2))';
   const st = document.createElement('style'); st.textContent = `
 .es-bk .es4-done{display:none!important}
+.es-bk .pw5,.es4-bk .pw5{display:none!important}.es-bk .es4-st:has(> .pw5)::before,.es4-bk > small:has(> .pw5)::before{content:"lido"}
 #shelflist .esv-grid > .es-bk > .es4-st:has(.pw5){display:none!important}
 #shelflist .esv-grid > .es-bk{grid-template-columns:minmax(0,1fr)!important}
 .mk-bear{position:absolute;top:-6px;left:10px;width:24px;height:42px;z-index:5;pointer-events:none;filter:drop-shadow(0 1.5px 1.5px rgba(0,0,0,.4))}
