@@ -9624,6 +9624,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12700,7 +12701,7 @@ function myProfileNums() {
       + cell(alvo ? `${lidosAno.length} de ${alvo}` : '–', alvo ? `meta de ${y} · ${pct}%` : `sem meta de ${y}`, 'meta', alvo ? `<span class="mt"><i style="width:${pct}%"></i></span>` : '', 'wide');
     const mark = () => { const N = S.nav; if (N && !N.st.length) N.st.push({ fn: () => goTab('eu'), tab: 'eu' }); };
     const shelf = (s) => { v.hidden = true; goTab('estante'); setTimeout(() => { openShelfV3(s); mark(); }, 150); };
-    const go = { lidos: () => shelf('LIDO'), fila: () => shelf('QUERO'), aband: () => shelf('ABANDONEI'), stats: () => { v.hidden = true; goTab('progresso'); }, meta: () => { v.hidden = true; goTab('progresso'); } };
+    const go = { lidos: () => shelf('LIDO'), fila: () => shelf('QUERO'), aband: () => shelf('ABANDONEI'), stats: () => { v.hidden = true; goTab('progresso'); }, meta: () => { const before = JSON.stringify(db.yearGoals || {}); setYearGoal(y); let n = 0; const t = setInterval(() => { if (++n > 120 || JSON.stringify(db.yearGoals || {}) !== before) { clearInterval(t); myProfileNums(); } }, 500); } }; // meta abre o ajuste da meta do ano
     nums.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); (go[b.dataset.go] || (() => {}))(); }, true));
   } catch (err) { console.warn('números do perfil', err); }
 }
