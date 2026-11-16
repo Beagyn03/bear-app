@@ -9621,6 +9621,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12668,7 +12669,7 @@ setTimeout(async () => {
 }
 // --- 53_perfil_numeros.js ---
 // Números do topo do perfil (Bia, 16/11): para leitor crítico. Saem "lendo", "amigos" e "conquistas" (a capinha já mostra a leitura).
-// Linha 1: lidos no ano · páginas no ano · nota média · ritmo. Linha 2: quero ler · abandonados · meta do ano (ocupa 2).
+// Linha 1 (geral, não zera na virada do ano): lidos · páginas · nota média · ritmo. Linha 2: quero ler · abandonados · meta do ano atual (ocupa 2).
 { const st = document.createElement('style'); st.textContent = `
 .yo-nums.yo-n7{grid-template-columns:repeat(4,1fr)!important}
 .yo-nums.yo-n7 button.wide{grid-column:span 2}
@@ -12681,16 +12682,17 @@ setTimeout(async () => {
     const v = $('#shelflist'), nums = v && !v.hidden && v.querySelector('.yo-top') && v.querySelector('.yo-nums'); if (!nums) return r;
     const L = lib(), y = Number(todayISO().slice(0, 4)), Y = String(y);
     const lidosAno = L.filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').slice(0, 4) === Y);
-    const pags = lidosAno.reduce((a, e) => a + (Number(e.totalPages) || 0), 0);
+    const lidos = L.filter((e) => e.status === 'LIDO'), pags = lidos.reduce((a, e) => a + (Number(e.totalPages) || 0), 0);
+    const datas = lidos.map((e) => String(e.startedAt || e.finishedAt || '')).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort(), desde = datas[0] || (Y + '-01-01');
     const rated = L.filter((e) => e.status === 'LIDO' && (reviewOfLib(e) || {}).paws), avg = rated.length ? rated.reduce((a, e) => a + reviewOfLib(e).paws, 0) / rated.length : 0;
-    const dias = Math.max(1, Math.round((Date.parse(todayISO()) - Date.parse(Y + '-01-01')) / 864e5) + 1), ritmo = pags ? Math.round(pags / dias) : 0;
+    const pagsDatadas = lidos.filter((e) => e.startedAt || e.finishedAt).reduce((a, e) => a + (Number(e.totalPages) || 0), 0), dias = Math.max(1, Math.round((Date.parse(todayISO()) - Date.parse(desde)) / 864e5) + 1), ritmo = pagsDatadas ? Math.round(pagsDatadas / dias) : 0;
     const fila = L.filter((e) => e.status === 'QUERO').length, aband = L.filter((e) => e.status === 'ABANDONEI').length;
     const alvo = Number((db.yearGoals || {})[y]) || 0, pct = alvo ? Math.min(100, Math.round(lidosAno.length / alvo * 100)) : 0;
     const k = (n) => Number(n).toLocaleString('pt-BR');
     const cell = (n, t, go, extra = '', cls = '') => `<button type="button" class="${cls}" ${go ? `data-go="${go}"` : 'disabled'}><b>${n}</b><small>${t}</small>${extra}</button>`;
     nums.classList.add('yo-n7');
-    nums.innerHTML = cell(k(lidosAno.length), lidosAno.length === 1 ? `lido em ${y}` : `lidos em ${y}`, 'lidos')
-      + cell(k(pags), `páginas em ${y}`, 'stats')
+    nums.innerHTML = cell(k(lidos.length), lidos.length === 1 ? 'lido' : 'lidos', 'lidos')
+      + cell(k(pags), 'páginas lidas', 'stats')
       + cell(avg ? avg.toFixed(1).replace('.', ',') : '–', 'nota média', 'stats')
       + cell(ritmo || '–', 'pág. por dia', 'stats')
       + cell(k(fila), 'quero ler', 'fila')
