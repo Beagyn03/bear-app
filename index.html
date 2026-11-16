@@ -9579,6 +9579,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11999,6 +12000,25 @@ editBio = async function () {
   const out = [...pt, ...other]; if (out.length < 10) out.push(...en);
   return out.slice(0, 18);
 }; }
+// --- 42_atualiza_sozinho.js ---
+// Mudou status, nota ou data de um livro: o perfil aberto e as Estatísticas se redesenham sozinhos (Bia, 16/11).
+// Antes era preciso recarregar o app para ver a mudança nas Leituras por mês e nos números do perfil.
+// (save é const, não dá para envolver; a conferência roda só com o perfil ou as Estatísticas na tela e nada aberto por cima.)
+{ const sig = () => { try { return lib().map((e) => e.id + ':' + e.status + ':' + ((reviewOfLib(e) || {}).paws || 0) + ':' + (e.finishedAt || '')).join('|'); } catch { return ''; } };
+  let last = sig(), busy = false;
+  setInterval(async () => {
+    if (busy || document.hidden) return;
+    const v = $('#shelflist'), onMe = v && !v.hidden && v.classList.contains('mine-page'), onStats = (!v || v.hidden) && S.tab === 'progresso';
+    if (!onMe && !onStats) { last = sig(); return; }
+    if (TR.querySelector('.bkm') || document.querySelector('.sheet')) return; // menu ou folha aberta: espera fechar
+    const s = sig(); if (s === last) return; last = s;
+    busy = true;
+    try {
+      if (onMe) { const y = v.scrollTop; S.nav.restoring = true; try { await openMyProfile(); } finally { S.nav.restoring = false; } v.scrollTop = y; }
+      else { const y = window.scrollY; drawTab(); window.scrollTo(0, y); }
+    } catch (err) { console.warn('atualizar tela', err); } finally { busy = false; }
+  }, 700);
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
