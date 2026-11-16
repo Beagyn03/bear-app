@@ -7476,7 +7476,7 @@ function importCSV() {
     const Y = Number(todayISO().slice(0, 4)), shelfOf = new Map((db.shelves || []).map((x) => [normT(x.name), x]));
     let n = 0, skip = 0, upd = 0; const fresh = [];
     // resenha (Goodreads "My Review", StoryGraph "Review") e spoiler; o Goodreads às vezes exporta quebras de linha como \n literal
-    const cV = col('my review', 'review', 'resenha', 'comentario'), cSp = col('spoiler'), cAd = col('date added', 'adicionado em', 'data de adicao'), cN = col('private notes', 'notas privadas', 'notas', 'anotacao');
+    const cV = col('my review', 'review', 'resenha', 'comentario'), cSp = col('spoiler'), cAd = col('date added', 'adicionado em', 'data de adicao'), cPub = col('publisher', 'editora'), cN = col('private notes', 'notas privadas', 'notas', 'anotacao');
     const dOf = (x) => { const m = String(x || '').trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : null; };
     const revOf = (r) => (cV >= 0 ? String(r[cV] || '').replace(/\\n/g, '\n').replace(/​/g, '').replace(/<br\s*\/?>/gi, '\n').trim().slice(0, 4000) : '');
     const spOf = (r) => cSp >= 0 && /^(true|sim|yes|1)$/i.test(String(r[cSp] || '').trim());
@@ -7515,7 +7515,7 @@ function importCSV() {
       const e = addToLibrary({ title, author: author || null, totalPages: pages, isbn: isbn || null }, null, status, { when: status === 'LIDO' ? when : null, quiet: true, paws: status === 'LIDO' && paws ? paws : 0,
         fmt: /kindle/.test(bind) ? { format: 'EBOOK', device: 'Kindle' } : /kobo/.test(bind) ? { format: 'EBOOK', device: 'Kobo' } : /ebook|e book|nook|digital/.test(bind) ? { format: 'EBOOK' } : /audio|audible/.test(bind) ? { format: 'AUDIO' } : null });
       if (status === 'LENDO') e.startedAt = todayISO();
-      { const ad = cAd >= 0 ? dOf(r[cAd]) : null; if (ad && ad <= todayISO()) e.addedAt = ad; const nt = cN >= 0 ? String(r[cN] || '').trim().slice(0, 2000) : ''; if (nt && !e.note) e.note = nt; }
+      { const ad = cAd >= 0 ? dOf(r[cAd]) : null; if (ad && ad <= todayISO()) e.addedAt = ad; const nt = cN >= 0 ? String(r[cN] || '').trim().slice(0, 2000) : ''; if (nt && !e.note) e.note = nt; const pb = cPub >= 0 ? String(r[cPub] || '').trim().slice(0, 120) : ''; if (pb && !e.publisher) e.publisher = pb; }
       const tx = revOf(r); if (tx && status === 'LIDO') e.review = { ...(e.review || {}), texto: tx, ...(spOf(r) ? { spoiler: true } : {}) };
       if (cX >= 0) for (const name of String(r[cX] || '').split(/[,;]/).map((x) => x.trim()).filter((x) => x && !/^(read|to-read|currently-reading|lidos?|quero ler|lendo)$/i.test(x)).slice(0, 5)) {
         let s = shelfOf.get(normT(name)); if (!s) { db.shelves = db.shelves || []; s = { id: uid(), name: name.slice(0, 40), bookIds: [] }; db.shelves.push(s); shelfOf.set(normT(name), s); } s.bookIds.push(e.id);
@@ -9610,6 +9610,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10758,6 +10759,12 @@ drawProgresso = function (box) {
   // pizzas de notas e formato
   const PIE_C = { m5: '#b78cff', mo: '#e2b53e', mp: '#a9b3bc', mb: '#c07a43', mf: '#7d848b' }, PIE_F = { 'Físico': '#c46f2b', 'E-book': '#4f97d1', 'Audiolivro': '#4fae78', 'Outro': '#999' };
   const pieHTML = (parts) => { const tot = parts.reduce((a, x) => a + x[1], 0) || 1; let acc = 0; const segs = parts.filter((x) => x[1]).map(([, n, c]) => { const a0 = acc; acc += n / tot * 360; return `${c} ${a0.toFixed(1)}deg ${acc.toFixed(1)}deg`; }).join(','); return `<div class="pie" style="background:conic-gradient(${segs || 'var(--line) 0 360deg'})"><span>${tot}</span></div><ul class="pie-l">${parts.filter((x) => x[1]).map(([l, n, c]) => `<li><i style="background:${c}"></i>${esc(l)}<b>${n}</b></li>`).join('')}</ul>`; };
+  // autores e editoras: 5 primeiros + Outros
+  const CAT = ['#c46f2b', '#4f97d1', '#4fae78', '#b78cff', '#e2b53e', '#a9b3bc'];
+  const pieTop = (vals) => { const t = top(vals, 999), head = t.slice(0, 5), rest = t.slice(5).reduce((a, x) => a + x[1], 0); return [...head, ...(rest ? [['Outros', rest]] : [])].map(([k, n], i) => [k, n, CAT[i % CAT.length]]); };
+  const autP = pieTop(fin.map((e) => String(e.author || '').split(',')[0].trim()).filter(Boolean));
+  const pubOf = (e) => String(e.publisher || (e.meta && e.meta.pub) || '').trim();
+  const pubP = pieTop(fin.map(pubOf).filter(Boolean)), noPub = fin.filter((e) => !pubOf(e)).length;
   // livros por mês
   const perM = Array.from({ length: 12 }, (_, i) => fin.filter((e) => !e.dateApprox && Number(String(e.finishedAt).slice(5, 7)) === i + 1).length);
   const perS = Array.from({ length: 12 }, (_, i) => { const m0 = `${y}-${String(i + 1).padStart(2, '0')}-01`, m1 = `${y}-${String(i + 1).padStart(2, '0')}-31`; return lib().filter((e) => { if (!['LIDO', 'LENDO', 'ABANDONEI', 'HIBERNANDO'].includes(e.status)) return false; const ini = e.startedAt || (e.status === 'LIDO' && !e.dateApprox ? e.finishedAt : null); if (!ini) return false; const fim = e.status === 'LIDO' ? (e.finishedAt || ini) : (e.statusAt && e.status !== 'LENDO' ? e.statusAt : todayISO()); return String(ini) <= m1 && String(fim) >= m0; }).length; }), maxM = Math.max(1, ...perM, ...perS);
@@ -10794,7 +10801,7 @@ drawProgresso = function (box) {
     <section class="v3c sx-c"><h3>Livros por mês</h3><div class="sx-bars sx-dual">${perM.map((n, i) => { const c = Math.max(perS[i], n), h = (k) => (k ? Math.max(8, Math.round((k / maxM) * 100)) : 2); return `<div title="${ML[i]}: leu ${c}, terminou ${n}"><span class="sx-nums">${c ? `<em>${c}</em>` : ''}</span><span class="sx-stack" style="height:${h(c)}%"><i class="s${c ? '' : ' z'}"></i>${n ? `<i class="f" style="height:${Math.round((n / c) * 100)}%"></i>` : ''}</span><span>${ML[i]}</span></div>`; }).join('')}</div><div class="sx-leg2"><span><i class="s"></i>lendo no mês</span><span><i></i>terminados</span></div></section>
     ${(rated.length || fmt.length) ? `<div class="sx-pies">${rated.length ? `<section class="v3c sx-c sx-pie"><h3>Notas</h3>${pieHTML(tierN.map(([l, n, c]) => [l, n, PIE_C[c] || '#999']))}${fin.length - rated.length ? `<p class="sx-note">${plural(fin.length - rated.length, 'livro', 'livros')} sem nota</p>` : ''}</section>` : ''}${fmt.length ? `<section class="v3c sx-c sx-pie"><h3>Formato</h3>${pieHTML(fmt.map(([k, n]) => [k, n, PIE_F[k] || '#999']))}</section>` : ''}</div>` : ''}
     ${gen.length ? `<section class="v3c sx-c"><h3>Gêneros</h3><div class="sx-rows">${gen.map(([k, n]) => row(k, n, maxG)).join('')}</div></section>` : ''}
-    ${aut.length ? `<section class="v3c sx-c"><h3>Autores mais lidos</h3><div class="sx-rows">${aut.map(([k, n]) => row(k, n, maxA)).join('')}</div></section>` : ''}
+    ${(autP.length || fin.length) ? `<div class="sx-pies">${autP.length ? `<section class="v3c sx-c sx-pie"><h3>Autores</h3>${pieHTML(autP)}</section>` : ''}<section class="v3c sx-c sx-pie"><h3>Editoras</h3>${pubP.length ? pieHTML(pubP) : '<p class="sx-note" style="margin:.2rem 0 0">Buscando as editoras dos seus livros…</p>'}${pubP.length && noPub ? `<p class="sx-note">${plural(noPub, 'livro', 'livros')} sem editora</p>` : ''}</section></div>` : ''}
     ${withP.length ? `<section class="v3c sx-c"><h3>Tamanho dos livros</h3><div class="sx-rows">${size.map(([k, n]) => row(k, n, maxS)).join('')}</div></section>` : ''}
     ${abY ? `<section class="v3c sx-c"><h3>Abandonados</h3><p class="sx-note" style="margin:0">${plural(abY, 'livro abandonado', 'livros abandonados')} em ${y}. Tudo bem largar o que não está bom.</p></section>` : ''}
     ${hab}` : `<p class="sx-empty">Nenhum livro terminado em ${y} ainda.${hab ? '' : ' Quando você marcar um livro como lido, os números aparecem aqui.'}</p>${hab}`}`;
@@ -10803,6 +10810,20 @@ drawProgresso = function (box) {
   const a = $('#sx-ys', box); if (a) { S.ysYear = y; mountYearShelf(box, a, ysItems(), true); a.remove(); }
   paintCv(box);
 };
+
+// Editoras: busca a ficha (que traz a editora) dos lidos que ainda não têm, poucos por vez, e redesenha as Estatísticas
+{ let busy = false; const tried = new Set();
+  const fillPubs = async () => {
+    if (busy || S.tab !== 'progresso') return; busy = true;
+    try {
+      const need = lib().filter((e) => e.status === 'LIDO' && !e.publisher && !(e.meta && e.meta.pub) && !tried.has(e.id)).slice(0, 6);
+      let got = 0; for (const e of need) { tried.add(e.id); try { await fetchBookMeta(e); if (e.meta && e.meta.pub) got++; } catch {} }
+      if (got) { save(); const v = $('#shelflist'); if ((!v || v.hidden) && S.tab === 'progresso') { const y = window.scrollY; drawTab(); window.scrollTo(0, y); } }
+      if (need.length === 6) setTimeout(() => { busy = false; fillPubs(); }, 1500); else busy = false;
+    } catch { busy = false; }
+  };
+  const _dt = drawTab; drawTab = function () { const r = _dt.apply(this, arguments); if (S.tab === 'progresso') setTimeout(fillPubs, 800); return r; };
+}
 // --- 31_brilho_cor_nota.js ---
 // Ajustes da Bia (15/11 e 16/11): a faixa da nota nas Leituras por mês vira barrinha arredondada EM CIMA do livro (fora da capa, sobre a parte visível da lombada);
 // só 5 patas e ouro brilham (prata, bronze e ferro ficam quietos); o reflexo tem a cor da nota (dourado no ouro, furta-cor no 5).
