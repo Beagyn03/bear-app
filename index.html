@@ -9566,6 +9566,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10923,12 +10924,12 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 // --- 34_cadastro_gostos.js ---
 // Cadastro (15/11): conta nova já sai com @usuário (sem cair em Editar perfil) e o Bear pergunta gêneros e livros
 // favoritos. Os gostos ficam em db.prefs.taste e alimentam "Para você" no Início (Google Livros, sem mudar a API).
-const TASTE_G = [['romance', 'Romance', 'subject:romance'], ['contemporaneo', 'Romance contemporâneo', '"romance contemporâneo" OR subject:"contemporary romance"'], ['dark', 'Dark romance', '"dark romance"'], ['fantasia', 'Fantasia', 'subject:fantasy'], ['romantasia', 'Romantasia', 'romantasia OR "fantasy romance"'], ['ficcao', 'Ficção científica', 'subject:"science fiction"'],
+const TASTE_G = [['romance', 'Romance', 'subject:romance'], ['contemporaneo', 'Romance contemporâneo', '"romance contemporâneo" OR subject:"contemporary romance"'], ['dark', 'Dark romance', '"dark romance"'], ['fantasia', 'Fantasia', 'subject:fantasy'], ['romantasia', 'Romantasia', 'romantasia OR "fantasy romance"'], ['darkfantasy', 'Dark fantasy', '"dark fantasy" OR "fantasia sombria"'], ['ficcao', 'Ficção científica', 'subject:"science fiction"'],
   ['suspense', 'Suspense', 'subject:thriller'], ['policial', 'Policial e mistério', 'subject:mystery'], ['terror', 'Terror', 'subject:horror'],
   ['historico', 'Romance histórico', 'subject:"historical fiction"'], ['classicos', 'Clássicos', 'subject:classics'], ['ya', 'Jovem adulto', 'subject:"young adult"'], ['distopia', 'Distopia', 'distopia OR subject:dystopian'],
   ['nacional', 'Literatura brasileira', 'subject:"literatura brasileira"'], ['poesia', 'Poesia', 'subject:poetry'], ['hq', 'HQ e mangá', 'subject:comics'],
   ['biografia', 'Biografias', 'subject:biography'], ['autoajuda', 'Autoajuda', 'subject:"self-help"'], ['negocios', 'Negócios', 'subject:business'], ['ciencia', 'Ciência', 'subject:science']];
-const TASTE_OL = {"romance":"romance","romantasia":"fantasy_romance","contemporaneo":"contemporary_romance","dark":"dark_romance","distopia":"dystopias","fantasia":"fantasy","ficcao":"science_fiction","suspense":"thriller","policial":"mystery","terror":"horror","historico":"historical_fiction","classicos":"classic_literature","ya":"young_adult_fiction","nacional":"brazilian_literature","poesia":"poetry","hq":"comics","biografia":"biography","autoajuda":"self-help","negocios":"business","ciencia":"science"};
+const TASTE_OL = {"romance":"romance","romantasia":"fantasy_romance","darkfantasy":"dark_fantasy","contemporaneo":"contemporary_romance","dark":"dark_romance","distopia":"dystopias","fantasia":"fantasy","ficcao":"science_fiction","suspense":"thriller","policial":"mystery","terror":"horror","historico":"historical_fiction","classicos":"classic_literature","ya":"young_adult_fiction","nacional":"brazilian_literature","poesia":"poetry","hq":"comics","biografia":"biography","autoajuda":"self-help","negocios":"business","ciencia":"science"};
 const tasteOf = () => (db.prefs && db.prefs.taste) || null;
 // ---------- @usuário automático ----------
 function handleBase(name, email) {
@@ -11141,7 +11142,7 @@ loadTrends = function (force) {
   return r;
 }; }
 // ---------- "Para você": começa pelo que os leitores do B.E.A.R estão lendo nos seus gêneros ----------
-const TASTE_TO_GENRE = { romance: 'Romance', contemporaneo: 'Romance', dark: 'Romance', romantasia: 'Fantasia', fantasia: 'Fantasia', distopia: 'Ficção científica', ficcao: 'Ficção científica', suspense: 'Suspense e mistério', policial: 'Suspense e mistério', terror: 'Terror', historico: 'História', classicos: 'Clássicos', ya: 'Jovem adulto', poesia: 'Poesia', hq: 'HQ e mangá', biografia: 'Biografia', autoajuda: 'Autoajuda', negocios: 'Não ficção', ciencia: 'Não ficção' };
+const TASTE_TO_GENRE = { romance: 'Romance', contemporaneo: 'Romance', dark: 'Romance', romantasia: 'Fantasia', darkfantasy: 'Fantasia', fantasia: 'Fantasia', distopia: 'Ficção científica', ficcao: 'Ficção científica', suspense: 'Suspense e mistério', policial: 'Suspense e mistério', terror: 'Terror', historico: 'História', classicos: 'Clássicos', ya: 'Jovem adulto', poesia: 'Poesia', hq: 'HQ e mangá', biografia: 'Biografia', autoajuda: 'Autoajuda', negocios: 'Não ficção', ciencia: 'Não ficção' };
 { const _tr = tasteRecs; tasteRecs = async function () {
   const base = await _tr.apply(this, arguments);
   const t = tasteOf(); if (!t || !connected() || !socialProfile) return base;
