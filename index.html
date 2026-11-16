@@ -9626,6 +9626,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12703,13 +12704,38 @@ function myProfileNums() {
       + cell(alvo ? `${lidosAno.length} de ${alvo}` : '–', alvo ? `meta de ${y} · ${pct}%` : `sem meta de ${y}`, 'meta', alvo ? `<span class="mt"><i style="width:${pct}%"></i></span>` : '', 'wide');
     const mark = () => { const N = S.nav; if (N && !N.st.length) N.st.push({ fn: () => goTab('eu'), tab: 'eu' }); };
     const shelf = (s) => { v.hidden = true; goTab('estante'); setTimeout(() => { openShelfV3(s); mark(); }, 150); };
-    const go = { lidos: () => shelf('LIDO'), fila: () => shelf('QUERO'), aband: () => shelf('ABANDONEI'), resenhas: () => { const ln = [...v.querySelectorAll('.v3-sh')].find((x) => /^Avalia/.test(x.textContent.trim())); if (ln) ln.scrollIntoView({ behavior: 'smooth', block: 'start' }); else { v.hidden = true; goTab('progresso'); } }, stats: () => { v.hidden = true; goTab('progresso'); }, meta: () => { const before = JSON.stringify(db.yearGoals || {}); setYearGoal(y); let n = 0; const t = setInterval(() => { if (++n > 120 || JSON.stringify(db.yearGoals || {}) !== before) { clearInterval(t); myProfileNums(); } }, 500); } }; // meta abre o ajuste da meta do ano
+    const go = { lidos: () => shelf('LIDO'), fila: () => shelf('QUERO'), aband: () => shelf('ABANDONEI'), resenhas: () => { mark(); openMyReviews(); }, stats: () => { v.hidden = true; goTab('progresso'); }, meta: () => { const before = JSON.stringify(db.yearGoals || {}); setYearGoal(y); let n = 0; const t = setInterval(() => { if (++n > 120 || JSON.stringify(db.yearGoals || {}) !== before) { clearInterval(t); myProfileNums(); } }, 500); } }; // meta abre o ajuste da meta do ano
     nums.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); (go[b.dataset.go] || (() => {}))(); }, true));
   } catch (err) { console.warn('números do perfil', err); }
 }
 // vale para o perfil aberto pela aba Perfil e para o próprio perfil aberto por outro caminho (tocar no seu nome na Rede, por exemplo)
 { const _om = openMyProfile; openMyProfile = async function () { const r = await _om.apply(this, arguments); myProfileNums(); return r; }; }
 { const _fp = friendPage; friendPage = async function (h) { const r = await _fp.apply(this, arguments); const d = S.fpData; if (d && d.self && d.handle === h) myProfileNums(); return r; }; }
+// Resenhas (Bia, 16/11): a seção "Avaliações" sai do perfil; o número "resenhas" abre esta página com as suas resenhas.
+{ const st = document.createElement('style'); st.textContent = `
+.mr-it{display:grid;grid-template-columns:54px 1fr;gap:.7rem;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.65rem;margin-bottom:.55rem;text-align:left;width:100%;color:var(--ink);font:inherit}
+.mr-it .cv{width:54px;height:81px;border-radius:3px 6px 6px 3px;font-size:.45rem}
+.mr-it b{display:block;font-size:.92rem;line-height:1.25}.mr-it .mr-m{font-size:.75rem;color:var(--ink-2);font-weight:700;margin:.1rem 0 .3rem}
+.mr-it p{margin:0;font-size:.85rem;line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+`; TR.append(st); }
+function openMyReviews() {
+  const v = $('#shelflist'); closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page');
+  const list = lib().map((e) => ({ e, r: reviewOfLib(e) })).filter((x) => x.r && String(x.r.texto || '').trim()).sort((a, z) => String(z.e.finishedAt || '').localeCompare(String(a.e.finishedAt || '')));
+  v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Minhas resenhas</b><span></span></div>'
+    + '<p class="hint" style="margin:.1rem 0 .7rem">' + plural(list.length, 'resenha', 'resenhas') + '</p>'
+    + (list.length ? list.map(({ e, r }, i) => '<button type="button" class="mr-it" data-i="' + i + '">' + cvh(e.title, e.cover, '') + '<span><b>' + esc(e.title) + '</b><span class="mr-m">' + [r.paws ? esc(pawTxt(r.paws)) : '', e.finishedAt ? fmt(String(e.finishedAt)) : '', r.share === false ? 'privada' : '', r.spoiler ? 'spoiler' : ''].filter(Boolean).join(' · ') + '</span><p>' + esc(r.texto) + '</p></span></button>').join('')
+      : '<p class="sl-empty">Você ainda não escreveu nenhuma resenha. Ao avaliar um livro, conte o que achou no campo Resenha.</p>');
+  try { paintCv(v); } catch {}
+  v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; try { openMyProfile(); } catch {} });
+  v.querySelectorAll('.mr-it').forEach((b) => b.addEventListener('click', () => { const x = list[+b.dataset.i]; rateForm(x.e, { logs: [] }, () => openMyReviews()); }));
+  v.hidden = false; v.scrollTop = 0; S.navView = { t: 'myrev', a: [] };
+}
+// tira a seção "Avaliações" do próprio perfil
+{ const _fp = friendPage; friendPage = async function (h) {
+  const r = await _fp.apply(this, arguments); const v = $('#shelflist'), d = S.fpData;
+  if (!v.hidden && d && d.self && d.handle === h) { const hd = [...v.querySelectorAll('.v3-sh')].find((x) => /^Avalia/.test(x.textContent.trim())); if (hd) { let n = hd.nextElementSibling; while (n && !n.classList.contains('v3-sh')) { const nx = n.nextElementSibling; n.remove(); n = nx; } hd.remove(); } }
+  return r;
+}; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
