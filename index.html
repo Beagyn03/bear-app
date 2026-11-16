@@ -9634,6 +9634,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12835,8 +12836,8 @@ function dueSheet(e) {
 // Leituras em comum (Bia, 16/11): no perfil de outra pessoa, logo abaixo dos números (antes de Leituras por mês), um botão
 // "Você e Fulana têm N leituras em comum, como …" que abre a página com as duas notas lado a lado e a compatibilidade literária.
 { const st = document.createElement('style'); st.textContent = `
-.cm-btn{display:grid;grid-template-columns:auto 1fr auto;gap:.6rem;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.65rem .8rem;margin:0 0 .9rem;color:var(--ink);font:inherit}
-.cm-btn .cm-pc{font-weight:900;font-size:1.05rem;color:var(--acc);min-width:46px;text-align:center}.cm-btn b{display:block;font-size:.88rem}.cm-btn small{font-size:.78rem;color:var(--ink-2)}
+.cm-btn{display:grid;grid-template-columns:1fr auto;gap:.6rem;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.65rem .8rem;margin:0 0 .9rem;color:var(--ink);font:inherit}
+.cm-btn .cm-pc{font-style:normal;font-weight:900;font-size:1.15rem;color:var(--acc)}.cm-btn b{display:block;font-size:.88rem}.cm-btn small{font-size:.78rem;color:var(--ink-2)}
 .cm-hd{display:grid;justify-items:center;text-align:center;gap:.2rem;margin:.3rem 0 1rem}.cm-hd .big{font-size:2.4rem;font-weight:900;color:var(--acc);line-height:1}.cm-hd small{color:var(--ink-2);font-size:.82rem;max-width:300px}
 .cm-row{display:grid;grid-template-columns:44px 1fr 56px 56px;gap:.55rem;align-items:center;border-bottom:1px solid var(--line);padding:.5rem 0}
 .cm-row .cv{width:44px;height:66px;border-radius:3px 5px 5px 3px;font-size:.42rem}.cm-row b{font-size:.86rem;line-height:1.25}
@@ -12875,7 +12876,7 @@ function openCommonReads(d) {
     const c = commonReads(d); if (!c.list.length) return r;
     const nm = String(d.displayName || d.handle).split(' ')[0];
     const b = document.createElement('button'); b.type = 'button'; b.className = 'cm-btn';
-    b.innerHTML = `<span class="cm-pc">${c.compat != null ? c.compat + '%' : c.list.length}</span><span><b>Você e ${esc(nm)} têm ${plural(c.list.length, 'leitura', 'leituras')} em comum</b><small>como ${esc(c.list[0].title)}${c.compat != null ? ' · compatibilidade literária' : ''}</small></span><span>›</span>`;
+    b.innerHTML = `<span><b>${c.compat != null ? `<em class="cm-pc">${c.compat}%</em> de compatibilidade literária` : `${plural(c.list.length, 'leitura', 'leituras')} em comum`}</b><small>${c.compat != null ? `Você e ${esc(nm)} têm ${plural(c.list.length, 'leitura', 'leituras')} em comum, como ${esc(c.list[0].title)}` : `Você e ${esc(nm)} leram ${esc(c.list[0].title)}${c.list.length > 1 ? ' e outros' : ''}`}</small></span><span>›</span>`;
     b.addEventListener('click', () => openCommonReads(d));
     const at = v.querySelector('.yo-nums') || v.querySelector('.yo-top'); if (at) at.after(b);
   } catch (err) { console.warn('leituras em comum', err); }
