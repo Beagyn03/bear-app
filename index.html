@@ -9570,6 +9570,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10419,7 +10420,8 @@ if (!ES_SORTS.some((x) => x[0] === 'prioridade')) ES_SORTS.splice(1, 0, ['priori
 `; TR.append(st); }
 { const _ys = yearShelfHTML; yearShelfHTML = function () {
   const h = _ys.apply(this, arguments); if (!h) return h;
-  return h.replace(/<div class="ys-leg">[\s\S]*?<\/div>/, '<div class="ys-leg"><span class="ys-lt">Nota</span><span><i class="ys-mi n5"></i>5</span><span><i class="ys-mi ouro"></i>4,5</span><span><i class="ys-mi prata"></i>4</span><span><i class="ys-mi bronze"></i>3 a 3,5</span><span><i class="ys-mi ferro"></i>menos de 3</span></div>');
+  return h.replace(/(class="es-bk ys-bk paw ys-5"[^>]*>)/g, '$1<span class="ys-sp a">✦</span><span class="ys-sp b">✦</span><span class="ys-sp c">✦</span>')
+    .replace(/<div class="ys-leg">[\s\S]*?<\/div>/, '<div class="ys-leg"><span class="ys-lt">Nota</span><span class="ys-5l"><i class="ys-mi n5"></i>5</span><span><i class="ys-mi ouro"></i>4,5</span><span><i class="ys-mi prata"></i>4</span><span><i class="ys-mi bronze"></i>3 a 3,5</span><span><i class="ys-mi ferro"></i>menos de 3</span></div>');
 }; }
 // Medalhas abaixo do 5 (escolha da Bia, 15/11): ouro 4,5 · prata 4 · bronze 3 a 3,5 · ferro abaixo de 3.
 // Faixa metálica no topo; ouro e prata com contorno e reflexo lento, bronze só contorno leve, ferro discreto.
@@ -10764,21 +10766,24 @@ drawProgresso = function (box) {
 .ys-bk.ys-5::after,.cv.rt-5::before{background:linear-gradient(115deg,transparent 34%,rgba(255,214,110,.55) 44%,rgba(255,150,210,.5) 50%,rgba(150,200,255,.5) 56%,transparent 66%)!important;background-size:250% 100%!important}
 .ys-bk.ys-ouro::after,.cv.rt-ouro::before{background:linear-gradient(115deg,transparent 40%,rgba(255,210,80,.55) 50%,transparent 60%)!important;background-size:250% 100%!important}
 `; TR.append(st); }
-// Bia (16/11): sem metais nem brilho; barrinha colada no topo da capa, em tons da cor do app (mais forte = nota maior).
+// Bia (16/11): o 5 continua furta-cor, com brilho e estrelinhas; 4,5 a menos de 3 em tons da cor do app (mais forte = nota maior).
+// A barrinha fica colada no topo da capa, na largura toda (o livro seguinte cobre a ponta, como cobre a capa).
 { const st = document.createElement('style'); st.textContent = `
 .ys-bk{--nb:var(--line)}
-.ys-bk.ys-5{--nb:var(--acc)}.ys-bk.ys-ouro{--nb:color-mix(in srgb,var(--acc) 72%,var(--panel))}.ys-bk.ys-prata{--nb:color-mix(in srgb,var(--acc) 50%,var(--panel))}
-.ys-bk.ys-bronze{--nb:color-mix(in srgb,var(--acc) 30%,var(--panel))}.ys-bk.ys-ferro{--nb:color-mix(in srgb,var(--ink-2) 35%,var(--panel))}
-.ys-bk.paw::before{top:-4px!important;left:0!important;right:auto!important;width:44px!important;height:4px!important;border-radius:3px 3px 0 0!important;background:var(--nb)!important;background-size:auto!important;box-shadow:none!important;animation:none!important}
-.ys-bk.ys-5::after,.ys-bk.ys-ouro::after,.ys-bk.ys-prata::after{content:none!important;animation:none!important}
-.ys-bk.ys-5 .cv,.ys-bk.ys-ouro .cv,.ys-bk.ys-prata .cv,.ys-bk.ys-bronze .cv{box-shadow:inset -2px 0 3px rgba(0,0,0,.25)!important}
-.ys-bk + .ys-bk:is(.ys-5,.ys-ouro,.ys-prata,.ys-bronze) .cv{box-shadow:-4px 0 6px -2px rgba(0,0,0,.45),inset -2px 0 3px rgba(0,0,0,.25)!important}
-.ys-bk .ys-sp{display:none!important}
-.ys-g{gap:.65rem!important}
-.ys-leg i.ys-mi,.ys-leg i.ys-mi.n5,.ys-leg i.ys-mi.ouro,.ys-leg i.ys-mi.prata,.ys-leg i.ys-mi.bronze,.ys-leg i.ys-mi.ferro{background:var(--nb)!important;box-shadow:none!important}
-.ys-leg i.ys-mi.n5{--nb:var(--acc)}.ys-leg i.ys-mi.ouro{--nb:color-mix(in srgb,var(--acc) 72%,var(--panel))}.ys-leg i.ys-mi.prata{--nb:color-mix(in srgb,var(--acc) 50%,var(--panel))}
-.ys-leg i.ys-mi.bronze{--nb:color-mix(in srgb,var(--acc) 30%,var(--panel))}.ys-leg i.ys-mi.ferro{--nb:color-mix(in srgb,var(--ink-2) 35%,var(--panel))}
+.ys-bk.ys-ouro{--nb:color-mix(in srgb,var(--acc) 80%,var(--panel))}.ys-bk.ys-prata{--nb:color-mix(in srgb,var(--acc) 55%,var(--panel))}
+.ys-bk.ys-bronze{--nb:color-mix(in srgb,var(--acc) 32%,var(--panel))}.ys-bk.ys-ferro{--nb:color-mix(in srgb,var(--ink-2) 35%,var(--panel))}
+.ys-bk.paw::before{top:-4px!important;left:0!important;right:0!important;width:auto!important;height:4px!important;border-radius:3px 3px 0 0!important;background:var(--nb)!important;background-size:auto!important;box-shadow:none!important;animation:none!important}
+.ys-bk.ys-5::before{top:-5px!important;height:5px!important;background:linear-gradient(90deg,#f6c94a,#ff8fc8,#b78cff,#6fd3ff,#f6c94a)!important;background-size:300% 100%!important;animation:ys5Flow 3s linear infinite!important;box-shadow:0 0 6px rgba(255,190,90,.9)!important}
+.ys-bk.ys-ouro::after,.ys-bk.ys-prata::after{content:none!important;animation:none!important}
+.ys-bk.ys-ouro .cv,.ys-bk.ys-prata .cv,.ys-bk.ys-bronze .cv{box-shadow:inset -2px 0 3px rgba(0,0,0,.25)!important}
+.ys-bk + .ys-bk:is(.ys-ouro,.ys-prata,.ys-bronze) .cv{box-shadow:-4px 0 6px -2px rgba(0,0,0,.45),inset -2px 0 3px rgba(0,0,0,.25)!important}
+.ys-g{gap:.75rem!important}
+.ys-leg i.ys-mi,.ys-leg i.ys-mi.ouro,.ys-leg i.ys-mi.prata,.ys-leg i.ys-mi.bronze,.ys-leg i.ys-mi.ferro{background:var(--nb)!important;box-shadow:none!important}
+.ys-leg i.ys-mi.n5{background:linear-gradient(90deg,#f6c94a,#ff8fc8,#b78cff,#6fd3ff)!important;box-shadow:0 0 4px rgba(246,201,74,.8)!important}
+.ys-leg i.ys-mi.ouro{--nb:color-mix(in srgb,var(--acc) 80%,var(--panel))}.ys-leg i.ys-mi.prata{--nb:color-mix(in srgb,var(--acc) 55%,var(--panel))}
+.ys-leg i.ys-mi.bronze{--nb:color-mix(in srgb,var(--acc) 32%,var(--panel))}.ys-leg i.ys-mi.ferro{--nb:color-mix(in srgb,var(--ink-2) 35%,var(--panel))}
 .ys-leg .ys-lt{font-weight:800;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.ys-bk.ys-5::before{animation:none!important}}
 `; TR.append(st); }
 // --- 32_navegacao.js ---
 // Voltar sempre para a tela de onde veio (auditoria de 15/11): pilha de páginas do #shelflist.
