@@ -9613,6 +9613,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12532,7 +12533,7 @@ const tidyTxt = (x) => (typeof x === 'string' ? x.replace(/\s+/g, ' ').trim() : 
 const tidyAll = () => { try { let n = 0; const bad = /\s{2,}|^\s|\s$/; for (const e of lib()) for (const k of ['title', 'author', 'publisher']) { if (typeof e[k] === 'string' && bad.test(e[k])) { e[k] = tidyTxt(e[k]); n++; } } for (const g of (db.goals || [])) for (const b of (g.books || [])) for (const k of ['title', 'author']) { if (typeof b[k] === 'string' && bad.test(b[k])) { b[k] = tidyTxt(b[k]); n++; } } if (n) save(); } catch {} };
 setTimeout(tidyAll, 2000); setInterval(tidyAll, 60000);
 // --- 49_livro_rede.js ---
-// Página do livro, aba "Rede" (Bia, 16/11): comentários (posts da Rede) e avaliações de todo mundo sobre o livro, inclusive os seus,
+// Página do livro, aba "Rede" (Bia, 16/11): comentários (posts da Rede) e avaliações de todo mundo sobre o livro, inclusive os seus (com borda destacada), em ordem de postagem,
 // com curtir e responder. Filtros: tipo (tudo, avaliações, comentários), nota e "sem spoiler". Vale também para livro do catálogo.
 const bookKeyRede = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 200); // igual ao bear_book_key da API
 S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: false };
@@ -12577,7 +12578,7 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       if (F.tipo === 'aval') list = list.filter((x) => x.type === 'review'); else if (F.tipo === 'com') list = list.filter((x) => x.type !== 'review');
       if (F.nota) list = list.filter((x) => { const p = Number(x.paws) || 0; return F.nota === '5' ? p >= 5 : F.nota === '4' ? p >= 4 && p < 5 : F.nota === '3' ? p >= 3 && p < 4 : p > 0 && p < 3; });
       if (F.semSp) list = list.filter((x) => x.mine || !(x.spoiler || x.spoilerKind));
-      list.sort((a, z) => (Number(z.mine) - Number(a.mine)) || (new Date(z.createdAt) - new Date(a.createdAt))); // os seus primeiro
+      list.sort((a, z) => new Date(z.createdAt) - new Date(a.createdAt)); // por ordem de postagem (mais recente primeiro)
       const total = mineLocal.length + data.revs.length + data.posts.length;
       sec.innerHTML = '<div class="br-top"><div class="br-avg">' + (data.avg != null ? '<b>' + esc(pawTxt(data.avg)) + '</b><small>média de ' + plural(data.count, 'nota', 'notas') + '</small>' : '<small>Ainda sem notas da rede</small>') + '</div><button type="button" class="rd-new2">+ Comentar</button></div>'
         + (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['com', 'Comentários']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
