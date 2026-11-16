@@ -9568,6 +9568,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10978,6 +10979,11 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .gs-bub::before{content:"";position:absolute;left:-7px;top:50%;width:12px;height:12px;background:var(--panel);border-left:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateY(-50%) rotate(45deg)}
 @keyframes gsHop{from{transform:translateY(14px) scale(.85);opacity:0}}@keyframes gsPop{from{transform:translateX(-8px);opacity:0}}
 @media (prefers-reduced-motion:reduce){.gs-hi img,.gs-bub{animation:none}}
+.gs-top{display:grid;gap:.45rem}.gs-rk,.gs-slot{grid-template-columns:22px 38px 1fr auto}.gs-rk em,.gs-slot em{font-style:normal;font-weight:900;font-size:1.05rem;color:var(--acc);text-align:center}
+.gs-slot{display:grid;align-items:center;gap:.6rem;min-height:68px;border:1.5px dashed var(--line);border-radius:12px;padding:.4rem .5rem;background:none;color:var(--ink);font:inherit;font-weight:800;text-align:left}
+.gs-slot span{grid-column:2/4}.gs-slot i{font-style:normal;font-size:1.3rem;color:var(--acc);width:36px;text-align:center}
+.gs-slot:not(:disabled){border-color:var(--acc);background:var(--panel)}.gs-slot:disabled{opacity:.45;min-height:46px}.gs-slot:disabled em{color:var(--ink-2)}
+.gs-nav{display:flex;gap:.5rem}.gs-nav .gs-ok{flex:1}.gs-prev{flex:0 0 auto;height:46px;padding:0 1.1rem;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:800}
 .gs-steps{display:flex;align-items:center;gap:.3rem;margin:.1rem 0 .5rem}.gs-steps i{width:26px;height:5px;border-radius:99px;background:var(--line)}.gs-steps i.on{background:var(--acc)}.gs-steps small{margin-left:.4rem;font-size:.75rem;font-weight:800;color:var(--ink-2)}
 .gs-hok{color:var(--ok,#2e7d4f)!important;font-weight:800;font-size:.9rem!important}
 .gs-skip{height:40px;border:0;background:none;color:var(--ink);font:inherit;font-weight:700;opacity:.75}
@@ -10992,12 +10998,17 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 `; TR.append(st); }
 // Primeiro acesso em 3 passos (16/11): gêneros → top 5 → histórico de outro app (importa ali mesmo). Depois, "Seus gostos" é uma página só.
 function openTaste(first, prof) {
-  S.gsHist = ''; let step = 1;
+  S.gsHist = ''; S.gsSeen = 0; let step = 1;
   const v = $('#shelflist'), t0 = tasteOf() || {}, sel = new Set(t0.genres || []), books = [...(t0.books || [])];
   const keep = () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, ...(sel.size || books.length ? { taste: { genres: [...sel], books, at: new Date().toISOString() } } : {}) }; save(); try { localStorage.removeItem('bear.pv'); } catch {} };
   const chips = () => '<div class="gs-chips">' + TASTE_G.map(([k, n]) => '<button type="button" class="gs-ch' + (sel.has(k) ? ' on' : '') + '" data-k="' + k + '" aria-pressed="' + sel.has(k) + '">' + esc(n) + '</button>').join('') + '</div>';
   const bookList = () => '<div class="gs-bks">' + books.map((b, i) => '<div class="gs-bk">' + cvh(b.title, b.cover) + '<span><b>' + esc(b.title) + '</b><small>' + esc(b.author || '') + '</small></span><button type="button" data-rm="' + i + '" aria-label="Tirar ' + esc(b.title) + '">×</button></div>').join('')
     + (books.length < 5 ? '<button type="button" class="gs-add" id="gs-add">+ Adicionar livro</button>' : '') + '</div>';
+  const bear = (img, title, text) => '<div class="gs-hi"><img src="' + ART[img] + '" alt="" width="84" height="84"><div class="gs-bub">' + (title ? '<b>' + title + '</b>' : '') + '<span>' + text + '</span></div></div>';
+  const slots = () => '<div class="gs-top">' + [0, 1, 2, 3, 4].map((i) => { const b = books[i];
+    return b ? '<div class="gs-bk gs-rk"><em>' + (i + 1) + '</em>' + cvh(b.title, b.cover) + '<span><b>' + esc(b.title) + '</b><small>' + esc(b.author || '') + '</small></span><button type="button" data-rm="' + i + '" aria-label="Tirar ' + esc(b.title) + '">×</button></div>'
+      : '<button type="button" class="gs-slot" data-slot="' + i + '"' + (i > books.length ? ' disabled' : '') + '><em>' + (i + 1) + '</em><span>' + (i === books.length ? (i ? 'Mais um que você amou' : 'Escolher o primeiro livro') : '') + '</span>' + (i === books.length ? '<i>+</i>' : '') + '</button>'; }).join('') + '</div>';
+  const pickBook = () => searchSheet({ title: 'Um livro que você amou', onPick: (it) => { if (it && it.title && !books.some((x) => normT(x.title) === normT(it.title))) books.push({ title: String(it.title).slice(0, 200), author: it.author || null, cover: typeof it.cover === 'string' && /^https:/.test(it.cover) ? it.cover : null }); draw(); } });
   const draw = () => {
     let body, okTxt, skipTxt, okOn = true, top;
     if (!first) {
@@ -11005,25 +11016,27 @@ function openTaste(first, prof) {
       body = '<p class="gs-intro">Conte seus gêneros e livros favoritos e o Bear indica leituras para você.</p><div class="gs-h">Gêneros</div>' + chips() + '<div class="gs-h">Livros que você amou <small style="font-weight:600;opacity:.7">(até 5)</small></div>' + bookList();
       okTxt = 'Salvar'; skipTxt = 'Cancelar'; okOn = !!(sel.size || books.length);
     } else {
-      top = (step > 1 ? '<button type="button" class="sl-back" data-own="1">‹ Voltar</button>' : '<span></span>') + '<b>Primeiros passos</b><span></span>';
+      top = '<span></span><b>Primeiros passos</b><span></span>';
       const dots = '<div class="gs-steps" aria-label="Passo ' + step + ' de 3">' + [1, 2, 3].map((i) => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '<small>Passo ' + step + ' de 3</small></div>';
-      if (step === 1) body = '<div class="gs-hi"><img src="' + ART.bear_celebrating + '" alt="" width="84" height="84"><div class="gs-bub"><b>Boas-vindas' + (prof ? ', @' + esc(prof.handle) : '') + '!</b><span>Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.</span></div></div>'
+      if (step === 1) body = bear('bear_celebrating', 'Boas-vindas' + (prof ? ', @' + esc(prof.handle) : '') + '!', 'Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.')
         + dots + '<h2 class="gs-t">Quais gêneros você mais gosta?</h2><p class="gs-intro">Marque quantos quiser.</p>' + chips();
-      else if (step === 2) body = dots + '<h2 class="gs-t">Seu top 5</h2><p class="gs-intro">Quais livros você mais amou? Com eles eu acho leituras parecidas para você.</p>' + bookList();
-      else body = dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Se sim, traga seus livros do Goodreads, Skoob, StoryGraph ou de uma planilha: exporte o arquivo por lá e importe aqui. Assim sua estante já começa cheia.</p>'
+      else if (step === 2) body = bear('bear_reading_chair', '', books.length ? (books.length < 5 ? 'Ótima escolha! Quer colocar mais algum?' : 'Que top 5! Já sei bem o que te indicar.') : 'Agora me conta: quais livros marcaram você? Com eles eu acho leituras parecidas.')
+        + dots + '<h2 class="gs-t">Seus livros do coração</h2><p class="gs-intro">Monte seu top 5. Pode ser só um, ou nenhum.</p>' + slots();
+      else body = bear('bear_running_books', '', S.gsHist ? 'Pronto, já coloquei seus livros na estante!' : 'Última pergunta, prometo!') + dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Se sim, traga seus livros do Goodreads, Skoob, StoryGraph ou de uma planilha: exporte o arquivo por lá e importe aqui. Assim sua estante já começa cheia.</p>'
         + '<div class="gs-hist">' + (S.gsHist ? '<small class="gs-hok">✓ ' + esc(S.gsHist) + '</small>' : '<small>No Goodreads: My Books › Import and export › Export library. Planilha: colunas título, autor e, se quiser, ano, nota e status.</small>')
         + '<button type="button" class="gs-add" id="gs-hist">' + (S.gsHist ? 'Importar outro arquivo' : 'Importar arquivo (CSV)') + '</button></div>';
       okTxt = step < 3 ? 'Continuar' : 'Começar a usar'; skipTxt = step < 3 ? 'Pular' : (S.gsHist ? '' : 'Agora não');
     }
     v.querySelector('.sl-body').innerHTML = '<div class="sl-top">' + top + '</div>' + body
-      + '<div class="gs-btns"><button type="button" class="gs-ok" id="gs-ok"' + (okOn ? '' : ' disabled') + '>' + okTxt + '</button>' + (skipTxt ? '<button type="button" class="gs-skip" id="gs-skip">' + skipTxt + '</button>' : '') + '</div>';
-    paintCv(v); v.scrollTop = 0;
+      + '<div class="gs-btns"><div class="gs-nav">' + (first && step > 1 ? '<button type="button" class="gs-prev" id="gs-prev">‹ Voltar</button>' : '') + '<button type="button" class="gs-ok" id="gs-ok"' + (okOn ? '' : ' disabled') + '>' + okTxt + '</button></div>' + (skipTxt ? '<button type="button" class="gs-skip" id="gs-skip">' + skipTxt + '</button>' : '') + '</div>';
+    paintCv(v); v.scrollTop = 0; if (S.gsSeen === step) v.querySelectorAll('.gs-hi img,.gs-bub').forEach((x) => { x.style.animation = 'none'; }); S.gsSeen = step;
     const back = v.querySelector('.sl-back');
-    if (back && first) back.addEventListener('click', () => { step = Math.max(1, step - 1); draw(); });
-    else if (back) back.addEventListener('click', () => { v.hidden = true; });
+    $('#gs-prev', v)?.addEventListener('click', () => { step = Math.max(1, step - 1); draw(); });
+    if (back) back.addEventListener('click', () => { v.hidden = true; });
     $$('.gs-ch', v).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; sel.has(k) ? sel.delete(k) : sel.add(k); b.classList.toggle('on', sel.has(k)); b.setAttribute('aria-pressed', sel.has(k)); if (!first) $('#gs-ok', v).disabled = !(sel.size || books.length); }));
     $$('[data-rm]', v).forEach((b) => b.addEventListener('click', () => { books.splice(+b.dataset.rm, 1); draw(); }));
-    $('#gs-add', v)?.addEventListener('click', () => searchSheet({ title: 'Um livro que você amou', onPick: (it) => { if (it && it.title && !books.some((x) => normT(x.title) === normT(it.title))) books.push({ title: String(it.title).slice(0, 200), author: it.author || null, cover: typeof it.cover === 'string' && /^https:/.test(it.cover) ? it.cover : null }); draw(); } }));
+    $('#gs-add', v)?.addEventListener('click', pickBook);
+    $$('.gs-slot', v).forEach((b) => b.addEventListener('click', pickBook));
     $('#gs-hist', v)?.addEventListener('click', () => { // importa ali mesmo, sem sair do passo
       const before = lib().length, old = S.listRedraw;
       S.listRedraw = () => { S.listRedraw = old; if (v.hidden || !v.querySelector('#gs-hist')) return old && old(); const n = lib().length - before; S.gsHist = n > 0 ? plural(n, 'livro importado', 'livros importados') : 'Nenhum livro novo nesse arquivo'; draw(); };
