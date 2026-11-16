@@ -9574,6 +9574,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10766,8 +10767,8 @@ drawProgresso = function (box) {
 .ys-bk.ys-prata::before,.ys-bk.ys-bronze::before,.ys-bk.ys-ferro::before{animation:none!important}
 .ys-bk.ys-prata::after,.cv.rt-prata::before{content:none!important;animation:none!important}
 .ys-bk.ys-prata .cv,.cv.rt-prata{box-shadow:0 0 0 1.5px #b9c1c8!important}
-.ys-bk.ys-5::after,.cv.rt-5::before{background:linear-gradient(115deg,transparent 34%,rgba(255,214,110,.55) 44%,rgba(255,150,210,.5) 50%,rgba(150,200,255,.5) 56%,transparent 66%)!important;background-size:250% 100%!important}
-.ys-bk.ys-ouro::after,.cv.rt-ouro::before{background:linear-gradient(115deg,transparent 40%,rgba(255,210,80,.55) 50%,transparent 60%)!important;background-size:250% 100%!important}
+.ys-bk.ys-5::after,.cv.rt-5::before{background-image:linear-gradient(115deg,transparent 34%,rgba(255,214,110,.55) 44%,rgba(255,150,210,.5) 50%,rgba(150,200,255,.5) 56%,transparent 66%)!important;background-size:250% 100%!important}
+.ys-bk.ys-ouro::after,.cv.rt-ouro::before{background-image:linear-gradient(115deg,transparent 40%,rgba(255,210,80,.55) 50%,transparent 60%)!important;background-size:250% 100%!important}
 `; TR.append(st); }
 // Bia (16/11): o 5 continua furta-cor, com brilho e estrelinhas; 4,5 ouro, 4 prata, 3 a 3,5 bronze e abaixo de 3 ferro, metalizados (brilho em cima, sombra embaixo, reflexo devagar).
 // A barrinha fica colada no topo da capa, na largura toda (o livro seguinte cobre a ponta, como cobre a capa).
@@ -10781,7 +10782,7 @@ drawProgresso = function (box) {
 .ys-bk.ys-prata::before{animation-delay:-2s!important}.ys-bk.ys-bronze::before{animation-delay:-4s!important}.ys-bk.ys-ferro::before{animation:none!important}
 @keyframes ysMetal{0%,100%{background-position:0 0,0% 0}50%{background-position:0 0,100% 0}}
 .ys-bk.ys-5::before{top:-5px!important;height:5px!important;background:linear-gradient(90deg,#f6c94a,#ff8fc8,#b78cff,#6fd3ff,#f6c94a)!important;background-size:300% 100%!important;animation:ys5Flow 3s linear infinite!important;box-shadow:0 0 6px rgba(255,190,90,.9)!important}
-.ys-bk.ys-ouro::after,.ys-bk.ys-prata::after{content:""!important;position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.5) 50%,transparent 62%)!important;background-size:250% 100%!important;animation:ys5Shine 4.5s ease-in-out infinite!important;border-radius:2px 4px 0 0}
+.ys-bk.ys-ouro::after,.ys-bk.ys-prata::after{content:""!important;position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.5) 50%,transparent 62%)!important;background-size:250% 100%!important;animation:ys5Shine 4.5s ease-in-out infinite!important;border-radius:2px 4px 0 0}
 .ys-bk.ys-prata::after{animation-delay:-1.5s!important}
 .ys-bk.ys-ouro .cv{box-shadow:0 0 0 1.5px #d4a520,0 0 7px rgba(212,165,32,.4)!important}.ys-bk.ys-prata .cv{box-shadow:0 0 0 1.5px #b9c1c8,0 0 6px rgba(185,193,200,.45)!important}.ys-bk.ys-bronze .cv{box-shadow:inset -2px 0 3px rgba(0,0,0,.25)!important}
 .ys-bk + .ys-bk.ys-bronze .cv{box-shadow:-4px 0 6px -2px rgba(0,0,0,.45),inset -2px 0 3px rgba(0,0,0,.25)!important}
@@ -10790,7 +10791,7 @@ drawProgresso = function (box) {
 .ys-leg i.ys-mi.n5{background:linear-gradient(90deg,#f6c94a,#ff8fc8,#b78cff,#6fd3ff)!important;box-shadow:0 0 4px rgba(246,201,74,.8)!important}
 .ys-leg i.ys-mi.ouro{--nb:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%,rgba(0,0,0,.28)),linear-gradient(90deg,#8a6210,#e9c45a 18%,#fff3b8 30%,#c9971c 45%,#f7dc6f 62%,#9c7314 80%,#e9c45a)}.ys-leg i.ys-mi.prata{--nb:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%,rgba(0,0,0,.28)),linear-gradient(90deg,#6f7880,#cfd6dc 18%,#ffffff 30%,#9aa3ab 45%,#e9eef2 62%,#7c858d 80%,#cfd6dc)}.ys-leg i.ys-mi.bronze{--nb:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%,rgba(0,0,0,.28)),linear-gradient(90deg,#6b3a14,#c98448 18%,#f3c08e 30%,#94562a 45%,#d99a62 62%,#74401a 80%,#c98448)}.ys-leg i.ys-mi.ferro{--nb:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%,rgba(0,0,0,.28)),linear-gradient(90deg,#3a3f45,#7d848b 25%,#b4bac0 35%,#5a6067 55%,#8a9096 75%,#3a3f45)}
 .ys-leg .ys-lt{font-weight:800;color:var(--ink)}
-.ys-bk.ys-5::after{content:""!important;position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.6) 50%,transparent 65%)!important;background-size:250% 100%!important;animation:ys5Shine 3.2s ease-in-out infinite!important;border-radius:2px 4px 0 0}
+.ys-bk.ys-5::after{content:""!important;position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.6) 50%,transparent 65%)!important;background-size:250% 100%!important;animation:ys5Shine 3.2s ease-in-out infinite!important;border-radius:2px 4px 0 0}
 @media (prefers-reduced-motion:reduce){.ys-bk.ys-5::before,.ys-bk.ys-5::after,.ys-bk.paw::before,.ys-bk.ys-ouro::after,.ys-bk.ys-prata::after{animation:none!important}}
 `; TR.append(st); }
 // --- 32_navegacao.js ---
