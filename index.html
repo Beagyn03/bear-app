@@ -9589,6 +9589,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12155,6 +12156,50 @@ function editTop5() {
   else { const at = [...v.querySelectorAll('.v3-sh')].find((x) => /^Lidos recentes/.test(x.textContent.trim())); if (at) at.before(...t.content.childNodes); else v.querySelector('.sl-body').append(...t.content.childNodes); }
   try { paintCv(v); } catch {}
   v.querySelector('#t5-edit')?.addEventListener('click', editTop5);
+  return r;
+}; }
+// --- 45_avaliacao_pagina.js ---
+// Avaliação em página inteira (Bia, 16/11): capa no topo, título, autor, status, datas de início e de conclusão,
+// depois as patas, a resenha (campo grande) e as demais opções; Salvar fixo embaixo.
+{ const st = document.createElement('style'); st.textContent = `
+.sheet.rt-full{align-items:stretch!important;justify-content:stretch!important;padding:0!important;background:var(--bg)!important;backdrop-filter:none!important}
+.sheet.rt-full > .box{position:fixed!important;inset:0!important;max-width:none!important;width:100%!important;max-height:none!important;height:100dvh!important;border-radius:0!important;margin:0!important;overflow-y:auto!important;padding:0 1rem calc(5.5rem + env(safe-area-inset-bottom))!important;background:var(--bg)!important;box-shadow:none!important;animation:none!important}
+.sheet.rt-full .box > form{max-width:560px;margin:0 auto}
+.rtf-top{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.7rem 0 .5rem;background:var(--bg)}
+.rtf-top b{font-size:1rem}.rtf-x{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.35rem .85rem;font:inherit;font-weight:800}
+.rtf-hd{display:grid;justify-items:center;text-align:center;gap:.25rem;margin:.3rem 0 .4rem}
+.rtf-hd .cv{display:grid;place-items:center;text-align:center;padding:.6rem;color:#fff;font-weight:900;font-size:1rem!important;line-height:1.15;background-color:var(--c);background-size:cover;background-position:center;text-shadow:0 1px 3px rgba(0,0,0,.4);width:120px;height:180px;border-radius:6px 10px 10px 6px;box-shadow:0 8px 18px rgba(0,0,0,.28);margin-bottom:.4rem;font-size:.8rem}
+.rtf-hd b{font-size:1.2rem;line-height:1.25}.rtf-hd small{font-size:.88rem;color:var(--ink-2);font-weight:700}
+.rtf-st{display:inline-block;margin-top:.25rem;font-size:.75rem;font-weight:800;border:1px solid var(--line);border-radius:99px;padding:.15rem .7rem;background:var(--panel)}
+.sheet.rt-full .rate-h{display:none!important}
+.sheet.rt-full .rate-dates{display:grid!important;grid-template-columns:1fr 1fr;gap:.6rem}
+.sheet.rt-full .rate-dates input{width:100%}
+.sheet.rt-full .rt-dates{display:none!important}
+.sheet.rt-full textarea{min-height:11rem!important;background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important;font-size:.95rem!important;line-height:1.5!important}
+.rtf-lb{font-weight:800;font-size:.9rem;margin:.4rem 0 -.2rem}
+.sheet.rt-full .rt-btns{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:.7rem 1rem calc(.7rem + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 25%);max-width:560px;margin:0 auto}
+`; document.head.append(st); }
+{ const _rf = rateForm; rateForm = function (b) {
+  const r = _rf.apply(this, arguments);
+  try {
+    const wrap = [...document.querySelectorAll('body > .sheet')].pop(), form = wrap && wrap.querySelector('form.form'); if (!form || wrap.classList.contains('rt-full')) return r;
+    wrap.classList.add('rt-full');
+    const libE = lib().find((x) => x === b || x.id === b.id || normT(x.title) === normT(b.title));
+    const stK = (libE && libE.status) || b.status, stTxt = (typeof LIB_LABEL !== 'undefined' && LIB_LABEL[stK]) || ({ CONCLUIDO: 'Lido', LENDO: 'Lendo', PAUSADO: 'Pausado', NAO_INICIADO: 'Quero ler' })[stK] || '';
+    const cover = (libE && libE.cover) || b.cover || null, author = (libE && libE.author) || b.author || '';
+    const top = document.createElement('div'); top.className = 'rtf-top'; top.innerHTML = '<b>' + (b.review && b.review.paws ? 'Sua avaliação' : 'Avaliar') + '</b><button type="button" class="rtf-x">Fechar</button>';
+    const hd = document.createElement('div'); hd.className = 'rtf-hd'; hd.innerHTML = cvh(b.title, cover, '') + '<b>' + esc(b.title) + '</b>' + (author ? '<small>' + esc(author) + '</small>' : '') + (stTxt ? '<span class="rtf-st">' + esc(stTxt) + '</span>' : '');
+    form.prepend(top, hd);
+    top.querySelector('.rtf-x').addEventListener('click', () => wrap.remove());
+    // datas sempre à vista, logo depois do cabeçalho; depois as patas; resenha com título
+    const dates = form.querySelector('.rate-dates'), nota = form.querySelector('.rate-nota');
+    if (dates) { dates.hidden = false; hd.after(dates); }
+    if (nota) (dates || hd).after(nota);
+    const ta = form.querySelector('textarea'), tl = ta && ta.closest('label');
+    if (tl) { const lb = document.createElement('div'); lb.className = 'rtf-lb'; lb.textContent = 'Resenha'; tl.before(lb); ta.rows = 8; ta.placeholder = 'O que você achou? Conte do seu jeito (opcional)'; }
+    try { paintCv(wrap); } catch {}
+    wrap.querySelector('.box').scrollTop = 0;
+  } catch (err) { console.warn('avaliação em página', err); }
   return r;
 }; }
 // ==== 4.4 rodada 2 (fim) ====
