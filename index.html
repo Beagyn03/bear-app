@@ -4906,7 +4906,8 @@ function openBookPage(e, tab = 'sobre') {
     const info0 = readingInfo(e), info = e.status === 'LIDO' && info0.total ? { ...info0, now: info0.total } : info0, r = reviewOfLib(e) || {}, m = e.meta || null, pct = e.status === 'LIDO' ? 100 : info.total ? Math.min(100, Math.round(info.now / info.total * 100)) : 0;
     const days = e.startedAt ? Math.max(1, between(e.startedAt, e.finishedAt || todayISO()) + 1) : 0, ser = bookSeries(e);
     const foc = (db.focus || []).filter((f) => f.libId === e.id), focMin = foc.reduce((a, f) => a + (f.minutes || 0), 0);
-    const tabs = e._preview ? [['sobre', 'Sobre'], ['trechos', 'Trechos e comentários'], ['comunidade', 'Rede']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['trechos', `Trechos e comentários${(e.quotes || []).length ? ' · ' + e.quotes.length : ''}`], ['comunidade', 'Rede']];
+    if (tab === 'trechos') tab = e._preview ? 'comunidade' : 'minha'; // trechos pessoais ficam em Minha leitura; comentários entraram na Rede
+    const tabs = e._preview ? [['sobre', 'Sobre'], ['comunidade', 'Rede']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['comunidade', 'Rede']];
     let body = '';
     if (tab === 'sobre') {
       const rows = [['Páginas', info.total || e.totalPages], ['Gênero', e.genre || (m && m.cat)], ['Publicação', m && m.pub], ['Publicado em', m && m.date && (m.date.length >= 10 ? fmt(m.date) : m.date)], ['Idioma', m && m.lang && (LANGS[m.lang] || m.lang)], ['ISBN', e.isbn]].filter((x) => x[1]);
@@ -4928,25 +4929,19 @@ function openBookPage(e, tab = 'sobre') {
           <button type="button" class="bp-adj" data-a="fmt"><span>Formato</span><b>${esc(fmtTxt(e))}</b><i>›</i></button>
           <button type="button" class="bp-adj" data-a="pages"><span>Total de páginas</span><b>${e.totalPages || '—'}</b><i>›</i></button>
           <button type="button" class="bp-adj" data-a="edition"><span>Trocar edição</span><b>capa, páginas e ISBN</b><i>›</i></button>
-          <button type="button" class="bp-adj" data-a="rmlib" style="color:#b3261e"><span>Tirar da Minha biblioteca</span><b>adicionado por engano</b><i>›</i></button></section>`;
+          <button type="button" class="bp-adj" data-a="rmlib" style="color:#b3261e"><span>Tirar da Minha biblioteca</span><b>adicionado por engano</b><i>›</i></button></section>
+        <div class="bp-row" style="margin:1rem .1rem .4rem"><span>Meus trechos</span></div>${(() => {
+      const qs = [...(e.quotes || [])].map((q, i) => ({ ...q, i })).sort((a, b) => (a.p || 99999) - (b.p || 99999));
+      return `${e.note ? `<section class="bp-card"><div class="bp-row"><span>Anotação</span><button type="button" class="bp-link" data-a="note">Editar</button></div><p class="bq-note">${esc(e.note)}</p></section>` : ''}
+        <section class="bp-card">${qs.length ? qs.map((q) => `<div class="bq"><span class="bq-p">${q.p ? `pág.<br>${q.p}` : '—'}</span><q>${esc(q.t)}</q><button type="button" class="bq-x" data-q="${q.i}" aria-label="Apagar trecho">×</button></div>`).join('') : '<p class="bp-load">Guarde aqui as frases que te marcaram neste livro.</p>'}
+        <button type="button" class="bp-btn pri" data-a="quote">+ Salvar trecho</button></section>`; })()}`;
     } else if (tab === 'grafico') {
       body = ser.length ? `<section class="bp-card">${chartSvg(ser, info.total)}<small class="bp-small">Páginas acumuladas em cada dia em que você registrou leitura.</small></section>`
         : '<section class="bp-card"><p class="bp-load">Ainda não há leituras registradas deste livro.</p></section>';
-    } else if (tab === 'trechos' && e._preview) {
-      body = bookMarkersHTML(e) || '<section class="bp-card"><p class="bp-load">Entre na conta para ver os marcadores dos amigos neste livro.</p></section>';
     } else if (tab === 'trechos') {
-      const qs = [...(e.quotes || [])].map((q, i) => ({ ...q, i })).sort((a, b) => (a.p || 99999) - (b.p || 99999));
-      body = `${e.note ? `<section class="bp-card"><div class="bp-row"><span>Anotação</span><button type="button" class="bp-link" data-a="note">Editar</button></div><p class="bq-note">${esc(e.note)}</p></section>` : ''}
-        <section class="bp-card">${qs.length ? qs.map((q) => `<div class="bq"><span class="bq-p">${q.p ? `pág.<br>${q.p}` : '—'}</span><q>${esc(q.t)}</q><button type="button" class="bq-x" data-q="${q.i}" aria-label="Apagar trecho">×</button></div>`).join('') : '<p class="bp-load">Guarde aqui as frases que te marcaram neste livro.</p>'}
-        <button type="button" class="bp-btn pri" data-a="quote">+ Salvar trecho</button></section>
-        ${bookMarkersHTML(e)}
-        `;
+      body = '<div class="bp-tc"></div>'; // Comentários: a seção da Rede entra aqui (49_livro_rede)
     } else if (tab === 'comunidade') {
-      const same = (SOC.feed || []).filter((p) => !p.mine && normT(p.title) === normT(e.title) && !isReview(p));
-      body = `${bookNetHTML(e)}<section class="bp-card">${same.length ? same.map((p) => { const rev = isReview(p), who = (p.user && p.user.displayName) || 'Alguém', h = (p.user && p.user.handle) || '';
-          return `<div class="bf"><span class="av sm" data-avh="${esc(h)}" style="background:${friendColor(h)}">${esc(initial(who))}</span><div><p><b>${esc(who)}</b> ${rev ? `avaliou com ${pawTxt(p.paws || 0)}` : p.kind === 'STARTED' ? 'começou a ler' : p.kind === 'FINISHED' ? 'terminou' : `está em ${Number(p.pct) || 0}%`}</p>${rev && p.text && !p.spoiler && iReadT(e.title) ? `<q>${esc(p.text)}</q>` : ''}<small>${esc(relTime(p.updatedAt))}</small></div></div>`; }).join('')
-          : '<p class="bp-load">Nenhum amigo começou este livro recentemente.</p>'}
-        ${e.status === 'LENDO' || e.status === 'QUERO' ? '<button type="button" class="bp-btn pri" data-a="buddy">Convidar alguém para ler junto</button>' : ''}</section>`;
+      body = `<div class="bp-tc"></div>${e.status === 'LENDO' || e.status === 'QUERO' ? '<section class="bp-card"><button type="button" class="bp-btn pri" data-a="buddy">Convidar alguém para ler junto</button></section>' : ''}`; // Rede: 49_livro_rede preenche
     } else {
       body = `<section class="bp-card bp-soon">${IC('comentar', 'ico-a')}<b>Avaliações e atualizações de outros leitores</b><small>Em breve: aqui vão aparecer as resenhas, as notas e o andamento de quem também está lendo este livro.</small></section>`;
     }
@@ -7705,9 +7700,10 @@ function bookNetHTML(e) {
       <small>${esc(relTime(x.updatedAt))}</small></div></div>`; };
   const others = (c.friends || []).length + (c.public || []).length;
   return `<section class="bp-card"><div class="bn-head">${c.avg != null ? `<b>${pawTxt(c.avg)}</b><small>média de ${plural(c.count, 'avaliação', 'avaliações')}</small>` : '<small>Ninguém da sua rede avaliou este livro ainda.</small>'}</div>
+    ${(() => { const lr = reviewOfLib(e) || (lib().find((x) => normT(x.title) === normT(e.title)) || {}).review || null; const me = c.mine || (lr && (lr.paws || lr.texto) ? { id: 'me', paws: lr.paws || null, text: lr.texto || null, spoiler: !!lr.spoiler, mine: true, updatedAt: e.finishedAt || todayISO(), user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME } } : null); return me ? `<div class="bn-sub">Você${!c.mine && lr && lr.share === false ? ' · avaliação privada' : ''}</div>${item(me)}` : ''; })()}
     ${(c.friends || []).length ? `<div class="bn-sub">Amigos</div>${c.friends.map(item).join('')}` : ''}
     ${(c.public || []).length ? `<div class="bn-sub">Outros leitores</div>${c.public.map(item).join('')}` : ''}
-    ${!others && c.mine ? '<p class="bp-load" style="padding:.4rem 0 0">Só você avaliou por enquanto.</p>' : ''}</section>`;
+    ${!others ? '<p class="bp-load" style="padding:.4rem 0 0">' + (c.mine ? 'Só você avaliou por enquanto.' : 'Ninguém mais avaliou ainda.') + '</p>' : ''}</section>`;
 }
 function bindBookNet(v) {
   paintAvatars();
@@ -9553,6 +9549,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -12535,39 +12532,65 @@ const tidyTxt = (x) => (typeof x === 'string' ? x.replace(/\s+/g, ' ').trim() : 
 const tidyAll = () => { try { let n = 0; const bad = /\s{2,}|^\s|\s$/; for (const e of lib()) for (const k of ['title', 'author', 'publisher']) { if (typeof e[k] === 'string' && bad.test(e[k])) { e[k] = tidyTxt(e[k]); n++; } } for (const g of (db.goals || [])) for (const b of (g.books || [])) for (const k of ['title', 'author']) { if (typeof b[k] === 'string' && bad.test(b[k])) { b[k] = tidyTxt(b[k]); n++; } } if (n) save(); } catch {} };
 setTimeout(tidyAll, 2000); setInterval(tidyAll, 60000);
 // --- 49_livro_rede.js ---
-// Página do livro (Bia, 16/11): "Trechos" vira "Trechos e comentários" e mostra também o que foi postado publicamente na Rede
-// sobre o livro (com curtir e responder); "Amigos" vira "Rede". Vale também para livro do catálogo que não está na estante.
-const bookKeyRede = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 200); // igual ao bear_book_key da API
-S.bkRede = S.bkRede || {};
+// Página do livro, aba "Rede" (Bia, 16/11): comentários (posts da Rede) e avaliações de todo mundo sobre o livro, inclusive os seus,
+// com curtir e responder. Filtros: tipo (tudo, avaliações, comentários), nota e "sem spoiler". Vale também para livro do catálogo.
+const bookKeyRede = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 200); // igual ao bear_book_key da API
+S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: false };
 { const st = document.createElement('style'); st.textContent = `
-.bp-rede{display:grid;gap:.6rem;margin-top:.9rem}.bp-rede h4{margin:0;font-size:1rem;display:flex;justify-content:space-between;align-items:center;gap:.5rem}
-.bp-rede .rd-new2{border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:99px;padding:.4rem .85rem;font:inherit;font-weight:800;font-size:.82rem}
+.bp-rede{display:grid;gap:.6rem}
+.bp-rede .br-top{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.bp-rede .br-avg b{font-size:1.1rem}.bp-rede .br-avg small{display:block;font-size:.74rem;color:var(--ink-2);font-weight:700}
+.bp-rede .rd-new2{border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:99px;padding:.45rem .9rem;font:inherit;font-weight:800;font-size:.84rem}
+.br-f{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center}
+.br-f button,.br-f select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.32rem .75rem;font:inherit;font-weight:800;font-size:.8rem}
+.br-f button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
 .bp-rede .bp-load{margin:0}
+.bp-rede .rd-card.mine{border-color:var(--acc)}
 `; TR.append(st); }
 { const v = $('#shelflist'); let tm = 0;
   const fill = async () => {
     const body = v.querySelector('.sl-body'); if (!body || v.hidden) return;
-    const hero = body.querySelector('.bp-hero'); if (!hero) return;
-    const isTre = !!body.querySelector('[data-a="quote"]') || !!body.querySelector('.bq');
-    if (!isTre || body.querySelector('.bp-rede')) return;
+    const hero = body.querySelector('.bp-hero'), slot = body.querySelector('.bp-tc'); if (!hero || !slot || slot.querySelector('.bp-rede')) return;
     const title = (hero.querySelector('h2') || {}).textContent || '', author = (hero.querySelector('small') || {}).textContent || '', key = bookKeyRede(title);
     if (!key) return;
-    const preview = [...hero.querySelectorAll('.bp-chip')].some((c) => c.textContent.trim() === 'Catálogo');
-    if (preview) body.querySelectorAll('.bp-card').forEach((c) => { if (c.querySelector('[data-a="quote"]')) c.remove(); }); // livro fora da estante: trechos pessoais não se aplicam
-    const sec = document.createElement('section'); sec.className = 'bp-rede';
-    sec.innerHTML = '<h4>Comentários na Rede' + (connected() ? '<button type="button" class="rd-new2">+ Comentar</button>' : '') + '</h4><p class="bp-load">Carregando…</p>';
-    const anchor = [...body.querySelectorAll('.bp-card')].pop(); if (anchor) anchor.after(sec); else body.append(sec);
-    sec.querySelector('.rd-new2')?.addEventListener('click', () => { try { openRdComposer({ book: { title, author: author || null, cover: null } }); } catch (err) { console.warn(err); } });
-    if (!connected()) { sec.querySelector('.bp-load').textContent = 'Entre na sua conta para ver o que estão comentando sobre este livro.'; return; }
-    let items = null; const c = S.bkRede[key];
-    if (c && Date.now() - c.at < 2 * 60000) items = c.items;
-    else { try { const r = await sapi('GET', '/v1/rede?book=' + encodeURIComponent(key)); items = r.status === 200 && r.data ? (r.data.items || []).filter((x) => x.type !== 'review') : []; S.bkRede[key] = { items, at: Date.now() }; } catch { items = []; } }
+    const sec = document.createElement('section'); sec.className = 'bp-rede'; slot.append(sec);
+    if (!connected() || !socialProfile) { sec.innerHTML = '<p class="bp-load">Entre na sua conta (com um @usuário) para ver o que estão dizendo sobre este livro.</p>'; return; }
+    sec.innerHTML = '<p class="bp-load">Carregando…</p>';
+    let data = S.bkRede[key];
+    if (!data || Date.now() - data.at > 2 * 60000) {
+      const [a, b] = await Promise.all([sapi('GET', '/v1/rede?book=' + encodeURIComponent(key)).catch(() => null), sapi('GET', '/v1/books/reviews?key=' + encodeURIComponent(normT(title).slice(0, 200))).catch(() => null)]);
+      const posts = a && a.status === 200 && a.data ? (a.data.items || []).filter((x) => x.type !== 'review') : [];
+      const net = b && b.status === 200 && b.data ? b.data : {};
+      const seen = new Set(); const revs = [];
+      const asRev = (x, mine) => ({ type: 'review', id: x.id, user: x.user, paws: x.paws, text: x.text, spoiler: !!x.spoiler, createdAt: x.updatedAt, mine: !!mine });
+      if (net.mine) { revs.push(asRev(net.mine, true)); seen.add(net.mine.id); }
+      for (const x of [...(net.friends || []), ...(net.public || [])]) if (!seen.has(x.id)) { seen.add(x.id); revs.push(asRev(x, false)); }
+      data = { posts, revs, avg: net.avg ?? null, count: net.count || 0, at: Date.now() }; S.bkRede[key] = data;
+    }
     if (!sec.isConnected) return;
+    // a sua avaliação aparece mesmo se for privada (só você vê)
+    const lr = lib().find((x) => normT(x.title) === normT(title)), my = lr && reviewOfLib(lr);
+    const mineLocal = !data.revs.some((r) => r.mine) && my && (my.paws || my.texto) ? [{ type: 'review', id: 'me-local', user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME }, paws: my.paws || null, text: my.texto || null, spoiler: !!my.spoiler, createdAt: lr.finishedAt || todayISO(), mine: true, local: true }] : [];
     const draw = () => {
-      const list = items || [];
-      sec.querySelector('.bp-load')?.remove(); sec.querySelectorAll('.rd-card').forEach((x) => x.remove());
-      if (!list.length) { const p = document.createElement('p'); p.className = 'bp-load'; p.textContent = 'Ninguém comentou este livro na Rede ainda. Que tal começar?'; sec.append(p); return; }
-      sec.insertAdjacentHTML('beforeend', list.map((it, i) => rdCardHTML(it, i)).join(''));
+      const F = S.bkF;
+      let list = [...mineLocal, ...data.revs, ...data.posts].map((x) => ({ ...x, mine: !!(x.mine || (x.user && socialProfile && x.user.handle === socialProfile.handle)) }));
+      if (F.tipo === 'aval') list = list.filter((x) => x.type === 'review'); else if (F.tipo === 'com') list = list.filter((x) => x.type !== 'review');
+      if (F.nota) list = list.filter((x) => { const p = Number(x.paws) || 0; return F.nota === '5' ? p >= 5 : F.nota === '4' ? p >= 4 && p < 5 : F.nota === '3' ? p >= 3 && p < 4 : p > 0 && p < 3; });
+      if (F.semSp) list = list.filter((x) => x.mine || !(x.spoiler || x.spoilerKind));
+      list.sort((a, z) => (Number(z.mine) - Number(a.mine)) || (new Date(z.createdAt) - new Date(a.createdAt))); // os seus primeiro
+      const total = mineLocal.length + data.revs.length + data.posts.length;
+      sec.innerHTML = '<div class="br-top"><div class="br-avg">' + (data.avg != null ? '<b>' + esc(pawTxt(data.avg)) + '</b><small>média de ' + plural(data.count, 'nota', 'notas') + '</small>' : '<small>Ainda sem notas da rede</small>') + '</div><button type="button" class="rd-new2">+ Comentar</button></div>'
+        + (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['com', 'Comentários']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
+          + '<select data-n aria-label="Filtrar por nota"><option value="">Todas as notas</option><option value="5">Nota 5</option><option value="4">4 e 4,5</option><option value="3">3 e 3,5</option><option value="2">Abaixo de 3</option></select>'
+          + '<button type="button" data-sp class="' + (F.semSp ? 'on' : '') + '">Sem spoiler</button></div>' : '')
+        + (list.length ? list.map((it, i) => rdCardHTML({ ...it, book: null }, i, it.local ? { noFoot: true } : {})).join('')
+          : '<p class="bp-load">' + (total ? 'Nada com esses filtros.' : 'Ninguém comentou nem avaliou este livro ainda. Que tal começar?') + '</p>');
+      const sel = sec.querySelector('select[data-n]'); if (sel) sel.value = F.nota;
+      sec.querySelectorAll('.rd-card').forEach((c) => { const it = list[+c.dataset.i]; if (it && it.mine) c.classList.add('mine'); });
+      sec.querySelectorAll('[data-t]').forEach((b) => b.addEventListener('click', () => { F.tipo = b.dataset.t; draw(); }));
+      sel?.addEventListener('change', () => { F.nota = sel.value; draw(); });
+      sec.querySelector('[data-sp]')?.addEventListener('click', () => { F.semSp = !F.semSp; draw(); });
+      sec.querySelector('.rd-new2').addEventListener('click', () => { try { openRdComposer({ book: { title, author: author || null, cover: lr ? lr.cover || null : null } }); } catch (err) { console.warn(err); } });
       rdBind(sec, list, draw);
     };
     draw();
