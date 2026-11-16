@@ -2541,14 +2541,13 @@ async function socialSettingsSheet() {
   const name = el('input', { value: prof.displayName, maxlength: '40' }), handle = el('input', { value: prof.handle, maxlength: '20', autocapitalize: 'none' });
   const ck = (k, t) => { const i = el('input', { type: 'checkbox', ...(pv[k] ? { checked: '' } : {}), onchange: (ev) => { pv[k] = ev.target.checked; } }); return el('label', { class: 'ck-row' }, [i, el('span', { text: t })]); };
   const msg = el('p', { class: 'hint' });
-  const form = el('form', { class: 'form pv2' }, [el('h3', { text: 'Amigos e privacidade' }),
-    el('div', { class: 'pv2-2' }, [el('label', { text: 'Nome' }, [name]), el('label', { text: '@usuário' }, [handle])]),
+  const form = el('form', { class: 'form pv2' }, [el('h3', { text: 'O que aparece no meu perfil' }),
     el('div', { class: 'group', text: 'Seus amigos veem' }),
     ck('reading', 'Lendo agora'), ck('shelf', 'Estantes'), ck('achievements', 'Conquistas'), ck('reviews', 'Avaliações'),
     el('div', { class: 'group', text: 'Qualquer pessoa vê' }), ck('public', 'Avaliações públicas (Descobrir e sua página)'),
     msg, el('div', { class: 'pv2-btns' }, [el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }), el('button', { type: 'submit', class: 'primary', text: 'Salvar' })])]);
   form.addEventListener('submit', async (ev) => { ev.preventDefault();
-    const r = await sapi('PUT', '/v1/me/profile', { handle: handle.value.trim().replace(/^@/, '').toLowerCase(), displayName: name.value.trim(), privacy: pv });
+    const r = await sapi('PUT', '/v1/me/profile', { handle: prof.handle, displayName: prof.displayName, privacy: pv });
     if (r.status === 409) { msg.textContent = 'Esse @usuário já existe'; return; } if (r.status !== 200) { msg.textContent = (r.data && r.data.issues && r.data.issues[0] && r.data.issues[0].message) || 'Não consegui salvar'; return; }
     socialProfile = r.data; close(); toast('Salvo'); });
   const wrap = el('div', { class: 'sheet', onclick: (ev) => { if (ev.target === wrap) close(); } }, [el('div', { class: 'box tall' }, [form])]);
@@ -8421,7 +8420,7 @@ async function openMyProfile() {
   $('#me-cfg', v).addEventListener('click', () => { v.hidden = true; S.ajMode = 'sistema'; goTab('perfil'); });
   $('#me-edit', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [
     { label: myPhoto() ? 'Trocar foto' : 'Adicionar foto', fn: pickPhoto }, { label: 'Nome', fn: editName }, { label: 'Frase do perfil', fn: editBio },
-    { label: '@usuário e privacidade', fn: socialSettingsSheet }, { label: 'Moldura e selo', fn: flairSheet }]));
+    { label: '@usuário', fn: () => editHandleSheet() }, { label: 'O que aparece no meu perfil', fn: socialSettingsSheet }, { label: 'Moldura e selo', fn: flairSheet }]));
 }
 { const _fp = friendPage; friendPage = async function (h) { $('#shelflist').classList.remove('mine-page'); return _fp(h); }; }
 { const _rn = restoreNav; restoreNav = function () { let n = null; try { n = JSON.parse(sessionStorage.getItem('bear.nav') || 'null'); } catch {} if (n && n.view && n.view.t === 'me' && Date.now() - (n.at || 0) < 30 * 60000) { if (n.tab) goTab(n.tab); setTimeout(openMyProfile, 150); return; } _rn(); }; }
@@ -9267,7 +9266,7 @@ publishSnapshot = async function () {
 Object.assign(DI, { shelves: BI.shelves, pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>', user: '<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/>' });
 { const _da = drawAjustes; drawAjustes = function (box) {
   _da(box); const mode = S.ajMode; if (!mode) return;
-  const keep = mode === 'perfil' ? ['Perfil', 'Privacidade'] : ['Aparência', 'Conta e dados'];
+  const keep = mode === 'perfil' ? ['Perfil'] : ['Privacidade', 'Aparência', 'Conta e dados']; // 16/11: privacidade saiu de Editar perfil
   box.querySelectorAll('.aj-g').forEach((g) => { if (keep.includes(g.textContent.trim())) return; const c = g.nextElementSibling; if (c && c.classList.contains('aj-card')) c.remove(); g.remove(); });
   if (mode === 'sistema') box.querySelector('.aj-me')?.remove();
   if (mode === 'perfil') { // sair, excluir conta e versão do app ficam só em Ajustes
@@ -9544,6 +9543,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -11002,7 +11002,7 @@ function openTaste(first, prof) {
 // ---------- "Para você" no Início ----------
 async function tasteRecs() {
   const t = tasteOf(); if (!t) return [];
-  const key = JSON.stringify([t.genres, (t.books || []).map((b) => b.title)]), day = todayISO();
+  const key = JSON.stringify(['pt2', t.genres, (t.books || []).map((b) => b.title)]), day = todayISO();
   try { const c = JSON.parse(localStorage.getItem('bear.pv') || 'null'); if (c && c.key === key && c.day === day && Array.isArray(c.items)) return c.items; } catch {}
   const qs = [];
   for (const k of t.genres || []) { const g = TASTE_G.find((x) => x[0] === k); if (g) qs.push(g[2]); }
@@ -11011,13 +11011,15 @@ async function tasteRecs() {
   const G = 'https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=20&langRestrict=pt&q=';
   let lists = await Promise.all(qs.slice(0, 8).map((q) => getJSON(G + encodeURIComponent(q), 8000).then(fromGoogle).catch(() => [])));
   if (lists.flat().filter((x) => x && x.coverUrl).length < 6) { // Google sem resposta (limite): Open Library como reserva
-    const O = 'https://openlibrary.org/search.json?limit=20&fields=title,author_name,cover_i&', ol = (d) => ((d && d.docs) || []).map((x) => ({ title: x.title, author: (x.author_name || [])[0] || null, coverUrl: x.cover_i ? `https://covers.openlibrary.org/b/id/${x.cover_i}-M.jpg` : null }));
+    const O = 'https://openlibrary.org/search.json?limit=20&language=por&fields=key,title,author_name,cover_i&', ol = (d) => ((d && d.docs) || []).map((x) => ({ title: x.title, author: (x.author_name || [])[0] || null, coverUrl: x.cover_i ? `https://covers.openlibrary.org/b/id/${x.cover_i}-M.jpg` : null, olKey: x.key }));
     const oq = [...(t.genres || []).map((k) => TASTE_OL[k] && 'subject=' + encodeURIComponent(TASTE_OL[k])), ...(t.books || []).map((b) => { const a = String(b.author || '').split(',')[0].trim(); return a && 'author=' + encodeURIComponent(a); })].filter(Boolean).slice(0, 8);
     lists = lists.concat(await Promise.all(oq.map((q) => getJSON(O + q, 9000).then(ol).catch(() => []))));
   }
   const mine = new Set([...(lib() || []).map((e) => normT(e.title || '')), ...(t.books || []).map((b) => normT(b.title))]), seen = new Set(), out = [];
   const side = /\b(box|kit|colecao|resumo|guia|edicao comentada|livro de colorir)\b/;
-  for (let i = 0; out.length < 18 && i < 20; i++) for (const L of lists) { const it = L[i]; if (!it || !it.title || !it.coverUrl) continue; const n = normT(it.title.split(':')[0]); if (!n || seen.has(n) || mine.has(n) || side.test(n)) continue; seen.add(n); out.push({ title: it.title.split(':')[0].trim(), author: it.author, coverUrl: it.coverUrl }); if (out.length >= 18) break; }
+  for (let i = 0; out.length < 40 && i < 20; i++) for (const L of lists) { const it = L[i]; if (!it || !it.title || !it.coverUrl) continue; const n = normT(it.title.split(':')[0]); if (!n || seen.has(n) || mine.has(n) || side.test(n)) continue; seen.add(n); out.push({ title: it.title.split(':')[0].trim(), author: it.author, coverUrl: it.coverUrl, lang: it.lang || '', isbn: it.isbn || null, olKey: it.olKey || null }); if (out.length >= 40) break; }
+  // reserva da Open Library: troca o título original pelo da edição em português (16/11)
+  const olq = out.filter((x) => x.olKey).slice(0, 16); out.forEach((x) => { if (x.olKey && !olq.includes(x)) delete x.olKey; }); await Promise.all([0, 1].map(async () => { for (let x; (x = olq.shift());) { try { const d = await getJSON(`https://openlibrary.org${x.olKey}/editions.json?limit=100`, 12000); if (!d) { delete x.olKey; continue; } const e = ((d && d.entries) || []).find((z) => (z.languages || []).some((l) => l.key === '/languages/por') && z.title); if (e) { x.title = e.title.split(':')[0].trim(); x.lang = 'pt'; if (e.covers && e.covers[0] > 0) x.coverUrl = `https://covers.openlibrary.org/b/id/${e.covers[0]}-M.jpg`; } else x.lang = 'en'; } catch {} delete x.olKey; } }));
   if (out.length) { try { localStorage.setItem('bear.pv', JSON.stringify({ key, day, items: out })); } catch {} }
   return out;
 }
@@ -11117,7 +11119,7 @@ const TASTE_TO_GENRE = { romance: 'Romance', fantasia: 'Fantasia', ficcao: 'Fic�
     const rs = await Promise.all(gs.map((g) => sapi('GET', '/v1/trends?genre=' + encodeURIComponent(g)).catch(() => null)));
     const mine = new Set((lib() || []).map((e) => normT(e.title || ''))), seen = new Set(base.map((x) => normT(x.title))), top = [];
     for (const r of rs) { if (!r || r.status !== 200 || !r.data) continue; for (const x of [...(r.data.topRated || []), ...(r.data.app || [])]) { const k = normT(x.title); if (!k || mine.has(k) || seen.has(k)) continue; seen.add(k); top.push({ title: x.title, author: x.author || null, coverUrl: x.cover || null }); } }
-    return [...top.slice(0, 8), ...base].slice(0, 18);
+    return [...top.slice(0, 8).map((x) => ({ ...x, fromApp: 1 })), ...base];
   } catch { return base; }
 }; }
 // ---------- "Sair da conta" no menu lateral ----------
@@ -11714,7 +11716,6 @@ function inSemana() {
 }
 function inComece() {
   return `<section class="in-sec" data-in="comece"><div class="in-h"><b>Comece por aqui</b></div><div class="in-go">
-    <button type="button" data-go="buscar"><b>Buscar um livro</b><small>Ache e coloque na estante</small></button>
     <button type="button" data-go="hist"><b>Trazer meu histórico</b><small>Goodreads, Skoob, StoryGraph ou planilha</small></button>
     <button type="button" data-go="meta"><b>Meta do ano</b><small>Quantos livros em ${todayISO().slice(0, 4)}?</small></button>
     <button type="button" data-go="amigos"><b>Encontrar amigos</b><small>Leia junto e troque indicações</small></button></div></section>`;
@@ -11727,7 +11728,7 @@ function inRede() {
   if (!connected() || !socialProfile) return '';
   const list = (typeof rdVisible === 'function' ? rdVisible(S.rd.items || []) : []).slice(0, 3);
   return `<section class="in-sec in-rd" data-in="rede"><div class="in-h"><b>Na Rede</b><button type="button" data-go="rede">Ver tudo</button></div>
-    ${list.length ? list.map((it, i) => rdCardHTML(it, i, { noFoot: true })).join('') : `<div class="in-card"><p class="in-empty">${S.rd.at ? 'Ainda não tem posts. Que tal começar a conversa?' : 'Carregando…'}</p></div>`}</section>`;
+    ${list.length ? list.map((it, i) => rdCardHTML(it, i, { noFoot: true })).join('') : (S.rd.at ? '<button type="button" class="rd-new" data-go="post"><i>+</i><span><b>Ainda não tem posts</b><small>Toque para começar a conversa</small></span></button>' : '<div class="in-card"><p class="in-empty">Carregando…</p></div>')}</section>`;
 }
 function inAlta() {
   const d = S.trends; if (!connected() || !socialProfile) return '';
@@ -11764,6 +11765,7 @@ function paintInicioMais() {
   box.querySelectorAll('[data-al]').forEach((b) => b.addEventListener('click', () => { const d = S.trends || {}, list = [...(d.friends || []), ...(d.app || []), ...(d.topRated || [])].filter((x, i, a) => a.findIndex((y) => y.key === x.key) === i); const x = list[+b.dataset.al]; if (!x) return; const mine = lib().find((e) => normT(e.title) === x.key); if (mine) return openBookPage(mine, 'inicio'); openAnyBook(x.title, x.author || null, x.cover || null); }));
 }
 function inGo(k) {
+  if (k === 'post') return openRdComposer();
   if (k === 'buscar') return goTab('buscar');
   if (k === 'hist') return openHistory();
   if (k === 'meta') return setYearGoal(todayISO().slice(0, 4));
@@ -11817,6 +11819,73 @@ window.bearTour = startTour;
 { const _da = drawAjustes; drawAjustes = function (box) { _da(box); if (S.ajMode === 'perfil' || box.querySelector('#aj-tour')) return; const out = box.querySelector('#aj-out'); if (!out) return;
   out.insertAdjacentHTML('beforebegin', '<div class="aj-card" style="margin-bottom:.8rem"><button type="button" class="aj-row" id="aj-tour"><span><b>Ver o tour do app</b><small>Um passeio rápido pelas telas</small></span>›</button></div>');
   $('#aj-tour', box).addEventListener('click', () => { goTab('inicio'); setTimeout(startTour, 300); }); }; }
+// --- 40_editar_perfil.js ---
+// Editar perfil (16/11): nome, @usuário e frase em folhas próprias, no padrão do app; privacidade mora em Ajustes.
+function pfTextSheet(o) { // o: { title, hint, label, value, max, area, prefix, clean, save: async (v) => mensagem de erro ou null }
+  const wrap = document.createElement('div'); wrap.className = 'sheet';
+  wrap.innerHTML = `<div class="box"><form class="form"><h3></h3>${o.hint ? '<p class="hint"></p>' : ''}<label><span class="pf-lb"></span>${o.area
+    ? `<textarea rows="3" maxlength="${o.max}" style="background:var(--panel);border:1px solid var(--line);font-size:1rem"></textarea>` : `<span style="position:relative;display:block">${o.prefix ? `<span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);font-weight:800;color:var(--ink-2);pointer-events:none">${o.prefix}</span>` : ''}<input maxlength="${o.max}" autocapitalize="${o.prefix ? 'none' : 'sentences'}" spellcheck="${o.prefix ? 'false' : 'true'}" ${o.prefix ? 'style="padding-left:1.7rem"' : ''}></span>`}</label>
+    <small class="hint pf-cnt" style="text-align:right;margin-top:-.2rem"></small><p class="hint pf-msg" style="color:var(--danger,#b4442c)"></p>
+    <button type="submit" class="primary">Salvar</button><button type="button" class="cancel">Cancelar</button></form></div>`;
+  const f = wrap.querySelector('form'), inp = f.querySelector('input,textarea'), msg = f.querySelector('.pf-msg'), cnt = f.querySelector('.pf-cnt');
+  f.querySelector('h3').textContent = o.title; if (o.hint) f.querySelector('.hint').textContent = o.hint; f.querySelector('.pf-lb').textContent = o.label;
+  inp.value = o.value || ''; const upd = () => { if (o.clean) { const c = o.clean(inp.value); if (c !== inp.value) inp.value = c; } cnt.textContent = `${inp.value.length}/${o.max}`; }; upd();
+  inp.addEventListener('input', upd);
+  const close = () => wrap.remove();
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); }); f.querySelector('.cancel').addEventListener('click', close);
+  f.addEventListener('submit', async (e) => { e.preventDefault(); const b = f.querySelector('.primary'); b.disabled = true; msg.textContent = '';
+    let err = null; try { err = await o.save(inp.value.trim()); } catch { err = 'Sem conexão. Tente de novo.'; }
+    b.disabled = false; if (err) { msg.textContent = err; return; } close(); });
+  document.body.append(wrap); setTimeout(() => { try { inp.focus(); const n = inp.value.length; inp.setSelectionRange(n, n); } catch {} }, 60);
+}
+const pfRedraw = () => { try { refresh(); } catch {} try { paintAvatar(); } catch {} try { paintGtop(); } catch {} try { const v = $('#shelflist'); if (v && !v.hidden && v.classList.contains('mine-page')) openMyProfile(); } catch {} };
+editName = function () {
+  pfTextSheet({ title: 'Seu nome', hint: 'É como o Bear te chama e como seus amigos veem você.', label: 'Nome', value: NAME === 'Você' ? '' : NAME, max: 40,
+    save: async (v) => {
+      if (!v) return 'O nome não pode ficar vazio.';
+      if (connected() && socialProfile) { const r = await sapi('PUT', '/v1/me/profile', { handle: socialProfile.handle, displayName: v }); if (r.status !== 200 || !r.data) return 'Não consegui salvar. Tente de novo.'; socialProfile = r.data; }
+      NAME = v; try { localStorage.setItem('bear.profile', JSON.stringify({ name: v })); } catch {}
+      db.profile = { ...(db.profile || {}), name: v }; save(); pfRedraw(); toast('Nome atualizado'); return null;
+    } });
+};
+function editHandleSheet() {
+  if (!connected()) return toast('Entre na sua conta para ter um @usuário');
+  if (!socialProfile) return socialSettingsSheet();
+  pfTextSheet({ title: 'Nome de usuário', hint: 'É como seus amigos te acham. 3 a 20 letras minúsculas, números, ponto ou _.', label: '@usuário', value: socialProfile.handle, max: 20, prefix: '@',
+    clean: (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9_.]+/g, '').slice(0, 20),
+    save: async (h) => {
+      if (h === socialProfile.handle) return null;
+      if (!/^[a-z0-9_.]{3,20}$/.test(h)) return 'Use de 3 a 20 letras minúsculas, números, ponto ou _.';
+      const r = await sapi('PUT', '/v1/me/profile', { handle: h, displayName: socialProfile.displayName || NAME });
+      if (r.status === 409) return `@${h} já é de outra pessoa. Tente outro.`;
+      if (r.status !== 200 || !r.data) return 'Não consegui salvar. Tente de novo.';
+      socialProfile = r.data; try { publishSnapshot(); } catch {} pfRedraw(); toast(`Agora você é @${h}`); return null;
+    } });
+}
+editBio = async function () {
+  pfTextSheet({ title: 'Frase do perfil', hint: 'Aparece no seu perfil, embaixo do nome. Deixe em branco para o app montar uma pelas suas leituras.', label: 'Frase', value: T().bio || '', max: 160, area: true,
+    save: async (bio) => {
+      T().bio = bio; save(); pfRedraw();
+      if (connected() && socialProfile) { const r = await sapi('PUT', '/v1/me/bio', { bio }); if (r.status !== 200) { toast('Frase salva só neste aparelho por enquanto'); return null; } }
+      toast(bio ? 'Frase atualizada' : 'Frase automática de volta'); return null;
+    } });
+};
+// Editar perfil: o @ abre só o @; o "Quem vê o quê" fica em Ajustes
+{ const _da2 = drawAjustes; drawAjustes = function (box) {
+  _da2(box);
+  const h = box.querySelector('#aj-handle'); if (h && socialProfile) { const n = h.cloneNode(true); h.replaceWith(n); n.addEventListener('click', editHandleSheet); }
+  const p = box.querySelector('#aj-priv'); if (p) { const b = p.querySelector('b'); if (b) b.textContent = 'O que aparece no meu perfil'; }
+}; }
+// Para você (16/11): livros em português primeiro (idioma do app); inglês só completa quando falta indicação
+{ const _tr2 = tasteRecs; tasteRecs = async function () {
+  const all = (await _tr2.apply(this, arguments)) || [];
+  const lg = (x) => { if (x.lang || x.isbn) { try { return bookLang({ title: '', isbn: x.isbn, lang: x.lang }); } catch {} } const t = ' ' + String(x.title || '').toLowerCase() + ' ', p = (t.match(/[ãõçâêôáéíóú]| (o|os|as|de|da|do|das|dos|e|um|uma|no|na|em|para|com|que) /g) || []).length, e = (t.match(/ (the|of|and|an|in|to|for|with|my|your|is|a) /g) || []).length; return p > e ? 'pt' : e > p ? 'en' : ''; };
+  const pt = [], other = [], en = [];
+  const mine = new Set((lib() || []).map((e) => normT(String(e.title || '').split(':')[0]))), seen = new Set();
+  for (const x of all) { const k = normT(String(x.title || '').split(':')[0]); if (!k || mine.has(k) || seen.has(k)) continue; seen.add(k); const l = lg(x); (l === 'pt' ? pt : l && l !== 'pt' ? en : other).push(x); }
+  const out = [...pt, ...other]; if (out.length < 10) out.push(...en);
+  return out.slice(0, 18);
+}; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
