@@ -9602,6 +9602,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12278,7 +12279,7 @@ function editTop5() {
     const yn = form.querySelector('.yn');
     if (yn) {
       const sel = document.createElement('select'); sel.className = 'rtf-rs'; sel.setAttribute('aria-label', 'Ressaca literária');
-      sel.innerHTML = '<option value="">Nem um nem outro</option><option value="deu">Me deu ressaca</option><option value="curou">Curou minha ressaca</option>';
+      sel.innerHTML = '<option value="">Não sei</option><option value="deu">Me deu ressaca</option><option value="curou">Curou minha ressaca</option>';
       const btns = () => [...yn.querySelectorAll('button')], cur = () => { const i = btns().findIndex((x) => x.classList.contains('on')); return i === 0 ? 'deu' : i === 1 ? 'curou' : ''; };
       sel.value = cur(); yn.style.setProperty('display', 'none', 'important'); yn.after(sel);
       sel.addEventListener('change', () => { const want = sel.value, now = cur(); if (want === now) return; if (!want) btns()[now === 'deu' ? 0 : 1].click(); else btns()[want === 'deu' ? 0 : 1].click(); });
