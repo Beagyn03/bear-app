@@ -4917,7 +4917,7 @@ function openBookPage(e, tab = 'sobre') {
     } else if (tab === 'minha') {
       body = `<section class="bp-card"><div class="bp-row"><span>Status</span><select class="bp-st" aria-label="Status">${['QUERO', 'LENDO', 'HIBERNANDO', 'LIDO', 'ABANDONEI'].map((st) => `<option value="${st}" ${e.status === st ? 'selected' : ''}>${LIB_LABEL[st]}</option>`).join('')}</select></div>
         ${info.total ? `<div class="rc-prog"><i class="mt-bar"><i style="width:${pct}%"></i></i><em>${pct}%</em></div><small class="bp-small">página ${info.now} de ${info.total}</small>` : ''}
-        <div class="bp-stats">${[[e.startedAt ? fmt(e.startedAt) : '—', 'início'], [e.finishedAt ? fmt(e.finishedAt) : '—', 'fim'], [days ? plural(days, 'dia', 'dias') : '—', 'de leitura'], [ser.length ? Math.round(ser[ser.length - 1].acc / ser.length) : '—', 'pág. por dia lido'], [foc.length ? `${focMin} min` : '—', `em ${plural(foc.length, 'foco', 'focos')}`]].map(([a, b]) => `<div><b>${a}</b><small>${b}</small></div>`).join('')}</div>
+        <div class="bp-stats">${[[e.startedAt ? fmt(e.startedAt) : '—', 'início'], [e.finishedAt ? fmt(e.finishedAt) : '—', 'fim'], [days ? plural(days, 'dia', 'dias') : '—', 'de leitura'], [ser.length ? Math.round(ser[ser.length - 1].acc / ser.length) : (e.status === 'LIDO' && days && info.total ? Math.round(info.total / days) : '—'), ser.length ? 'pág. por dia lido' : 'pág. por dia (média)'], [foc.length ? `${focMin} min` : '—', `em ${plural(foc.length, 'foco', 'focos')}`]].map(([a, b]) => `<div><b>${a}</b><small>${b}</small></div>`).join('')}</div>
         ${e.status === 'QUERO' ? `<button type="button" class="bp-btn" data-a="next">${T().nextId === e.id ? 'Desmarcar como próxima leitura' : 'Marcar como próxima leitura'}</button>` : ''}${canReadNow(e) ? `<button type="button" class="bp-btn pri" data-a="now">Ler agora</button>` : e.status === 'LENDO' ? `<button type="button" class="bp-btn pri" data-a="upd">${IC('atualizar', 'ico-b')}Atualizar leitura</button>` : ''}</section>
         <section class="bp-card"><div class="bp-row"><span>Minha avaliação</span><button type="button" class="bp-link" data-a="rate">${r.paws ? 'Editar' : 'Avaliar'}</button></div>
         ${r.paws ? `<div class="bp-stars">${pawTxt(r.paws)}</div>` : '<small class="bp-small">Ainda sem avaliação.</small>'}
@@ -7622,7 +7622,7 @@ function youSectionsHTML() {
 .fr-read{display:grid;grid-template-columns:auto 1fr;gap:.7rem;align-items:center;margin-bottom:.5rem}
 .fr-read .cv{width:52px;height:78px;border-radius:3px 6px 6px 3px}
 .fr-read b{display:block;font-size:.9rem;color:var(--ink)}.fr-read small{font-size:.72rem;color:var(--ink-2)}
-.sp-own{display:inline-block;margin-top:.35rem;font-size:.7rem;font-weight:800;color:var(--ink-2);border:1px solid var(--line);border-radius:99px;padding:.05rem .5rem}
+.sp-own{display:inline-block;width:fit-content;justify-self:start;margin-top:.35rem;font-size:.7rem;font-weight:800;color:var(--ink-2);border:1px solid var(--line);border-radius:99px;padding:.05rem .5rem}
 .bp-rev{margin:.5rem 0 0;font-size:.88rem;line-height:1.5;white-space:pre-line;color:var(--ink)}details.bp-rev summary{cursor:pointer;font-weight:800;color:var(--acc);font-size:.84rem}details.bp-rev p{margin:.4rem 0 0}
 .fr-common{font-size:.78rem;color:var(--acc);font-weight:800;margin:-.3rem 0 .8rem}
 .fr-revs{display:grid;gap:.6rem}
