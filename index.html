@@ -8633,12 +8633,12 @@ function openDrawer() {
   const d = document.createElement('nav'); d.className = 'drw'; d.setAttribute('aria-label', 'Menu');
   const it = (id, ic, t, small) => `<button type="button" class="drw-it" data-go="${id}">${dsv(ic)}${t}${small ? `<small>${small}</small>` : ''}</button>`;
   d.innerHTML = `<button type="button" class="drw-me" data-go="me"><span class="av" style="${h.ph ? `background-image:${cssUrl(h.ph)}` : ''}">${h.ph ? '' : esc(initial(h.name))}</span><span><b>${esc(h.name)}</b><small>${prof ? '@' + esc(prof.handle) : 'Sem @usuário ainda'}</small></span></button>
-    <div class="drw-g">Minha leitura</div>${it('stats', 'stats', 'Estatísticas')}${it('quotes', 'quote', 'Meus trechos', nQ || '')}${it('cols', 'shelves', 'Estantes', nC || '')}${it('hist', 'hist', 'Montar histórico')}
+    <div class="drw-g">Minha leitura</div>${it('stats', 'stats', 'Estatísticas')}${it('quotes', 'quote', 'Meus trechos', nQ || '')}${it('cols', 'shelves', 'Estantes', nC || '')}${it('hist', 'hist', 'Montar histórico')}${it('fix', 'stats', 'Ajustar leituras')}
     <div class="drw-g">Conquistas e metas</div>${it('ach', 'award', 'Conquistas')}${it('goals', 'target', 'Metas com prazo')}
     <div class="drw-g">Pessoas</div>${it('friends', 'users', 'Amigos', nF || '')}${it('people', 'plus', 'Encontrar leitores')}
     <div class="drw-g">Você</div>${it('prof', 'pen', prof ? 'Editar perfil' : 'Criar meu perfil')}
     <div class="drw-g">App</div>${it('cfg', 'cfg', 'Ajustes', 'tema, sons e dados')}`;
-  const go = { me: () => openMyProfile(), stats: () => goTab('progresso'), quotes: () => openAllQuotes(), cols: () => goTab('estante'), hist: () => openHistory(), ach: () => openAchList(), goals: () => openGoalsV4(), friends: () => openFriendsV3(), people: () => openPeopleSearch(), prof: () => { S.ajMode = 'perfil'; goTab('perfil'); }, cfg: () => { S.ajMode = 'sistema'; goTab('perfil'); } };
+  const go = { me: () => openMyProfile(), stats: () => goTab('progresso'), quotes: () => openAllQuotes(), cols: () => goTab('estante'), hist: () => openHistory(), fix: () => openFixReads(), ach: () => openAchList(), goals: () => openGoalsV4(), friends: () => openFriendsV3(), people: () => openPeopleSearch(), prof: () => { S.ajMode = 'perfil'; goTab('perfil'); }, cfg: () => { S.ajMode = 'sistema'; goTab('perfil'); } };
   d.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { closeDrawer(); go[b.dataset.go](); }));
   TR.append(bg, d);
 }
@@ -9553,6 +9553,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -12436,7 +12437,7 @@ function openFixReads(filter) {
   const draw = () => {
     const c = fxCount();
     const list = lib().filter((e) => e.status === 'LIDO' && (f === 'todos' || fxMiss(e)[f])).sort((a, z) => String(z.finishedAt || '').localeCompare(String(a.finishedAt || '')));
-    v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Completar leituras</b><span></span></div>'
+    v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Ajustar leituras</b><span></span></div>'
       + '<p class="hint" style="margin:.1rem 0 .3rem">Preencha o que faltou nos seus lidos (por exemplo, depois de importar o histórico). Cada campo salva sozinho e as Estatísticas usam na hora.</p>'
       + '<div class="fx-chips">' + ['ini', 'fim', 'pag', 'nota', 'todos'].map((k) => '<button type="button" data-f="' + k + '" class="' + (f === k ? 'on' : '') + '">' + NAMES[k] + ' · ' + (k === 'todos' ? c.all : c[k]) + '</button>').join('') + '</div>'
       + (list.length ? list.map((e) => { const m = fxMiss(e), rv = reviewOfLib(e) || {};
@@ -12471,10 +12472,10 @@ function openFixReads(filter) {
   const r = _dt.apply(this, arguments);
   try {
     if (S.tab !== 'progresso') return r; const box = $('#lista'); if (!box || box.querySelector('.fx-card')) return r;
-    const c = fxCount(), miss = c.ini + c.fim + c.pag; if (!c.all || !miss) return r;
+    const c = fxCount(), miss = c.ini + c.fim + c.pag; if (!c.all) return r;
     const parts = [c.ini ? plural(c.ini, 'sem data de início', 'sem data de início') : '', c.fim ? c.fim + ' sem data de fim' : '', c.pag ? c.pag + ' sem páginas' : ''].filter(Boolean);
     const b = document.createElement('button'); b.type = 'button'; b.className = 'fx-card';
-    b.innerHTML = '<span><b>Completar leituras</b><small>' + esc(parts.join(' · ')) + '. Preencha para as estatísticas ficarem certas.</small></span><span>›</span>';
+    b.innerHTML = '<span><b>Ajustar leituras</b><small>' + (miss ? esc(parts.join(' · ')) + '. Preencha para as estatísticas ficarem certas.' : 'Datas, páginas, formato e nota dos seus lidos.') + '</small></span><span>›</span>'; if (!miss) b.style.borderStyle = 'solid';
     b.addEventListener('click', () => openFixReads());
     const first = box.querySelector('.ys') || box.firstElementChild; if (first) first.before(b); else box.prepend(b);
   } catch (err) { console.warn('completar leituras', err); }
