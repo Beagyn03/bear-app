@@ -9592,6 +9592,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12178,6 +12179,13 @@ function editTop5() {
 .sheet.rt-full .rate-dates input{width:100%}
 .sheet.rt-full .rt-dates{display:none!important}
 .sheet.rt-full textarea{min-height:11rem!important;background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--line)!important;font-size:.95rem!important;line-height:1.5!important}
+.rtf-acts{display:flex;gap:.4rem}.rtf-ed{border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:99px;padding:.4rem .95rem;font:inherit;font-weight:800}
+.sheet.rt-full form{align-content:start!important;min-height:0!important;height:auto!important}.rtf-hd > *,.rtf-view > *{align-self:start}.rtf-view .rv-tags{align-items:flex-start}
+.sheet.rt-view form > :not(.rtf-top):not(.rtf-hd):not(.rtf-view){display:none!important}
+.rtf-view{display:grid;gap:.8rem;margin-top:.4rem}.rtf-view .rv-paws{text-align:center;font-size:1.5rem;font-weight:900;color:var(--acc)}
+.rtf-view .rv-dates{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}.rtf-view .rv-dates div{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:.5rem .7rem}.rtf-view .rv-dates small{display:block;font-size:.72rem;font-weight:800;color:var(--ink-2)}.rtf-view .rv-dates b{font-size:.95rem}
+.rtf-view .rv-txt{white-space:pre-line;line-height:1.55;font-size:.95rem;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.85rem .95rem;margin:0}
+.rtf-view .rv-tags{display:flex;flex-wrap:wrap;gap:.35rem}.rtf-view .rv-tags span{font-size:.75rem;font-weight:800;border:1px solid var(--line);border-radius:99px;padding:.15rem .65rem;color:var(--ink-2)}
 .rtf-lb{font-weight:800;font-size:.9rem;margin:.4rem 0 -.2rem}
 .sheet.rt-full .rt-btns{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:.7rem 1rem calc(.7rem + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 25%);max-width:560px;margin:0 auto}
 `; document.head.append(st); }
@@ -12193,6 +12201,21 @@ function editTop5() {
     const hd = document.createElement('div'); hd.className = 'rtf-hd'; hd.innerHTML = cvh(b.title, cover, '') + '<b>' + esc(b.title) + '</b>' + (author ? '<small>' + esc(author) + '</small>' : '') + (stTxt ? '<span class="rtf-st">' + esc(stTxt) + '</span>' : '');
     form.prepend(top, hd);
     top.querySelector('.rtf-x').addEventListener('click', () => wrap.remove());
+    // avaliação já salva: abre para ler; "Editar avaliação" no topo abre o formulário
+    const rv = b.review || {};
+    if (rv.paws || rv.texto || rv.frase) {
+      wrap.classList.add('rt-view');
+      const [ds, de] = (() => { const i = form.querySelector('.rate-dates input[name=ini]'), f = form.querySelector('.rate-dates input[name=fim]'); return [i && i.value, f && f.value]; })();
+      const view = document.createElement('div'); view.className = 'rtf-view';
+      view.innerHTML = (rv.paws ? '<div class="rv-paws">' + esc(pawTxt(rv.paws)) + '</div>' : '')
+        + '<div class="rv-dates"><div><small>Comecei em</small><b>' + (ds ? fmt(ds) : '—') + '</b></div><div><small>Terminei em</small><b>' + (de ? fmt(de) : '—') + '</b></div></div>'
+        + (rv.texto ? '<p class="rv-txt">' + esc(rv.texto) + '</p>' : rv.frase ? '<p class="rv-txt">' + esc(rv.frase) + '</p>' : '')
+        + '<div class="rv-tags">' + [rv.spoiler ? 'Tem spoiler' : '', rv.share === false ? 'Privada (só você vê)' : 'Visível para os outros', rv.ressaca === true ? 'Me deixou de ressaca' : ''].filter(Boolean).map((t) => '<span>' + t + '</span>').join('') + '</div>';
+      hd.after(view);
+      const x = top.querySelector('.rtf-x'), acts = document.createElement('span'); acts.className = 'rtf-acts';
+      acts.innerHTML = '<button type="button" class="rtf-ed">Editar avaliação</button>'; x.before(acts); acts.append(x);
+      acts.querySelector('.rtf-ed').addEventListener('click', () => { wrap.classList.remove('rt-view'); view.remove(); acts.querySelector('.rtf-ed').remove(); top.querySelector('b').textContent = 'Editar avaliação'; wrap.querySelector('.box').scrollTop = 0; });
+    }
     // datas sempre à vista, logo depois do cabeçalho; depois as patas; resenha com título
     const dates = form.querySelector('.rate-dates'), nota = form.querySelector('.rate-nota');
     if (dates) { dates.hidden = false; hd.after(dates); }
