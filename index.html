@@ -2366,7 +2366,7 @@ async function publishReview(b) {
     if (!socialProfile) return; // sem @usuário ainda: publica tudo ao criar
     const rv = b.review;
     if (!rv || rv.share === false) { await sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`); return; }
-    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler, ressaca: rv.ressaca === 'curou' ? 'curou' : rv.ressaca ? 'deu' : null, readerPct: readerPctOf(e.title), ...(rv.spoiler && rv.spoilerKind ? { spoilerKind: rv.spoilerKind, ...(rv.spoilerAt ? { spoilerAt: rv.spoilerAt } : {}) } : {}) });
+    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler, ressaca: rv.ressaca === 'curou' ? 'curou' : rv.ressaca ? 'deu' : null, readerPct: readerPctOf(e.title), ...(e.status === 'LIDO' && e.finishedAt && /^\d{4}-\d{2}-\d{2}$/.test(e.finishedAt) ? { readAt: e.finishedAt } : {}), ...(rv.spoiler && rv.spoilerKind ? { spoilerKind: rv.spoilerKind, ...(rv.spoilerAt ? { spoilerAt: rv.spoilerAt } : {}) } : {}) });
   } catch {}
 }
 async function publishAllReviews() { libSync(); for (const e of (db.library || [])) if (e.review && e.review.share !== false) await publishReview(e); }
@@ -9617,6 +9617,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12613,6 +12614,54 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
 .bp-card > .bp-adj i{grid-column:2;grid-row:1 / span 2}
 .bp-card > .bp-adj[data-a="rmlib"] b{color:inherit;opacity:.8;font-weight:700}
 `; TR.append(st); }
+// --- 51_reenvia_avaliacoes.js ---
+// Uma vez: reenviar as avaliações já publicadas para elas ganharem a data em que o livro foi terminado (posted_at da API, 16/11).
+setTimeout(async () => {
+  try {
+    if (!connected() || !socialProfile || (db.prefs && db.prefs.rvPostedSync)) return;
+    await publishAllReviews();
+    db.prefs = { ...(db.prefs || {}), rvPostedSync: 1 }; save();
+  } catch (err) { console.warn('reenviar avaliações', err); }
+}, 8000);
+// --- 52_estante_marcador.js ---
+// Estante (Bia, 16/11): mesma linguagem das Leituras por mês. Livro lido com nota ganha o marca-página de urso com a nota
+// (5 furta-cor, 4 e 4,5 ouro, 3 e 3,5 prata, abaixo de 3 bronze); saem a coluna de patinhas e a barrinha verde de "lido".
+{ const G = 'linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 55%,rgba(0,0,0,.2))';
+  const st = document.createElement('style'); st.textContent = `
+.es-bk .es4-done{display:none!important}
+#shelflist .esv-grid > .es-bk > .es4-st:has(.pw5){display:none!important}
+#shelflist .esv-grid > .es-bk{grid-template-columns:minmax(0,1fr)!important}
+.mk-bear{position:absolute;top:-6px;left:10px;width:24px;height:42px;z-index:5;pointer-events:none;filter:drop-shadow(0 1.5px 1.5px rgba(0,0,0,.4))}
+#shelflist .esv-grid > .es-bk > .mk-bear{top:-22px}
+.mk-bear::before{content:"";position:absolute;left:10px;top:0;width:4px;height:24px;background:var(--mk);background-size:100% 100%,220% 100%}
+.mk-bear b{position:absolute;left:1px;bottom:0;width:22px;height:20px;border-radius:50% 50% 46% 46%;background:var(--mk);background-size:100% 100%,220% 100%;font:900 9px/21px Nunito,system-ui,sans-serif;letter-spacing:-.2px;text-align:center;color:var(--mkt,#2b2018);text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.mk-bear b::before,.mk-bear b::after{content:"";position:absolute;top:-3px;width:9px;height:9px;border-radius:50%;background:var(--mk);background-size:100% 100%,220% 100%;z-index:-1}
+.mk-bear b::before{left:0}.mk-bear b::after{right:0}
+.mk-bear.t-ouro{--mk:${G},linear-gradient(90deg,#9c7314,#e9c45a 25%,#fff3b8 40%,#c9971c 60%,#f7dc6f 80%,#9c7314)}
+.mk-bear.t-prata{--mk:${G},linear-gradient(90deg,#7c858d,#cfd6dc 25%,#ffffff 40%,#9aa3ab 60%,#e9eef2 80%,#7c858d)}
+.mk-bear.t-bronze{--mk:${G},linear-gradient(90deg,#74401a,#c98448 25%,#f3c08e 40%,#94562a 60%,#d99a62 80%,#74401a);--mkt:#fff8ef}
+.mk-bear.t-bronze b{text-shadow:0 1px 1px rgba(0,0,0,.45)}
+.mk-bear.t-5{--mk:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 60%),linear-gradient(90deg,#f6c94a,#ff8fc8,#b78cff,#6fd3ff,#f6c94a);--mkt:#fff;filter:drop-shadow(0 0 4px rgba(255,190,90,.9)) drop-shadow(0 1.5px 1.5px rgba(0,0,0,.35))}
+.mk-bear.t-5 b{text-shadow:0 1px 2px rgba(80,30,90,.7)}
+.mk-bear.t-5::before,.mk-bear.t-5 b,.mk-bear.t-5 b::before,.mk-bear.t-5 b::after{animation:ysMkFlow 3s linear infinite}
+@media (prefers-reduced-motion:reduce){.mk-bear *,.mk-bear::before{animation:none!important}}
+`; TR.append(st); }
+{ const tierOf = (p) => (p >= 5 ? 't-5' : p >= 4 ? 't-ouro' : p >= 3 ? 't-prata' : 't-bronze');
+  const paint = () => {
+    TR.querySelectorAll('.es-bk[data-id]').forEach((b) => {
+      if (b.closest('.ys')) return; // Leituras por mês já tem o seu
+      const e = lib().find((x) => x.id === b.dataset.id), p = e && e.status === 'LIDO' ? ((reviewOfLib(e) || {}).paws || 0) : 0;
+      const cur = b.querySelector(':scope > .mk-bear'), want = p ? tierOf(p) + '|' + p : '';
+      if ((cur ? cur.dataset.k : '') === want) return;
+      cur && cur.remove(); if (!p) return;
+      if (getComputedStyle(b).position === 'static') b.style.position = 'relative';
+      const m = document.createElement('span'); m.className = 'mk-bear ' + tierOf(p); m.dataset.k = want; m.setAttribute('aria-hidden', 'true');
+      m.innerHTML = '<b>' + String(p).replace('.', ',') + '</b>'; b.prepend(m);
+    });
+  };
+  let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 60); }).observe(TR, { childList: true, subtree: true });
+  setTimeout(paint, 1500);
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
