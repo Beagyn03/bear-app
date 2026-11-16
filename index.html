@@ -4921,7 +4921,7 @@ function openBookPage(e, tab = 'sobre') {
         <section class="bp-card"><div class="bp-row"><span>Minha avaliação</span><button type="button" class="bp-link" data-a="rate">${r.paws ? 'Editar' : 'Avaliar'}</button></div>
         ${r.paws ? `<div class="bp-stars">${pawTxt(r.paws)} <small>${String(r.paws).replace('.', ',')}</small></div>` : '<small class="bp-small">Ainda sem avaliação.</small>'}
         ${r.frase ? `<q class="bp-q">${esc(String(r.frase).replace(/^["“]|["”]$/g, ''))}</q>` : ''}
-        ${r.texto ? (r.spoiler ? `<details class="bp-rev"><summary>Tem spoiler · toque para ler</summary><p>${esc(r.texto)}</p></details>` : `<p class="bp-rev">${esc(r.texto)}</p>`) : ''}</section>
+        ${r.texto ? `<p class="bp-rev">${esc(r.texto)}</p>${r.spoiler ? '<small class="sp-own">marcada como spoiler</small>' : ''}` : ''}</section>
         ${ser.length ? `<section class="bp-card"><div class="bp-row"><span>Páginas por dia</span></div>${chartSvg(ser, info.total)}</section>` : ''}
         <section class="bp-card"><div class="bp-row"><span>Ajustes do livro</span></div>
           <button type="button" class="bp-adj" data-a="fmt"><span>Formato</span><b>${esc(fmtTxt(e))}</b><i>›</i></button>
@@ -7621,6 +7621,7 @@ function youSectionsHTML() {
 .fr-read{display:grid;grid-template-columns:auto 1fr;gap:.7rem;align-items:center;margin-bottom:.5rem}
 .fr-read .cv{width:52px;height:78px;border-radius:3px 6px 6px 3px}
 .fr-read b{display:block;font-size:.9rem;color:var(--ink)}.fr-read small{font-size:.72rem;color:var(--ink-2)}
+.sp-own{display:inline-block;margin-top:.35rem;font-size:.7rem;font-weight:800;color:var(--ink-2);border:1px solid var(--line);border-radius:99px;padding:.05rem .5rem}
 .bp-rev{margin:.5rem 0 0;font-size:.88rem;line-height:1.5;white-space:pre-line;color:var(--ink)}details.bp-rev summary{cursor:pointer;font-weight:800;color:var(--acc);font-size:.84rem}details.bp-rev p{margin:.4rem 0 0}
 .fr-common{font-size:.78rem;color:var(--acc);font-weight:800;margin:-.3rem 0 .8rem}
 .fr-revs{display:grid;gap:.6rem}
@@ -7656,9 +7657,9 @@ friendPage = async function (handle) {
   const rv = $('#fr-revs', v);
   if (rv && d.reviews && d.reviews.length) {
     const read = (t) => { const e = lib().find((x) => normT(x.title) === normT(t)); return e && e.status === 'LIDO'; };
-    rv.innerHTML = d.reviews.map((x, i) => { const hide = x.spoiler ? 'Contém spoiler' : !read(x.title) ? 'Você ainda não leu este livro' : '';
+    rv.innerHTML = d.reviews.map((x, i) => { const hide = d.self || x.mine ? '' : x.spoiler ? 'Contém spoiler' : !read(x.title) ? 'Você ainda não leu este livro' : '';
       return `<article class="fr-rv">${cvh(x.title, x.cover, 'fr-rcv')}<div><b>${esc(x.title)}</b>${x.author ? `<small>${esc(x.author)}</small>` : ''}${x.paws ? `<span class="fr-paws">${pawTxt(x.paws)}</span>` : ''}
-        ${x.text ? (hide ? `<button type="button" class="fd-sp fr-see" data-i="${i}">${IC('spoiler', 'ico-b')}${hide} · toque para ver</button><p class="fr-tx" hidden>${esc(x.text)}</p>` : `<p class="fr-tx">${esc(x.text)}</p>`) : ''}
+        ${x.text ? (hide ? `<button type="button" class="fd-sp fr-see" data-i="${i}">${IC('spoiler', 'ico-b')}${hide} · toque para ver</button><p class="fr-tx" hidden>${esc(x.text)}</p>` : `<p class="fr-tx">${esc(x.text)}</p>${x.spoiler && (d.self || x.mine) ? '<small class="sp-own">marcada como spoiler</small>' : ''}`) : ''}
         <small class="fr-meta">${esc(relTime(x.updatedAt))}${x.likes ? ` · ♥ ${x.likes}` : ''}${x.comments ? ` · ${plural(x.comments, 'comentário', 'comentários')}` : ''}</small></div></article>`; }).join('');
     $$('.fr-see', rv).forEach((b) => b.addEventListener('click', () => { b.nextElementSibling.hidden = false; b.remove(); }));
   }
@@ -7696,7 +7697,7 @@ function bookNetHTML(e) {
   if (c.loading) return '<section class="bp-card"><p class="bp-load">Carregando as avaliações da sua rede…</p></section>';
   if (c.err) return '';
   const lido = iReadT(e.title), open = S.bnOpen || (S.bnOpen = new Set());
-  const item = (x) => { const hide = x.text && !open.has(x.id) && (x.spoiler || !lido) ? (x.spoiler ? 'Contém spoiler' : 'Você ainda não leu este livro') : '';
+  const item = (x) => { const hide = x.text && !x.mine && !open.has(x.id) && (x.spoiler || !lido) ? (x.spoiler ? 'Contém spoiler' : 'Você ainda não leu este livro') : '';
     return `<div class="bn-it"><span class="av sm" data-avh="${esc(x.user.handle)}" style="background:${friendColor(x.user.handle)}">${esc(initial(x.user.displayName))}</span><div>
       <p><button type="button" class="fd-who bn-who" data-h="${esc(x.user.handle)}">${esc(x.user.displayName)}</button>${x.paws ? ` · ${pawTxt(x.paws)}` : ''}</p>
       ${x.text ? (hide ? `<button type="button" class="fd-sp bn-see" data-id="${esc(x.id)}">${IC('spoiler', 'ico-b')}${hide} · toque para ver</button>` : `<p class="bn-tx">${esc(x.text)}</p>`) : ''}
@@ -9551,6 +9552,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -12008,24 +12010,27 @@ editBio = async function () {
   return out.slice(0, 18);
 }; }
 // --- 42_atualiza_sozinho.js ---
-// Mudou status, nota ou data de um livro: o perfil aberto e as Estatísticas se redesenham sozinhos (Bia, 16/11).
+// Mudou status, nota ou data de um livro: o perfil, a página aberta (livro, estante…) e as Estatísticas se redesenham sozinhos (Bia, 16/11).
 // Antes era preciso recarregar o app para ver a mudança nas Leituras por mês e nos números do perfil.
 // (save é const, não dá para envolver; a conferência roda só com o perfil ou as Estatísticas na tela e nada aberto por cima.)
 { const sig = () => { try { return lib().map((e) => e.id + ':' + e.status + ':' + ((reviewOfLib(e) || {}).paws || 0) + ':' + (e.finishedAt || '')).join('|'); } catch { return ''; } };
   let last = sig(), busy = false;
   setInterval(async () => {
     if (busy || document.hidden) return;
-    const v = $('#shelflist'), onMe = v && !v.hidden && v.classList.contains('mine-page'), onStats = (!v || v.hidden) && S.tab === 'progresso';
-    if (!onMe && !onStats) { last = sig(); return; }
+    const v = $('#shelflist'), onMe = v && !v.hidden && v.classList.contains('mine-page') && !v.querySelector('.bp-card') && !!v.querySelector('.yo-top'), onStats = (!v || v.hidden) && S.tab === 'progresso', onPage = v && !v.hidden && !onMe && !!v.querySelector('.bp-card') && typeof S.bpDraw === 'function';
+    if (!onMe && !onStats && !onPage) { last = sig(); return; }
     if (TR.querySelector('.bkm') || document.querySelector('.sheet')) return; // menu ou folha aberta: espera fechar
     const s = sig(); if (s === last) return; last = s;
     busy = true;
     try {
       if (onMe) { const y = v.scrollTop; S.nav.restoring = true; try { await openMyProfile(); } finally { S.nav.restoring = false; } v.scrollTop = y; }
+      else if (onPage) { const y = v.scrollTop; S.bpDraw(); v.scrollTop = y; }
       else { const y = window.scrollY; drawTab(); window.scrollTo(0, y); }
     } catch (err) { console.warn('atualizar tela', err); } finally { busy = false; }
   }, 700);
 }
+// página do livro: guarda o desenho dela (S.listRedraw pode ser trocado por outra tela enquanto a avaliação está aberta)
+{ const _ob = openBookPage; openBookPage = function () { const r = _ob.apply(this, arguments); S.bpDraw = S.listRedraw; return r; }; }
 // --- 43_capas_moderacao.js ---
 // Capa corrigida pela moderação (16/11): vale para todo mundo. A API guarda por título normalizado (covKey);
 // o app troca a capa nas estantes (menos de quem escolheu outra edição: e.coverOwn), na busca e no que mostra.
