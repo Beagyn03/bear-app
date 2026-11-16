@@ -9611,6 +9611,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12455,7 +12456,7 @@ async function openRessacaList(kind) {
 .fx-it{display:grid;grid-template-columns:48px 1fr;gap:.7rem;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.6rem .65rem;margin-bottom:.55rem}
 .fx-it .cv{width:48px;height:72px;border-radius:3px 6px 6px 3px;font-size:.45rem}
 .fx-it b{display:block;font-size:.9rem;line-height:1.25}.fx-it .au{font-size:.76rem;color:var(--ink-2)}
-.fx-f{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.45rem}.fx-f select{width:100%;min-width:0;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:.82rem;padding:0 .3rem;box-sizing:border-box}
+.fx-f{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.45rem}.fx-f .fx-rs{grid-column:1/-1}.fx-f select{width:100%;min-width:0;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:.82rem;padding:0 .3rem;box-sizing:border-box}
 .fx-f label{display:grid;gap:.1rem;font-size:.68rem;font-weight:800;color:var(--ink-2)}
 .fx-f input{width:100%;min-width:0;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:.82rem;padding:0 .4rem;box-sizing:border-box}
 .fx-f input.miss{border-color:var(--acc);border-style:dashed}
@@ -12479,7 +12480,7 @@ function openFixReads(filter) {
       + '<div class="fx-chips">' + ['ini', 'fim', 'pag', 'nota', 'todos'].map((k) => '<button type="button" data-f="' + k + '" class="' + (f === k ? 'on' : '') + '">' + NAMES[k] + ' · ' + (k === 'todos' ? c.all : c[k]) + '</button>').join('') + '</div>'
       + (list.length ? list.map((e) => { const m = fxMiss(e), rv = reviewOfLib(e) || {};
         return '<div class="fx-it" data-id="' + esc(e.id) + '">' + cvh(e.title, e.cover, '') + '<div><b>' + esc(e.title) + '</b><span class="au">' + esc(e.author || '') + '</span>'
-          + '<div class="fx-f"><label>Comecei em<input type="date" data-k="ini" value="' + esc(e.startedAt || '') + '" class="' + (m.ini ? 'miss' : '') + '"></label><label>Terminei em<input type="date" data-k="fim" value="' + esc(e.finishedAt || '') + '" class="' + (m.fim ? 'miss' : '') + '"></label><label>Páginas<input type="number" inputmode="numeric" min="1" data-k="pag" value="' + (Number(e.totalPages) > 0 ? Number(e.totalPages) : '') + '" class="' + (m.pag ? 'miss' : '') + '"></label><label>Formato<select data-k="fmt">' + [['FISICO', 'Físico'], ['EBOOK', 'E-book'], ['AUDIO', 'Audiolivro']].map(([k, n]) => '<option value="' + k + '"' + ((e.format || 'FISICO') === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label></div>'
+          + '<div class="fx-f"><label>Comecei em<input type="date" data-k="ini" value="' + esc(e.startedAt || '') + '" class="' + (m.ini ? 'miss' : '') + '"></label><label>Terminei em<input type="date" data-k="fim" value="' + esc(e.finishedAt || '') + '" class="' + (m.fim ? 'miss' : '') + '"></label><label>Páginas<input type="number" inputmode="numeric" min="1" data-k="pag" value="' + (Number(e.totalPages) > 0 ? Number(e.totalPages) : '') + '" class="' + (m.pag ? 'miss' : '') + '"></label><label>Formato<select data-k="fmt">' + [['FISICO', 'Físico'], ['EBOOK', 'E-book'], ['AUDIO', 'Audiolivro']].map(([k, n]) => '<option value="' + k + '"' + ((e.format || 'FISICO') === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label><label class="fx-rs">Ressaca literária<select data-k="rs">' + [['', 'Não sei'], ['deu', 'Me deu ressaca'], ['curou', 'Curou minha ressaca']].map(([k, n]) => { const cur = rv.ressaca === true ? 'deu' : (rv.ressaca || ''); return '<option value="' + k + '"' + (cur === k ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></label></div>'
           + '<div class="fx-row2"><span>' + (rv.paws ? esc(pawTxt(rv.paws)) : '<span style="color:var(--ink-2)">Sem nota</span>') + '</span><span class="fx-ok" hidden>Salvo</span><button type="button" data-rate="1">' + (rv.paws ? 'Avaliação ›' : 'Avaliar ›') + '</button></div></div></div>'; }).join('')
         : '<p class="sl-empty">' + (f === 'todos' ? 'Nenhum livro lido ainda.' : 'Nada faltando aqui. 🎉') + '</p>');
     try { paintCv(v); } catch {}
@@ -12488,6 +12489,7 @@ function openFixReads(filter) {
     v.querySelectorAll('.fx-it').forEach((row) => {
       const e = lib().find((x) => x.id === row.dataset.id); if (!e) return; const ok = row.querySelector('.fx-ok');
       const flash = () => { ok.hidden = false; clearTimeout(ok._t); ok._t = setTimeout(() => { ok.hidden = true; }, 1400); };
+      row.querySelector('select[data-k=rs]')?.addEventListener('change', (ev) => { const v = ev.target.value || null; const rv0 = reviewOfLib(e); if (rv0) { if (v) rv0.ressaca = v; else delete rv0.ressaca; if (e.link && !e.review) { /* avaliação guardada na meta */ } } else if (v) e.review = { paws: 0, mel: [], frase: '', ressaca: v }; save(); try { publishReview(e); } catch {} flash(); });
       row.querySelector('select[data-k=fmt]')?.addEventListener('change', (ev) => { setFormat(e, { format: ev.target.value }); save(); flash(); });
       row.querySelectorAll('input').forEach((inp) => inp.addEventListener('change', () => {
         const k = inp.dataset.k, val = inp.value.trim();
