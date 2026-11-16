@@ -7620,6 +7620,7 @@ function youSectionsHTML() {
 .sp-own{display:inline-block;width:fit-content;justify-self:start;margin-top:.35rem;font-size:.7rem;font-weight:800;color:var(--ink-2);border:1px solid var(--line);border-radius:99px;padding:.05rem .5rem}
 .rd-pct{font-size:.72rem;font-weight:800;color:var(--ink-2);margin:-.1rem 0 .3rem}
 .bp-rev{margin:.5rem 0 0;font-size:.88rem;line-height:1.5;white-space:pre-line;color:var(--ink)}details.bp-rev summary{cursor:pointer;font-weight:800;color:var(--acc);font-size:.84rem}details.bp-rev p{margin:.4rem 0 0}
+.ps-list{display:grid;gap:.5rem}.ps-list .ps-it{width:100%}.ps-ch{font-style:normal}.ps-list .ps-it:has(+ .ps-add) .ps-ch{visibility:hidden}.ps-add{justify-self:end;position:relative;margin:-3.35rem .7rem 1.15rem 0;z-index:1;border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:99px;padding:.4rem .95rem;font:inherit;font-weight:800;font-size:.84rem}.ps-add:disabled{background:var(--panel);color:var(--ink-2);border:1px solid var(--line)}
 .fr-lock{display:grid;justify-items:center;text-align:center;gap:.35rem;padding:1.5rem 1rem}.fr-lock .av{width:72px;height:72px;font-size:1.6rem}.fr-lock b{font-size:1.1rem}.fr-lock small{color:var(--ink-2)}.fr-lock p{margin:.4rem 0 .6rem;color:var(--ink-2);font-size:.9rem;max-width:320px}
 .fr-common{font-size:.78rem;color:var(--acc);font-weight:800;margin:-.3rem 0 .8rem}
 .fr-revs{display:grid;gap:.6rem}
@@ -7726,8 +7727,8 @@ function openPeopleSearch() {
   const drawList = () => {
     const box = v.querySelector('.ps-list'); if (!box) return;
     box.innerHTML = busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '<p class="sl-empty">Digite o @ ou o nome. Pelo nome, só aparece quem deixou o perfil aberto.</p>' : !res.length ? '<p class="sl-empty">Ninguém encontrado.</p>'
-      : res.map((x) => `<button type="button" class="ps-it" data-h="${esc(x.handle)}"><span class="av" data-avh="${esc(x.handle)}" style="background:${friendColor(x.handle)}">${esc(initial(x.displayName))}</span><span><b>${esc(x.displayName)}</b><small>@${esc(x.handle)}${x.bio ? ' · ' + esc(x.bio) : ''}</small></span>${x.isFriend ? '<em>amigos</em>' : '›'}</button>`).join('');
-    S.psNames = S.psNames || {}; (res || []).forEach((x) => { S.psNames[x.handle] = x.displayName; }); $$('.ps-it', v).forEach((b) => b.addEventListener('click', () => friendPage(b.dataset.h)));
+      : res.map((x) => `<button type="button" class="ps-it" data-h="${esc(x.handle)}"><span class="av" data-avh="${esc(x.handle)}" style="background:${friendColor(x.handle)}">${esc(initial(x.displayName))}</span><span><b>${esc(x.displayName)}</b><small>@${esc(x.handle)}${x.bio ? ' · ' + esc(x.bio) : ''}</small></span>${x.isFriend ? '<em>amigos</em>' : '<i class="ps-ch">›</i>'}</button>${!x.isFriend && !(socialProfile && socialProfile.handle === x.handle) ? `<button type="button" class="ps-add" data-add="${esc(x.handle)}">${(S.psSent || {})[x.handle] ? 'Pedido enviado' : 'Adicionar'}</button>` : ''}`).join('');
+    $$('.ps-add', v).forEach((b) => b.addEventListener('click', async (ev) => { ev.stopPropagation(); if (b.disabled) return; b.disabled = true; const h = b.dataset.add; const q = await sapi('POST', '/v1/friends/requests', { handle: h }); if (q.status < 300) { S.psSent = S.psSent || {}; S.psSent[h] = 1; b.textContent = q.data && q.data.status === 'ACCEPTED' ? 'Amigos!' : 'Pedido enviado'; } else { b.disabled = false; toast('Não deu certo agora'); } })); S.psNames = S.psNames || {}; (res || []).forEach((x) => { S.psNames[x.handle] = x.displayName; }); $$('.ps-it', v).forEach((b) => b.addEventListener('click', () => friendPage(b.dataset.h)));
     paintAvatars();
   };
   const run = async () => {
