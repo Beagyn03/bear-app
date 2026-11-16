@@ -46,6 +46,12 @@ async function refreshApp(cached) {
   } catch (e) { return null; }
 }
 
+// a página pede para conferir (ao trocar de menu ou voltar ao app); se houver versão nova, ela recarrega sozinha
+self.addEventListener('message', (event) => {
+  if (!event.data || event.data.type !== 'bear-check') return;
+  event.waitUntil((async () => { const c = await caches.open(CACHE); const cached = await c.match(APP_KEY()); await refreshApp(cached ? cached.clone() : null); })());
+});
+
 function offlinePage() {
   return new Response(
     '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B.E.A.R</title>' +
@@ -63,10 +69,14 @@ self.addEventListener('fetch', (event) => {
 
   const root = new URL('./', self.registration.scope).pathname;
   if (req.mode === 'navigate' && (url.pathname === root || url.pathname === root + 'index.html')) {
-    // abre o que está guardado na hora; confere a versão nova em segundo plano
+    // 16/11 (Bia): abrir ou recarregar já traz a versão nova. Busca na rede primeiro (até 3,5 s); sem rede ou lenta, abre a guardada.
     event.respondWith((async () => {
       const c = await caches.open(CACHE);
       const cached = await c.match(APP_KEY());
+      try {
+        const fresh = await Promise.race([fetch(APP_KEY(), { cache: 'no-cache' }), new Promise((_, rej) => setTimeout(() => rej(new Error('lento')), 3500))]);
+        if (fresh && fresh.ok) { c.put(APP_KEY(), fresh.clone()).catch(() => {}); return fresh; }
+      } catch (e) {}
       if (cached) { event.waitUntil(refreshApp(cached.clone())); return cached; } // clona antes: o corpo entregue à página não pode ser lido de novo
       return (await refreshApp(null)) || offlinePage();
     })());
