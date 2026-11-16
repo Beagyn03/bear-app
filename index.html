@@ -9228,7 +9228,7 @@ function yearShelfHTML(items, year, own) {
   const groups = []; for (let m = 1; m <= 12; m++) { const g = list.filter((x) => !x.ap && Number(String(x.d).slice(5, 7)) === m); if (g.length) groups.push([YS_MESES[m - 1], g]); }
   const sem = list.filter((x) => x.ap || !String(x.d).slice(5, 7)); if (sem.length) groups.push(['Sem mês', sem]);
   const pages = list.reduce((s, x) => s + (x.pg || 0), 0);
-  const bk = (x) => { const c = pawColor(x.p); return `<button type="button" class="es-bk ys-bk${c ? ' paw' : ''}${x.p >= 5 ? ' ys-5' : x.p >= 4 ? ' ys-ouro' : x.p >= 3 ? ' ys-prata' : x.p ? ' ys-bronze' : ''}" ${own && x.id ? `data-id="${esc(x.id)}"` : `data-book="${esc(x.t)}" data-author="${esc(x.a || '')}"`} title="${esc(x.t)}" aria-label="${esc(x.t)}" style="${c ? `--pc:${c}` : ''}">${cvh(x.t, x.c, 'ys-cv', 'font-size:.38rem;line-height:1.05')}${x.p ? `<span class="ys-mk" aria-hidden="true"><b>${String(x.p).replace('.', ',')}</b></span>` : ''}</button>`; };
+  const bk = (x) => { const c = pawColor(x.p); return `<button type="button" class="es-bk ys-bk${c ? ' paw' : ''}${x.p >= 5 ? ' ys-5' : x.p >= 4.5 ? ' ys-ouro ys-45' : x.p >= 4 ? ' ys-ouro' : x.p >= 3 ? ' ys-prata' : x.p ? ' ys-bronze' : ''}" ${own && x.id ? `data-id="${esc(x.id)}"` : `data-book="${esc(x.t)}" data-author="${esc(x.a || '')}"`} title="${esc(x.t)}" aria-label="${esc(x.t)}" style="${c ? `--pc:${c}` : ''}">${cvh(x.t, x.c, 'ys-cv', 'font-size:.38rem;line-height:1.05')}${x.p ? `<span class="ys-mk" aria-hidden="true"><b>${String(x.p).replace('.', ',')}</b></span>` : ''}</button>`; };
   return `<section class="v3c ys"><div class="ys-h"><b>Leituras por mês</b><span class="ys-y"><button type="button" data-ysy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><b>${y}</b><button type="button" data-ysy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></span></div>
     <div class="es5-c"><span>${plural(list.length, 'livro', 'livros')}</span>${pages ? `<span>${pages.toLocaleString('pt-BR')} páginas</span>` : ''}</div>
     <div class="ys-row">${groups.map(([n, g]) => `<div class="ys-g"><span class="ys-m">${n}</span><div class="ys-bks">${g.map(bk).join('')}</div></div>`).join('')}</div>
@@ -9546,6 +9546,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -10592,7 +10593,7 @@ function profShelvesSnap(snapshot) {
     try { for (const e of lib()) { if (e.status !== 'LIDO') continue; const p = (reviewOfLib(e) || {}).paws || 0; if (p) map.set(normT(e.title), p); } } catch {}
     return map;
   };
-  const tier = (p) => (p >= 5 ? '5' : p >= 4 ? 'ouro' : p >= 3 ? 'prata' : p ? 'bronze' : '');
+  const tier = (p) => (p >= 5 ? '5' : p >= 4.5 ? 'ouro rt-45' : p >= 4 ? 'ouro' : p >= 3 ? 'prata' : p ? 'bronze' : '');
   const _cvh = cvh;
   cvh = function (title, coverUrl, cls = '', style = '') {
     const h = _cvh.apply(this, arguments);
@@ -10621,7 +10622,7 @@ function profShelvesSnap(snapshot) {
 `; TR.append(st); }
 {
   const EXP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
-  const tier = (p) => (p >= 5 ? '5' : p >= 4 ? 'ouro' : p >= 3 ? 'prata' : p ? 'bronze' : '');
+  const tier = (p) => (p >= 5 ? '5' : p >= 4.5 ? 'ouro rt-45' : p >= 4 ? 'ouro' : p >= 3 ? 'prata' : p ? 'bronze' : '');
   const _m = mountYearShelf;
   mountYearShelf = function (root, at, items, own) {
     const r = _m.apply(this, arguments); const sec = root && root.querySelector('.ys'); if (!sec) return r;
@@ -10814,6 +10815,11 @@ drawProgresso = function (box) {
 .ys-row{padding-top:14px!important}.ys-g{gap:.85rem!important}
 .ys-bk .ys-sp.a{top:-12px!important;right:-3px!important}
 @media (prefers-reduced-motion:reduce){.ys-bk.ys-5 .ys-mk *,.ys-bk.ys-5 .ys-mk::before{animation:none!important}}
+`; TR.append(st); }
+// Reflexo só no 5 e no 4,5 (16/11)
+{ const st = document.createElement('style'); st.textContent = `
+.ys-bk.ys-ouro:not(.ys-45)::after,.ys-bk.ys-prata::after,.ys-bk.ys-bronze::after,.cv.rt-ouro:not(.rt-45)::before,.cv.rt-prata::before,.cv.rt-bronze::before{content:none!important;animation:none!important}
+.ys-bk.ys-ouro:not(.ys-45) .cv{box-shadow:0 0 0 1.5px #d4a520!important}
 `; TR.append(st); }
 // --- 32_navegacao.js ---
 // Voltar sempre para a tela de onde veio (auditoria de 15/11): pilha de páginas do #shelflist.
