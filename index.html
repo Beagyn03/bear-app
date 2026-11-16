@@ -9571,6 +9571,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10783,7 +10784,8 @@ drawProgresso = function (box) {
 .ys-leg i.ys-mi.ouro{--nb:color-mix(in srgb,var(--acc) 80%,var(--panel))}.ys-leg i.ys-mi.prata{--nb:color-mix(in srgb,var(--acc) 55%,var(--panel))}
 .ys-leg i.ys-mi.bronze{--nb:color-mix(in srgb,var(--acc) 32%,var(--panel))}.ys-leg i.ys-mi.ferro{--nb:color-mix(in srgb,var(--ink-2) 35%,var(--panel))}
 .ys-leg .ys-lt{font-weight:800;color:var(--ink)}
-@media (prefers-reduced-motion:reduce){.ys-bk.ys-5::before{animation:none!important}}
+.ys-bk.ys-5::after{content:""!important;position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.6) 50%,transparent 65%)!important;background-size:250% 100%!important;animation:ys5Shine 3.2s ease-in-out infinite!important;border-radius:2px 4px 0 0}
+@media (prefers-reduced-motion:reduce){.ys-bk.ys-5::before,.ys-bk.ys-5::after{animation:none!important}}
 `; TR.append(st); }
 // --- 32_navegacao.js ---
 // Voltar sempre para a tela de onde veio (auditoria de 15/11): pilha de páginas do #shelflist.
