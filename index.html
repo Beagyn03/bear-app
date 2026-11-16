@@ -9608,6 +9608,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10717,6 +10718,7 @@ ACHIEVEMENTS.filter((a) => a.m === 'regs').forEach((a) => { a.desc = a.goal === 
 .sx-c{margin-bottom:.8rem}.sx-c h3{margin:0 0 .6rem;font-size:.95rem;color:var(--ink)}
 .sx-bars{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:96px}
 .sx-bars div{display:grid;grid-template-rows:auto 1fr auto;justify-items:center;height:100%;font-size:.6rem;color:var(--ink-2);font-weight:800}
+.sx-dual .sx-stack{position:relative;align-self:end;width:100%;max-width:16px;margin:0 auto;display:block}.sx-dual .sx-stack i{position:absolute;left:0;right:0;bottom:0;max-width:none;border-radius:5px 5px 2px 2px}.sx-dual .sx-stack i.s{top:0;height:100%}.sx-dual .sx-stack i.f{background:var(--acc)}
 .sx-dual .sx-pair{display:flex;gap:2px;align-items:flex-end;justify-content:center;width:100%;height:100%}.sx-dual .sx-pair i{flex:1;max-width:9px;height:auto}
 .sx-dual .sx-nums{display:flex;gap:2px;font-size:.52rem}.sx-dual .sx-nums em{font-style:normal;min-width:7px;text-align:center}.sx-dual .sx-nums em.s{color:color-mix(in srgb,var(--acc) 55%,var(--ink-2))}
 .sx-bars i.s{background:color-mix(in srgb,var(--acc) 40%,var(--panel))}
@@ -10751,7 +10753,7 @@ drawProgresso = function (box) {
   const top = (arr, n = 5) => Object.entries(arr.reduce((m, k) => { if (k) m[k] = (m[k] || 0) + 1; return m; }, {})).sort((a, b) => b[1] - a[1]).slice(0, n);
   // livros por mês
   const perM = Array.from({ length: 12 }, (_, i) => fin.filter((e) => !e.dateApprox && Number(String(e.finishedAt).slice(5, 7)) === i + 1).length);
-  const perS = Array.from({ length: 12 }, (_, i) => lib().filter((e) => e.startedAt && String(e.startedAt).slice(0, 4) === String(y) && Number(String(e.startedAt).slice(5, 7)) === i + 1).length), maxM = Math.max(1, ...perM, ...perS);
+  const perS = Array.from({ length: 12 }, (_, i) => { const m0 = `${y}-${String(i + 1).padStart(2, '0')}-01`, m1 = `${y}-${String(i + 1).padStart(2, '0')}-31`; return lib().filter((e) => { if (!['LIDO', 'LENDO', 'ABANDONEI', 'HIBERNANDO'].includes(e.status)) return false; const ini = e.startedAt || (e.status === 'LIDO' && !e.dateApprox ? e.finishedAt : null); if (!ini) return false; const fim = e.status === 'LIDO' ? (e.finishedAt || ini) : (e.statusAt && e.status !== 'LENDO' ? e.statusAt : todayISO()); return String(ini) <= m1 && String(fim) >= m0; }).length; }), maxM = Math.max(1, ...perM, ...perS);
   const ML = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   // notas
   const tiers = [['Nota 5', (p) => p >= 5, 'm5'], ['4 e 4,5', (p) => p >= 4 && p < 5, 'mo'], ['3 e 3,5', (p) => p >= 3 && p < 4, 'mp'], ['menos de 3', (p) => p > 0 && p < 3, 'mb']];
@@ -10782,7 +10784,7 @@ drawProgresso = function (box) {
     ${fin.length ? `
     <div class="sx-sum">${stat(fin.length, fin.length === 1 ? 'livro lido' : 'livros lidos', cmp(fin.length, prev.length))}${stat(pg.toLocaleString('pt-BR'), 'páginas lidas', cmp(pg, pgPrev))}${stat(avg ? avg.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : '—', 'nota média', avg ? paws5(Math.round(avg * 2) / 2) : '')}${stat(longest && longest.totalPages ? Number(longest.totalPages).toLocaleString('pt-BR') : '—', 'páginas no mais longo', longest && longest.totalPages ? `<em>${esc(longest.title)}</em>` : '')}</div>
     <div id="sx-ys"></div>
-    <section class="v3c sx-c"><h3>Livros por mês</h3><div class="sx-bars sx-dual">${perM.map((n, i) => { const c = perS[i], h = (k) => (k ? Math.max(8, Math.round((k / maxM) * 100)) : 2); return `<div title="${ML[i]}: começou ${c}, terminou ${n}"><span class="sx-nums"><em class="s">${c || ''}</em><em>${n || ''}</em></span><span class="sx-pair"><i class="s${c ? '' : ' z'}" style="height:${h(c)}%"></i><i class="${n ? '' : 'z'}" style="height:${h(n)}%"></i></span><span>${ML[i]}</span></div>`; }).join('')}</div><div class="sx-leg2"><span><i class="s"></i>começou</span><span><i></i>terminou</span></div></section>
+    <section class="v3c sx-c"><h3>Livros por mês</h3><div class="sx-bars sx-dual">${perM.map((n, i) => { const c = Math.max(perS[i], n), h = (k) => (k ? Math.max(8, Math.round((k / maxM) * 100)) : 2); return `<div title="${ML[i]}: leu ${c}, terminou ${n}"><span class="sx-nums">${c ? `<em>${c}</em>` : ''}</span><span class="sx-stack" style="height:${h(c)}%"><i class="s${c ? '' : ' z'}"></i>${n ? `<i class="f" style="height:${Math.round((n / c) * 100)}%"></i>` : ''}</span><span>${ML[i]}</span></div>`; }).join('')}</div><div class="sx-leg2"><span><i class="s"></i>lendo no mês</span><span><i></i>terminados</span></div></section>
     ${rated.length ? `<section class="v3c sx-c"><h3>Suas notas</h3><div class="sx-rows">${tierN.map(([l, n, c]) => row(l, n, maxT, c)).join('')}</div>${fin.length - rated.length ? `<p class="sx-note">${plural(fin.length - rated.length, 'livro', 'livros')} sem nota.</p>` : ''}</section>` : ''}
     ${gen.length ? `<section class="v3c sx-c"><h3>Gêneros</h3><div class="sx-rows">${gen.map(([k, n]) => row(k, n, maxG)).join('')}</div></section>` : ''}
     ${aut.length ? `<section class="v3c sx-c"><h3>Autores mais lidos</h3><div class="sx-rows">${aut.map(([k, n]) => row(k, n, maxA)).join('')}</div></section>` : ''}
