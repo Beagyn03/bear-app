@@ -2366,7 +2366,7 @@ async function publishReview(b) {
     if (!socialProfile) return; // sem @usuário ainda: publica tudo ao criar
     const rv = b.review;
     if (!rv || rv.share === false) { await sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`); return; }
-    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler, ressaca: rv.ressaca === 'curou' ? 'curou' : rv.ressaca ? 'deu' : null, ...(rv.spoiler && rv.spoilerKind ? { spoilerKind: rv.spoilerKind, ...(rv.spoilerAt ? { spoilerAt: rv.spoilerAt } : {}) } : {}) });
+    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler, ressaca: rv.ressaca === 'curou' ? 'curou' : rv.ressaca ? 'deu' : null, readerPct: readerPctOf(e.title), ...(rv.spoiler && rv.spoilerKind ? { spoilerKind: rv.spoilerKind, ...(rv.spoilerAt ? { spoilerAt: rv.spoilerAt } : {}) } : {}) });
   } catch {}
 }
 async function publishAllReviews() { libSync(); for (const e of (db.library || [])) if (e.review && e.review.share !== false) await publishReview(e); }
@@ -7618,6 +7618,7 @@ function youSectionsHTML() {
 .fr-read .cv{width:52px;height:78px;border-radius:3px 6px 6px 3px}
 .fr-read b{display:block;font-size:.9rem;color:var(--ink)}.fr-read small{font-size:.72rem;color:var(--ink-2)}
 .sp-own{display:inline-block;width:fit-content;justify-self:start;margin-top:.35rem;font-size:.7rem;font-weight:800;color:var(--ink-2);border:1px solid var(--line);border-radius:99px;padding:.05rem .5rem}
+.rd-pct{font-size:.72rem;font-weight:800;color:var(--ink-2);margin:-.1rem 0 .3rem}
 .bp-rev{margin:.5rem 0 0;font-size:.88rem;line-height:1.5;white-space:pre-line;color:var(--ink)}details.bp-rev summary{cursor:pointer;font-weight:800;color:var(--acc);font-size:.84rem}details.bp-rev p{margin:.4rem 0 0}
 .fr-common{font-size:.78rem;color:var(--acc);font-weight:800;margin:-.3rem 0 .8rem}
 .fr-revs{display:grid;gap:.6rem}
@@ -9615,6 +9616,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11415,14 +11417,16 @@ function rdSpoil(it) { // null = pode mostrar; senão o aviso
   return { label: `Spoiler${it.book ? ` de ${it.book.title}` : ''}${where ? ' · ' + where : ''}`, note };
 }
 const pawsTxt = (p) => p ? `${String(p).replace('.', ',')} ${p === 1 ? 'pata' : 'patas'}` : '';
+function readerPctOf(title) { const e = lib().find((x) => normT(x.title) === normT(title || '')); if (!e) return null; if (e.status === 'LIDO') return 100; try { const p = Math.round(readingInfo(e).pct || 0); return p > 0 ? Math.min(100, p) : (e.status === 'LENDO' ? 0 : null); } catch { return null; } }
+const readerPctTxt = (p) => (p == null ? '' : p >= 100 ? 'terminou o livro' : p <= 0 ? 'começando o livro' : `em ${p}% do livro`);
 function rdCardHTML(it, i, opts = {}) {
   const kind = it.type === 'review' ? 'Avaliação' : (RD_KINDS.find((k) => k[0] === it.kind) || [, ''])[1];
   const sp = rdSpoil(it), u = it.user || {};
   const fe = (it.feelings || []).length ? `<div class="rd-fe">${it.feelings.map((k) => qtFeel(k)).join('')}</div>` : '';
-  const body = `${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
+  const body = `${it.paws ? `<div class="rd-paws">${pawsTxt(it.paws)}</div>` : ''}${it.readerPct != null ? `<div class="rd-pct">${readerPctTxt(it.readerPct)}</div>` : ''}${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
     ${it.text ? `<p>${esc(it.text)}</p>` : ''}
     ${it.book2 ? `<div class="rd-rec"><span>${cvh(it.book.title, it.book.cover)}<b>${esc(it.book.title)}</b></span><em>➜</em><span>${cvh(it.book2.title, it.book2.cover)}<b>${esc(it.book2.title)}</b></span></div>` : ''}
-    ${fe}${it.paws ? `<div class="rd-paws">${pawsTxt(it.paws)}</div>` : ''}${it.hasImage ? `<div class="rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
+    ${fe}${it.hasImage ? `<div class="rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
   return `<article class="rd-card" data-i="${i}">
     <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
       <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
@@ -11629,7 +11633,7 @@ function openRdComposer(pre = {}) {
     let spoiler = null;
     if (R.sp) { const n = Math.round(Number(R.spat)); spoiler = (R.spk === 'page' || R.spk === 'pct') && n > 0 ? { kind: R.spk, at: R.spk === 'pct' ? Math.min(100, n) : n } : { kind: R.spk === 'end' ? 'end' : 'yes' }; }
     const body = { kind: R.kind, text: R.text, visibility: R.vis, feelings: R.feelings, ...(R.book ? { book: R.book } : {}), ...(R.kind === 'rec' ? { book2: R.book2 } : {}),
-      ...(R.kind === 'quote' ? { quote: R.quote.slice(0, 600), ...(Number(R.page) > 0 ? { page: Math.round(Number(R.page)) } : {}) } : {}), ...(R.paws ? { paws: R.paws } : {}), ...(spoiler ? { spoiler } : {}), ...(R.image ? { image: R.image } : {}) };
+      ...(R.kind === 'quote' ? { quote: R.quote.slice(0, 600), ...(Number(R.page) > 0 ? { page: Math.round(Number(R.page)) } : {}) } : {}), ...(R.paws ? { paws: R.paws } : {}), ...(spoiler ? { spoiler } : {}), ...(R.image ? { image: R.image } : {}), ...(R.book && readerPctOf(R.book.title) != null ? { readerPct: readerPctOf(R.book.title) } : {}) };
     busy = true; const go = $('#rdc-go', v); if (go) { go.disabled = true; go.textContent = 'Publicando…'; }
     try {
       const r = await sapi('POST', '/v1/posts', body);
@@ -12564,7 +12568,7 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       const posts = a && a.status === 200 && a.data ? (a.data.items || []).filter((x) => x.type !== 'review') : [];
       const net = b && b.status === 200 && b.data ? b.data : {};
       const seen = new Set(); const revs = [];
-      const asRev = (x, mine) => ({ type: 'review', id: x.id, user: x.user, paws: x.paws, text: x.text, spoiler: !!x.spoiler, createdAt: x.updatedAt, mine: !!mine });
+      const asRev = (x, mine) => ({ type: 'review', id: x.id, user: x.user, paws: x.paws, text: x.text, spoiler: !!x.spoiler, createdAt: x.updatedAt, mine: !!mine, readerPct: x.readerPct ?? null });
       if (net.mine) { revs.push(asRev(net.mine, true)); seen.add(net.mine.id); }
       for (const x of [...(net.friends || []), ...(net.public || [])]) if (!seen.has(x.id)) { seen.add(x.id); revs.push(asRev(x, false)); }
       data = { posts, revs, avg: net.avg ?? null, count: net.count || 0, at: Date.now() }; S.bkRede[key] = data;
@@ -12572,7 +12576,7 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
     if (!sec.isConnected) return;
     // a sua avaliação aparece mesmo se for privada (só você vê)
     const lr = lib().find((x) => normT(x.title) === normT(title)), my = lr && reviewOfLib(lr);
-    const mineLocal = !data.revs.some((r) => r.mine) && my && (my.paws || my.texto) ? [{ type: 'review', id: 'me-local', user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME }, paws: my.paws || null, text: my.texto || null, spoiler: !!my.spoiler, createdAt: lr.finishedAt || todayISO(), mine: true, local: true }] : [];
+    const mineLocal = !data.revs.some((r) => r.mine) && my && (my.paws || my.texto) ? [{ type: 'review', id: 'me-local', user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME }, paws: my.paws || null, text: my.texto || null, spoiler: !!my.spoiler, createdAt: lr.finishedAt || todayISO(), mine: true, local: true, readerPct: readerPctOf(title) }] : [];
     const draw = () => {
       const F = S.bkF;
       let list = [...mineLocal, ...data.revs, ...data.posts].map((x) => ({ ...x, mine: !!(x.mine || (x.user && socialProfile && x.user.handle === socialProfile.handle)) }));
