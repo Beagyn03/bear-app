@@ -9560,6 +9560,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10742,10 +10743,11 @@ drawProgresso = function (box) {
   paintCv(box);
 };
 // --- 31_brilho_cor_nota.js ---
-// Ajustes da Bia (15/11): a faixa da nota nas Leituras por mês vira a mesma barrinha das outras telas (arredondada, dentro da capa, no topo);
+// Ajustes da Bia (15/11 e 16/11): a faixa da nota nas Leituras por mês vira barrinha arredondada EM CIMA do livro (fora da capa, sobre a parte visível da lombada);
 // só 5 patas e ouro brilham (prata, bronze e ferro ficam quietos); o reflexo tem a cor da nota (dourado no ouro, furta-cor no 5).
 { const st = document.createElement('style'); st.textContent = `
-.ys-bk.paw::before{top:6px!important;left:6px!important;right:6px!important;height:4px!important;border-radius:99px!important;z-index:3!important;box-shadow:0 0 0 1px rgba(255,255,255,.5)!important}
+.ys-bk.paw::before{top:-9px!important;left:4px!important;right:auto!important;width:36px!important;height:4px!important;border-radius:99px!important;z-index:3!important;box-shadow:0 0 0 1px rgba(255,255,255,.5)!important}
+.ys-g{gap:1rem!important}
 .ys-bk.ys-5::before{box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 6px rgba(255,190,90,.9)!important}
 .ys-bk.ys-ouro::before{box-shadow:0 0 0 1px rgba(255,255,255,.5),0 0 5px rgba(212,165,32,.8)!important}
 .ys-bk.ys-prata::before,.ys-bk.ys-bronze::before,.ys-bk.ys-ferro::before{animation:none!important}
