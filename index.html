@@ -7485,7 +7485,7 @@ function importCSV() {
       const tMain = (x) => normT(String(x || '').split(/[:(]/)[0]), aLast = (x) => normT(String(x || '').split(',')[0]).split(' ').filter(Boolean).pop() || '';
       const had = lib().find((e) => (isbn && e.isbn === isbn) || (tMain(e.title) === tMain(title) && (!e.author || !author || normT(String(e.author).split(',')[0]) === normT(author.split(',')[0]) || aLast(e.author) === aLast(author))));
       if (had) { // já estava na estante: atualiza o status pelo arquivo e completa o que falta (nota, páginas), sem sobrescrever o que a pessoa já preencheu
-        let stCh = false; const sh0 = cS >= 0 ? normT(r[cS]) : '', st0 = !sh0 ? null : /currently|lendo|reading/.test(sh0) ? 'LENDO' : /to read|quero|wish/.test(sh0) ? 'QUERO' : /abandon|did not finish|dnf/.test(sh0) ? 'ABANDONEI' : /paus|hiberna/.test(sh0) ? 'HIBERNANDO' : /read|lido|lidos|finished|conclu|terminad/.test(sh0) ? 'LIDO' : null;
+        let stCh = false; const sh0 = cS >= 0 ? normT(r[cS]) : '', tg0 = cX >= 0 ? normT(r[cX]) : '', ABD0 = /abandon|did not finish|dnf|desist|nao termin|nao conclu/, st0 = ABD0.test(sh0) || ABD0.test(tg0) ? 'ABANDONEI' : !sh0 ? null : /currently|lendo|reading/.test(sh0) ? 'LENDO' : /to read|quero|wish/.test(sh0) ? 'QUERO' : /paus|hiberna/.test(sh0) ? 'HIBERNANDO' : /read|lido|lidos|finished|conclu|terminad/.test(sh0) ? 'LIDO' : null;
         const RK = { QUERO: 0, HIBERNANDO: 1, LENDO: 1, LIDO: 2, ABANDONEI: 2 };
         if (st0 && st0 !== had.status && had.link && (RK[st0] ?? 0) >= (RK[had.status] ?? 0)) {
           const g = db.goals.find((x) => x.id === had.link.goalId), gb = g && g.books.find((x) => x.id === had.link.bookId), gs = { LENDO: 'LENDO', HIBERNANDO: 'PAUSADO', LIDO: 'CONCLUIDO', QUERO: 'NAO_INICIADO' }[st0];
@@ -7503,7 +7503,7 @@ function importCSV() {
         if (pg && !had.totalPages) { had.totalPages = pg; ch = true; }
         (ch || stCh) ? upd++ : skip++; continue;
       }
-      const sh = cS >= 0 ? normT(r[cS]) : '', status = /currently|lendo|reading/.test(sh) ? 'LENDO' : /to read|quero|wish/.test(sh) ? 'QUERO' : /abandon|did not finish|dnf/.test(sh) ? 'ABANDONEI' : 'LIDO';
+      const sh = cS >= 0 ? normT(r[cS]) : '', tg = cX >= 0 ? normT(r[cX]) : '', ABD = /abandon|did not finish|\bdnf\b|desist|nao termin|nao conclu/, status = ABD.test(sh) || ABD.test(tg) ? 'ABANDONEI' : /currently|lendo|reading/.test(sh) ? 'LENDO' : /to read|quero|wish/.test(sh) ? 'QUERO' : 'LIDO';
       const raw = cD >= 0 ? String(r[cD] || '').trim() : '', dm = raw.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/) || raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/), ym = raw.match(/\b(19\d\d|20\d\d)\b/);
       let when = 'unknown';
       if (dm) { const [y, mo, da] = dm[1].length === 4 ? [dm[1], dm[2], dm[3]] : [dm[3], dm[2], dm[1]]; when = { d: `${y}-${String(mo).padStart(2, '0')}-${String(da).padStart(2, '0')}` }; } else if (ym && Number(ym[1]) <= Y) when = { y: Number(ym[1]) };
@@ -7642,7 +7642,7 @@ friendPage = async function (handle) {
       <div class="yo-id"><b>${esc(d.displayName)}</b><small>@${esc(d.handle)}</small></div><span></span></header>
     ${d.self ? '' : `<div class="fr-acts">${d.isFriend ? `<button type="button" id="fr-duel">⚔ Duelo da semana</button>` : `<button type="button" class="pri" id="fr-add">+ Adicionar aos amigos</button>`}</div>`}
     ${d.shelf || d.achievements ? `<div class="yo-nums"><button type="button" disabled><b>${c.LIDO || 0}</b><small>${(c.LIDO || 0) === 1 ? 'lido' : 'lidos'}</small></button><button type="button" disabled><b>${c.LENDO || 0}</b><small>lendo</small></button><button type="button" disabled><b>${c.QUERO || 0}</b><small>quero ler</small></button><button type="button" disabled><b>${won.length}</b><small>${won.length === 1 ? 'conquista' : 'conquistas'}</small></button></div>` : ''}
-    ${common.length && !(socialProfile && String(socialProfile.handle).toLowerCase() === String(d.handle || handle).toLowerCase()) ? `<p class="fr-common">Você e @${esc(d.handle || handle)} leram ${common.slice(0, 3).map((b) => esc(b.title)).join(', ')}${common.length > 3 ? ` e mais ${common.length - 3}` : ''}</p>` : ''}
+    ${common.length && !d.self && !(socialProfile && String(socialProfile.handle).toLowerCase() === String(d.handle || handle).toLowerCase()) ? `<p class="fr-common">Você e @${esc(d.handle || handle)} leram ${common.slice(0, 3).map((b) => esc(b.title)).join(', ')}${common.length > 3 ? ` e mais ${common.length - 3}` : ''}</p>` : ''}
     ${d.reading ? `<div class="v3-sh"><b>Lendo agora</b></div>${d.reading.length ? d.reading.map((b) => `<div class="fr-read" data-book="${esc(b.title)}" data-author="${esc(b.author || '')}" role="button" tabindex="0">${cvh(b.title, b.cover, '')}<div><b>${esc(b.title)}</b><small>${Number(b.pct) || 0}% lido</small><i class="v3-bar"><i style="width:${Math.max(0, Math.min(100, Number(b.pct) || 0))}%"></i></i></div></div>`).join('') : '<p class="v3-empty">Nada no momento.</p>'}` : ''}
     ${d.achievements ? `<section class="v3c"><div class="v3-sh" style="margin:0 0 .5rem"><b>Conquistas · ${won.length} de ${d.achievements.total || 0}</b></div>${won.filter((a) => DECO_IMG[a.k]).length ? `<div class="v3-shelf">${won.filter((a) => DECO_IMG[a.k]).slice(0, 12).map((a) => `<span class="v3-trophy${a.rare ? ' rare' : ''}" title="${esc(a.n)}"><img src="${DECO_IMG[a.k]}" alt="${esc(a.n)}"></span>`).join('')}</div>` : '<p class="v3-empty" style="margin:0">Nenhuma conquista ainda.</p>'}</section>` : ''}
     ${d.shelf && (d.shelf.potinho || []).length ? `<div class="v3-sh"><b>Melhores avaliados</b></div>${strip(d.shelf.potinho)}` : ''}
@@ -8848,7 +8848,7 @@ function bookMenuOpen(anchor, b) {
     e && st === 'LENDO' && { id: 'st', ic: 'flag', label: 'Status', items: [['flag', 'Terminei', set('LIDO')], ['pause', 'Pausar', set('HIBERNANDO'), `guarda a pág. ${pg}`], ['x', 'Abandonar', set('ABANDONEI')],
       ...(lendo > 1 ? [isCur ? ['swap', 'Trocar leitura do Início', () => swapReading()] : ['swap', 'Ler agora no Início', () => { readNow(e); reload(); }]] : []), ...resetIt] },
     e && (st === 'HIBERNANDO' || st === 'ABANDONEI') && { id: 'st', ic: 'flag', label: 'Status', items: [queueIt, ...(st === 'HIBERNANDO' ? [['x', 'Abandonar', set('ABANDONEI')]] : []), ...resetIt] },
-    e && st === 'LIDO' && resetIt.length && { id: 'st', ic: 'flag', label: 'Status', items: resetIt },
+    e && st === 'LIDO' && { id: 'st', ic: 'flag', label: 'Status', items: [['x', 'Abandonei', set('ABANDONEI'), 'não terminei esse livro'], queueIt, ...resetIt] },
     e && st !== 'QUERO' && { id: 'tr', ic: 'quote', label: 'Trechos e anotação', items: [['quote', 'Salvar trecho', () => saveQuote(e)], ['note', 'Anotação', () => editNote(e), e.note || ''],
       ...((e.quotes || []).length ? [['book', `Ver trechos (${e.quotes.length})`, () => openBookPage(e, 'trechos')]] : [])] },
     { id: 'dt', ic: 'book', label: 'Detalhes do livro', items: [['book', 'Ver no catálogo', () => (e ? openBookPage(e) : openAnyBook(b.title, b.author, b.cover)), 'sinopse e ficha'],
