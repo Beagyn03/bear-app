@@ -3729,10 +3729,16 @@ function connectSheet(gate) {
   const field = (label, name, attrs) => el('label', { text: label }, [el('input', { name, ...attrs })]);
   let form, creating = false;
   const nameField = el('label', { text: 'Seu nome', class: 'hidden' }, [el('input', { name: 'name', maxlength: '40', autocomplete: 'given-name' })]);
+  const hInput = el('input', { name: 'handle', maxlength: '20', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', placeholder: 'seunome', style: 'padding-left:1.7rem' });
+  const handleField = el('label', { text: 'Nome de usuário', class: 'hidden' }, [el('span', { style: 'position:relative;display:block' }, [el('span', { text: '@', style: 'position:absolute;left:.75rem;top:50%;transform:translateY(-50%);font-weight:800;color:var(--ink-2);pointer-events:none' }), hInput]), el('small', { class: 'hint', text: 'É como seus amigos te acham. 3 a 20 letras minúsculas, números, ponto ou _.', style: 'display:block;margin-top:.3rem;font-weight:600' })]);
+  let hTouched = false; const hClean = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9_.]+/g, '').slice(0, 20);
+  hInput.addEventListener('input', () => { hTouched = true; const c = hClean(hInput.value); if (c !== hInput.value) hInput.value = c; });
+  nameField.querySelector('input').addEventListener('input', (e) => { if (!hTouched) hInput.value = hClean(String(e.target.value || '').trim().split(/\s+/).join('')).replace(/^[._]+/, '').slice(0, 16); });
+  let handleOnly = null; // conta já criada, falta só um @ livre
   const submitBtn = el('button', { type: 'submit', class: 'primary', text: 'Entrar' });
   const switchBtn = el('button', { type: 'button', text: 'Não tenho conta: criar uma', onclick: () => {
     creating = !creating;
-    nameField.classList.toggle('hidden', !creating);
+    nameField.classList.toggle('hidden', !creating); handleField.classList.toggle('hidden', !creating);
     form.querySelector('h3').textContent = creating ? 'Criar conta' : 'Entrar na sua conta';
     submitBtn.textContent = creating ? 'Criar conta' : 'Entrar';
     switchBtn.textContent = creating ? 'Já tenho conta: entrar' : 'Não tenho conta: criar uma';
@@ -3757,6 +3763,7 @@ function connectSheet(gate) {
       el('h3', { text: 'Entrar na sua conta' }),
       el('p', { class: 'hint', text: gate ? 'Sua estante, suas metas e seu ritmo de leitura, com o Bear acompanhando cada página.' : 'Entre com a mesma conta em cada aparelho para ver os mesmos dados.' }),
       nameField,
+      handleField,
       field('E-mail', 'email', { type: 'email', value: apiCfg.email || '', autocomplete: 'email', required: '' }),
       field('Senha (8 ou mais caracteres)', 'password', { type: 'password', autocomplete: 'current-password', minlength: '8', required: '' }),
       msg,
@@ -3767,12 +3774,15 @@ function connectSheet(gate) {
     form.addEventListener('submit', (e) => { e.preventDefault(); go(creating); });
   }
   async function go(register) {
+    if (handleOnly) { const h = hClean(hInput.value); if (!/^[a-z0-9_.]{3,20}$/.test(h)) { msg.textContent = 'O nome de usuário precisa de 3 a 20 letras minúsculas, números, ponto ou _.'; return; } msg.textContent = 'Salvando…'; const ok = await handleOnly(h); if (ok) handleOnly = null; return; }
     const f = new FormData(form);
     const api = String(apiCfg.api || DEFAULT_API).trim().replace(/\/+$/, ''), email = String(f.get('email') || '').trim(), password = String(f.get('password') || '');
     if (!/^https:\/\//.test(api) && !/^http:\/\/(localhost|127\.0\.0\.1)/.test(api)) { msg.textContent = 'O endereço precisa começar com https://'; return; }
     if (!email || password.length < 8) { msg.textContent = 'Preencha e-mail e senha (8 ou mais caracteres).'; return; }
     const newName = String(f.get('name') || '').trim().slice(0, 40);
     if (register && !newName) { msg.textContent = 'Diga como o Bear deve te chamar.'; return; }
+    const newHandle = hClean(f.get('handle'));
+    if (register && !/^[a-z0-9_.]{3,20}$/.test(newHandle)) { msg.textContent = 'Escolha um nome de usuário de 3 a 20 letras minúsculas, números, ponto ou _.'; return; }
     msg.textContent = 'Conectando… (a primeira vez pode levar até 1 minuto)';
     try {
       if (register) {
@@ -3794,10 +3804,23 @@ function connectSheet(gate) {
       if (!register && accName && !(db.profile && db.profile.name)) { NAME = accName; try { localStorage.setItem('bear.profile', JSON.stringify({ name: accName })); } catch {} db.profile = { ...(db.profile || {}), name: accName }; save(); }
       if (register) { NAME = newName; try { localStorage.setItem('bear.profile', JSON.stringify({ name: newName })); } catch {} db.profile = { ...(db.profile || {}), name: newName }; save(); }
       syncMeta.version = syncMeta.version || 0; saveMeta();
+      if (register) { // grava o @ escolhido; se já for de outra pessoa, a conta fica criada e o formulário pede só outro @
+        const putH = async (h) => { try { const rr = await apiCall('PUT', '/v1/me/profile', { handle: h, displayName: newName }); if (rr.status === 200 && rr.data && rr.data.handle) { socialProfile = rr.data; return 'ok'; } return rr.status === 409 ? 'taken' : 'err'; } catch { return 'err'; } };
+        const res = await putH(newHandle);
+        if (res === 'taken') {
+          [...form.querySelectorAll('label')].forEach((l) => { if (l !== handleField) l.classList.add('hidden'); }); switchBtn.classList.add('hidden');
+          form.querySelector('h3').textContent = 'Escolha outro @'; submitBtn.textContent = 'Continuar'; msg.textContent = `@${newHandle} já é de outra pessoa. Sua conta foi criada; escolha outro nome de usuário.`; hInput.focus();
+          handleOnly = async (h) => { const r2 = await putH(h); if (r2 === 'ok') { finish(); return true; } msg.textContent = r2 === 'taken' ? `@${h} também já é de outra pessoa. Tente outro.` : 'Não consegui salvar. Tente de novo.'; return false; };
+          return;
+        }
+      }
+      finish();
+    } catch { msg.textContent = 'Sem conexão com a API. Confira o endereço e a internet.'; }
+    function finish() {
       close(); toast(register ? 'Conta criada' : 'Conectado'); paintAvatar(); pull();
       if (register) { try { if (typeof window.bearAfterRegister === 'function') window.bearAfterRegister(newName, email); } catch (err) { console.warn(err); } }
       else setTimeout(() => { try { window.bearEnsureHandle && window.bearEnsureHandle(); } catch {} }, 1500);
-    } catch { msg.textContent = 'Sem conexão com a API. Confira o endereço e a internet.'; }
+    }
   }
   const wrap = gate
     ? el('div', { class: 'gate', id: 'auth-gate' }, [el('div', { class: 'box' }, [form])])
@@ -9521,6 +9544,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
