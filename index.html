@@ -9607,6 +9607,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10751,7 +10752,7 @@ drawProgresso = function (box) {
   // livros por mês
   const perM = Array.from({ length: 12 }, (_, i) => fin.filter((e) => !e.dateApprox && Number(String(e.finishedAt).slice(5, 7)) === i + 1).length);
   const perS = Array.from({ length: 12 }, (_, i) => lib().filter((e) => e.startedAt && String(e.startedAt).slice(0, 4) === String(y) && Number(String(e.startedAt).slice(5, 7)) === i + 1).length), maxM = Math.max(1, ...perM, ...perS);
-  const ML = ['j', 'f', 'm', 'a', 'm', 'j', 'j', 'a', 's', 'o', 'n', 'd'];
+  const ML = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   // notas
   const tiers = [['Nota 5', (p) => p >= 5, 'm5'], ['4 e 4,5', (p) => p >= 4 && p < 5, 'mo'], ['3 e 3,5', (p) => p >= 3 && p < 4, 'mp'], ['menos de 3', (p) => p > 0 && p < 3, 'mb']];
   const tierN = tiers.map(([l, f, c]) => [l, rated.filter((e) => f(paws(e))).length, c]), maxT = Math.max(1, ...tierN.map((x) => x[1]));
