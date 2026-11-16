@@ -4920,7 +4920,8 @@ function openBookPage(e, tab = 'sobre') {
         ${e.status === 'QUERO' ? `<button type="button" class="bp-btn" data-a="next">${T().nextId === e.id ? 'Desmarcar como próxima leitura' : 'Marcar como próxima leitura'}</button>` : ''}${canReadNow(e) ? `<button type="button" class="bp-btn pri" data-a="now">Ler agora</button>` : e.status === 'LENDO' ? `<button type="button" class="bp-btn pri" data-a="upd">${IC('atualizar', 'ico-b')}Atualizar leitura</button>` : ''}</section>
         <section class="bp-card"><div class="bp-row"><span>Minha avaliação</span><button type="button" class="bp-link" data-a="rate">${r.paws ? 'Editar' : 'Avaliar'}</button></div>
         ${r.paws ? `<div class="bp-stars">${pawTxt(r.paws)} <small>${String(r.paws).replace('.', ',')}</small></div>` : '<small class="bp-small">Ainda sem avaliação.</small>'}
-        ${r.frase ? `<q class="bp-q">${esc(String(r.frase).replace(/^["“]|["”]$/g, ''))}</q>` : ''}</section>
+        ${r.frase ? `<q class="bp-q">${esc(String(r.frase).replace(/^["“]|["”]$/g, ''))}</q>` : ''}
+        ${r.texto ? (r.spoiler ? `<details class="bp-rev"><summary>Tem spoiler · toque para ler</summary><p>${esc(r.texto)}</p></details>` : `<p class="bp-rev">${esc(r.texto)}</p>`) : ''}</section>
         ${ser.length ? `<section class="bp-card"><div class="bp-row"><span>Páginas por dia</span></div>${chartSvg(ser, info.total)}</section>` : ''}
         <section class="bp-card"><div class="bp-row"><span>Ajustes do livro</span></div>
           <button type="button" class="bp-adj" data-a="fmt"><span>Formato</span><b>${esc(fmtTxt(e))}</b><i>›</i></button>
@@ -7474,7 +7475,8 @@ function importCSV() {
     const Y = Number(todayISO().slice(0, 4)), shelfOf = new Map((db.shelves || []).map((x) => [normT(x.name), x]));
     let n = 0, skip = 0, upd = 0; const fresh = [];
     // resenha (Goodreads "My Review", StoryGraph "Review") e spoiler; o Goodreads às vezes exporta quebras de linha como \n literal
-    const cV = col('my review', 'review', 'resenha', 'comentario'), cSp = col('spoiler');
+    const cV = col('my review', 'review', 'resenha', 'comentario'), cSp = col('spoiler'), cAd = col('date added', 'adicionado em', 'data de adicao'), cN = col('private notes', 'notas privadas', 'notas', 'anotacao');
+    const dOf = (x) => { const m = String(x || '').trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : null; };
     const revOf = (r) => (cV >= 0 ? String(r[cV] || '').replace(/\\n/g, '\n').replace(/​/g, '').replace(/<br\s*\/?>/gi, '\n').trim().slice(0, 4000) : '');
     const spOf = (r) => cSp >= 0 && /^(true|sim|yes|1)$/i.test(String(r[cSp] || '').trim());
     const whenOfRow = (r) => { const raw = cD >= 0 ? String(r[cD] || '').trim() : '', dm = raw.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/) || raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/), ym = raw.match(/\b(19\d\d|20\d\d)\b/);
@@ -7512,6 +7514,7 @@ function importCSV() {
       const e = addToLibrary({ title, author: author || null, totalPages: pages, isbn: isbn || null }, null, status, { when: status === 'LIDO' ? when : null, quiet: true, paws: status === 'LIDO' && paws ? paws : 0,
         fmt: /kindle/.test(bind) ? { format: 'EBOOK', device: 'Kindle' } : /kobo/.test(bind) ? { format: 'EBOOK', device: 'Kobo' } : /ebook|e book|nook|digital/.test(bind) ? { format: 'EBOOK' } : /audio|audible/.test(bind) ? { format: 'AUDIO' } : null });
       if (status === 'LENDO') e.startedAt = todayISO();
+      { const ad = cAd >= 0 ? dOf(r[cAd]) : null; if (ad && ad <= todayISO()) e.addedAt = ad; const nt = cN >= 0 ? String(r[cN] || '').trim().slice(0, 2000) : ''; if (nt && !e.note) e.note = nt; }
       const tx = revOf(r); if (tx && status === 'LIDO') e.review = { ...(e.review || {}), texto: tx, ...(spOf(r) ? { spoiler: true } : {}) };
       if (cX >= 0) for (const name of String(r[cX] || '').split(/[,;]/).map((x) => x.trim()).filter((x) => x && !/^(read|to-read|currently-reading|lidos?|quero ler|lendo)$/i.test(x)).slice(0, 5)) {
         let s = shelfOf.get(normT(name)); if (!s) { db.shelves = db.shelves || []; s = { id: uid(), name: name.slice(0, 40), bookIds: [] }; db.shelves.push(s); shelfOf.set(normT(name), s); } s.bookIds.push(e.id);
@@ -7618,6 +7621,7 @@ function youSectionsHTML() {
 .fr-read{display:grid;grid-template-columns:auto 1fr;gap:.7rem;align-items:center;margin-bottom:.5rem}
 .fr-read .cv{width:52px;height:78px;border-radius:3px 6px 6px 3px}
 .fr-read b{display:block;font-size:.9rem;color:var(--ink)}.fr-read small{font-size:.72rem;color:var(--ink-2)}
+.bp-rev{margin:.5rem 0 0;font-size:.88rem;line-height:1.5;white-space:pre-line;color:var(--ink)}details.bp-rev summary{cursor:pointer;font-weight:800;color:var(--acc);font-size:.84rem}details.bp-rev p{margin:.4rem 0 0}
 .fr-common{font-size:.78rem;color:var(--acc);font-weight:800;margin:-.3rem 0 .8rem}
 .fr-revs{display:grid;gap:.6rem}
 .fr-rv{display:grid;grid-template-columns:auto 1fr;gap:.7rem;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:.7rem}
