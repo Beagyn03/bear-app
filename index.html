@@ -4903,7 +4903,7 @@ function openBookPage(e, tab = 'sobre') {
   const v = $('#shelflist'), wasOpen = !v.hidden, prevDraw = S.listRedraw, prevFeed = v.classList.contains('feedview');
   const back = () => { if (wasOpen && prevDraw) { if (prevFeed) v.classList.add('feedview'); S.listRedraw = prevDraw; prevDraw(); } else v.hidden = true; };
   const draw = () => {
-    const info = readingInfo(e), r = reviewOfLib(e) || {}, m = e.meta || null, pct = info.total ? Math.min(100, Math.round(info.now / info.total * 100)) : 0;
+    const info0 = readingInfo(e), info = e.status === 'LIDO' && info0.total ? { ...info0, now: info0.total } : info0, r = reviewOfLib(e) || {}, m = e.meta || null, pct = e.status === 'LIDO' ? 100 : info.total ? Math.min(100, Math.round(info.now / info.total * 100)) : 0;
     const days = e.startedAt ? Math.max(1, between(e.startedAt, e.finishedAt || todayISO()) + 1) : 0, ser = bookSeries(e);
     const foc = (db.focus || []).filter((f) => f.libId === e.id), focMin = foc.reduce((a, f) => a + (f.minutes || 0), 0);
     const tabs = e._preview ? [['sobre', 'Sobre'], ['comunidade', 'Amigos']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['trechos', `Trechos${(e.quotes || []).length ? ' · ' + e.quotes.length : ''}`], ['comunidade', 'Amigos']];
@@ -4920,7 +4920,7 @@ function openBookPage(e, tab = 'sobre') {
         <div class="bp-stats">${[[e.startedAt ? fmt(e.startedAt) : '—', 'início'], [e.finishedAt ? fmt(e.finishedAt) : '—', 'fim'], [days ? plural(days, 'dia', 'dias') : '—', 'de leitura'], [ser.length ? Math.round(ser[ser.length - 1].acc / ser.length) : '—', 'pág. por dia lido'], [foc.length ? `${focMin} min` : '—', `em ${plural(foc.length, 'foco', 'focos')}`]].map(([a, b]) => `<div><b>${a}</b><small>${b}</small></div>`).join('')}</div>
         ${e.status === 'QUERO' ? `<button type="button" class="bp-btn" data-a="next">${T().nextId === e.id ? 'Desmarcar como próxima leitura' : 'Marcar como próxima leitura'}</button>` : ''}${canReadNow(e) ? `<button type="button" class="bp-btn pri" data-a="now">Ler agora</button>` : e.status === 'LENDO' ? `<button type="button" class="bp-btn pri" data-a="upd">${IC('atualizar', 'ico-b')}Atualizar leitura</button>` : ''}</section>
         <section class="bp-card"><div class="bp-row"><span>Minha avaliação</span><button type="button" class="bp-link" data-a="rate">${r.paws ? 'Editar' : 'Avaliar'}</button></div>
-        ${r.paws ? `<div class="bp-stars">${pawTxt(r.paws)} <small>${String(r.paws).replace('.', ',')}</small></div>` : '<small class="bp-small">Ainda sem avaliação.</small>'}
+        ${r.paws ? `<div class="bp-stars">${pawTxt(r.paws)}</div>` : '<small class="bp-small">Ainda sem avaliação.</small>'}
         ${r.frase ? `<q class="bp-q">${esc(String(r.frase).replace(/^["“]|["”]$/g, ''))}</q>` : ''}
         ${r.texto ? `<p class="bp-rev">${esc(r.texto)}</p>${r.spoiler ? '<small class="sp-own">marcada como spoiler</small>' : ''}` : ''}</section>
         ${ser.length ? `<section class="bp-card"><div class="bp-row"><span>Páginas por dia</span></div>${chartSvg(ser, info.total)}</section>` : ''}
@@ -4952,7 +4952,7 @@ function openBookPage(e, tab = 'sobre') {
     }
     v.querySelector('.sl-body').innerHTML = `
       <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b></b>${e._preview ? '<span></span>' : '<button type="button" class="es-dots" data-a="menu" aria-label="Opções do livro">•••</button>'}</div>
-      <header class="bp-hero">${cvh(e.title, e.cover, 'bp-cv')}<div class="bp-ht"><h2>${esc(e.title)}</h2><small>${esc(e.author || '')}</small><div class="bp-chips">${e.status ? `<span class="bp-chip">${esc(LIB_LABEL[e.status] || '')}</span>` : '<span class="bp-chip">Catálogo</span>'}${e.status && e.format ? `<span class="bp-chip">${esc(fmtTxt(e))}</span>` : ''}${e.status === 'LIDO' && e.dateApprox && e.finishedAt ? `<span class="bp-chip">lido em ${e.finishedAt.slice(0, 4)}</span>` : ''}${e.status === 'LIDO' && e.noDate ? '<span class="bp-chip">lido · sem data</span>' : ''}${info.total ? `<span class="bp-chip">${info.total} pág.</span>` : ''}${r.paws ? `<span class="bp-chip gold">${pawTxt(r.paws)}</span>` : ''}</div></div></header>
+      <header class="bp-hero">${cvh(e.title, e.cover, 'bp-cv')}<div class="bp-ht"><h2>${esc(e.title)}</h2><small>${esc(e.author || '')}</small><div class="bp-chips">${e.status ? `<span class="bp-chip">${esc(LIB_LABEL[e.status] || '')}</span>` : '<span class="bp-chip">Catálogo</span>'}${e.status && e.format ? `<span class="bp-chip">${esc(fmtTxt(e))}</span>` : ''}${e.status === 'LIDO' && e.dateApprox && e.finishedAt ? `<span class="bp-chip">lido em ${e.finishedAt.slice(0, 4)}</span>` : ''}${e.status === 'LIDO' && e.noDate ? '<span class="bp-chip">lido · sem data</span>' : ''}${info.total ? `<span class="bp-chip">${info.total} pág.</span>` : ''}${r.paws ? `<span class="bp-chip gold" title="Sua nota">minha nota ${pawTxt(r.paws)}</span>` : ''}</div></div></header>
       <nav class="bp-tabs">${tabs.map(([k, n]) => `<button type="button" data-t="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}</nav>
       ${body}`;
     paintCv(v);
@@ -7870,7 +7870,7 @@ function decorateBookPage(v) {
   const tabOn = (v.querySelector('.bp-tabs button.on') || {}).textContent || '', title = (v.querySelector('.bp-ht h2') || {}).textContent || '', author = (v.querySelector('.bp-ht small') || {}).textContent || '';
   if (!title) return;
   const net = S.bookNet[normT(title).slice(0, 200)], chips = v.querySelector('.bp-chips');
-  if (chips && net && net.avg != null && !chips.querySelector('.bp-net')) chips.insertAdjacentHTML('beforeend', `<span class="bp-chip gold bp-net">rede ${pawTxt(net.avg)} · ${net.count}</span>`);
+  if (chips && net && net.avg != null && !chips.querySelector('.bp-net')) chips.insertAdjacentHTML('beforeend', `<span class="bp-chip bp-net" title="Média das notas de quem avaliou no B.E.A.R">média da rede ${pawTxt(net.avg)} · ${net.count} ${net.count === 1 ? 'nota' : 'notas'}</span>`);
   if (net === undefined && connected() && socialProfile) bookNetHTML({ title }); // busca a média já no topo
   if (/^Sobre/.test(tabOn) && !v.querySelector('.au-row')) { const sec = v.querySelector('.sl-body'); const h = authorStripHTML({ title, author }); if (h) { sec.insertAdjacentHTML('beforeend', h); paintCv(v); } }
 }
