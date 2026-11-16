@@ -9623,6 +9623,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12670,10 +12671,10 @@ setTimeout(async () => {
 }
 // --- 53_perfil_numeros.js ---
 // Números do topo do perfil (Bia, 16/11): para leitor crítico. Saem "lendo", "amigos" e "conquistas" (a capinha já mostra a leitura).
-// Linha 1 (geral, não zera na virada do ano): lidos · páginas · nota média · ritmo. Linha 2: quero ler · abandonados · meta do ano atual (ocupa 2).
+// Linha 1 (geral, não zera na virada do ano): lidos · páginas · nota média · quero ler. Linha 2: abandonados · meta do ano atual (ocupa 3). Sem "pág. por dia" (pedido da Bia).
 { const st = document.createElement('style'); st.textContent = `
 .yo-nums.yo-n7{grid-template-columns:repeat(4,1fr)!important}
-.yo-nums.yo-n7 button.wide{grid-column:span 2}
+.yo-nums.yo-n7 button.wide{grid-column:span 3}
 .yo-nums.yo-n7 button small{white-space:nowrap}
 .yo-nums.yo-n7 .mt{display:block;width:80%;height:4px;border-radius:99px;background:var(--line);margin:.2rem auto 0;overflow:hidden}.yo-nums.yo-n7 .mt i{display:block;height:100%;background:var(--acc)}
 `; TR.append(st); }
@@ -12694,7 +12695,6 @@ function myProfileNums() {
     nums.innerHTML = cell(k(lidos.length), lidos.length === 1 ? 'lido' : 'lidos', 'lidos')
       + cell(k(pags), 'páginas lidas', 'stats')
       + cell(avg ? avg.toFixed(1).replace('.', ',') : '–', 'nota média', 'stats')
-      + cell(ritmo || '–', 'pág. por dia', 'stats')
       + cell(k(fila), 'quero ler', 'fila')
       + cell(k(aband), aband === 1 ? 'abandonado' : 'abandonados', 'aband')
       + cell(alvo ? `${lidosAno.length} de ${alvo}` : '–', alvo ? `meta de ${y} · ${pct}%` : `sem meta de ${y}`, 'meta', alvo ? `<span class="mt"><i style="width:${pct}%"></i></span>` : '', 'wide');
