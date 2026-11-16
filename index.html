@@ -9611,6 +9611,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12663,7 +12664,7 @@ setTimeout(async () => {
 .yo-nums.yo-n7{grid-template-columns:repeat(4,1fr)!important}
 #shelflist.mine-page:has(.yo-top) > .sl-body > .sl-top .sl-back{visibility:hidden} /* seu perfil (aba Perfil): não tem para onde voltar; os menus de baixo navegam */
 .yo-nums.yo-n7 button.wide{grid-column:span 2}
-.yo-nums.yo-n7 button small{white-space:nowrap}
+.yo-nums.yo-n7 button small{white-space:nowrap}.yo-nums.yo-n7 .tt{display:block;max-width:100%;padding:0 .3rem;font-size:.6rem;font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
 .yo-nums.yo-n7 .mt{display:block;width:80%;height:4px;border-radius:99px;background:var(--line);margin:.2rem auto 0;overflow:hidden}.yo-nums.yo-n7 .mt i{display:block;height:100%;background:var(--acc)}
 `; TR.append(st); }
 function myProfileNums() {
@@ -12686,7 +12687,7 @@ function myProfileNums() {
       + cell(k(resenhas), resenhas === 1 ? 'resenha' : 'resenhas', 'resenhas')
       + cell(k(fila), 'quero ler', 'fila')
       + cell(k(aband), aband === 1 ? 'abandonado' : 'abandonados', 'aband')
-      + cell(maior ? k(maior.totalPages) : '–', maior ? 'pág. no mais longo' : 'mais longo', maior ? 'maior' : '')
+      + cell(maior ? k(maior.totalPages) + ' pág.' : '–', maior ? 'mais longo' : 'mais longo', maior ? 'maior' : '', maior ? '<span class="tt">' + esc(maior.title) + '</span>' : '')
       + cell(alvo ? `${lidosAno.length} de ${alvo}` : '–', alvo ? `meta de ${y} · ${pct}%` : `sem meta de ${y}`, 'meta', alvo ? `<span class="mt"><i style="width:${pct}%"></i></span>` : '');
     const mark = () => { const N = S.nav; if (N && !N.st.length) N.st.push({ fn: () => goTab('eu'), tab: 'eu' }); };
     const shelf = (s) => { v.hidden = true; goTab('estante'); setTimeout(() => { openShelfV3(s); mark(); }, 150); };
@@ -12746,7 +12747,7 @@ function myStatsSnap() {
     const pct = s.meta ? Math.min(100, Math.round(s.meta.feitos / s.meta.alvo * 100)) : 0;
     nums.classList.add('yo-n7');
     nums.innerHTML = cell(k(s.lidos), s.lidos === 1 ? 'lido' : 'lidos') + cell(k(s.paginas), 'páginas lidas') + cell(s.nota ? String(s.nota).replace('.', ',') : '–', 'nota média') + cell(k(s.resenhas), s.resenhas === 1 ? 'resenha' : 'resenhas')
-      + cell(k(s.quero), 'quero ler') + cell(k(s.aband), s.aband === 1 ? 'abandonado' : 'abandonados') + cell(s.maior ? k(s.maior.p) : '–', 'pág. no mais longo')
+      + cell(k(s.quero), 'quero ler') + cell(k(s.aband), s.aband === 1 ? 'abandonado' : 'abandonados') + cell(s.maior ? k(s.maior.p) + ' pág.' : '–', 'mais longo', s.maior ? '<span class="tt">' + esc(s.maior.t) + '</span>' : '')
       + cell(s.meta ? `${s.meta.feitos} de ${s.meta.alvo}` : '–', s.meta ? `meta de ${s.meta.ano} · ${pct}%` : 'sem meta do ano', s.meta ? `<span class="mt"><i style="width:${pct}%"></i></span>` : '');
     if (s.maior) nums.children[6].title = s.maior.t;
   } catch (err) { console.warn('números do perfil de outra pessoa', err); }
