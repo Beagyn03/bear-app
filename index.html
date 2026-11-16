@@ -4906,7 +4906,7 @@ function openBookPage(e, tab = 'sobre') {
     const info0 = readingInfo(e), info = e.status === 'LIDO' && info0.total ? { ...info0, now: info0.total } : info0, r = reviewOfLib(e) || {}, m = e.meta || null, pct = e.status === 'LIDO' ? 100 : info.total ? Math.min(100, Math.round(info.now / info.total * 100)) : 0;
     const days = e.startedAt ? Math.max(1, between(e.startedAt, e.finishedAt || todayISO()) + 1) : 0, ser = bookSeries(e);
     const foc = (db.focus || []).filter((f) => f.libId === e.id), focMin = foc.reduce((a, f) => a + (f.minutes || 0), 0);
-    const tabs = e._preview ? [['sobre', 'Sobre'], ['comunidade', 'Amigos']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['trechos', `Trechos${(e.quotes || []).length ? ' · ' + e.quotes.length : ''}`], ['comunidade', 'Amigos']];
+    const tabs = e._preview ? [['sobre', 'Sobre'], ['trechos', 'Trechos e comentários'], ['comunidade', 'Rede']] : [['sobre', 'Sobre'], ['minha', 'Minha leitura'], ['trechos', `Trechos e comentários${(e.quotes || []).length ? ' · ' + e.quotes.length : ''}`], ['comunidade', 'Rede']];
     let body = '';
     if (tab === 'sobre') {
       const rows = [['Páginas', info.total || e.totalPages], ['Gênero', e.genre || (m && m.cat)], ['Publicação', m && m.pub], ['Publicado em', m && m.date && (m.date.length >= 10 ? fmt(m.date) : m.date)], ['Idioma', m && m.lang && (LANGS[m.lang] || m.lang)], ['ISBN', e.isbn]].filter((x) => x[1]);
@@ -9615,6 +9615,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12533,6 +12534,46 @@ const tidyTxt = (x) => (typeof x === 'string' ? x.replace(/\s+/g, ' ').trim() : 
 { const _atlT = addToLibrary; addToLibrary = function (item) { if (item && typeof item === 'object') { if (item.title) item.title = tidyTxt(item.title); if (item.author) item.author = tidyTxt(item.author); if (item.publisher) item.publisher = tidyTxt(item.publisher); } const e = _atlT.apply(this, arguments); try { if (e) { e.title = tidyTxt(e.title); if (e.author) e.author = tidyTxt(e.author); } } catch {} return e; }; }
 const tidyAll = () => { try { let n = 0; const bad = /\s{2,}|^\s|\s$/; for (const e of lib()) for (const k of ['title', 'author', 'publisher']) { if (typeof e[k] === 'string' && bad.test(e[k])) { e[k] = tidyTxt(e[k]); n++; } } for (const g of (db.goals || [])) for (const b of (g.books || [])) for (const k of ['title', 'author']) { if (typeof b[k] === 'string' && bad.test(b[k])) { b[k] = tidyTxt(b[k]); n++; } } if (n) save(); } catch {} };
 setTimeout(tidyAll, 2000); setInterval(tidyAll, 60000);
+// --- 49_livro_rede.js ---
+// Página do livro (Bia, 16/11): "Trechos" vira "Trechos e comentários" e mostra também o que foi postado publicamente na Rede
+// sobre o livro (com curtir e responder); "Amigos" vira "Rede". Vale também para livro do catálogo que não está na estante.
+const bookKeyRede = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 200); // igual ao bear_book_key da API
+S.bkRede = S.bkRede || {};
+{ const st = document.createElement('style'); st.textContent = `
+.bp-rede{display:grid;gap:.6rem;margin-top:.9rem}.bp-rede h4{margin:0;font-size:1rem;display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.bp-rede .rd-new2{border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:99px;padding:.4rem .85rem;font:inherit;font-weight:800;font-size:.82rem}
+.bp-rede .bp-load{margin:0}
+`; TR.append(st); }
+{ const v = $('#shelflist'); let tm = 0;
+  const fill = async () => {
+    const body = v.querySelector('.sl-body'); if (!body || v.hidden) return;
+    const hero = body.querySelector('.bp-hero'); if (!hero) return;
+    const isTre = !!body.querySelector('[data-a="quote"]') || !!body.querySelector('.bq');
+    if (!isTre || body.querySelector('.bp-rede')) return;
+    const title = (hero.querySelector('h2') || {}).textContent || '', author = (hero.querySelector('small') || {}).textContent || '', key = bookKeyRede(title);
+    if (!key) return;
+    const preview = [...hero.querySelectorAll('.bp-chip')].some((c) => c.textContent.trim() === 'Catálogo');
+    if (preview) body.querySelectorAll('.bp-card').forEach((c) => { if (c.querySelector('[data-a="quote"]')) c.remove(); }); // livro fora da estante: trechos pessoais não se aplicam
+    const sec = document.createElement('section'); sec.className = 'bp-rede';
+    sec.innerHTML = '<h4>Comentários na Rede' + (connected() ? '<button type="button" class="rd-new2">+ Comentar</button>' : '') + '</h4><p class="bp-load">Carregando…</p>';
+    const anchor = [...body.querySelectorAll('.bp-card')].pop(); if (anchor) anchor.after(sec); else body.append(sec);
+    sec.querySelector('.rd-new2')?.addEventListener('click', () => { try { openRdComposer({ book: { title, author: author || null, cover: null } }); } catch (err) { console.warn(err); } });
+    if (!connected()) { sec.querySelector('.bp-load').textContent = 'Entre na sua conta para ver o que estão comentando sobre este livro.'; return; }
+    let items = null; const c = S.bkRede[key];
+    if (c && Date.now() - c.at < 2 * 60000) items = c.items;
+    else { try { const r = await sapi('GET', '/v1/rede?book=' + encodeURIComponent(key)); items = r.status === 200 && r.data ? (r.data.items || []).filter((x) => x.type !== 'review') : []; S.bkRede[key] = { items, at: Date.now() }; } catch { items = []; } }
+    if (!sec.isConnected) return;
+    const draw = () => {
+      const list = items || [];
+      sec.querySelector('.bp-load')?.remove(); sec.querySelectorAll('.rd-card').forEach((x) => x.remove());
+      if (!list.length) { const p = document.createElement('p'); p.className = 'bp-load'; p.textContent = 'Ninguém comentou este livro na Rede ainda. Que tal começar?'; sec.append(p); return; }
+      sec.insertAdjacentHTML('beforeend', list.map((it, i) => rdCardHTML(it, i)).join(''));
+      rdBind(sec, list, draw);
+    };
+    draw();
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(fill, 80); }).observe(v, { childList: true, subtree: true });
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
