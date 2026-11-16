@@ -10487,16 +10487,22 @@ if (!ES_SORTS.some((x) => x[0] === 'prioridade')) ES_SORTS.splice(1, 0, ['priori
 .sheet .pv2 .pv2-shr button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line,#e5d9c8);background:transparent;color:inherit;font:inherit;font-weight:900;padding:0;margin:0}
 .sheet .pv2 .pv2-shr button:disabled{opacity:.25}
 `; document.head.append(st); }
-const PROF_SH_DEFAULT = ['MELHORES', 'LIDOS'];
+const PROF_SH_BASE = ['MELHORES', 'LIDOS'];
+const PROF_SH_DEFAULT = ['TOP5', ...PROF_SH_BASE];
+const profTopBooks = () => {
+  const taste = tasteOf(), books = taste && taste.books;
+  return Array.isArray(books) ? books.filter((b) => b && typeof b.title === 'string' && b.title.trim()).slice(0, 5) : [];
+};
 const profShelfOpts = () => {
   const L = lib(), n = (f) => L.filter(f).length;
-  const base = [['MELHORES', 'Melhores avaliados', n((e) => e.status === 'LIDO' && ((reviewOfLib(e) || {}).paws || 0) >= 4.5)], ['LIDOS', 'Lidos recentes', n((e) => e.status === 'LIDO')],
+  const base = [['TOP5', 'Top 5 do perfil', profTopBooks().length], ['MELHORES', 'Melhores avaliados', n((e) => e.status === 'LIDO' && ((reviewOfLib(e) || {}).paws || 0) >= 4.5)], ['LIDOS', 'Lidos recentes', n((e) => e.status === 'LIDO')],
     ['LENDO', 'Lendo', n((e) => e.status === 'LENDO')], ['QUERO', 'Quero ler', n((e) => e.status === 'QUERO')], ['FAV', shelfName('FAV'), n((e) => isFav(e))], ['ABANDONEI', 'Abandonados', n((e) => e.status === 'ABANDONEI')]];
   const mine = (db.shelves || []).map((s) => ['sh:' + s.id, s.name || 'Estante', (s.bookIds || []).filter((id) => L.some((e) => e.id === id)).length]);
   return [...base, ...mine];
 };
 const profShelfBooks = (key) => {
   const L = lib(), by = (k) => (a, b) => String(b[k] || '').localeCompare(String(a[k] || ''));
+  if (key === 'TOP5') return profTopBooks();
   if (key === 'LENDO') return L.filter((e) => e.status === 'LENDO');
   if (key === 'QUERO') return L.filter((e) => e.status === 'QUERO').sort((a, b) => ((a.prio || 2) - (b.prio || 2)) || by('addedAt')(a, b));
   if (key === 'FAV') return L.filter((e) => isFav(e));
@@ -10510,7 +10516,7 @@ function profShelvesSnap(snapshot) {
   const show = profShelfShow(), names = Object.fromEntries(profShelfOpts().map((o) => [o[0], o[1]]));
   const mini = (e) => ({ title: e.title, author: e.author || null, cover: e.cover && !/^data:/.test(e.cover) && e.cover.length < 600 ? e.cover : null });
   snapshot.shelf.show = show;
-  snapshot.shelf.extra = show.filter((k) => !PROF_SH_DEFAULT.includes(k)).slice(0, 8).map((k) => ({ key: k, name: names[k], books: profShelfBooks(k).slice(0, 12).map(mini) }));
+  snapshot.shelf.extra = show.filter((k) => !PROF_SH_BASE.includes(k)).slice(0, 8).map((k) => ({ key: k, name: names[k], books: profShelfBooks(k).slice(0, 12).map(mini) }));
 }
 // "Amigos e privacidade": lista expansível
 { const _ss = socialSettingsSheet; socialSettingsSheet = async function () {
@@ -10542,7 +10548,7 @@ function profShelvesSnap(snapshot) {
   const ins = (nodes) => nodes.forEach((n) => (anchor ? anchor.before(n) : v.querySelector('.sl-body').append(n)));
   Object.values(parts).forEach((p) => p && p.forEach((n) => n.remove()));
   const strip = (arr) => `<div class="es-row">${arr.map((b) => `<button type="button" class="es-bk" data-book="${esc(b.title)}" data-author="${esc(b.author || '')}">${cvh(b.title, b.cover, 'es-cv')}</button>`).join('')}</div>`;
-  const extra = d.self ? show.filter((k) => !PROF_SH_DEFAULT.includes(k)).map((k) => ({ key: k, name: (profShelfOpts().find((o) => o[0] === k) || [])[1], books: profShelfBooks(k).slice(0, 12).map((e) => ({ title: e.title, author: e.author, cover: e.cover })) })) : (d.shelf.extra || []);
+  const extra = d.self ? show.filter((k) => !PROF_SH_BASE.includes(k)).map((k) => ({ key: k, name: (profShelfOpts().find((o) => o[0] === k) || [])[1], books: profShelfBooks(k).slice(0, 12).map((e) => ({ title: e.title, author: e.author, cover: e.cover })) })) : (d.shelf.extra || []);
   for (const k of show) {
     if (parts[k]) { ins(parts[k]); continue; }
     const x = extra.find((y) => y.key === k); if (!x || !x.books.length) continue;
@@ -10993,7 +10999,7 @@ function openTaste(first, prof) {
     $$('.gs-ch', v).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; sel.has(k) ? sel.delete(k) : sel.add(k); b.classList.toggle('on', sel.has(k)); b.setAttribute('aria-pressed', sel.has(k)); $('#gs-ok', v).disabled = !(sel.size || books.length); }));
     $$('[data-rm]', v).forEach((b) => b.addEventListener('click', () => { books.splice(+b.dataset.rm, 1); draw(); }));
     $('#gs-add', v)?.addEventListener('click', () => searchSheet({ title: 'Um livro que você amou', onPick: (it) => { if (it && it.title && !books.some((x) => normT(x.title) === normT(it.title))) books.push({ title: String(it.title).slice(0, 200), author: it.author || null, cover: typeof it.cover === 'string' && /^https:/.test(it.cover) ? it.cover : null }); draw(); } }));
-    $('#gs-hist', v)?.addEventListener('click', () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, ...(sel.size || books.length ? { taste: { genres: [...sel], books, at: new Date().toISOString() } } : {}) }; save(); v.hidden = true; try { goTab('inicio'); } catch {} setTimeout(() => openHistory(), 80); });
+    $('#gs-hist', v)?.addEventListener('click', () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, ...(sel.size || books.length ? { taste: { genres: [...sel], books, at: new Date().toISOString() } } : {}) }; save(); openHistory(); });
     $('#gs-skip', v).addEventListener('click', () => { if (first) { db.prefs = { ...(db.prefs || {}), tasteAsked: 1 }; save(); } done(); });
     $('#gs-ok', v).addEventListener('click', () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, taste: { genres: [...sel], books, at: new Date().toISOString() } }; save(); try { localStorage.removeItem('bear.pv'); } catch {} toast('Gostos salvos'); done(); });
   };
