@@ -9627,6 +9627,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12690,7 +12691,7 @@ function myProfileNums() {
     const datas = lidos.map((e) => String(e.startedAt || e.finishedAt || '')).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort(), desde = datas[0] || (Y + '-01-01');
     const rated = L.filter((e) => e.status === 'LIDO' && (reviewOfLib(e) || {}).paws), avg = rated.length ? rated.reduce((a, e) => a + reviewOfLib(e).paws, 0) / rated.length : 0;
     const pagsDatadas = lidos.filter((e) => e.startedAt || e.finishedAt).reduce((a, e) => a + (Number(e.totalPages) || 0), 0), dias = Math.max(1, Math.round((Date.parse(todayISO()) - Date.parse(desde)) / 864e5) + 1), ritmo = pagsDatadas ? Math.round(pagsDatadas / dias) : 0;
-    const resenhas = L.filter((e) => { const rv = reviewOfLib(e); return rv && String(rv.texto || '').trim(); }).length, fila = L.filter((e) => e.status === 'QUERO').length, aband = L.filter((e) => e.status === 'ABANDONEI').length;
+    const maior = lidos.reduce((m, e) => ((Number(e.totalPages) || 0) > (Number(m && m.totalPages) || 0) ? e : m), null), resenhas = L.filter((e) => { const rv = reviewOfLib(e); return rv && String(rv.texto || '').trim(); }).length, fila = L.filter((e) => e.status === 'QUERO').length, aband = L.filter((e) => e.status === 'ABANDONEI').length;
     const alvo = Number((db.yearGoals || {})[y]) || 0, pct = alvo ? Math.min(100, Math.round(lidosAno.length / alvo * 100)) : 0;
     const k = (n) => Number(n).toLocaleString('pt-BR');
     const cell = (n, t, go, extra = '', cls = '') => `<button type="button" class="${cls}" ${go ? `data-go="${go}"` : 'disabled'}><b>${n}</b><small>${t}</small>${extra}</button>`;
@@ -12701,10 +12702,11 @@ function myProfileNums() {
       + cell(k(resenhas), resenhas === 1 ? 'resenha' : 'resenhas', 'resenhas')
       + cell(k(fila), 'quero ler', 'fila')
       + cell(k(aband), aband === 1 ? 'abandonado' : 'abandonados', 'aband')
-      + cell(alvo ? `${lidosAno.length} de ${alvo}` : '–', alvo ? `meta de ${y} · ${pct}%` : `sem meta de ${y}`, 'meta', alvo ? `<span class="mt"><i style="width:${pct}%"></i></span>` : '', 'wide');
+      + cell(maior ? k(maior.totalPages) : '–', maior ? 'pág. no mais longo' : 'mais longo', maior ? 'maior' : '')
+      + cell(alvo ? `${lidosAno.length} de ${alvo}` : '–', alvo ? `meta de ${y} · ${pct}%` : `sem meta de ${y}`, 'meta', alvo ? `<span class="mt"><i style="width:${pct}%"></i></span>` : '');
     const mark = () => { const N = S.nav; if (N && !N.st.length) N.st.push({ fn: () => goTab('eu'), tab: 'eu' }); };
     const shelf = (s) => { v.hidden = true; goTab('estante'); setTimeout(() => { openShelfV3(s); mark(); }, 150); };
-    const go = { lidos: () => shelf('LIDO'), fila: () => shelf('QUERO'), aband: () => shelf('ABANDONEI'), resenhas: () => { mark(); openMyReviews(); }, stats: () => { v.hidden = true; goTab('progresso'); }, meta: () => { const before = JSON.stringify(db.yearGoals || {}); setYearGoal(y); let n = 0; const t = setInterval(() => { if (++n > 120 || JSON.stringify(db.yearGoals || {}) !== before) { clearInterval(t); myProfileNums(); } }, 500); } }; // meta abre o ajuste da meta do ano
+    const go = { lidos: () => shelf('LIDO'), fila: () => shelf('QUERO'), aband: () => shelf('ABANDONEI'), resenhas: () => { mark(); openMyReviews(); }, maior: () => { if (maior) { mark(); openBookPage(maior); } }, stats: () => { v.hidden = true; goTab('progresso'); }, meta: () => { const before = JSON.stringify(db.yearGoals || {}); setYearGoal(y); let n = 0; const t = setInterval(() => { if (++n > 120 || JSON.stringify(db.yearGoals || {}) !== before) { clearInterval(t); myProfileNums(); } }, 500); } }; // meta abre o ajuste da meta do ano
     nums.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); (go[b.dataset.go] || (() => {}))(); }, true));
   } catch (err) { console.warn('números do perfil', err); }
 }
