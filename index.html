@@ -7638,8 +7638,8 @@ friendPage = async function (handle) {
   v.classList.remove('feedview'); shell('<p class="sl-empty">Carregando…</p>'); v.hidden = false; v.scrollTop = 0;
   let d; try { const r = await sapi('GET', `/v1/users/${encodeURIComponent(handle)}`); if (r.status === 403) { S.fpData = null; S.listRedraw = null; S.navView = { t: 'friend', a: [handle] }; const nm = (S.psNames && S.psNames[handle]) || handle; shell(`<div class="fr-lock"><span class="av v3-av" style="background:${friendColor(handle)}">${esc(initial(nm))}</span><b>${esc(nm)}</b><small>@${esc(handle)}</small><p>O perfil de @${esc(handle)} é só para amigos. Mande um pedido de amizade para ver as leituras.</p><button type="button" class="bp-btn pri" id="fr-lock-add">Adicionar amigo</button></div>`); const b = v.querySelector('#fr-lock-add'); b.addEventListener('click', async () => { b.disabled = true; const q = await sapi('POST', '/v1/friends/requests', { handle }); if (q.status < 300) { b.textContent = q.data && q.data.status === 'ACCEPTED' ? 'Vocês já são amigos!' : 'Pedido enviado'; if (q.data && q.data.status === 'ACCEPTED') setTimeout(() => friendPage(handle), 600); } else { b.disabled = false; toast('Não deu certo agora'); } }); return; } if (r.status !== 200) throw 0; d = r.data; S.fpData = d; } catch { return shell('<p class="sl-empty">Não foi possível abrir essa página agora.</p>'); }
   const c = (d.shelf && d.shelf.counts) || {}, won = (d.achievements && d.achievements.won) || [], fl = SOC.flairs[d.handle], fr = fl && fl.frame && PF_FRAMES.find((x) => x[0] === fl.frame);
-  const mine = new Set(lib().filter((e) => e.status === 'LIDO').map((e) => normT(e.title)));
-  const common = ((d.shelf && d.shelf.lidos) || []).filter((b) => mine.has(normT(b.title)));
+  const tk = (t) => normT(String(t || '').split(/[:(]/)[0]), mine = new Set(lib().filter((e) => e.status === 'LIDO').map((e) => tk(e.title))); // título principal (sem subtítulo/série)
+  const common = (() => { const seen = new Set(), out = []; for (const b of [...((d.shelf && d.shelf.lidos) || []), ...((d.shelf && d.shelf.ano) || []).map((x) => ({ title: x.t, author: x.a }))]) { const k = tk(b.title); if (!k || seen.has(k) || !mine.has(k)) continue; seen.add(k); out.push(b); } return out; })(); // lidos recentes + leituras com data (até 200)
   const strip = (arr) => `<div class="es-row">${arr.map((b) => `<button type="button" class="es-bk" data-book="${esc(b.title)}" data-author="${esc(b.author || '')}">${cvh(b.title, b.cover, 'es-cv')}</button>`).join('')}</div>`;
   const fechado = !d.reading && !d.shelf && !d.achievements && !d.reviews;
   shell(`<header class="yo-top"><span class="av v3-av yo-av${fr ? ' framed' : ''}" data-avh="${esc(d.handle)}" style="background-color:${friendColor(d.handle)};${fr ? `--frame:${fr[2]}` : ''}">${esc(initial(d.displayName))}</span>
@@ -9552,6 +9552,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -12739,6 +12740,32 @@ function openMyReviews() {
 { const _fp = friendPage; friendPage = async function (h) {
   const r = await _fp.apply(this, arguments); const v = $('#shelflist'), d = S.fpData;
   if (!v.hidden && d && d.self && d.handle === h) { const hd = [...v.querySelectorAll('.v3-sh')].find((x) => /^Avalia/.test(x.textContent.trim())); if (hd) { let n = hd.nextElementSibling; while (n && !n.classList.contains('v3-sh')) { const nx = n.nextElementSibling; n.remove(); n = nx; } hd.remove(); } }
+  return r;
+}; }
+// Perfil de outra pessoa (16/11): os mesmos números, vindos do resumo publicado (shelf.stats). Quem ainda não atualizou o app fica com os antigos.
+function myStatsSnap() {
+  const L = lib(), y = Number(todayISO().slice(0, 4)), Y = String(y), lidos = L.filter((e) => e.status === 'LIDO');
+  const rated = lidos.filter((e) => (reviewOfLib(e) || {}).paws), maior = lidos.reduce((m, e) => ((Number(e.totalPages) || 0) > (Number(m && m.totalPages) || 0) ? e : m), null);
+  return { lidos: lidos.length, paginas: lidos.reduce((a, e) => a + (Number(e.totalPages) || 0), 0), nota: rated.length ? Math.round(rated.reduce((a, e) => a + reviewOfLib(e).paws, 0) / rated.length * 10) / 10 : null,
+    resenhas: L.filter((e) => { const r = reviewOfLib(e); return r && r.share !== false && String(r.texto || '').trim(); }).length, quero: L.filter((e) => e.status === 'QUERO').length,
+    aband: L.filter((e) => e.status === 'ABANDONEI').length, maior: maior ? { p: Number(maior.totalPages) || 0, t: String(maior.title).slice(0, 120) } : null,
+    meta: Number((db.yearGoals || {})[y]) ? { ano: y, alvo: Number(db.yearGoals[y]), feitos: lidos.filter((e) => String(e.finishedAt || '').slice(0, 4) === Y).length } : null };
+}
+{ const _ps2 = profShelvesSnap; profShelvesSnap = function (snapshot) { _ps2.apply(this, arguments); try { snapshot.shelf.stats = myStatsSnap(); } catch {} }; }
+{ const _fp = friendPage; friendPage = async function (h) {
+  const r = await _fp.apply(this, arguments); const v = $('#shelflist'), d = S.fpData;
+  try {
+    if (v.hidden || !d || d.self || d.handle !== h) return r;
+    const s = d.shelf && d.shelf.stats, nums = v.querySelector('.yo-nums'); if (!s || !nums) return r;
+    const k = (n) => Number(n || 0).toLocaleString('pt-BR');
+    const cell = (n, t, extra = '') => `<button type="button" disabled><b>${n}</b><small>${t}</small>${extra}</button>`;
+    const pct = s.meta ? Math.min(100, Math.round(s.meta.feitos / s.meta.alvo * 100)) : 0;
+    nums.classList.add('yo-n7');
+    nums.innerHTML = cell(k(s.lidos), s.lidos === 1 ? 'lido' : 'lidos') + cell(k(s.paginas), 'páginas lidas') + cell(s.nota ? String(s.nota).replace('.', ',') : '–', 'nota média') + cell(k(s.resenhas), s.resenhas === 1 ? 'resenha' : 'resenhas')
+      + cell(k(s.quero), 'quero ler') + cell(k(s.aband), s.aband === 1 ? 'abandonado' : 'abandonados') + cell(s.maior ? k(s.maior.p) : '–', 'pág. no mais longo')
+      + cell(s.meta ? `${s.meta.feitos} de ${s.meta.alvo}` : '–', s.meta ? `meta de ${s.meta.ano} · ${pct}%` : 'sem meta do ano', s.meta ? `<span class="mt"><i style="width:${pct}%"></i></span>` : '');
+    if (s.maior) nums.children[6].title = s.maior.t;
+  } catch (err) { console.warn('números do perfil de outra pessoa', err); }
   return r;
 }; }
 // --- 54_prazo_leitura.js ---
