@@ -9601,6 +9601,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12206,6 +12207,7 @@ function editTop5() {
 .rtf-st.st-lido,.rtf-st.st-concluido{background:#2f8a52!important;border-color:#2f8a52!important;color:#fff!important}
 .rtf-lb{font-weight:800;font-size:.9rem;margin:.4rem 0 -.2rem}
 .sheet.rt-full .rt-ress .yn{flex-wrap:wrap}.sheet.rt-full .rt-ress .yn button{padding:0 .85rem!important;font-size:.84rem}
+.sheet.rt-full .rtf-rs{flex:1 1 200px;max-width:260px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:700;padding:0 .7rem}
 .sheet.rt-full .rt-btns{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:.55rem 1rem calc(.55rem + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);max-width:none;margin:0;display:flex!important;justify-content:flex-end;gap:.5rem}
 .sheet.rt-full .rt-btns button{min-height:40px!important;height:40px!important;padding:0 1.2rem!important;font-size:.92rem!important;width:auto!important;flex:none!important;border-radius:12px!important;margin:0!important}
 .sheet.rt-full .rt-btns .primary{min-width:120px}
@@ -12272,6 +12274,15 @@ function editTop5() {
     const shareLb = [...form.querySelectorAll('label.ck-row')].find((l) => /Compartilhar com meus amigos/.test(l.textContent));
     if (shareLb) { const shareCk = shareLb.querySelector('input'); const pv = document.createElement('label'); pv.className = 'ck-row'; pv.innerHTML = '<input type="checkbox"><span>Avaliação privada <small style="opacity:.7;font-weight:600">(só você vê)</small></span>';
       const pk = pv.querySelector('input'); pk.checked = !shareCk.checked; pk.addEventListener('change', () => { shareCk.checked = !pk.checked; }); shareLb.after(pv); shareLb.style.setProperty('display', 'none', 'important'); }
+    // ressaca: lista suspensa (nem um nem outro / me deu / curou) no lugar dos dois botões; os botões originais ficam escondidos e guardam o valor
+    const yn = form.querySelector('.yn');
+    if (yn) {
+      const sel = document.createElement('select'); sel.className = 'rtf-rs'; sel.setAttribute('aria-label', 'Ressaca literária');
+      sel.innerHTML = '<option value="">Nem um nem outro</option><option value="deu">Me deu ressaca</option><option value="curou">Curou minha ressaca</option>';
+      const btns = () => [...yn.querySelectorAll('button')], cur = () => { const i = btns().findIndex((x) => x.classList.contains('on')); return i === 0 ? 'deu' : i === 1 ? 'curou' : ''; };
+      sel.value = cur(); yn.style.setProperty('display', 'none', 'important'); yn.after(sel);
+      sel.addEventListener('change', () => { const want = sel.value, now = cur(); if (want === now) return; if (!want) btns()[now === 'deu' ? 0 : 1].click(); else btns()[want === 'deu' ? 0 : 1].click(); });
+    }
     try { paintCv(wrap); } catch {}
     wrap.querySelector('.box').scrollTop = 0;
   } catch (err) { console.warn('avaliação em página', err); }
