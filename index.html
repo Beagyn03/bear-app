@@ -9578,6 +9578,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10817,10 +10818,12 @@ drawProgresso = function (box) {
 .ys-bk .ys-sp.a{top:-12px!important;right:-3px!important}
 @media (prefers-reduced-motion:reduce){.ys-bk.ys-5 .ys-mk *,.ys-bk.ys-5 .ys-mk::before{animation:none!important}}
 `; TR.append(st); }
-// Reflexo só no 5 e no 4,5 (16/11)
+// Reflexo no 5 (furta-cor) e no ouro, notas 4 e 4,5 (dourado); prata e bronze sem reflexo (16/11)
 { const st = document.createElement('style'); st.textContent = `
-.ys-bk.ys-ouro:not(.ys-45)::after,.ys-bk.ys-prata::after,.ys-bk.ys-bronze::after,.cv.rt-ouro:not(.rt-45)::before,.cv.rt-prata::before,.cv.rt-bronze::before{content:none!important;animation:none!important}
-.ys-bk.ys-ouro:not(.ys-45) .cv{box-shadow:0 0 0 1.5px #d4a520!important}
+.ys-bk.ys-prata::after,.ys-bk.ys-bronze::after,.cv.rt-prata::before,.cv.rt-bronze::before{content:none!important;animation:none!important}
+.ys-bk.ys-ouro::after{content:""!important;position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:2px 4px 0 0;animation:ys5Shine 4.5s ease-in-out infinite!important}
+.ys-bk.ys-ouro::after,.cv.rt-ouro::before{background-image:linear-gradient(115deg,transparent 38%,rgba(255,214,90,.6) 50%,transparent 62%)!important;background-size:250% 100%!important}
+.ys-bk.ys-5::after,.cv.rt-5::before{background-image:linear-gradient(115deg,transparent 34%,rgba(255,214,110,.6) 44%,rgba(255,150,210,.55) 50%,rgba(150,200,255,.55) 56%,transparent 66%)!important;background-size:250% 100%!important}
 `; TR.append(st); }
 // --- 32_navegacao.js ---
 // Voltar sempre para a tela de onde veio (auditoria de 15/11): pilha de páginas do #shelflist.
