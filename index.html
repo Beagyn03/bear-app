@@ -9594,6 +9594,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12239,6 +12240,25 @@ function editTop5() {
   } catch (err) { console.warn('avaliação em página', err); }
   return r;
 }; }
+// Recarregar o app com a avaliação aberta volta para ela (Bia, 16/11): guarda o livro e o modo (ler/editar) na sessão.
+{ const K = 'bear.rateOpen';
+  const _rf2 = rateForm; rateForm = function (b) {
+    const r = _rf2.apply(this, arguments);
+    try {
+      const wrap = [...document.querySelectorAll('body > .sheet.rt-full')].pop(); if (!wrap) return r;
+      const put = () => { try { sessionStorage.setItem(K, JSON.stringify({ id: b.id || null, t: b.title, ed: !wrap.classList.contains('rt-view') })); } catch {} };
+      put(); wrap.querySelector('.rtf-ed')?.addEventListener('click', () => setTimeout(put, 0));
+      const tm = setInterval(() => { if (!wrap.isConnected) { clearInterval(tm); try { const c = JSON.parse(sessionStorage.getItem(K) || 'null'); if (c && c.t === b.title) sessionStorage.removeItem(K); } catch {} } }, 400);
+    } catch {}
+    return r;
+  };
+  setTimeout(() => {
+    let c = null; try { c = JSON.parse(sessionStorage.getItem(K) || 'null'); } catch {} if (!c) return;
+    const e = lib().find((x) => (c.id && x.id === c.id && normT(x.title) === normT(c.t))) || lib().find((x) => normT(x.title) === normT(c.t));
+    if (!e) { try { sessionStorage.removeItem(K); } catch {} return; }
+    try { rateForm(e, { logs: [] }, () => renderHome(todayISO())); if (c.ed) setTimeout(() => document.querySelector('.sheet.rt-full .rtf-ed')?.click(), 50); } catch (err) { console.warn('reabrir avaliação', err); }
+  }, 1800);
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
