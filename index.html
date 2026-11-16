@@ -9614,6 +9614,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12464,6 +12465,7 @@ async function openRessacaList(kind) {
 .fx-f input.miss{border-color:var(--acc);border-style:dashed}
 .fx-row2{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.4rem;font-size:.8rem}
 .fx-row2 button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;padding:0}
+.fx-pg{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:.2rem 0 .7rem;font-size:.82rem;font-weight:800;color:var(--ink-2)}.fx-pg button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:.4rem .75rem;font:inherit;font-weight:800}.fx-pg button:disabled{opacity:.35}
 .fx-ok{font-size:.74rem;font-weight:800;color:#2f8a52}
 .fx-card{display:grid;grid-template-columns:1fr auto;gap:.6rem;align-items:center;width:100%;text-align:left;border:1px dashed var(--acc);border-radius:14px;padding:.7rem .85rem;background:var(--panel);color:var(--ink);font:inherit;margin:0 0 .8rem}
 .fx-card b{display:block;font-size:.92rem}.fx-card small{font-size:.8rem;color:var(--ink-2)}
@@ -12472,22 +12474,25 @@ const fxMiss = (e) => { const rv = reviewOfLib(e) || {}; return { ini: !e.starte
 const fxCount = () => { const L = lib().filter((e) => e.status === 'LIDO'); return { all: L.length, ini: L.filter((e) => fxMiss(e).ini).length, fim: L.filter((e) => fxMiss(e).fim).length, pag: L.filter((e) => fxMiss(e).pag).length, nota: L.filter((e) => fxMiss(e).nota).length }; };
 function openFixReads(filter) {
   const v = $('#shelflist'); closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page');
-  let f = filter || (fxCount().ini ? 'ini' : 'todos');
+  let f = filter || (fxCount().ini ? 'ini' : 'todos'), page = 0; const PER = 10; // 10 livros por página
   const NAMES = { ini: 'Sem início', fim: 'Sem fim', pag: 'Sem páginas', nota: 'Sem nota', todos: 'Todos os lidos' };
   const draw = () => {
     const c = fxCount();
-    const list = lib().filter((e) => e.status === 'LIDO' && (f === 'todos' || fxMiss(e)[f])).sort((a, z) => String(z.finishedAt || '').localeCompare(String(a.finishedAt || '')));
+    const all = lib().filter((e) => e.status === 'LIDO' && (f === 'todos' || fxMiss(e)[f])).sort((a, z) => String(z.finishedAt || '').localeCompare(String(a.finishedAt || '')));
+    const pages = Math.max(1, Math.ceil(all.length / PER)); if (page >= pages) page = pages - 1; const list = all.slice(page * PER, page * PER + PER);
+    const nav = all.length > PER ? '<div class="fx-pg"><button type="button" data-pg="-1"' + (page ? '' : ' disabled') + '>‹ Anterior</button><span>' + (page * PER + 1) + '–' + Math.min(all.length, page * PER + PER) + ' de ' + all.length + '</span><button type="button" data-pg="1"' + (page < pages - 1 ? '' : ' disabled') + '>Próxima ›</button></div>' : '';
     v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Ajustar leituras</b><span></span></div>'
       + '<p class="hint" style="margin:.1rem 0 .3rem">Preencha o que faltou nos seus lidos (por exemplo, depois de importar o histórico). Cada campo salva sozinho e as Estatísticas usam na hora.</p>'
       + '<div class="fx-chips">' + ['ini', 'fim', 'pag', 'nota', 'todos'].map((k) => '<button type="button" data-f="' + k + '" class="' + (f === k ? 'on' : '') + '">' + NAMES[k] + ' · ' + (k === 'todos' ? c.all : c[k]) + '</button>').join('') + '</div>'
-      + (list.length ? list.map((e) => { const m = fxMiss(e), rv = reviewOfLib(e) || {};
+      + nav + (list.length ? list.map((e) => { const m = fxMiss(e), rv = reviewOfLib(e) || {};
         return '<div class="fx-it" data-id="' + esc(e.id) + '">' + cvh(e.title, e.cover, '') + '<div><b>' + esc(e.title) + '</b><span class="au">' + esc(e.author || '') + '</span>'
           + '<div class="fx-f"><label>Comecei em<input type="date" data-k="ini" value="' + esc(e.startedAt || '') + '" class="' + (m.ini ? 'miss' : '') + '"></label><label>Terminei em<input type="date" data-k="fim" value="' + esc(e.finishedAt || '') + '" class="' + (m.fim ? 'miss' : '') + '"></label><label>Páginas<input type="number" inputmode="numeric" min="1" data-k="pag" value="' + (Number(e.totalPages) > 0 ? Number(e.totalPages) : '') + '" class="' + (m.pag ? 'miss' : '') + '"></label><label>Formato<select data-k="fmt">' + [['FISICO', 'Físico'], ['EBOOK', 'E-book'], ['AUDIO', 'Audiolivro']].map(([k, n]) => '<option value="' + k + '"' + ((e.format || 'FISICO') === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label><label class="fx-rs">Ressaca literária<select data-k="rs">' + [['', 'Não sei'], ['deu', 'Me deu ressaca'], ['curou', 'Curou minha ressaca']].map(([k, n]) => { const cur = rv.ressaca === true ? 'deu' : (rv.ressaca || ''); return '<option value="' + k + '"' + (cur === k ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></label></div>'
           + '<div class="fx-row2"><span>' + (rv.paws ? esc(pawTxt(rv.paws)) : '<span style="color:var(--ink-2)">Sem nota</span>') + '</span><span class="fx-ok" hidden>Salvo</span><button type="button" data-rate="1">' + (rv.paws ? 'Avaliação ›' : 'Avaliar ›') + '</button></div></div></div>'; }).join('')
-        : '<p class="sl-empty">' + (f === 'todos' ? 'Nenhum livro lido ainda.' : 'Nada faltando aqui. 🎉') + '</p>');
+        : '<p class="sl-empty">' + (f === 'todos' ? 'Nenhum livro lido ainda.' : 'Nada faltando aqui. 🎉') + '</p>') + nav;
     try { paintCv(v); } catch {}
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; try { refresh(); } catch {} });
-    v.querySelectorAll('.fx-chips button').forEach((b) => b.addEventListener('click', () => { f = b.dataset.f; draw(); }));
+    v.querySelectorAll('.fx-chips button').forEach((b) => b.addEventListener('click', () => { f = b.dataset.f; page = 0; draw(); }));
+    v.querySelectorAll('.fx-pg button').forEach((b) => b.addEventListener('click', () => { page += Number(b.dataset.pg); draw(); v.scrollTop = 0; }));
     v.querySelectorAll('.fx-it').forEach((row) => {
       const e = lib().find((x) => x.id === row.dataset.id); if (!e) return; const ok = row.querySelector('.fx-ok');
       const flash = () => { ok.hidden = false; clearTimeout(ok._t); ok._t = setTimeout(() => { ok.hidden = true; }, 1400); };
