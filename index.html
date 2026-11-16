@@ -9597,6 +9597,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12199,6 +12200,7 @@ function editTop5() {
 .rv-empty{margin:0;font-size:.86rem;color:var(--ink-2)}
 .rv-add{justify-self:start;border:1.5px dashed var(--line);background:none;color:var(--ink);border-radius:12px;padding:.45rem .9rem;font:inherit;font-weight:800}
 .rv-c{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:.5rem .75rem}.rv-c small{color:var(--ink-2)}.rv-c p{margin:.2rem 0 0;white-space:pre-line}
+.rtf-st.st-lido,.rtf-st.st-concluido{background:#2f8a52!important;border-color:#2f8a52!important;color:#fff!important}
 .rtf-lb{font-weight:800;font-size:.9rem;margin:.4rem 0 -.2rem}
 .sheet.rt-full .rt-btns{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:.55rem 1rem calc(.55rem + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);max-width:none;margin:0;display:flex!important;justify-content:flex-end;gap:.5rem}
 .sheet.rt-full .rt-btns button{min-height:40px!important;height:40px!important;padding:0 1.2rem!important;font-size:.92rem!important;width:auto!important;flex:none!important;border-radius:12px!important;margin:0!important}
@@ -12213,7 +12215,7 @@ function editTop5() {
     const stK = (libE && libE.status) || b.status, stTxt = (typeof LIB_LABEL !== 'undefined' && LIB_LABEL[stK]) || ({ CONCLUIDO: 'Lido', LENDO: 'Lendo', PAUSADO: 'Pausado', NAO_INICIADO: 'Quero ler' })[stK] || '';
     const cover = (libE && libE.cover) || b.cover || null, author = (libE && libE.author) || b.author || '';
     const top = document.createElement('div'); top.className = 'rtf-top'; top.innerHTML = '<b>' + (b.review && b.review.paws ? 'Sua avaliação' : 'Avaliar') + '</b><button type="button" class="rtf-x">Fechar</button>';
-    const hd = document.createElement('div'); hd.className = 'rtf-hd'; hd.innerHTML = cvh(b.title, cover, '') + '<div class="rtf-info"><b>' + esc(b.title) + '</b>' + (author ? '<small>' + esc(author) + '</small>' : '') + (stTxt ? '<span class="rtf-st">' + esc(stTxt) + '</span>' : '') + '<button type="button" class="rtf-cat">Ver no catálogo ›</button></div>';
+    const hd = document.createElement('div'); hd.className = 'rtf-hd'; hd.innerHTML = cvh(b.title, cover, '') + '<div class="rtf-info"><b>' + esc(b.title) + '</b>' + (author ? '<small>' + esc(author) + '</small>' : '') + (stTxt ? '<span class="rtf-st st-' + esc(String(stK || '').toLowerCase()) + '">' + esc(stTxt) + '</span>' : '') + '<button type="button" class="rtf-cat">Ver no catálogo ›</button></div>';
     form.prepend(top, hd);
     top.querySelector('.rtf-x').addEventListener('click', () => wrap.remove());
     hd.querySelector('.rtf-cat').addEventListener('click', () => { wrap.remove(); try { if (libE) openBookPage(libE); else openAnyBook(b.title, author || null, cover); } catch (err) { console.warn('catálogo', err); } });
