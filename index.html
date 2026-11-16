@@ -9595,6 +9595,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12189,6 +12190,12 @@ function editTop5() {
 .rtf-view .rv-txt{white-space:pre-line;line-height:1.55;font-size:.95rem;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.85rem .95rem;margin:0}
 .rtf-view .rv-tags{display:flex;flex-wrap:wrap;gap:.35rem}.rtf-view .rv-tags span{font-size:.75rem;font-weight:800;border:1px solid var(--line);border-radius:99px;padding:.15rem .65rem;color:var(--ink-2)}
 .rtf-cat{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.85rem;padding:.3rem .5rem;margin-top:.1rem}
+.rv-sec{display:grid;gap:.45rem;margin-top:.4rem}.rv-sec h4{margin:.2rem 0 0;font-size:1rem}
+.rv-q{margin:0;border-left:3px solid var(--acc);background:var(--panel);border-radius:0 12px 12px 0;padding:.55rem .8rem;font-style:italic;line-height:1.5}.rv-q small{display:block;font-style:normal;font-weight:800;color:var(--ink-2);font-size:.72rem;margin-top:.2rem}
+.rv-note{margin:0;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:.55rem .8rem;white-space:pre-line}.rv-note small{display:block;font-weight:800;color:var(--ink-2);font-size:.72rem}
+.rv-empty{margin:0;font-size:.86rem;color:var(--ink-2)}
+.rv-add{justify-self:start;border:1.5px dashed var(--line);background:none;color:var(--ink);border-radius:12px;padding:.45rem .9rem;font:inherit;font-weight:800}
+.rv-c{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:.5rem .75rem}.rv-c small{color:var(--ink-2)}.rv-c p{margin:.2rem 0 0;white-space:pre-line}
 .rtf-lb{font-weight:800;font-size:.9rem;margin:.4rem 0 -.2rem}
 .sheet.rt-full .rt-btns{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:.7rem 1rem calc(.7rem + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 25%);max-width:560px;margin:0 auto}
 `; document.head.append(st); }
@@ -12216,6 +12223,25 @@ function editTop5() {
         + (rv.texto ? '<p class="rv-txt">' + esc(rv.texto) + '</p>' : rv.frase ? '<p class="rv-txt">' + esc(rv.frase) + '</p>' : '')
         + '<div class="rv-tags">' + [rv.spoiler ? 'Tem spoiler' : '', rv.share === false ? 'Privada (só você vê)' : 'Visível para os outros', rv.ressaca === true ? 'Me deixou de ressaca' : ''].filter(Boolean).map((t) => '<span>' + t + '</span>').join('') + '</div>';
       hd.after(view);
+      // embaixo da avaliação: trechos (e anotação) do livro e os comentários que a avaliação recebeu
+      const qs = libE ? [...(libE.quotes || [])].sort((a, z) => (a.p || 99999) - (z.p || 99999)) : [];
+      const tq = document.createElement('section'); tq.className = 'rv-sec';
+      tq.innerHTML = '<h4>Trechos</h4>' + (libE && libE.note ? '<p class="rv-note"><small>Anotação</small>' + esc(libE.note) + '</p>' : '')
+        + (qs.length ? qs.map((q) => '<blockquote class="rv-q">' + esc(q.t) + (q.p ? '<small>pág. ' + q.p + '</small>' : '') + '</blockquote>').join('') : '<p class="rv-empty">Nenhum trecho salvo deste livro.</p>')
+        + (libE ? '<button type="button" class="rv-add">+ Salvar trecho</button>' : '');
+      view.append(tq);
+      tq.querySelector('.rv-add')?.addEventListener('click', () => { wrap.remove(); try { saveQuote(libE); } catch {} });
+      if (rv.share !== false && libE && connected() && socialProfile) {
+        const cm = document.createElement('section'); cm.className = 'rv-sec'; cm.innerHTML = '<h4>Comentários</h4><p class="rv-empty">Carregando…</p>'; view.append(cm);
+        (async () => {
+          try {
+            const u = await sapi('GET', '/v1/users/' + encodeURIComponent(socialProfile.handle)); const mineRv = u.status === 200 && u.data && (u.data.reviews || []).find((x) => x.libId === libE.id || normT(x.title) === normT(libE.title));
+            if (!mineRv) { cm.querySelector('.rv-empty').textContent = 'Sua avaliação ainda não foi publicada. Ela aparece para os outros depois de sincronizar.'; return; }
+            const c = await sapi('GET', '/v1/reviews/' + encodeURIComponent(mineRv.id) + '/comments'); const items = c.status === 200 && c.data ? c.data.items || [] : [];
+            cm.innerHTML = '<h4>Comentários' + (items.length ? ' · ' + items.length : '') + '</h4>' + (items.length ? items.map((x) => '<div class="rv-c"><b>' + esc((x.user && x.user.displayName) || '') + '</b> <small>@' + esc((x.user && x.user.handle) || '') + '</small><p>' + esc(x.text) + '</p></div>').join('') : '<p class="rv-empty">Ninguém comentou ainda.</p>');
+          } catch { cm.querySelector('.rv-empty') && (cm.querySelector('.rv-empty').textContent = 'Não consegui carregar os comentários agora.'); }
+        })();
+      }
       const x = top.querySelector('.rtf-x'), acts = document.createElement('span'); acts.className = 'rtf-acts';
       acts.innerHTML = '<button type="button" class="rtf-ed">Editar avaliação</button>'; x.before(acts); acts.append(x);
       acts.querySelector('.rtf-ed').addEventListener('click', () => { wrap.classList.remove('rt-view'); view.remove(); acts.querySelector('.rtf-ed').remove(); top.querySelector('b').textContent = 'Editar avaliação'; wrap.querySelector('.box').scrollTop = 0; });
