@@ -9567,6 +9567,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10972,6 +10973,11 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .gs-btns{position:sticky;bottom:0;display:grid;gap:.3rem;padding:.8rem 0 .4rem;background:linear-gradient(transparent,var(--bg) 30%)}
 .gs-ok{height:46px;border-radius:12px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:800;font-size:1rem}
 .gs-ok:disabled{opacity:.5}
+.gs-hi{display:grid;grid-template-columns:84px 1fr;gap:.7rem;align-items:center;margin:.2rem 0 1rem}.gs-hi img{width:84px;height:84px;object-fit:contain;animation:gsHop .6s cubic-bezier(.2,1.4,.4,1) both}
+.gs-bub{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:.7rem .85rem;display:grid;gap:.2rem;font-size:.9rem;color:var(--ink-2);font-weight:600;animation:gsPop .45s .15s ease-out both}.gs-bub b{color:var(--ink);font-size:1.05rem;font-weight:900}
+.gs-bub::before{content:"";position:absolute;left:-7px;top:50%;width:12px;height:12px;background:var(--panel);border-left:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateY(-50%) rotate(45deg)}
+@keyframes gsHop{from{transform:translateY(14px) scale(.85);opacity:0}}@keyframes gsPop{from{transform:translateX(-8px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.gs-hi img,.gs-bub{animation:none}}
 .gs-steps{display:flex;align-items:center;gap:.3rem;margin:.1rem 0 .5rem}.gs-steps i{width:26px;height:5px;border-radius:99px;background:var(--line)}.gs-steps i.on{background:var(--acc)}.gs-steps small{margin-left:.4rem;font-size:.75rem;font-weight:800;color:var(--ink-2)}
 .gs-hok{color:var(--ok,#2e7d4f)!important;font-weight:800;font-size:.9rem!important}
 .gs-skip{height:40px;border:0;background:none;color:var(--ink);font:inherit;font-weight:700;opacity:.75}
@@ -11001,9 +11007,10 @@ function openTaste(first, prof) {
     } else {
       top = (step > 1 ? '<button type="button" class="sl-back" data-own="1">‹ Voltar</button>' : '<span></span>') + '<b>Primeiros passos</b><span></span>';
       const dots = '<div class="gs-steps" aria-label="Passo ' + step + ' de 3">' + [1, 2, 3].map((i) => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '<small>Passo ' + step + ' de 3</small></div>';
-      if (step === 1) body = dots + '<h2 class="gs-t">Quais gêneros você mais gosta?</h2><p class="gs-intro">' + (prof ? 'Sua conta está pronta, você é <b>@' + esc(prof.handle) + '</b>. ' : 'Sua conta está pronta. ') + 'Marque quantos quiser.</p>' + chips();
-      else if (step === 2) body = dots + '<h2 class="gs-t">Seu top 5</h2><p class="gs-intro">Os livros que você mais amou. O Bear usa para indicar leituras parecidas.</p>' + bookList();
-      else body = dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Traga os livros que você já leu no Goodreads, Skoob, StoryGraph ou numa planilha: exporte o arquivo por lá e importe aqui.</p>'
+      if (step === 1) body = '<div class="gs-hi"><img src="' + ART.bear_celebrating + '" alt="" width="84" height="84"><div class="gs-bub"><b>Boas-vindas' + (prof ? ', @' + esc(prof.handle) : '') + '!</b><span>Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.</span></div></div>'
+        + dots + '<h2 class="gs-t">Quais gêneros você mais gosta?</h2><p class="gs-intro">Marque quantos quiser.</p>' + chips();
+      else if (step === 2) body = dots + '<h2 class="gs-t">Seu top 5</h2><p class="gs-intro">Quais livros você mais amou? Com eles eu acho leituras parecidas para você.</p>' + bookList();
+      else body = dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Se sim, traga seus livros do Goodreads, Skoob, StoryGraph ou de uma planilha: exporte o arquivo por lá e importe aqui. Assim sua estante já começa cheia.</p>'
         + '<div class="gs-hist">' + (S.gsHist ? '<small class="gs-hok">✓ ' + esc(S.gsHist) + '</small>' : '<small>No Goodreads: My Books › Import and export › Export library. Planilha: colunas título, autor e, se quiser, ano, nota e status.</small>')
         + '<button type="button" class="gs-add" id="gs-hist">' + (S.gsHist ? 'Importar outro arquivo' : 'Importar arquivo (CSV)') + '</button></div>';
       okTxt = step < 3 ? 'Continuar' : 'Começar a usar'; skipTxt = step < 3 ? 'Pular' : (S.gsHist ? '' : 'Agora não');
