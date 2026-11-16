@@ -9622,6 +9622,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12676,10 +12677,9 @@ setTimeout(async () => {
 .yo-nums.yo-n7 button small{white-space:nowrap}
 .yo-nums.yo-n7 .mt{display:block;width:80%;height:4px;border-radius:99px;background:var(--line);margin:.2rem auto 0;overflow:hidden}.yo-nums.yo-n7 .mt i{display:block;height:100%;background:var(--acc)}
 `; TR.append(st); }
-{ const _om = openMyProfile; openMyProfile = async function () {
-  const r = await _om.apply(this, arguments);
+function myProfileNums() {
   try {
-    const v = $('#shelflist'), nums = v && !v.hidden && v.querySelector('.yo-top') && v.querySelector('.yo-nums'); if (!nums) return r;
+    const v = $('#shelflist'), nums = v && !v.hidden && v.querySelector('.yo-top') && v.querySelector('.yo-nums'); if (!nums) return;
     const L = lib(), y = Number(todayISO().slice(0, 4)), Y = String(y);
     const lidosAno = L.filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').slice(0, 4) === Y);
     const lidos = L.filter((e) => e.status === 'LIDO'), pags = lidos.reduce((a, e) => a + (Number(e.totalPages) || 0), 0);
@@ -12703,8 +12703,10 @@ setTimeout(async () => {
     const go = { lidos: () => shelf('LIDO'), fila: () => shelf('QUERO'), aband: () => shelf('ABANDONEI'), stats: () => { v.hidden = true; goTab('progresso'); }, meta: () => { v.hidden = true; goTab('progresso'); } };
     nums.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); (go[b.dataset.go] || (() => {}))(); }, true));
   } catch (err) { console.warn('números do perfil', err); }
-  return r;
-}; }
+}
+// vale para o perfil aberto pela aba Perfil e para o próprio perfil aberto por outro caminho (tocar no seu nome na Rede, por exemplo)
+{ const _om = openMyProfile; openMyProfile = async function () { const r = await _om.apply(this, arguments); myProfileNums(); return r; }; }
+{ const _fp = friendPage; friendPage = async function (h) { const r = await _fp.apply(this, arguments); const d = S.fpData; if (d && d.self && d.handle === h) myProfileNums(); return r; }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
