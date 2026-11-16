@@ -9593,6 +9593,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12186,6 +12187,7 @@ function editTop5() {
 .rtf-view .rv-dates{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}.rtf-view .rv-dates div{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:.5rem .7rem}.rtf-view .rv-dates small{display:block;font-size:.72rem;font-weight:800;color:var(--ink-2)}.rtf-view .rv-dates b{font-size:.95rem}
 .rtf-view .rv-txt{white-space:pre-line;line-height:1.55;font-size:.95rem;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.85rem .95rem;margin:0}
 .rtf-view .rv-tags{display:flex;flex-wrap:wrap;gap:.35rem}.rtf-view .rv-tags span{font-size:.75rem;font-weight:800;border:1px solid var(--line);border-radius:99px;padding:.15rem .65rem;color:var(--ink-2)}
+.rtf-cat{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.85rem;padding:.3rem .5rem;margin-top:.1rem}
 .rtf-lb{font-weight:800;font-size:.9rem;margin:.4rem 0 -.2rem}
 .sheet.rt-full .rt-btns{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:.7rem 1rem calc(.7rem + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 25%);max-width:560px;margin:0 auto}
 `; document.head.append(st); }
@@ -12198,9 +12200,10 @@ function editTop5() {
     const stK = (libE && libE.status) || b.status, stTxt = (typeof LIB_LABEL !== 'undefined' && LIB_LABEL[stK]) || ({ CONCLUIDO: 'Lido', LENDO: 'Lendo', PAUSADO: 'Pausado', NAO_INICIADO: 'Quero ler' })[stK] || '';
     const cover = (libE && libE.cover) || b.cover || null, author = (libE && libE.author) || b.author || '';
     const top = document.createElement('div'); top.className = 'rtf-top'; top.innerHTML = '<b>' + (b.review && b.review.paws ? 'Sua avaliação' : 'Avaliar') + '</b><button type="button" class="rtf-x">Fechar</button>';
-    const hd = document.createElement('div'); hd.className = 'rtf-hd'; hd.innerHTML = cvh(b.title, cover, '') + '<b>' + esc(b.title) + '</b>' + (author ? '<small>' + esc(author) + '</small>' : '') + (stTxt ? '<span class="rtf-st">' + esc(stTxt) + '</span>' : '');
+    const hd = document.createElement('div'); hd.className = 'rtf-hd'; hd.innerHTML = cvh(b.title, cover, '') + '<b>' + esc(b.title) + '</b>' + (author ? '<small>' + esc(author) + '</small>' : '') + (stTxt ? '<span class="rtf-st">' + esc(stTxt) + '</span>' : '') + '<button type="button" class="rtf-cat">Ver no catálogo ›</button>';
     form.prepend(top, hd);
     top.querySelector('.rtf-x').addEventListener('click', () => wrap.remove());
+    hd.querySelector('.rtf-cat').addEventListener('click', () => { wrap.remove(); try { if (libE) openBookPage(libE); else openAnyBook(b.title, author || null, cover); } catch (err) { console.warn('catálogo', err); } });
     // avaliação já salva: abre para ler; "Editar avaliação" no topo abre o formulário
     const rv = b.review || {};
     if (rv.paws || rv.texto || rv.frase) {
