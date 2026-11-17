@@ -9614,6 +9614,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12934,25 +12935,25 @@ async function pushSubscribe() {
   const j = sub.toJSON(); const r = await sapi('POST', '/v1/push/subscribe', { endpoint: j.endpoint, keys: j.keys });
   if (r.status !== 200) throw new Error('inscrição');
 }
-const reminderBody = (e) => { const i = readingInfo(e), total = i.total || Number(e.totalPages) || 0; return total ? { title: String(e.title).slice(0, 200), dueAt: e.dueAt, total, page: Math.min(total, i.now || 0), hour: e.remind.hour, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo' } : null; };
-async function reminderSync(e) { try { if (!connected()) return; if (!e || !e.remind || !e.dueAt || e.status !== 'LENDO') { await sapi('DELETE', '/v1/me/reminder'); return; } const b = reminderBody(e); if (b) { await sapi('PUT', '/v1/me/reminder', b); e.remind.sent = b.page + '|' + b.dueAt + '|' + b.hour; save(); } } catch {} }
+const reminderBody = (e) => { const i = readingInfo(e), total = i.total || Number(e.totalPages) || 0; return total ? { title: String(e.title).slice(0, 200), dueAt: e.dueAt, total, page: Math.min(total, i.now || 0), hour: e.remind.hour, minute: e.remind.minute || 0, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo' } : null; };
+async function reminderSync(e) { try { if (!connected()) return; if (!e || !e.remind || !e.dueAt || e.status !== 'LENDO') { await sapi('DELETE', '/v1/me/reminder'); return; } const b = reminderBody(e); if (b) { await sapi('PUT', '/v1/me/reminder', b); e.remind.sent = b.page + '|' + b.dueAt + '|' + b.hour + ':' + b.minute; save(); } } catch {} }
 // opção no "Quando quer terminar?"
 { const _ds = dueSheet; dueSheet = function (e) {
   const r = _ds.apply(this, arguments);
   try {
     const wrap = [...document.querySelectorAll('body > .sheet')].pop(), f = wrap && wrap.querySelector('form'); if (!f || !f.querySelector('input[name=due]')) return r;
-    const hours = Array.from({ length: 18 }, (_, i) => i + 6), cur = (e.remind && e.remind.hour) ?? 20;
+    const hhmm = (h, m) => String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'), times = []; for (let h = 6; h <= 23; h++) for (const m of [0, 15, 30, 45]) times.push([h, m]); const cur = e.remind ? hhmm(e.remind.hour, e.remind.minute || 0) : '20:00';
     const box = document.createElement('div'); box.style.cssText = 'display:grid;gap:.35rem;border:1px solid var(--line);border-radius:12px;padding:.6rem .7rem;background:var(--panel)';
     box.innerHTML = `<label class="ck-row" style="margin:0"><input type="checkbox" name="rem" ${e.remind ? 'checked' : ''}><span><b>Me lembrar todo dia</b> com quantas páginas faltam</span></label>
-      <label style="display:flex;gap:.5rem;align-items:center;margin:0;font-size:.86rem">às <select name="remh" style="width:auto">${hours.map((h) => `<option value="${h}" ${h === cur ? 'selected' : ''}>${String(h).padStart(2, '0')}:00</option>`).join('')}</select></label>
+      <label style="display:flex;gap:.5rem;align-items:center;margin:0;font-size:.86rem">às <select name="remh" style="width:auto">${times.map(([h, m]) => `<option value="${hhmm(h, m)}" ${hhmm(h, m) === cur ? 'selected' : ''}>${hhmm(h, m)}</option>`).join('')}</select></label>
       <small class="hint" style="margin:0">${pushOk() ? 'O celular vai pedir permissão para notificar. No iPhone, só funciona com o B.E.A.R instalado na tela de início.' : 'Este navegador não recebe notificações.'}</small>`;
     f.querySelector('.dp').after(box);
     const sub = f.querySelector('button[type=submit]');
     sub.addEventListener('click', async () => { // roda antes do salvar do formulário (que fecha a folha)
-      const on = box.querySelector('input[name=rem]').checked, h = Number(box.querySelector('select[name=remh]').value);
+      const on = box.querySelector('input[name=rem]').checked, [h, mi] = box.querySelector('select[name=remh]').value.split(':').map(Number);
       if (!on) { if (e.remind) { delete e.remind; save(); setTimeout(() => reminderSync(e), 300); } return; }
-      e.remind = { hour: h }; save();
-      try { await pushSubscribe(); setTimeout(() => reminderSync(e), 300); toast(`Lembrete todo dia às ${String(h).padStart(2, '0')}:00`); }
+      e.remind = { hour: h, minute: mi }; save();
+      try { await pushSubscribe(); setTimeout(() => reminderSync(e), 300); toast(`Lembrete todo dia às ${hhmm(h, mi)}`); }
       catch (err) { delete e.remind; save(); toast(err.message === 'negado' ? 'Sem permissão para notificar. Libere nas configurações do navegador.' : 'Este aparelho não aceitou notificações'); }
     }, true);
     f.querySelector('.dx')?.addEventListener('click', () => { delete e.remind; save(); setTimeout(() => reminderSync(e), 300); });
@@ -12964,14 +12965,14 @@ setInterval(() => { try {
   const R = reading(); const e = R && R.e;
   for (const x of lib()) if (x.remind && (x !== e || x.status !== 'LENDO' || !x.dueAt)) { delete x.remind; save(); reminderSync(null); }
   if (!e || !e.remind || !e.dueAt) return; const b = reminderBody(e); if (!b) return;
-  if (e.remind.sent !== b.page + '|' + b.dueAt + '|' + b.hour) reminderSync(e);
+  if (e.remind.sent !== b.page + '|' + b.dueAt + '|' + b.hour + ':' + b.minute) reminderSync(e);
 } catch {} }, 30000);
 // a notificação abre o app no "Atualizar leitura"
 const openUpd = () => { try { const R = reading(); if (R) editLeitura(); } catch {} };
 if (/[?&]upd=1/.test(location.search)) { setTimeout(openUpd, 2200); try { history.replaceState(null, '', location.pathname); } catch {} }
 if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (ev) => { if (ev.data && ev.data.type === 'bear-upd') openUpd(); });
 // cartão do Início: mostra que o lembrete está ligado
-{ let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { TR.querySelectorAll('.due-ln span:first-child').forEach((s) => { const R = reading(); if (R && R.e.remind && !s.dataset.bell) { s.dataset.bell = 1; s.insertAdjacentHTML('beforeend', ' <small style="font-weight:700;opacity:.75">· lembrete às ' + R.e.remind.hour + 'h</small>'); } }); }, 120); }).observe(TR, { childList: true, subtree: true }); }
+{ let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { TR.querySelectorAll('.due-ln span:first-child').forEach((s) => { const R = reading(); if (R && R.e.remind && !s.dataset.bell) { s.dataset.bell = 1; s.insertAdjacentHTML('beforeend', ' <small style="font-weight:700;opacity:.75">· lembrete às ' + String(R.e.remind.hour).padStart(2, '0') + ':' + String(R.e.remind.minute || 0).padStart(2, '0') + '</small>'); } }); }, 120); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
