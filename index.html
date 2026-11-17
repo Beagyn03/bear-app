@@ -9824,6 +9824,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14566,6 +14567,108 @@ const yvRemount = (sec) => { const c = YV_CTX.get(sec) || YV_LAST; if (!c) retur
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('.yv-ln button, .yv-seg button'); if (!b) return; const sec = b.closest('.ys'); if (!sec) return;
   if (b.dataset.l) yvPref('ysLines', Number(b.dataset.l)); else if (b.dataset.v) yvPref('ysView', b.dataset.v); yvRemount(sec); });
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => TR.querySelectorAll('.ys[data-yv]').forEach((sec) => { if (sec.dataset.yv !== yvSig() || !YV_CTX.has(sec)) yvRemount(sec); }), 60); }).observe(TR, { childList: true, subtree: true }); }
+// --- 86_historico_diario.js ---
+// Histórico no Diário de leitura (Bia, 17/11): embaixo das ações, uma linha do tempo do livro, do mais novo para o mais antigo.
+// Cada dia tem o marca-página do prazo (enche com as páginas do dia; dourado com estrela quando bateu a meta; tracejado na folga)
+// e o que aconteceu: páginas lidas, emoções, comentários, trechos, início da leitura e prazo definido.
+{ const st = document.createElement('style'); st.textContent = `
+#editor .tl{margin:1.1rem 0 .4rem;border-top:1px solid var(--line);padding-top:.8rem}
+#editor .tl-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 .6rem}#editor .tl-h b{font-size:.92rem}#editor .tl-h small{font-size:.7rem;color:var(--ink-2);font-weight:700}
+#editor .tl-d{display:grid;grid-template-columns:30px minmax(0,1fr);gap:.65rem;position:relative;padding-bottom:.85rem}
+#editor .tl-d::before{content:"";position:absolute;left:14px;top:52px;bottom:4px;width:2px;background:var(--line);border-radius:2px}
+#editor .tl-d:last-child::before{display:none}
+#editor .tl-rib{position:relative;display:block;width:24px;height:46px;margin:2px auto 0;background:color-mix(in srgb,var(--ink) 12%,transparent);clip-path:polygon(0 0,100% 0,100% 100%,50% 80%,0 100%);overflow:hidden}
+#editor .tl-rib i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(var(--acc),color-mix(in srgb,var(--acc) 70%,#000))}
+#editor .tl-rib.ok i{background:linear-gradient(#ffe08a,#e2a92c)}
+#editor .tl-rib.off{background:none;outline:1.5px dashed var(--line);outline-offset:-2px;clip-path:none;border-radius:3px}
+#editor .tl-rib.dot{width:12px;height:12px;border-radius:50%;clip-path:none;margin-top:6px;background:var(--acc)}
+#editor .tl-rib u{position:absolute;left:0;right:0;top:4px;text-align:center;text-decoration:none;font-size:.72rem;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+#editor .tl-t{font-size:.78rem;font-weight:900;color:var(--ink)}#editor .tl-t small{font-weight:700;color:var(--ink-2);margin-left:.3rem}
+#editor .tl-pg{font-size:.76rem;font-weight:800;color:var(--acc);margin-top:.1rem}#editor .tl-pg.ok{color:#c08a12}
+#editor .tl-it{margin-top:.35rem;font-size:.82rem;line-height:1.4;color:var(--ink)}
+#editor .tl-it small{display:block;font-size:.66rem;font-weight:800;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
+#editor .tl-it p{margin:.1rem 0 0;white-space:pre-line}#editor .tl-it q{font-style:italic}
+#editor .tl-fe{display:flex;gap:.25rem;flex-wrap:wrap;margin-top:.15rem}#editor .tl-fe span{font-size:.68rem;font-weight:800;padding:.1rem .45rem;border-radius:99px;background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc)}
+#editor .tl-ev{font-size:.76rem;font-weight:700;color:var(--ink-2);margin-top:.3rem}
+#editor .tl-more{width:100%;border:1.5px dashed var(--line);background:none;color:var(--ink-2);font:inherit;font-weight:800;font-size:.78rem;border-radius:12px;padding:.45rem}
+#editor .tl-empty{font-size:.78rem;color:var(--ink-2);margin:0}
+`; TR.append(st); }
+const TL_DOW = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+const tlDay = (iso) => { const t = todayISO(); if (iso === t) return 'Hoje'; if (iso === new Date(Date.parse(t) - 864e5).toISOString().slice(0, 10)) return 'Ontem'; const d = new Date(iso + 'T12:00:00Z'); return TL_DOW[d.getUTCDay()] + ', ' + iso.slice(8, 10) + '/' + iso.slice(5, 7); };
+function tlEvents(e) {
+  const info = (() => { try { return readingInfo(e); } catch { return { now: 0, total: 0 }; } })(), now = info.now || 0, total = info.total || Number(e.totalPages) || 0;
+  const days = new Map(), day = (d) => { if (!days.has(d)) days.set(d, { d, pages: 0, items: [], ev: [] }); return days.get(d); };
+  (e.readLog || []).forEach((l) => { if (l && l.date) day(String(l.date).slice(0, 10)).pages += Number(l.pages) || 0; });
+  (e.diary || []).forEach((x) => { if (x && x.d) day(String(x.d).slice(0, 10)).items.push({ k: 'dy', x }); });
+  (e.quotes || []).forEach((x) => { if (x && x.at) day(String(x.at).slice(0, 10)).items.push({ k: 'qt', x }); });
+  if (e.startedAt) day(String(e.startedAt).slice(0, 10)).ev.push('Começou a ler');
+  if (e.dueSince && e.dueAt) day(String(e.dueSince).slice(0, 10)).ev.push('Prazo definido: ' + tlDay(e.dueAt).replace(/^Hoje$/, 'hoje'));
+  const list = [...days.values()].sort((a, b) => b.d.localeCompare(a.d));
+  // página em que cada dia terminou: volta da página atual descontando o que foi lido nos dias seguintes
+  let after = 0; list.forEach((x) => { x.end = Math.max(0, now - after); x.start = Math.max(0, x.end - x.pages); after += x.pages; });
+  const maxP = Math.max(1, ...list.map((x) => x.pages)), off = e.dueOff || [];
+  // meta dos dias passados: a mesma conta dos marca-páginas do Início (feita no dia em que o prazo foi marcado)
+  let workAll = 0; if (e.dueAt && e.dueSince) for (let d = String(e.dueSince).slice(0, 10); d <= e.dueAt; d = new Date(Date.parse(d) + 864e5).toISOString().slice(0, 10)) if (!off.includes(new Date(d + 'T12:00:00Z').getUTCDay())) workAll++;
+  const base = total && workAll ? Math.ceil(Math.max(0, total - (e.dueStartPage || 0)) / workAll) : 0;
+  list.forEach((x) => {
+    const w = new Date(x.d + 'T12:00:00Z').getUTCDay();
+    x.inDue = !!(e.dueAt && e.dueSince && x.d >= String(e.dueSince).slice(0, 10) && x.d <= e.dueAt);
+    if (x.inDue && total) {
+      x.off = off.includes(w) && workAll > 0; const hj = x.d === todayISO() ? (() => { try { return dueToday(e); } catch { return null; } })() : null;
+      x.per = x.off ? 0 : hj ? hj.per : base;
+      x.ok = !x.off && x.per > 0 && x.pages >= x.per; x.fill = x.off ? 0 : x.per ? Math.min(1, x.pages / x.per) : 0;
+    } else x.fill = x.pages / maxP;
+  });
+  return list;
+}
+function tlHTML(e, all) {
+  const list = tlEvents(e); if (!list.length) return '<div class="tl"><div class="tl-h"><b>Histórico</b></div><p class="tl-empty">Suas atualizações deste livro aparecem aqui, dia a dia.</p></div>';
+  const show = all ? list : list.slice(0, 14);
+  const names = (fe) => (fe || []).map((k) => (QT_FEELS.find((y) => y[0] === k) || [, k])[1]);
+  const rows = show.map((x) => {
+    const rib = x.pages || x.inDue ? '<span class="tl-rib' + (x.ok ? ' ok' : '') + (x.off ? ' off' : '') + '"><i style="height:' + Math.round(x.fill * 100) + '%"></i>' + (x.ok ? '<u>★</u>' : '') + '</span>' : '<span class="tl-rib dot"></span>';
+    const pg = x.pages ? '<div class="tl-pg' + (x.ok ? ' ok' : '') + '">+' + x.pages + ' pág. · até a pág. ' + x.end + (x.inDue && x.per ? (x.ok ? ' · meta do dia batida' : ' · meta era ' + x.per) : '') + '</div>' : (x.off ? '<div class="tl-ev">Dia de folga</div>' : '');
+    const its = x.items.map(({ k, x: y }) => k === 'qt' ? '<div class="tl-it"><small>Trecho' + (y.p ? ' · pág. ' + y.p : '') + '</small><p><q>' + esc(y.t) + '</q></p></div>'
+      : '<div class="tl-it"><small>' + (y.text ? 'Comentário' : 'Emoções') + ' · pág. ' + (y.page || 0) + '</small>' + (y.fe && y.fe.length ? '<div class="tl-fe">' + names(y.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : '') + (y.text ? '<p>' + esc(y.text) + '</p>' : '') + '</div>').join('');
+    return '<div class="tl-d">' + rib + '<div><div class="tl-t">' + tlDay(x.d) + '</div>' + pg + its + x.ev.map((v) => '<div class="tl-ev">' + esc(v) + '</div>').join('') + '</div></div>';
+  }).join('');
+  const hit = list.filter((x) => x.ok).length, dueDays = list.filter((x) => x.inDue && !x.off && x.d < todayISO()).length;
+  return '<div class="tl"><div class="tl-h"><b>Histórico</b>' + (e.dueAt ? '<small>meta batida em ' + hit + ' dia' + (hit === 1 ? '' : 's') + '</small>' : '') + '</div>' + rows
+    + (!all && list.length > show.length ? '<button type="button" class="tl-more">Ver tudo (' + list.length + ' dias)</button>' : '') + '</div>';
+}
+{ const _el = editLeitura; editLeitura = function () { try { const R = reading(); S.tlE = R && R.e; S.tlAll = false; } catch {} return _el.apply(this, arguments); }; }
+{ const ed = $('#editor'); let tm = 0;
+  const paint = () => {
+    const body = ed.querySelector('.ed-body'); if (ed.hidden || !body || !body.querySelector('#up-save') || body.querySelector('.tl')) return;
+    const e = S.tlE; if (!e) return; const t = document.createElement('div'); t.innerHTML = tlHTML(e, S.tlAll); const tl = t.firstElementChild; body.append(tl);
+    const more = tl.querySelector('.tl-more'); if (more) more.addEventListener('click', () => { S.tlAll = true; tl.remove(); paint(); });
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 40); }).observe(ed, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+}
+// --- 87_meta_inicio_livros.js ---
+// Meta do ano no Início (Bia, 17/11): no lugar da barra, as capas dos livros lidos no ano que contam para a meta,
+// do mais recente para o mais antigo, e depois as vagas tracejadas que faltam.
+{ const st = document.createElement('style'); st.textContent = `
+.ini-meta.im2{padding:.7rem .85rem .75rem}
+.ini-meta.im2 > i{display:none!important}
+.im2-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:.55rem;padding-bottom:2px}.im2-row::-webkit-scrollbar{display:none}
+.im2-row .cv{flex:none;width:42px!important;height:63px!important;border-radius:4px!important;background-size:cover!important;background-position:center!important;font-size:.38rem!important;box-shadow:0 2px 5px rgba(0,0,0,.18)}
+.im2-row .im2-v{flex:none;width:42px;height:63px;border-radius:4px;border:1.5px dashed var(--line);box-sizing:border-box;display:grid;place-items:center;font-size:.62rem;font-weight:900;color:var(--ink-2)}
+.ini-meta.im2 small b{color:var(--acc);font-size:inherit}
+`; TR.append(st); }
+{ let tm = 0; const paint = () => {
+    const m = TR.querySelector('#ini-meta'); if (!m || m.classList.contains('im2')) return;
+    const y = String(new Date().getFullYear()), goal = Number((db.yearGoals || {})[y]) || 0;
+    const read = lib().filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').slice(0, 4) === y).sort((a, b) => String(a.finishedAt).localeCompare(String(b.finishedAt))).reverse();
+    if (!goal && !read.length) return;
+    const left = Math.max(0, goal - read.length);
+    m.classList.add('im2');
+    const sm = m.querySelector('small'); if (sm) sm.innerHTML = read.length + ' de ' + goal + ' livros' + (left ? ' · faltam <b>' + left + '</b>' : ' · <b>meta batida</b>');
+    const row = document.createElement('div'); row.className = 'im2-row';
+    row.innerHTML = read.map((e) => cvh(e.title, e.cover, '')).join('') + Array.from({ length: Math.min(left, 12) }, (_, i) => '<span class="im2-v">' + (read.length + i + 1) + '</span>').join('');
+    m.append(row); try { paintCv(row); } catch {}
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 70); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
