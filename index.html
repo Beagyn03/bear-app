@@ -9651,6 +9651,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12808,15 +12809,24 @@ function myStatsSnap() {
 .due-ln{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.45rem;font-size:.8rem;font-weight:800;color:var(--ink-2);width:100%}
 .due-ln b{color:var(--acc)}.due-ln button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.78rem;padding:0;flex:none}
 .due-ln.late b{color:#c0392b}
+
 `; TR.append(st); }
+{ const st2 = document.createElement('style'); st2.textContent = `.dp-sum{display:grid;justify-items:center;text-align:center;margin:.2rem 0 .5rem}.dp-sum b{font-size:2rem;font-weight:900;color:var(--acc);line-height:1}.dp-sum small{color:var(--ink-2);font-size:.8rem;font-weight:700}
+.dp-days{display:flex;gap:.3rem;overflow-x:auto;padding-bottom:.3rem;scrollbar-width:none}
+.dp-d{flex:1 0 44px;display:grid;justify-items:center;gap:.15rem;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;padding:.35rem .2rem;font:inherit}
+.dp-d small{font-size:.65rem;font-weight:800;color:var(--ink-2);text-transform:uppercase}.dp-d i{display:flex;align-items:flex-end;width:14px;height:46px;border-radius:7px;background:var(--line);overflow:hidden}.dp-d u{display:block;width:100%;background:var(--acc);border-radius:7px}
+.dp-d b{font-size:.8rem;font-weight:900}.dp-d em{font-style:normal;font-size:.62rem;color:var(--ink-2)}
+.dp-d.off{opacity:.55;border-style:dashed}.dp-d.off b{font-size:.68rem;color:var(--ink-2)}.dp-d.hoje{border-color:var(--acc)}`; document.head.append(st2); } // a folha do prazo fica fora do app (document.body)
 const DOW = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
-function duePlan(e, due) {
-  const info = readingInfo(e), total = info.total || Number(e.totalPages) || 0, now = info.now || 0, rem = Math.max(0, total - now);
+function duePlan(e, due, offIn) {
+  const off = offIn || e.dueOff || [], info = readingInfo(e), total = info.total || Number(e.totalPages) || 0, now = info.now || 0, rem = Math.max(0, total - now);
   const t = todayISO(), dd = Math.round((Date.parse(due) - Date.parse(t)) / 864e5) + 1; // hoje conta
-  if (!total || dd < 1) return { rem, days: Math.max(0, dd), perDay: 0, late: dd < 1 && rem > 0, list: [] };
-  const per = Math.ceil(rem / dd), list = []; let left = rem;
-  for (let i = 0; i < dd && left > 0; i++) { const d = new Date(Date.parse(t) + i * 864e5), n = Math.min(per, left); left -= n; list.push({ iso: d.toISOString().slice(0, 10), dow: DOW[d.getUTCDay()], n }); }
-  return { rem, days: dd, perDay: per, late: false, list };
+  if (!total || dd < 1) return { rem, days: Math.max(0, dd), work: 0, perDay: 0, late: dd < 1 && rem > 0, list: [], todayOff: false };
+  const all = []; for (let i = 0; i < dd; i++) { const d = new Date(Date.parse(t) + i * 864e5); all.push({ iso: d.toISOString().slice(0, 10), w: d.getUTCDay(), dow: DOW[d.getUTCDay()], off: off.includes(d.getUTCDay()) }); }
+  let work = all.filter((x) => !x.off).length; if (!work) { all.forEach((x) => { x.off = false; }); work = all.length; } // todos de folga: ignora a folga
+  const per = Math.ceil(rem / work); let left = rem;
+  for (const x of all) { x.n = x.off ? 0 : Math.min(per, left); left -= x.n; }
+  return { rem, days: dd, work, perDay: per, late: false, list: all, todayOff: all[0].off };
 }
 const dueLabel = (iso) => { const d = new Date(iso + 'T12:00:00Z'); return `${DOW[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
 function dueSheet(e) {
@@ -12831,13 +12841,19 @@ function dueSheet(e) {
     <button type="submit" class="primary">Salvar prazo</button>${e.dueAt ? '<button type="button" class="dx">Tirar o prazo</button>' : ''}<button type="button" class="cancel">Cancelar</button></form></div>`;
   const f = wrap.querySelector('form'), inp = f.querySelector('input[name=due]'), out = f.querySelector('.dp');
   f.querySelector('.hint').textContent = `“${e.title}”: o app divide as páginas que faltam pelos dias até lá.`;
-  const show = () => { const v = inp.value; if (!v) { out.innerHTML = ''; return; } const p = duePlan(e, v);
-    out.innerHTML = !p.rem ? 'Você já está na última página.' : p.days < 1 ? 'Escolha hoje ou um dia depois.' : `Faltam <b>${p.rem}</b> páginas em <b>${p.days}</b> ${p.days === 1 ? 'dia' : 'dias'}: <b>${p.perDay} por dia</b>.<br><small style="color:var(--ink-2)">${p.list.map((x) => `${x.dow} ${x.iso.slice(8, 10)}/${x.iso.slice(5, 7)}: ${x.n}`).join(' · ')}</small>`; };
+  let off = [...(e.dueOff || [])];
+  const show = () => { const v = inp.value; if (!v) { out.innerHTML = ''; return; } const p = duePlan(e, v, off);
+    if (!p.rem) { out.innerHTML = 'Você já está na última página.'; return; } if (p.days < 1) { out.innerHTML = 'Escolha hoje ou um dia depois.'; return; }
+    const mx = Math.max(1, ...p.list.map((x) => x.n));
+    out.innerHTML = `<div class="dp-sum"><b>${p.perDay}</b> páginas por dia<small>${p.rem} páginas em ${plural(p.work, 'dia de leitura', 'dias de leitura')}${p.work < p.days ? ' · ' + plural(p.days - p.work, 'folga', 'folgas') : ''}</small></div>
+      <div class="dp-days">${p.list.map((x) => `<button type="button" class="dp-d${x.off ? ' off' : ''}${x.iso === todayISO() ? ' hoje' : ''}" data-w="${x.w}" aria-pressed="${x.off}" title="${x.off ? 'Folga: toque para ler neste dia' : 'Toque para marcar folga'}"><small>${x.iso === todayISO() ? 'hoje' : x.dow}</small><i><u style="height:${x.off ? 0 : Math.max(10, Math.round(x.n / mx * 100))}%"></u></i><b>${x.off ? 'folga' : x.n}</b><em>${x.iso.slice(8, 10)}</em></button>`).join('')}</div>
+      <small class="hint" style="margin:0">Toque num dia para marcar folga (vale para esse dia da semana até o prazo).</small>`;
+    out.querySelectorAll('.dp-d').forEach((b) => b.addEventListener('click', () => { const w = Number(b.dataset.w); off = off.includes(w) ? off.filter((x) => x !== w) : [...off, w]; show(); })); };
   inp.value = e.dueAt || ''; show(); inp.addEventListener('input', show);
   f.querySelectorAll('.dq').forEach((b) => b.addEventListener('click', () => { inp.value = b.dataset.d; show(); }));
   const close = () => wrap.remove(); wrap.addEventListener('click', (ev) => { if (ev.target === wrap) close(); }); f.querySelector('.cancel').addEventListener('click', close);
   f.querySelector('.dx')?.addEventListener('click', () => { delete e.dueAt; save(); close(); try { renderHome(todayISO()); } catch {} toast('Prazo removido'); });
-  f.addEventListener('submit', (ev) => { ev.preventDefault(); if (!inp.value || inp.value < t) return toast('Escolha hoje ou um dia depois'); e.dueAt = inp.value; save(); close(); try { renderHome(todayISO()); } catch {} toast(`Prazo: ${dueLabel(e.dueAt)}`); });
+  f.addEventListener('submit', (ev) => { ev.preventDefault(); if (!inp.value || inp.value < t) return toast('Escolha hoje ou um dia depois'); e.dueAt = inp.value; if (off.length) e.dueOff = off; else delete e.dueOff; save(); close(); try { renderHome(todayISO()); } catch {} toast(`Prazo: ${dueLabel(e.dueAt)}`); });
   document.body.append(wrap);
 }
 // cartão "Lendo agora" do Início: linha do prazo (ou convite para definir)
@@ -12849,6 +12865,7 @@ function dueSheet(e) {
       if (e.dueAt) { const p = duePlan(e, e.dueAt); row.classList.toggle('late', p.late);
         row.innerHTML = p.late ? `<span>Prazo de ${dueLabel(e.dueAt)} passou · <b>faltam ${p.rem} pág.</b></span><button type="button">Novo prazo</button>`
           : !p.rem ? `<span>Pronto para terminar até ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>`
+          : p.todayOff ? `<span>Hoje é folga · até ${dueLabel(e.dueAt)}: <b>${p.perDay} pág. nos dias de leitura</b></span><button type="button">Mudar</button>`
           : `<span>Até ${dueLabel(e.dueAt)}: <b>${p.perDay} pág. por dia</b></span><button type="button">Mudar</button>`;
       } else row.innerHTML = '<span></span><button type="button">+ Prazo para terminar</button>';
       const acts = card.querySelector('.v3-now-acts'); if (acts) acts.before(row); else card.append(row);
