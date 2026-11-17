@@ -9752,6 +9752,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13303,6 +13304,30 @@ img[src^="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP"]{display:none!important}
     if (a.legacy) continue; const f = FIX[a.id];
     if (f) { a.rn = f[0]; if (f[1]) DECO_IMG[a.reward] = 'img/cq/' + f[1] + '.webp'; }
     if (a.id === 'rev5') { a.goal = 1; a.desc = 'Avaliar 1 livro lido pelo app'; }
+  } }
+// --- 65_conquistas_so_app.js ---
+// Conquistas só valem pelo que foi feito no app (Bia, 17/11): o que veio de importação (CSV, histórico) não conta.
+// - Da lista para a mão: só livros que saíram do Quero ler para Lendo dentro do app (e.fromQuero).
+// - Explorador: só livros adicionados pelo Catálogo do app (e.viaCat).
+// - Resenhista: só resenhas de livros lidos pelo app (mesmo critério de "lido com registro").
+// - Mudança de estante / Acervo crescendo: viram organizar livros LIDOS PELO APP nas suas estantes (10 e 30),
+//   em vez de cadastrar livros lidos (que contava importação).
+{ const _m2 = achMetrics;
+  achMetrics = function () {
+    const M = _m2(); const { lidos: V } = verifiedReading(); const vset = new Set(V.map((e) => e.id)), L = lib();
+    M.fromQuero = L.filter((e) => e.fromQuero).length;
+    M.catAdds = L.filter((e) => e.viaCat).length;
+    M.textReviews = V.filter((e) => { const r = reviewOfLib(e); return r && String(r.texto || '').trim().length >= 20; }).length;
+    const shelved = new Set(); for (const s of (db.shelves || [])) for (const id of (s.bookIds || [])) if (vset.has(id)) shelved.add(id);
+    M.libLidos = shelved.size;
+    return M;
+  };
+  for (const a of ACHIEVEMENTS) {
+    if (a.id === 'mud10') { a.desc = 'Organizar 10 livros lidos pelo app nas suas estantes'; }
+    if (a.id === 'mud50') { a.goal = 30; a.desc = 'Organizar 30 livros lidos pelo app nas suas estantes'; }
+    if (a.id === 'quero5') a.desc = 'Começar no app 5 livros que estavam no Quero ler';
+    if (a.id === 'cat5') a.desc = 'Adicionar 5 livros pelo Catálogo do app';
+    if (a.id === 'resenha3') a.desc = 'Escrever 3 resenhas de livros lidos pelo app';
   } }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
