@@ -7420,11 +7420,13 @@ function openHistory() {
     v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Montar meu histórico</b><span></span></div>
       <div class="hs-intro"><p><b>Os livros que você leu antes do app.</b> Busque, toque em “Já li” e escolha o ano. Eles entram nos lidos sem contar na meta deste ano.</p>
       <button type="button" class="hs-imp" id="hs-imp">Importar arquivo CSV (Goodreads ou planilha)</button>
+      <label class="ck-row" style="margin:.4rem 0 0;font-size:.82rem"><input type="checkbox" id="hs-ow" ${S.csvOverwrite ? 'checked' : ''}><span>O arquivo manda: nos livros que já estão no app, substituir status, nota, resenha e datas pelo que está no arquivo</span></label>
       <p>No Goodreads: My Books › Import and export › Export library. Planilha: colunas título, autor e, se quiser, ano, nota e status.</p></div>
       <input type="search" id="hs-q" class="fs-input" placeholder="Título, autor ou ISBN" autocomplete="off" value="${esc(q)}"><div class="hs-list ct-list" style="margin-top:.6rem"></div>`;
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; refresh(); });
     $('#hs-q', v).addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(run, 450); });
     $('#hs-imp', v).addEventListener('click', importCSV);
+    $('#hs-ow', v)?.addEventListener('change', (ev) => { S.csvOverwrite = ev.target.checked; });
     drawList();
   };
   S.listRedraw = draw; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0; setTimeout(() => $('#hs-q', v)?.focus(), 60);
@@ -7458,7 +7460,8 @@ function importCSV() {
       cB = col('binding', 'formato'), cX = col('bookshelves', 'estantes', 'tags');
     if (cT < 0) return toast('Não encontrei a coluna de título');
     const Y = Number(todayISO().slice(0, 4)), shelfOf = new Map((db.shelves || []).map((x) => [normT(x.name), x]));
-    let n = 0, skip = 0, upd = 0; const fresh = [];
+    let n = 0, skip = 0, upd = 0; const fresh = []; const OW = !!S.csvOverwrite;
+    if (OW) { const tk = (x) => normT(String(x || '').split(/[:(]/)[0]); const have = new Set(lib().map((e) => tk(e.title))); const hit = rows.slice(1).filter((r) => have.has(tk(r[cT]))).length; if (hit && !confirm(`${hit} ${hit === 1 ? 'livro que já está' : 'livros que já estão'} no app ${hit === 1 ? 'vai ser atualizado' : 'vão ser atualizados'} pelo arquivo: status, nota, resenha e datas. O que você mudou no app nesses livros será substituído. Continuar?`)) return; }
     // resenha (Goodreads "My Review", StoryGraph "Review") e spoiler; o Goodreads às vezes exporta quebras de linha como \n literal
     const cV = col('my review', 'review', 'resenha', 'comentario'), cSp = col('spoiler'), cAd = col('date added', 'adicionado em', 'data de adicao'), cPub = col('publisher', 'editora'), cN = col('private notes', 'notas privadas', 'notas', 'anotacao');
     const dOf = (x) => { const m = String(x || '').trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : null; };
@@ -7478,16 +7481,23 @@ function importCSV() {
           const g = db.goals.find((x) => x.id === had.link.goalId), gb = g && g.books.find((x) => x.id === had.link.bookId), gs = { LENDO: 'LENDO', HIBERNANDO: 'PAUSADO', LIDO: 'CONCLUIDO', QUERO: 'NAO_INICIADO' }[st0];
           if (gb && gs && !(gs === 'LENDO' && g.books.some((x) => x.status === 'LENDO' && x.id !== gb.id))) { gb.status = gs; if (gs === 'CONCLUIDO') { const w = whenOfRow(r), d = w === 'unknown' ? null : whenDate(w); gb.finishedAt = d || gb.finishedAt || todayISO(); } stCh = true; }
         }
-        if (st0 && st0 !== had.status && !had.link && (RK[st0] ?? 0) >= (RK[had.status] ?? 0)) {
+        if (st0 && st0 !== had.status && !had.link && (OW || (RK[st0] ?? 0) >= (RK[had.status] ?? 0))) {
           had.status = st0; had.statusAt = todayISO(); stCh = true;
           if (st0 === 'LENDO' && !had.startedAt) had.startedAt = todayISO();
           if (st0 === 'LIDO') { const w = whenOfRow(r), d = w === 'unknown' ? null : whenDate(w); if (d) { had.finishedAt = d; delete had.noDate; if (!w.d) had.dateApprox = 'year'; else delete had.dateApprox; } else if (!had.finishedAt) had.noDate = true; if (!had.startedAt && had.finishedAt) had.startedAt = had.finishedAt; } else delete had.finishedAt;
         }
         const pw = cR >= 0 ? Math.max(0, Math.min(5, Math.round(Number(String(r[cR]).replace(',', '.')) * 2) / 2)) : 0, pg = cP >= 0 ? Number(String(r[cP]).replace(/\D/g, '')) || null : null;
         let ch = false;
-        if (pw && !(reviewOfLib(had) || {}).paws && had.status === 'LIDO') { had.review = { ...(had.review || {}), paws: pw }; ch = true; }
-        const tx = revOf(r); if (tx && had.status === 'LIDO' && !(reviewOfLib(had) || {}).texto) { had.review = { ...(had.review || {}), texto: tx, ...(spOf(r) ? { spoiler: true } : {}) }; ch = true; }
-        if (pg && !had.totalPages) { had.totalPages = pg; ch = true; }
+        if (pw && (OW || !(reviewOfLib(had) || {}).paws) && had.status === 'LIDO' && (reviewOfLib(had) || {}).paws !== pw) { had.review = { ...(had.review || {}), paws: pw }; ch = true; }
+        const tx = revOf(r); if (tx && had.status === 'LIDO' && (OW || !(reviewOfLib(had) || {}).texto) && (reviewOfLib(had) || {}).texto !== tx) { had.review = { ...(had.review || {}), texto: tx, ...(spOf(r) ? { spoiler: true } : {}) }; ch = true; }
+        if (pg && (!had.totalPages || (OW && had.totalPages !== pg))) { had.totalPages = pg; ch = true; }
+        // completa o que estiver vazio (ou substitui, se o arquivo manda): data de término, editora, notas privadas, data em que entrou, estantes
+        if (had.status === 'LIDO') { const w = whenOfRow(r), d = w === 'unknown' ? null : whenDate(w); if (d && (!had.finishedAt || had.noDate || (OW && had.finishedAt !== d))) { had.finishedAt = d; delete had.noDate; if (!w.d) had.dateApprox = 'year'; else delete had.dateApprox; ch = true; } }
+        { const pb = cPub >= 0 ? String(r[cPub] || '').replace(/\s+/g, ' ').trim().slice(0, 120) : ''; if (pb && (!had.publisher || (OW && had.publisher !== pb))) { had.publisher = pb; ch = true; }
+          const nt = cN >= 0 ? String(r[cN] || '').trim().slice(0, 2000) : ''; if (nt && (!had.note || (OW && had.note !== nt))) { had.note = nt; ch = true; }
+          const ad = cAd >= 0 ? dOf(r[cAd]) : null; if (ad && OW && ad <= todayISO() && had.addedAt !== ad) { had.addedAt = ad; ch = true; } }
+        if (cX >= 0) for (const name of String(r[cX] || '').split(/[,;]/).map((x) => x.trim()).filter((x) => x && !/^(read|to-read|currently-reading|lidos?|quero ler|lendo)$/i.test(x)).slice(0, 5)) {
+          let sv = shelfOf.get(normT(name)); if (!sv) { db.shelves = db.shelves || []; sv = { id: uid(), name: name.slice(0, 40), bookIds: [] }; db.shelves.push(sv); shelfOf.set(normT(name), sv); } if (!(sv.bookIds || []).includes(had.id)) { sv.bookIds = [...(sv.bookIds || []), had.id]; ch = true; } }
         (ch || stCh) ? upd++ : skip++; continue;
       }
       const sh = cS >= 0 ? normT(r[cS]) : '', tg = cX >= 0 ? normT(r[cX]) : '', ABD = /abandon|did not finish|\bdnf\b|desist|nao termin|nao conclu/, status = ABD.test(sh) || ABD.test(tg) ? 'ABANDONEI' : /currently|lendo|reading/.test(sh) ? 'LENDO' : /to read|quero|wish/.test(sh) ? 'QUERO' : 'LIDO';
