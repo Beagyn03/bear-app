@@ -9808,6 +9808,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14255,6 +14256,7 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
 { const st = document.createElement('style'); st.textContent = `
 .v3-quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;margin-top:.6rem;width:100%}
 .v3-quick button{display:flex;align-items:center;justify-content:center;gap:.35rem;height:38px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;min-width:0;white-space:nowrap}
+.v3-now .due-ln{border-top:1px solid var(--line);padding-top:.55rem;margin-top:.65rem!important}
 .v3-quick button.pri{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
 .v3-quick button.ok{border-color:#2f8a52;color:#2f8a52}
 .v3-quick svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}`; TR.append(st); }
@@ -14266,7 +14268,7 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
       q.innerHTML = '<button type="button" class="pri" data-q="upd">' + SV('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>') + 'Atualizar</button>'
         + '<button type="button" data-q="foco">' + SV('<circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 2M9 3h6"/>') + 'Foco</button>'
         + '<button type="button" class="ok" data-q="fim">' + SV('<path d="M5 12l5 5L20 7"/>') + 'Concluir</button>';
-      card.append(q);
+      const ln = card.querySelector('.due-ln'); if (ln) ln.before(q); else card.append(q);
       q.querySelectorAll('button').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); const k = b.dataset.q, R2 = reading(); if (!R2) return;
         if (k === 'upd') { if (S.madrugada) return wakeBear('upd'); return editLeitura(); }
         if (k === 'foco') return startFocus();
@@ -14274,6 +14276,9 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
     });
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 80); }).observe(TR, { childList: true, subtree: true }); setTimeout(put, 1500); }
+
+// a linha do prazo pode chegar depois dos atalhos: mantém os atalhos acima dela
+{ let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => TR.querySelectorAll('.v3-now:not(.empty)').forEach((c) => { const q = c.querySelector('.v3-quick'), ln = c.querySelector('.due-ln'); if (q && ln && (q.compareDocumentPosition(ln) & Node.DOCUMENT_POSITION_PRECEDING)) ln.before(q); }), 120); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
