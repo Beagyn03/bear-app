@@ -9849,6 +9849,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11663,6 +11664,31 @@ TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closes
 .rdc-go:disabled{opacity:.5}
 .rdm-it{border:1px solid var(--line);border-radius:14px;padding:.6rem;display:grid;gap:.4rem;background:var(--panel)}
 .rdm-it .rd-row button{border:1px solid var(--line);background:none;border-radius:999px;min-height:36px;padding:0 .8rem;font:inherit;font-weight:800}
+.rd2.rd-card{border-radius:20px;padding:.85rem .9rem .35rem}
+.rd2 header{grid-template-columns:auto minmax(0,1fr) auto auto;align-items:start}.rd2 header .av{margin-top:2px}
+.rd2 .rd-kc{display:flex;flex-direction:column;align-items:center;gap:.2rem;min-width:70px;margin-left:0}
+.rd-tag{display:block;min-width:70px;text-align:center;font-size:.72rem;font-weight:900;padding:.22rem .55rem;border-radius:99px;background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc)}
+.rd-tag.rv{background:var(--acc);color:var(--on-acc,#fff)}
+.rd2 .rd-kpct{text-align:center;font-size:.84rem;line-height:1}
+.rd2 .rd-kc .rd-mk{width:26px;height:42px}.rd2 .rd-kc .rd-mk b{font-size:.6rem}
+.rd2 .rd-more{height:28px;margin-top:-2px}
+.rd2 .rd-book{grid-template-columns:64px minmax(0,1fr);gap:.8rem;align-items:start;padding:.6rem 0 .3rem}
+.rd2 .rd-book .cv{width:64px!important;height:96px!important;border-radius:5px!important;box-shadow:0 3px 8px rgba(0,0,0,.18);font-size:.5rem}
+.rd2 .rd-book b{font-size:1rem;line-height:1.2;margin-top:.1rem}.rd2 .rd-book small{display:block;font-size:.8rem;font-weight:700;margin-top:.1rem}
+.rd2 .rd-book em{display:block;font-style:normal;font-size:.76rem;font-weight:800;color:var(--ink-2);margin-top:.35rem}
+.rd2 .rd-tx{background:color-mix(in srgb,var(--ink) 5%,transparent);border-radius:14px;padding:.55rem .7rem;margin:.35rem 0}
+.rd2 .rd-tx p{margin:0;font-size:.92rem}.rd2 .rd-tx .rd-fe{margin:.4rem 0 0}
+.rd2 .rd-q{border-radius:0 14px 14px 0;background:color-mix(in srgb,var(--ink) 3%,transparent)}
+.rd2 footer{align-items:center}.rd2 footer .rd-sp{flex:1}
+.rd2 footer .rd-save,.rd2 footer .rd-share{width:38px;padding:0;display:grid;place-items:center}
+.rd2 footer svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rd2 footer .rd-save.on{color:var(--acc)}.rd2 footer .rd-save.on svg{fill:currentColor}
+.rd2 footer .rd-ql{border:1.5px solid var(--acc)!important;color:var(--acc)!important;border-radius:99px!important;min-height:32px!important;padding:0 .7rem!important;font-size:.76rem!important;margin-left:.2rem;white-space:nowrap}
+.rd2 footer .rd-ql.in{border-color:var(--line)!important;color:var(--ink-2)!important}
+.rd-day{font-size:.74rem;font-weight:900;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em;margin:.4rem .2rem -.2rem}
+.rd-fl{display:flex;gap:.35rem;overflow-x:auto;scrollbar-width:none}.rd-fl::-webkit-scrollbar{display:none}
+.rd-fl button{flex:none;border:1.5px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:99px;min-height:32px;padding:0 .8rem;font:inherit;font-weight:800;font-size:.78rem}
+.rd-fl button.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 `; TR.append(st); }
 
 S.rd = S.rd || { items: [], more: false, busy: false, at: 0, admin: false };
@@ -11692,23 +11718,90 @@ const rdMark = (p) => { const n = Number(p) || 0, t = n >= 5 ? '5' : n >= 4 ? 'o
 const pawsTxt = (p) => p ? `nota ${String(p).replace('.', ',')}` : '';
 function readerPctOf(title) { const e = lib().find((x) => normT(x.title) === normT(title || '')); if (!e) return null; if (e.status === 'LIDO') return 100; try { const p = Math.round(readingInfo(e).pct || 0); return p > 0 ? Math.min(100, p) : (e.status === 'LENDO' ? 0 : null); } catch { return null; } }
 const readerPctTxt = (p) => (p == null ? '' : p >= 100 ? 'terminou o livro' : p <= 0 ? 'começando o livro' : `em ${p}% do livro`);
+const RD_FR = { 0.5: 'Socorro, o que foi isso?', 1: 'Não foi pra mim', 1.5: 'Quase abandonei', 2: 'Fraquinho', 2.5: 'Teve seus momentos', 3: 'Bom, mas não marcou', 3.5: 'Gostei bastante', 4: 'Muito bom!', 4.5: 'Quase perfeito', 5: 'Favorito da vida!' };
+const rdMk = (p) => { const n = Number(p) || 0, t = n >= 5 ? '5' : n >= 4 ? 'ouro' : n >= 3 ? 'prata' : 'bronze'; return '<span class="rd-mk" style="--nimg:url(img/nota_' + t + '.webp)"><b>' + String(n).replace('.', ',') + '</b></span>'; };
+const rdSavedList = () => ((db.prefs || {}).rdSaved || []);
+const rdIsSaved = (it) => rdSavedList().some((x) => x.k === it.type + it.id);
+function rdShelfBtn(it) {
+  if (!it.book || it.book2) return '';
+  const e = myBookByKey(it.book.key || normT(it.book.title));
+  if (!e) return '<button type="button" class="rd-ql">＋ Quero ler</button>';
+  const t = { LIDO: '✓ Lido', QUERO: '✓ Na sua fila', LENDO: 'Lendo', HIBERNANDO: 'Pausado', ABANDONEI: 'Abandonado' }[e.status] || 'Na estante';
+  return '<button type="button" class="rd-ql in">' + t + '</button>';
+}
 function rdCardHTML(it, i, opts = {}) {
-  const kind = it.type === 'review' ? 'Avaliação' : (RD_KINDS.find((k) => k[0] === it.kind) || [, ''])[1];
+  const isRev = it.type === 'review';
+  const kind = isRev ? 'Avaliou' : it.kind === 'question' ? 'Pergunta' : it.kind === 'rec' ? 'Indicação' : 'Lendo';
   const sp = rdSpoil(it), u = it.user || {};
+  const pct = it.readerPct != null && !it.paws ? Math.max(0, Math.min(100, Math.round(it.readerPct))) : null;
   const fe = (it.feelings || []).length ? `<div class="rd-fe">${it.feelings.map((k) => qtFeel(k)).join('')}</div>` : '';
-  const body = `${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
-    ${it.text ? `<p>${esc(it.text)}</p>` : ''}
+  const txt = it.text || fe ? `<div class="rd-tx">${it.text ? `<p>${esc(it.text)}</p>` : ''}${fe}</div>` : '';
+  const body = `${txt}${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
     ${it.book2 ? `<div class="rd-rec"><span>${cvh(it.book.title, it.book.cover)}<b>${esc(it.book.title)}</b></span><em>➜</em><span>${cvh(it.book2.title, it.book2.cover)}<b>${esc(it.book2.title)}</b></span></div>` : ''}
-    ${fe}${it.hasImage ? `<div class="rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
-  return `<article class="rd-card" data-i="${i}">
+    ${it.hasImage ? `<div class="rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
+  const fr = isRev && it.paws ? (RD_FR[Number(it.paws)] || '') : '';
+  const fim = isRev && (it.readAt || it.postedAt) ? 'terminou em ' + String(it.readAt || it.postedAt).slice(8, 10) + '/' + String(it.readAt || it.postedAt).slice(5, 7) : '';
+  const saved = rdIsSaved(it);
+  return `<article class="rd-card rd2" data-i="${i}">
     <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
       <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
-      <span class="rd-kc"><span class="rd-kind">${esc(kind)}</span>${it.readerPct != null && !it.paws ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${Math.max(0, Math.min(100, Math.round(it.readerPct)))}%</span>` : ''}${it.paws ? `<span class="rd-kmk">${rdMark(it.paws)}</span>` : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
-    ${it.book && !it.book2 ? `<button type="button" class="rd-book">${cvh(it.book.title, it.book.cover)}<span><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small></span></button>` : ''}
+      <span class="rd-kc"><span class="rd-tag${isRev ? ' rv' : ''}">${esc(kind)}</span>${pct != null ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${pct}%</span>` : ''}${it.paws ? rdMk(it.paws) : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
+    ${it.book && !it.book2 ? `<button type="button" class="rd-book">${cvh(it.book.title, it.book.cover)}<span><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small>${fr || fim ? `<em>${esc([fr, fim].filter(Boolean).join(' · '))}</em>` : ''}</span></button>` : ''}
     <div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>
-    ${opts.noFoot ? '' : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" aria-pressed="${!!it.liked}">${it.liked ? '♥' : '♡'} ${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button></footer>`}
+    ${opts.noFoot ? '' : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" aria-pressed="${!!it.liked}">${it.liked ? '♥' : '♡'} ${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button>
+      <span class="rd-sp"></span><button type="button" class="rd-save${saved ? ' on' : ''}" aria-pressed="${saved}" aria-label="${saved ? 'Tirar dos salvos' : 'Salvar post'}" title="${saved ? 'Salvo' : 'Salvar'}"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></button><button type="button" class="rd-share" aria-label="Compartilhar" title="Compartilhar"><svg viewBox="0 0 24 24"><path d="M14 5l7 7-7 7M21 12H9a6 6 0 0 0-6 6"/></svg></button>${rdShelfBtn(it)}</footer>`}
   </article>`;
 }
+// salvar / compartilhar
+function rdToggleSave(it) {
+  const k = it.type + it.id, L = rdSavedList();
+  if (L.some((x) => x.k === k)) { rdSetPref('rdSaved', L.filter((x) => x.k !== k)); toast('Tirado dos salvos'); return false; }
+  const c = JSON.parse(JSON.stringify(it)); if (c.book && c.book.cover && String(c.book.cover).length > 600) delete c.book.cover;
+  rdSetPref('rdSaved', [{ k, at: new Date().toISOString(), it: c }, ...L].slice(0, 200)); toast('Post salvo · veja em Salvos'); return true;
+}
+const RD_APP_URL = 'https://beagyn03.github.io/bear-app/';
+function rdShareText(it) {
+  const u = it.user || {}, bk = it.book ? it.book.title : '', who = u.displayName || ('@' + (u.handle || ''));
+  const act = it.type === 'review' ? 'avaliou' : it.quote && !it.text ? 'guardou um trecho de' : 'comentou sobre';
+  if (it.spoiler) return who + ' ' + act + ' ' + bk + ' (tem spoiler) no Livroverso';
+  const ex = String(it.text || it.quote || '').trim(); return who + ' ' + act + ' ' + bk + ' no Livroverso' + (ex ? ': “' + (ex.length > 140 ? ex.slice(0, 137) + '…' : ex) + '”' : '');
+}
+function rdShareMenu(it, anchor) {
+  const items = [{ label: 'Enviar para um amigo', fn: () => rdSendToFriend(it) }, { label: 'Compartilhar fora do app', fn: async () => {
+    const text = rdShareText(it);
+    try { if (navigator.share) { await navigator.share({ title: 'Livroverso', text, url: RD_APP_URL }); return; } } catch (err) { if (err && err.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(text + ' ' + RD_APP_URL); toast('Texto copiado'); } catch { toast('Não consegui compartilhar agora'); }
+  } }];
+  if (anchor && typeof popMenu === 'function') return popMenu(anchor, items);
+  sheet('Compartilhar', items.map((x) => [x.label, x.fn]));
+}
+function rdPostToken(it) {
+  const u = it.user || {}, b = it.book || {};
+  const d = { t: it.type, id: it.id, h: u.handle || '', n: u.displayName || '', b: b.title || '', a: b.author || '', c: b.cover && String(b.cover).length < 300 ? b.cover : '', x: String(it.text || '').slice(0, 220), q: String(it.quote || '').slice(0, 220), pg: it.page || 0, p: it.readerPct != null ? Math.round(it.readerPct) : null, s: it.paws || 0, sp: it.spoiler || null, k: it.kind || '' };
+  return '[lvp:' + btoa(unescape(encodeURIComponent(JSON.stringify(d)))) + ']';
+}
+function rdSendToFriend(it) {
+  const fr = (SOC.fr && SOC.fr.friends) || [];
+  if (!fr.length) return toast('Adicione amigos para enviar posts');
+  sheet('Enviar para', fr.slice(0, 40).map((f) => [f.displayName || '@' + f.handle, async () => {
+    const body = rdShareText(it) + '\n' + rdPostToken(it);
+    if (body.length > 1000) return toast('Post grande demais para enviar');
+    try { const r = await sapi('POST', '/v1/messages', { handle: f.handle, body, bookTitle: it.spoiler && it.book ? String(it.book.title).slice(0, 200) : null });
+      toast(r.status === 201 ? 'Enviado para ' + (f.displayName || '@' + f.handle) : 'Não consegui enviar agora'); } catch { toast('Não consegui enviar agora'); }
+  }]));
+}
+// na conversa, a mensagem com post vira um cartãozinho; tocar abre o post com as respostas
+{ const st = document.createElement('style'); st.textContent = '.bub .rdm{display:grid;grid-template-columns:40px minmax(0,1fr);gap:.5rem;margin:.1rem 0 .2rem;padding:.45rem;border-radius:12px;background:color-mix(in srgb,var(--panel) 80%,transparent);border:1px solid var(--line);text-align:left;color:var(--ink);font:inherit;width:100%;cursor:pointer}.bub .rdm .cv{width:40px!important;height:60px!important;border-radius:4px!important;font-size:.36rem!important}.bub .rdm b{display:block;font-size:.8rem}.bub .rdm small{display:block;font-size:.7rem;color:var(--ink-2)}.bub .rdm p{margin:.2rem 0 0;font-size:.78rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}'; TR.append(st);
+  let tm = 0; const paint = () => TR.querySelectorAll('.bub').forEach((b) => {
+    if (b.dataset.rdm) return; const m = b.textContent.match(/\[lvp:([A-Za-z0-9+/=]+)\]/); if (!m) return; b.dataset.rdm = '1';
+    let d = null; try { d = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch { return; }
+    const it = { type: d.t, id: d.id, kind: d.k, user: { handle: d.h, displayName: d.n }, book: { title: d.b, author: d.a, cover: d.c || null, key: normT(d.b) }, text: d.x, quote: d.q, page: d.pg, readerPct: d.p, paws: d.s, spoiler: d.sp, createdAt: new Date().toISOString() };
+    const sm = b.querySelector('small'), time = sm ? sm.outerHTML : '';
+    b.innerHTML = '<button type="button" class="rdm">' + cvh(d.b, d.c || null, '') + '<span><b>' + esc(d.b) + '</b><small>' + esc((d.n || '@' + d.h) + (d.t === 'review' ? ' · avaliou' : ' · post na Rede')) + '</small>' + (d.sp ? '<p>Tem spoiler · toque para abrir</p>' : (d.x || d.q ? '<p>' + esc(d.x || '“' + d.q + '”') + '</p>' : '')) + '</span></button>' + time;
+    try { paintCv(b); } catch {}
+    b.querySelector('.rdm').addEventListener('click', () => { try { $('#shelflist').hidden = false; openRdThread(it); } catch {} });
+  });
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 60); }).observe(TR, { childList: true, subtree: true }); }
 async function rdLoadImages(root) {
   S.rdImg = S.rdImg || {};
   for (const n of $$('[data-img]', root)) {
@@ -11731,6 +11824,10 @@ function rdBind(root, list, after) { // liga os botões dos cartões
       try { const r = await sapi(on ? 'POST' : 'DELETE', base); if (r.status >= 300) throw 0; } catch { toast('Não consegui agora'); }
     });
     c.querySelector('.rd-rp')?.addEventListener('click', () => openRdThread(it));
+    c.querySelector('.rd-save')?.addEventListener('click', (ev) => { const on = rdToggleSave(it), b = ev.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); if (!on && S.rdF === 'salvos') after(); });
+    c.querySelector('.rd-share')?.addEventListener('click', (ev) => rdShareMenu(it, ev.currentTarget));
+    c.querySelector('.rd-ql')?.addEventListener('click', (ev) => { const b = ev.currentTarget; if (b.classList.contains('in')) return openAnyBook(it.book.title, it.book.author, it.book.cover);
+      try { addToLibrary({ title: it.book.title, author: it.book.author || null, cover: it.book.cover || null }, null, 'QUERO'); } catch {} b.classList.add('in'); b.textContent = '✓ Na sua fila'; });
   });
   paintCv(root); rdLoadImages(root);
 }
@@ -11750,14 +11847,21 @@ async function rdLoad(more) {
   paintRede();
 }
 const RD_PROMPTS = ['Que página te pegou hoje?', 'Qual personagem você levaria para casa?', 'Um trecho que você não esquece', 'Que livro você indicaria para quem amou o último que leu?', 'Que final te deixou sem chão?', 'Pergunte à rede o que ler depois'];
+const RD_DOW = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+function rdDayLbl(iso) { const d = new Date(iso); if (isNaN(d)) return ''; const k = (x) => x.getFullYear() + '-' + x.getMonth() + '-' + x.getDate(), now = new Date(), y = new Date(Date.now() - 864e5);
+  if (k(d) === k(now)) return 'Hoje'; if (k(d) === k(y)) return 'Ontem'; const diff = (now - d) / 864e5; return diff < 7 ? RD_DOW[d.getDay()] : String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + (d.getFullYear() !== now.getFullYear() ? '/' + d.getFullYear() : ''); }
+function rdDays(list) { let last = ''; return list.map((it, i) => { const d = rdDayLbl(it.createdAt), h = d && d !== last ? '<div class="rd-day">' + esc(d) + '</div>' : ''; if (d) last = d; return h + rdCardHTML(it, i); }).join(''); }
 function paintRede() {
   const host = $('#lista #rd-host'); if (!host) return;
   if (!connected() || !socialProfile) { host.innerHTML = `<p class="rd-empty">Entre na sua conta para ver e postar na Rede.</p>`; return; }
-  const P = rdPrefs(), list = rdVisible(S.rd.items), pr = RD_PROMPTS[Math.floor(Date.now() / 3600000) % RD_PROMPTS.length];
+  const F = S.rdF || 'tudo', base = F === 'salvos' ? rdSavedList().map((x) => x.it) : rdVisible(S.rd.items);
+  const P = rdPrefs(), list = F === 'lendo' ? base.filter((x) => x.type !== 'review') : F === 'aval' ? base.filter((x) => x.type === 'review') : base, pr = RD_PROMPTS[Math.floor(Date.now() / 3600000) % RD_PROMPTS.length];
   host.innerHTML = `<button type="button" class="rd-new" id="rd-new"><i>+</i><span><b>${esc(pr)}</b><small>Comentário, trecho, pergunta ou indicação</small></span></button>
     <div class="rd-opts"><button type="button" class="rd-opt${P.hideReading ? ' on' : ''}" id="rd-hr" aria-pressed="${P.hideReading}">Esconder livros que estou lendo</button>${S.rd.admin ? '<button type="button" class="rd-opt" id="rd-mod">Denúncias</button>' : ''}</div>
-    ${list.length ? list.map((it, i) => rdCardHTML(it, i)).join('') : `<p class="rd-empty">${S.rd.busy || !S.rd.at ? 'Carregando a Rede…' : S.rd.err ? 'Não consegui carregar agora. Tente de novo em instantes.' : 'Ainda não tem nada aqui. Que tal começar a conversa?'}</p>`}
-    ${S.rd.more ? '<button type="button" class="rd-moreb" id="rd-moreb">Ver mais</button>' : ''}`;
+    <div class="rd-fl">${[['tudo', 'Tudo'], ['lendo', 'Lendo'], ['aval', 'Avaliações'], ['salvos', 'Salvos']].map(([k, n]) => `<button type="button" data-f="${k}" class="${F === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+    ${list.length ? rdDays(list) : `<p class="rd-empty">${F === 'salvos' ? 'Toque no marca-página de um post para guardar e voltar nele depois.' : S.rd.busy || !S.rd.at ? 'Carregando a Rede…' : S.rd.err ? 'Não consegui carregar agora. Tente de novo em instantes.' : F !== 'tudo' ? 'Nada por aqui ainda.' : 'Ainda não tem nada aqui. Que tal começar a conversa?'}</p>`}
+    ${S.rd.more && F !== 'salvos' ? '<button type="button" class="rd-moreb" id="rd-moreb">Ver mais</button>' : ''}`;
+  $$('.rd-fl [data-f]', host).forEach((b) => b.addEventListener('click', () => { S.rdF = b.dataset.f; paintRede(); }));
   $('#rd-new', host).addEventListener('click', () => openRdComposer());
   $('#rd-hr', host).addEventListener('click', () => { rdSetPref('rdHideReading', !rdPrefs().hideReading); paintRede(); });
   $('#rd-mod', host)?.addEventListener('click', openRdMod);
