@@ -9779,6 +9779,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13385,8 +13386,9 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
       if (!off1 && d < t) { due++; if (br >= tg) hit++; }
       return dueCard(e, { iso: d, w, off: off1, tg, r: br, ate: d < t ? '' : (ateMap.get(d) || ''), hoje: d === t, fim: d === e.dueAt, fut }, false).replace('<i>até </i>', ''); }).join('');
     const foot = h && h.todayOff ? 'Hoje é folga' : h && h.done ? `Meta de hoje cumprida (pág. ${h.target})` : `Hoje: leia até a <b>pág. ${h ? h.target : '—'}</b>`;
-    return `<section class="in-sec" data-in="semana"><div class="in-h"><b>Prazo: ${["domingo","segunda","terça","quarta","quinta","sexta","sábado"][new Date(e.dueAt + "T12:00:00Z").getUTCDay()]}, ${e.dueAt.slice(8, 10)}/${e.dueAt.slice(5, 7)}</b></div><div class="in-card">
-      <div class="pz-mn" style="font-size:.78rem;font-weight:800;color:var(--ink-2);margin-bottom:.35rem">${due ? `Meta batida em ${hit} de ${due} dias · ` : ''}a capa ganha cor conforme você lê</div>
+    return `<section class="in-sec" data-in="semana"><div class="in-h"><b>Prazo de leitura</b></div><div class="in-card">
+      <div class="pz-tt" style="font-size:.92rem;font-weight:700;color:var(--ink);margin-bottom:.15rem">Terminar <b>${esc(String(e.title).split(/\s[-–:]\s|:\s/)[0].slice(0, 40))}</b> até ${['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][new Date(e.dueAt + 'T12:00:00Z').getUTCDay()]}, ${e.dueAt.slice(8, 10)}/${e.dueAt.slice(5, 7)}</div>
+      <div class="pz-mn" style="font-size:.72rem;font-weight:700;color:var(--ink-2);margin-bottom:.4rem">${due ? `Meta batida em ${hit} de ${due} dias · ` : ''}a capa ganha cor conforme você lê</div>
       <div class="dk-row">${cardsH}</div>
       <div class="pz-ft"><span>${foot}${e.dueAt.slice(0, 7) !== t.slice(0, 7) ? ' · o prazo continua no mês que vem' : ''}</span><button type="button" class="pz-plan">Ver plano</button></div></div></section>`;
   } catch (err) { console.warn('calendário do prazo', err); return _isw2.apply(this, arguments); }
