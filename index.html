@@ -9830,6 +9830,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14522,7 +14523,7 @@ function yvShelf(sec, row, list, y, own) {
   const spine = (k, o) => { const x = by.get(k); if (!x) return '';
     const h = x.pg ? 58 + Math.min(30, Math.round(x.pg / 22)) : 62 + (k.length * 7) % 24;
     const attrs = E.edit ? '' : (own && x.id ? ' data-id="' + esc(x.id) + '"' : ' data-book="' + esc(x.t) + '" data-author="' + esc(x.a || '') + '"');
-    return '<button type="button" class="' + (E.edit ? '' : 'es-bk ') + 'yv-sp o-' + o + (E.sel === k ? ' sel' : '') + '" data-k="' + esc(k) + '"' + attrs + ' title="' + esc(x.t) + '" style="height:' + h + 'px;--c:' + colorOf(x.t) + ';--pw:' + (46 + (k.length % 3) * 5) + 'px">' + (x.c ? cvh(x.t, x.c, '') : '') + '<em>' + esc(x.t) + '</em></button>'; };
+    return '<button type="button" class="' + (E.edit ? '' : 'es-bk ') + 'yv-sp o-' + o + (E.sel === k ? ' sel' : '') + '" data-k="' + esc(k) + '"' + attrs + ' title="' + esc(x.t) + '" style="height:' + h + 'px;--c:' + colorOf(x.t) + ';--pw:' + (46 + (k.length % 3) * 5) + 'px">' + cvh(x.t, x.c, '') + '<em>' + esc(x.t) + '</em></button>'; };
   const cellHTML = (c) => { let h = '', pile = ''; c.forEach(([k, o]) => { if (o === 'de') pile = spine(k, o) + pile; else { if (pile) { h += '<span class="yv-pile">' + pile + '</span>'; pile = ''; } h += spine(k, o); } });
     return h + (pile ? '<span class="yv-pile">' + pile + '</span>' : ''); };
   const draw = () => {
@@ -14581,8 +14582,10 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 .yv-cm{overflow:visible!important}
 .yv-fan .yv-fc{transition:transform .18s cubic-bezier(.2,1.3,.4,1),filter .18s;transform-origin:50% 100%}
 .yv-fan .yv-fc:hover,.yv-fan .yv-fc.yv-up{transform:translateY(-8px) scale(1.3)!important;z-index:9!important;filter:drop-shadow(0 8px 10px rgba(0,0,0,.35))}
-.yv-sp.es-bk{transition:width .2s ease,transform .18s cubic-bezier(.2,1.3,.4,1),filter .18s}
-.yv-sp.es-bk:not(.o-de):hover,.yv-sp.es-bk:not(.o-de).yv-up{width:46px;transform:translateY(-6px);z-index:3;filter:drop-shadow(0 6px 8px rgba(0,0,0,.4))}
+.yv-sp.es-bk{transition:transform .18s cubic-bezier(.2,1.3,.4,1),filter .18s}
+.yv-sp.es-bk:not(.o-de):hover,.yv-sp.es-bk:not(.o-de).yv-up{transform:translateY(-6px);z-index:5;overflow:visible;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45))}
+.yv-sp.es-bk:not(.o-de):hover .cv,.yv-sp.es-bk:not(.o-de).yv-up .cv{font-size:.42rem!important;left:50%!important;right:auto!important;width:48px!important;transform:translateX(-50%) scale(1.08);transform-origin:50% 100%;border-radius:3px!important;box-shadow:0 4px 10px rgba(0,0,0,.4)}
+.yv-cell:has(.yv-up),.yv-cell:has(.yv-sp:hover){overflow:visible}
 .yv-sp.es-bk:not(.o-de):hover em,.yv-sp.es-bk:not(.o-de).yv-up em,.yv-sp.es-bk:not(.o-de):hover::after,.yv-sp.es-bk:not(.o-de).yv-up::after{opacity:0}
 .yv-sp.o-in.es-bk:hover,.yv-sp.o-in.es-bk.yv-up{transform:rotate(0) translateY(-6px)}
 .yv-sp.o-de.es-bk:hover,.yv-sp.o-de.es-bk.yv-up{transform:translateY(-3px) scale(1.06);filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
