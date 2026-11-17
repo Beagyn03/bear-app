@@ -9815,6 +9815,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13921,7 +13922,7 @@ async function openNivelList(k, title) {
     ed.querySelector('#up-cancel')?.addEventListener('click', () => { ST.lido = null; ST.tempo = null; });
     apply();
   };
-  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(enhance, 30); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+  new MutationObserver(() => { try { enhance(); } catch {} }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 // --- 75_status_tela_unica.js ---
 // Tela única de status (Bia, 17/11): no topo do "Atualizar" e das ações de status do menu do livro, a fileira
 // Lendo · Lido · Pausado · Quero ler · Abandonei; o conteúdo muda conforme o chip e só salva ao confirmar.
@@ -14063,7 +14064,7 @@ function statusSheet(e, want, after) {
     { const sub2 = ed.querySelector('.ed-body > .up-s'), info = (() => { try { return readingInfo(e); } catch { return { now: 0 }; } })(); const hd = document.createElement('div'); hd.className = 'ss-hd'; hd.innerHTML = cvh(e.title, e.cover, 'ss-cv', 'width:40px;height:60px;flex:none;font-size:.4rem') + '<div><b>' + esc(e.title) + '</b><small>lendo · pág. ' + (info.now || 0) + (info.total ? ' de ' + info.total : '') + '</small></div>'; h.before(hd); h.style.display = 'none'; if (sub2) sub2.style.display = 'none'; try { paintCv(hd); } catch {} }
     ch.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { if (b.dataset.s !== 'LENDO') statusSheet(e, b.dataset.s); }));
   };
-  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 25); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+  new MutationObserver(() => { try { put(); } catch {} }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 // Avaliação: "Não lembro as datas" (apaga as datas e marca noDate)
 { const st = document.createElement('style'); st.textContent = '.rtf-nd{display:flex;align-items:center;gap:.4rem;font-size:.76rem;font-weight:700;color:var(--ink-2);margin:-.2rem 0 .45rem;cursor:pointer}.rtf-nd input{width:16px;height:16px;margin:0}.rate-dates.nd input{opacity:.4;pointer-events:none}'; document.head.append(st);
   const _rf = rateForm; rateForm = function (b) {
@@ -14193,14 +14194,18 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
 // pular de tamanho; o conteúdo rola por dentro.
 { const st = document.createElement('style'); st.textContent = `
 #editor.ss-modal{align-items:stretch!important;justify-content:center!important;padding:0!important;background:var(--bg)!important}
-#editor.ss-modal .ed-body{position:relative!important;width:min(640px,100%)!important;height:100%!important;max-height:none!important;margin:0 auto!important;border-radius:0!important;border:0!important;box-shadow:none!important;padding:max(14px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom))!important;overflow-y:auto!important;overscroll-behavior:contain;align-content:start!important;justify-content:stretch;bottom:auto!important;top:auto!important;transform:none!important;animation:ssPop .18s ease-out}
+#editor.ss-modal .ed-body{position:relative!important;width:min(640px,100%)!important;height:100%!important;max-height:none!important;margin:0 auto!important;border-radius:0!important;border:0!important;box-shadow:none!important;padding:max(14px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom))!important;overflow-y:auto!important;overscroll-behavior:contain;align-content:start!important;justify-content:stretch;bottom:auto!important;top:auto!important;transform:none!important}
 #editor.ss-modal .ed-body::before{display:none!important}
 #editor.ss-modal .ed-body > *{flex-shrink:0!important}#editor.ss-modal .ss-chips{min-height:36px;overflow-y:hidden}
 #editor.ss-modal .ss-title{font-size:1.1rem;font-weight:900;color:var(--ink);min-height:40px;display:flex;align-items:center;padding-right:52px;margin:0 0 .35rem}
 #editor.ss-modal .ed-body > .up-x,#editor.ss-modal .ed-body > #ss-x{top:max(14px,env(safe-area-inset-top))!important}
 @keyframes ssPop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}`; TR.append(st); }
 { let tm = 0; const sync = () => { const ed = TR.querySelector('#editor'); if (!ed) return; ed.classList.toggle('ss-modal', !ed.hidden && !!ed.querySelector('.ss-chips')); const b = ed.querySelector('.ed-body'); if (ed.classList.contains('ss-modal') && b && !b.querySelector(':scope > .ss-title')) { const t = document.createElement('div'); t.className = 'ss-title'; t.textContent = 'Diário de leitura'; b.prepend(t); } };
-  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(sync, 0); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+  new MutationObserver(() => { try { sync(); } catch {} }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+// troca de status sem salto: mantém a rolagem no topo e só anima na primeira abertura
+{ let was = false; new MutationObserver(() => { const ed = TR.querySelector('#editor'); if (!ed) return; const on = ed.classList.contains('ss-modal') && !ed.hidden;
+    if (on && !was) { const b = ed.querySelector('.ed-body'); if (b && b.animate) b.animate([{ opacity: 0, transform: 'scale(.985)' }, { opacity: 1, transform: 'none' }], { duration: 160, easing: 'ease-out' }); }
+    was = on; }).observe(TR, { subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] }); }
 // --- 81_lendo_acoes.js ---
 // Atualizar leitura mais simples (Bia, 17/11): o progresso em cima; embaixo três ações claras — Anotação, Trecho e
 // Comentar — e cada uma abre só o que precisa. As datas viram uma linha discreta que abre quando a pessoa quiser.
@@ -14256,7 +14261,7 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
       if (was) return; b.classList.add('on'); if (k === 'coment') { note.classList.remove('lz-hide'); note.querySelector('textarea')?.focus(); } else if (k === 'emo') { drawFe(); pFe.hidden = false; feRow.hidden = true; } else { panes[k].hidden = false; panes[k].querySelector('textarea').focus(); } }));
     if (e.note) { /* mostra que já tem anotação */ acts.querySelector('[data-p=nota] small').textContent = 'tem anotação'; }
   };
-  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 40); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+  new MutationObserver(() => { try { put(); } catch {} }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 
 { const st = document.createElement('style'); st.textContent = '.fe-grid{display:flex;flex-wrap:wrap;gap:.4rem;margin:.4rem 0 .3rem}.fe-grid button{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.45rem .8rem;font:inherit;font-size:.86rem;font-weight:800;cursor:pointer}.fe-grid button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}.fe-cnt{display:block;text-align:right;font-size:.72rem;color:var(--ink-2);margin-bottom:.5rem}'; document.head.append(st); }
 // as emoções agora abrem dentro do #editor (raiz do app): o estilo precisa estar lá também
