@@ -9770,6 +9770,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12988,7 +12989,17 @@ function myStatsSnap() {
 .dp-d b{font-size:.8rem;font-weight:900}.dp-d em{font-style:normal;font-size:.62rem;color:var(--ink-2)}
 .dp-d.off{opacity:.55;border-style:dashed}.dp-d.off b{font-size:.68rem;color:var(--ink-2)}.dp-d.hoje{border-color:var(--acc)}
 .due-sh .box{overflow-x:hidden}.due-sh form{min-width:0;max-width:100%}.due-sh form > *{min-width:0;max-width:100%}.due-sh .dp{min-width:0;max-width:100%;overflow:hidden}.due-sh .dp-days{max-width:100%}.due-sh .hint{overflow-wrap:anywhere}
-.dp-d em{white-space:nowrap}`; document.head.append(st2); } // a folha do prazo fica fora do app (document.body)
+.dp-d em{white-space:nowrap}
+.dc{margin:.2rem 0 .35rem;display:grid;gap:.6rem}.dc-mn{font-size:.82rem;font-weight:900;color:var(--ink);text-transform:capitalize;margin:0 0 .2rem}
+.dc-hs,.dc-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.dc-hs{margin-bottom:3px}
+.dc-h{border:0;background:none;color:var(--ink-2);font:inherit;font-size:.66rem;font-weight:800;padding:.2rem 0;border-radius:8px;cursor:pointer}.dc-h.off{opacity:.45;text-decoration:line-through}
+.dc-d{position:relative;display:grid;place-items:center;min-width:0;height:48px;border:1px solid transparent;background:color-mix(in srgb,var(--ink) 5%,transparent);color:var(--ink);border-radius:9px;padding:0;font:inherit;cursor:pointer;overflow:hidden}
+.dc-d i{position:absolute;top:3px;left:5px;font-style:normal;font-size:.62rem;font-weight:800;color:var(--ink-2)}
+.dc-d b{font-size:.78rem;font-weight:900;color:var(--acc);margin-top:8px}.dc-d small{font-size:.6rem;font-weight:800;color:var(--ink-2);margin-top:8px}
+.dc-d em{position:absolute;bottom:2px;left:0;right:0;font-style:normal;font-size:.5rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em;color:var(--acc)}
+.dc-d.blank{background:none;cursor:default}.dc-d.out{background:none;cursor:default}.dc-d.out i{opacity:.45}
+.dc-d.off{border:1px dashed var(--line);background:none}.dc-d.hoje{border:2px solid var(--acc)}.dc-d.fim{background:color-mix(in srgb,var(--acc) 22%,var(--panel));border-color:var(--acc)}.dc-d.fim b{margin-top:0}
+.dc-leg{margin:.1rem 0 0;font-size:.7rem;color:var(--ink-2)}`; document.head.append(st2); } // a folha do prazo fica fora do app (document.body)
 const DOW = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 function duePlan(e, due, offIn) {
   const off = offIn || e.dueOff || [], info = readingInfo(e), total = info.total || Number(e.totalPages) || 0, now = info.now || 0, rem = Math.max(0, total - now);
@@ -13011,6 +13022,21 @@ function dueToday(e) {
   return { total, now, start, per, target, todayOff, done: now >= target };
 }
 const dueLabel = (iso) => { const d = new Date(iso + 'T12:00:00Z'); return `${DOW[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
+function dueCal(p) {
+  const t = todayISO(), last = p.list.length ? p.list[p.list.length - 1].iso : t, byIso = new Map(p.list.map((x) => [x.iso, x]));
+  const offW = new Set(p.list.filter((x) => x.off).map((x) => x.w)), MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const ORD = [1, 2, 3, 4, 5, 6, 0], NOME = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  const head = '<div class="dc-hs">' + ORD.map((w) => '<button type="button" class="dc-h' + (offW.has(w) ? ' off' : '') + '" data-w="' + w + '" aria-label="' + DOW[w] + (offW.has(w) ? ': folga' : '') + '">' + NOME[w] + '</button>').join('') + '</div>';
+  const months = []; for (let y = Number(t.slice(0, 4)), m = Number(t.slice(5, 7)) - 1; ; m++) { if (m > 11) { m = 0; y++; } const key = y + '-' + String(m + 1).padStart(2, '0'); months.push([y, m]); if (key >= last.slice(0, 7)) break; }
+  return '<div class="dc">' + months.map(([y, m]) => {
+    const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7; const cells = [];
+    for (let i = 0; i < lead; i++) cells.push('<span class="dc-d blank"></span>');
+    for (let d = 1; d <= days; d++) { const iso = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'), x = byIso.get(iso);
+      if (!x) { cells.push('<span class="dc-d out"><i>' + d + '</i></span>'); continue; }
+      cells.push('<button type="button" class="dc-d' + (x.off ? ' off' : '') + (iso === t ? ' hoje' : '') + (iso === last ? ' fim' : '') + '" data-w="' + x.w + '" title="' + (x.off ? 'folga' : 'até a pág. ' + x.ate) + '"><i>' + d + '</i>' + (x.off ? '<small>folga</small>' : '<b>' + x.ate + '</b>') + (iso === last ? '<em>prazo</em>' : '') + '</button>'); }
+    return '<div class="dc-m">' + (months.length > 1 ? '<div class="dc-mn">' + MES[m] + '</div>' : '') + head + '<div class="dc-g">' + cells.join('') + '</div></div>';
+  }).join('') + '<p class="dc-leg">O número em cada dia é a página até onde ler.</p></div>';
+}
 function dueSheet(e) {
   const t = todayISO(), add = (n) => new Date(Date.parse(t) + n * 864e5).toISOString().slice(0, 10);
   const nextDow = (w) => { const d0 = new Date(t + 'T12:00:00Z').getUTCDay(); let n = (w - d0 + 7) % 7; if (n === 0) n = 7; return add(n); };
@@ -13028,9 +13054,9 @@ function dueSheet(e) {
     if (!p.rem) { out.innerHTML = 'Você já está na última página.'; return; } if (p.days < 1) { out.innerHTML = 'Escolha hoje ou um dia depois.'; return; }
     const mx = Math.max(1, ...p.list.map((x) => x.n)); { let acc = (readingInfo(e).now || 0); for (const x of p.list) { acc += x.n; x.ate = Math.min(acc, readingInfo(e).total || Number(e.totalPages) || acc); } }
     out.innerHTML = `<div class="dp-sum"><b>${p.perDay}</b> páginas por dia<small>${p.rem} páginas em ${plural(p.work, 'dia de leitura', 'dias de leitura')}${p.work < p.days ? ' · ' + plural(p.days - p.work, 'folga', 'folgas') : ''}</small></div>
-      <div class="dp-days">${p.list.map((x) => `<button type="button" class="dp-d${x.off ? ' off' : ''}${x.iso === todayISO() ? ' hoje' : ''}" data-w="${x.w}" aria-pressed="${x.off}" title="${x.off ? 'Folga: toque para ler neste dia' : 'Toque para marcar folga'}"><small>${x.iso === todayISO() ? 'hoje' : x.dow}</small><i><u style="height:${x.off ? 0 : Math.max(10, Math.round(x.n / mx * 100))}%"></u></i><b>${x.off ? 'folga' : x.n}</b><em>${x.off ? x.iso.slice(8, 10) : 'até ' + x.ate}</em></button>`).join('')}</div>
-      <small class="hint" style="margin:0">Toque num dia para marcar folga (vale para esse dia da semana até o prazo).</small>`;
-    out.querySelectorAll('.dp-d').forEach((b) => b.addEventListener('click', () => { const w = Number(b.dataset.w); off = off.includes(w) ? off.filter((x) => x !== w) : [...off, w]; show(); })); };
+      ${dueCal(p)}
+      <small class="hint" style="margin:0">Toque num dia da semana (no topo) ou num dia para marcar folga; vale para aquele dia até o prazo.</small>`;
+    out.querySelectorAll('.dc-d[data-w], .dc-h[data-w]').forEach((b) => b.addEventListener('click', () => { const w = Number(b.dataset.w); off = off.includes(w) ? off.filter((x) => x !== w) : [...off, w]; show(); })); };
   inp.value = e.dueAt || ''; show(); inp.addEventListener('input', show);
   f.querySelectorAll('.dq').forEach((b) => b.addEventListener('click', () => { inp.value = b.dataset.d; show(); }));
   const close = () => wrap.remove(); wrap.addEventListener('click', (ev) => { if (ev.target === wrap) close(); }); f.querySelector('.cancel').addEventListener('click', close);
