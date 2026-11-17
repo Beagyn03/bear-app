@@ -4921,7 +4921,7 @@ function openBookPage(e, tab = 'sobre') {
         ${m && m.desc ? `<p class="bp-src">Fonte: ${esc(m.src)}</p>` : ''}
         ${e._preview ? `<button type="button" class="bp-btn pri" data-a="add">+ Adicionar à minha biblioteca</button>` : ''}`;
     } else if (tab === 'minha') {
-      body = `<section class="bp-card"><div class="bp-row"><span>Status</span><select class="bp-st" aria-label="Status">${['QUERO', 'LENDO', 'HIBERNANDO', 'LIDO', 'ABANDONEI'].map((st) => `<option value="${st}" ${e.status === st ? 'selected' : ''}>${LIB_LABEL[st]}</option>`).join('')}</select></div>
+      body = `<section class="bp-card"><div class="bp-row"><span>${e.status === 'LIDO' ? 'Corrigir status' : 'Status'}</span><select class="bp-st" aria-label="Status">${['QUERO', 'LENDO', 'HIBERNANDO', 'LIDO', 'ABANDONEI'].map((st) => `<option value="${st}" ${e.status === st ? 'selected' : ''}>${LIB_LABEL[st]}</option>`).join('')}</select></div>
         ${info.total ? `<div class="rc-prog"><i class="mt-bar"><i style="width:${pct}%"></i></i><em>${pct}%</em></div><small class="bp-small">página ${info.now} de ${info.total}</small>` : ''}
         <div class="bp-stats">${[[e.startedAt ? fmt(e.startedAt) : '—', 'início'], [e.finishedAt ? fmt(e.finishedAt) : '—', 'fim'], [days ? plural(days, 'dia', 'dias') : '—', 'de leitura'], [ser.length ? Math.round(ser[ser.length - 1].acc / ser.length) : (e.status === 'LIDO' && days && info.total ? Math.round(info.total / days) : '—'), ser.length ? 'pág. por dia lido' : 'pág. por dia (média)'], [foc.length ? `${focMin} min` : '—', `em ${plural(foc.length, 'foco', 'focos')}`]].map(([a, b]) => `<div><b>${a}</b><small>${b}</small></div>`).join('')}</div>
         ${e.status === 'QUERO' ? `<button type="button" class="bp-btn" data-a="next">${T().nextId === e.id ? 'Desmarcar como próxima leitura' : 'Marcar como próxima leitura'}</button>` : ''}${canReadNow(e) ? `<button type="button" class="bp-btn pri" data-a="now">Ler agora</button>` : e.status === 'LENDO' ? `<button type="button" class="bp-btn pri" data-a="upd">${IC('atualizar', 'ico-b')}Atualizar leitura</button>` : ''}</section>
@@ -8864,7 +8864,7 @@ function bookMenuOpen(anchor, b) {
     e && st === 'LENDO' && { id: 'st', ic: 'flag', label: 'Status', items: [['flag', 'Terminei', set('LIDO')], ['pause', 'Pausar', set('HIBERNANDO'), `guarda a pág. ${pg}`], ['x', 'Abandonar', set('ABANDONEI')],
       ...(lendo > 1 ? [isCur ? ['swap', 'Trocar leitura do Início', () => swapReading()] : ['swap', 'Ler agora no Início', () => { readNow(e); reload(); }]] : []), ...resetIt] },
     e && (st === 'HIBERNANDO' || st === 'ABANDONEI') && { id: 'st', ic: 'flag', label: 'Status', items: [queueIt, ...(st === 'HIBERNANDO' ? [['x', 'Abandonar', set('ABANDONEI')]] : []), ...resetIt] },
-    e && st === 'LIDO' && { id: 'st', ic: 'flag', label: 'Status', items: [['x', 'Abandonei', set('ABANDONEI'), 'não terminei esse livro'], queueIt, ...resetIt] },
+    e && st === 'LIDO' && { id: 'st', ic: 'flag', label: 'Corrigir status', items: [['x', 'Abandonei', set('ABANDONEI'), 'não terminei esse livro'], queueIt, ...resetIt] },
     e && st !== 'QUERO' && { id: 'tr', ic: 'quote', label: 'Trechos e anotação', items: [['quote', 'Salvar trecho', () => saveQuote(e)], ['note', 'Anotação', () => editNote(e), e.note || ''],
       ...((e.quotes || []).length ? [['book', `Ver trechos (${e.quotes.length})`, () => openBookPage(e, 'trechos')]] : [])] },
     { id: 'dt', ic: 'book', label: 'Detalhes do livro', items: [['book', 'Ver no catálogo', () => (e ? openBookPage(e) : openAnyBook(b.title, b.author, b.cover)), 'sinopse e ficha'],
@@ -9563,6 +9563,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
