@@ -9853,6 +9853,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11682,7 +11683,7 @@ TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closes
 .rd2 .rd-tx{background:color-mix(in srgb,var(--ink) 5%,transparent);border-radius:14px;padding:.55rem .7rem;margin:.35rem 0}
 .rd2 .rd-tx p{margin:0;font-size:.92rem}.rd2 .rd-tx .rd-fe{margin:.4rem 0 0}
 .rd2 .rd-q{border-radius:0 14px 14px 0;background:color-mix(in srgb,var(--ink) 3%,transparent)}
-.rd2 footer{align-items:center}.rd2 footer .rd-sp{flex:1}
+.rd2 footer{align-items:center}.rd2 footer .rd-like{min-width:46px;text-align:left}.rd2 footer .rd-sp{flex:1}
 .rd2 footer .rd-save,.rd2 footer .rd-share{width:38px;padding:0;display:grid;place-items:center}
 .rd2 footer svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .rd2 footer .rd-save.on{color:var(--acc)}.rd2 footer .rd-save.on svg{fill:currentColor}
@@ -11755,7 +11756,7 @@ function rdCardHTML(it, i, opts = {}) {
       <span class="rd-kc"><span class="rd-tag${isRev ? ' rv' : ''}">${esc(kind)}</span>${pct != null ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${pct}%</span>` : ''}${it.paws ? rdMk(it.paws) : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
     ${it.book && !it.book2 ? `<button type="button" class="rd-book">${cvh(it.book.title, it.book.cover)}<span><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small>${fr || fim ? `<em>${esc([fr, fim].filter(Boolean).join(' · '))}</em>` : ''}</span></button>` : ''}
     <div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}
-    ${opts.noFoot ? '' : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" aria-pressed="${!!it.liked}">${it.liked ? '♥' : '♡'} ${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button>
+    ${opts.noFoot ? '' : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" data-ic2="1" aria-label="Curtir" aria-pressed="${!!it.liked}"><img class="rd-hi" src="img/bt_curtir.webp" alt="">${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button>
       <span class="rd-sp"></span><button type="button" class="rd-save${saved ? ' on' : ''}" aria-pressed="${saved}" aria-label="${saved ? 'Tirar dos salvos' : 'Salvar post'}" title="${saved ? 'Salvo' : 'Salvar'}"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></button><button type="button" class="rd-share" aria-label="Compartilhar" title="Compartilhar"><svg viewBox="0 0 24 24"><path d="M14 5l7 7-7 7M21 12H9a6 6 0 0 0-6 6"/></svg></button>${rdShelfBtn(it)}</footer>`}
   </article>`;
 }
@@ -11826,7 +11827,7 @@ function rdBind(root, list, after) { // liga os botões dos cartões
     c.querySelector('.rd-more')?.addEventListener('click', (ev) => rdMenu(it, after, ev.currentTarget));
     c.querySelector('.rd-like')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget, on = !it.liked; it.liked = on; it.likes = Math.max(0, (it.likes || 0) + (on ? 1 : -1));
-      b.classList.toggle('on', on); b.textContent = `${on ? '♥' : '♡'} ${it.likes || ''}`;
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.innerHTML = '<img class="rd-hi" src="img/bt_curtir.webp" alt="">' + (it.likes || '');
       const base = it.type === 'review' ? `/v1/reviews/${it.id}/like` : `/v1/posts/${it.id}/like`;
       try { const r = await sapi(on ? 'POST' : 'DELETE', base); if (r.status >= 300) throw 0; } catch { toast('Não consegui agora'); }
     });
