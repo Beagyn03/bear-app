@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-<title>B.E.A.R — Be A Reader</title>
+<title>Livroverso — organizador de leituras</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap">
 <meta name="theme-color" content="#1f140d">
@@ -15,13 +15,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="B.E.A.R">
+<meta name="apple-mobile-web-app-title" content="Livroverso">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;900&display=swap">
 <style>
 :root{
   color-scheme:light;
-  /* Paleta B.E.A.R: tons pastel e subtons de marrom tirados do próprio urso */
+  /* Paleta Livroverso: tons pastel e subtons de marrom tirados do próprio urso */
   --bg:#f6ece1;        /* latte */
   --panel:#fff9f3;     /* creme */
   --hero:#f0dfcb;      /* bege-avelã, fundo do urso */
@@ -66,7 +66,7 @@ main{max-width:640px;margin:0 auto;padding:1rem 1rem calc(5.5rem + env(safe-area
 .gate .adv{margin-top:.8rem;color:var(--ink-2);font-size:.85rem}
 .gate-brand{display:grid;justify-items:center;text-align:center}
 .gate-brand img{width:140px;height:140px}
-.gate-name{font-weight:900;font-size:1.6rem;letter-spacing:.12em}
+.gate-name{font-weight:900;font-size:1.6rem;letter-spacing:.02em}
 .gate-sub{color:var(--ink-2);font-size:.85rem;letter-spacing:.2em;text-transform:uppercase}
 .bookcase{--wood:#9c6b3f;--wood-d:#6e4828;--wood-l:#c9996a;--back:#4e331d;position:relative;margin:.2rem 0 .8rem;padding:10px;border-radius:12px;
   background:repeating-linear-gradient(92deg,rgba(255,255,255,.04) 0 2px,transparent 2px 9px),linear-gradient(90deg,var(--wood-d),var(--wood) 6%,var(--wood) 94%,var(--wood-d));
@@ -464,7 +464,7 @@ label{display:grid;gap:.25rem;font-size:.9rem;color:var(--ink-2)}
 
 .splash{position:fixed;inset:0;z-index:50;display:grid;place-items:center;align-content:center;gap:.6rem;background:var(--hero);transition:opacity .45s ease}
 .splash img{width:min(240px,60vw);height:auto}
-.splash .wm{font-weight:900;font-size:2.4rem;letter-spacing:.18em;color:var(--ink);line-height:1}
+.splash .wm{font-weight:900;font-size:2.2rem;letter-spacing:.02em;color:var(--ink);line-height:1}
 .splash .wm small{display:block;font-size:.9rem;letter-spacing:.22em;color:var(--ink-2);margin-top:.4rem;text-align:center}
 .splash.out{opacity:0;pointer-events:none}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}.splash{transition:none}}
@@ -1150,12 +1150,12 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 <body class="at-home">
 <script>(function(){var k="papel";try{k=localStorage.getItem("bear.theme")||"papel"}catch(e){}var h=document.documentElement;h.dataset.pal=k;if(k!=="papel")h.dataset.theme="dark"})()</script>
 <div class="app-bg" aria-hidden="true"></div>
-<div class="splash" id="splash" aria-hidden="true"><img alt="" src="img/splash.webp"><div class="wm">B·E·A·R<small>BE A READER</small></div></div>
+<div class="splash" id="splash" aria-hidden="true"><img alt="" src="img/splash.webp"><div class="wm">Livroverso<small>organizador de leituras</small></div></div>
 <div id="toca-host"></div>
 <main>
   <div class="topbar">
     <button id="toca-back" class="ghost" type="button" aria-label="Voltar para a tela inicial">‹ Toca</button>
-    <div class="brand"><img alt="" src="img/brand_logo.webp">B.E.A.R<small>Be A Reader</small></div>
+    <div class="brand"><img alt="" src="img/brand_logo.webp">Livroverso<small>organizador de leituras</small></div>
     <span id="sync-status" class="sync" aria-live="polite"></span>
     <div id="nav" class="hidden"><button id="back" class="ghost">‹ Metas</button></div>
     <button id="home-gear" class="gear" type="button" aria-label="Perfil, conta e backup"><span class="avatar" id="avatar" aria-hidden="true">B</span></button>
@@ -1585,7 +1585,7 @@ function renderHome(today) {
     // Primeira vez: começa pela estante; a meta com prazo é opcional.
     td.append(el('div', { class: 'today' }, [
       el('div', { class: 'th' }, [bearImg('bear_reading_chair', 'Boas-vindas'), el('div', {}, [
-        el('div', { class: 't', text: 'Boas-vindas ao B.E.A.R!' }),
+        el('div', { class: 't', text: 'Boas-vindas ao Livroverso!' }),
         el('p', { class: 'say', text: 'Comece pelos livros: o que você está lendo, o que quer ler e o que já leu. Se quiser, monte uma meta com prazo.' })])]),
       el('hr'),
       el('button', { class: 'primary', type: 'button', text: '+ Adicionar meu primeiro livro', onclick: () => searchSheet({ onPick: addToLibrary }) }),
@@ -3563,8 +3563,8 @@ async function storyImage(fmt = 'story') {
 
   // rodapé
   x.textAlign = 'center'; x.textBaseline = 'alphabetic';
-  x.fillStyle = '#4b3326'; x.font = F(900, 30); x.letterSpacing = '8px'; x.fillText('B.E.A.R', W/2, H - (FEED ? 52 : 96)); x.letterSpacing = '0px';
-  x.fillStyle = '#8c6e5a'; x.font = F(500, 22); x.fillText('Be A Reader', W/2, H - (FEED ? 22 : 62));
+  x.fillStyle = '#4b3326'; x.font = F(900, 30); x.letterSpacing = '1px'; x.fillText('Livroverso', W/2, H - (FEED ? 52 : 96)); x.letterSpacing = '0px';
+  x.fillStyle = '#8c6e5a'; x.font = F(500, 22); x.fillText('organizador de leituras', W/2, H - (FEED ? 22 : 62));
   return new Promise((res) => c.toBlob(res, 'image/png'));
 }
 for (const btn of [$('#story'), $('#feed')]) btn.addEventListener('click', async () => {
@@ -3760,7 +3760,7 @@ function connectSheet(gate) {
     ]);
   } else {
     form = el('form', { class: 'form' }, [
-      ...(gate ? [el('div', { class: 'gate-brand' }, [bearImg('bear_reading_chair', 'B.E.A.R'), el('div', { class: 'gate-name', text: 'B.E.A.R' }), el('div', { class: 'gate-sub', text: 'Be A Reader' })])] : []),
+      ...(gate ? [el('div', { class: 'gate-brand' }, [bearImg('bear_reading_chair', 'Livroverso'), el('div', { class: 'gate-name', text: 'Livroverso' }), el('div', { class: 'gate-sub', text: 'organizador de leituras' })])] : []),
       el('h3', { text: 'Entrar na sua conta' }),
       el('p', { class: 'hint', text: gate ? 'Sua estante, suas metas e seu ritmo de leitura, com o Bear acompanhando cada página.' : 'Entre com a mesma conta em cada aparelho para ver os mesmos dados.' }),
       nameField,
@@ -3920,7 +3920,7 @@ function libLog(e, raw, pctMode) {
 // Onde não oferece (iPhone/iPad e outros), mostra o passo a passo do próprio aparelho.
 var installEvt = null;
 window.addEventListener('beforeinstallprompt', (ev) => { ev.preventDefault(); installEvt = ev; try { renderProfile(); } catch {} });
-window.addEventListener('appinstalled', () => { installEvt = null; toast('B.E.A.R instalado! Procure o ícone do urso na sua tela inicial.'); try { renderProfile(); } catch {} });
+window.addEventListener('appinstalled', () => { installEvt = null; toast('Livroverso instalado! Procure o ícone do urso na sua tela inicial.'); try { renderProfile(); } catch {} });
 const appInstalled = () => { try { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; } catch { return false; } };
 async function installApp() {
   if (appInstalled()) return toast('Você já está usando o app instalado');
@@ -3928,10 +3928,10 @@ async function installApp() {
   const ua = navigator.userAgent || '', ios = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), android = /Android/.test(ua);
   const steps = ios ? ['Abra esta página no Safari.', 'Toque em Compartilhar (o quadrado com a seta para cima).', 'Escolha “Adicionar à Tela de Início”.', 'Confirme em “Adicionar”.']
     : android ? ['Abra esta página no Chrome.', 'Toque no menu ⋮, no canto de cima.', 'Escolha “Adicionar à tela inicial” ou “Instalar app”.', 'Confirme em “Instalar”.']
-    : ['Abra esta página no Chrome ou no Edge.', 'Clique no ícone de instalar, no fim da barra de endereço (ou no menu ⋮).', 'Escolha “Instalar B.E.A.R”.'];
+    : ['Abra esta página no Chrome ou no Edge.', 'Clique no ícone de instalar, no fim da barra de endereço (ou no menu ⋮).', 'Escolha “Instalar Livroverso”.'];
   const close = () => wrap.remove();
   const wrap = el('div', { class: 'sheet', onclick: (ev) => { if (ev.target === wrap) close(); } }, [el('div', { class: 'box install-box' }, [
-    el('h3', { text: 'Instalar o B.E.A.R' }),
+    el('h3', { text: 'Instalar o Livroverso' }),
     el('p', { class: 'hint', text: 'O app fica com ícone próprio na tela inicial e abre em tela cheia, sem a barra do navegador. Seus dados continuam na sua conta.' }),
     el('ol', { class: 'install-steps' }, steps.map(t => el('li', { text: t }))),
     el('button', { type: 'button', class: 'cancel', text: 'Entendi', onclick: close }),
@@ -3956,7 +3956,7 @@ function renderProfile() {
     el('div', { class: 'group', text: 'App' }), btn(appInstalled() ? 'App instalado neste aparelho' : 'Instalar o app no celular', installApp),
     el('details', { class: 'me-adv' }, [el('summary', { text: 'Avançado' }), el('p', { class: 'hint', text: 'Sua conta já guarda tudo. Use o backup só para levar os dados para fora do app.' }),
       btn('Exportar backup (JSON)', () => $('#export').click()), btn('Importar backup (JSON)', () => $('#import').click())]),
-    el('p', { class: 'app-ver', text: `B.E.A.R versão ${APP_VERSION} · ${APP_BUILD.split('-').reverse().join('/')}` }),
+    el('p', { class: 'app-ver', text: `Livroverso versão ${APP_VERSION} · ${APP_BUILD.split('-').reverse().join('/')}` }),
   ]));
 }
 function editName() {
@@ -3990,7 +3990,7 @@ async function logout() {
   try { ['bear.lastSync', 'bear.profile', 'bear.owner', 'bear.toca.local', 'bear.socialStats', 'bear.socialStatsOwner'].forEach(k => localStorage.removeItem(k)); sessionStorage.removeItem('bear.toca.awake'); } catch {}
   location.reload();
 }
-// Apaga os dados do B.E.A.R deste aparelho (não mexe na nuvem).
+// Apaga os dados do Livroverso deste aparelho (não mexe na nuvem).
 function resetLocal() {
   applyingRemote = true; db = { goals: [] }; save(); applyingRemote = false;
   syncMeta = { version: 0, dirty: false }; saveMeta();
@@ -4918,7 +4918,7 @@ function openBookPage(e, tab = 'sobre') {
       const rows = [['Páginas', info.total || e.totalPages], ['Gênero', e.genre || (m && m.cat)], ['Publicação', m && m.pub], ['Publicado em', m && m.date && (m.date.length >= 10 ? fmt(m.date) : m.date)], ['Idioma', m && m.lang && (LANGS[m.lang] || m.lang)], ['ISBN', e.isbn]].filter((x) => x[1]);
       body = `<section class="bp-sec">${!m ? '<p class="bp-load">Buscando a sinopse…</p>' : m.desc ? `<div class="bp-desc ${S.bpMore ? 'open' : ''}">${esc(m.desc).replace(/\n/g, '<br>')}</div>${m.desc.length > 420 ? `<button type="button" class="bp-more">${S.bpMore ? 'Mostrar menos' : 'Ler mais'}</button>` : ''}` : '<p class="bp-load">Não encontramos a sinopse deste livro.</p>'}</section>
         ${rows.length ? `<dl class="bp-dl">${rows.map(([k, val]) => `<dt>${k}</dt><dd>${esc(val)}</dd>`).join('')}</dl>` : ''}
-        ${m && m.desc ? `<p class="bp-src">Fonte: ${esc(m.src)}</p>` : ''}
+        ${m && m.desc ? `<p class="bp-src">Fonte: ${esc(String(m.src || '').replace('B.E.A.R', 'Livroverso'))}</p>` : ''}
         ${e._preview ? `<button type="button" class="bp-btn pri" data-a="add">+ Adicionar à minha biblioteca</button>` : ''}`;
     } else if (tab === 'minha') {
       body = `<section class="bp-card"><div class="bp-row"><span>${e.status === 'LIDO' ? 'Corrigir status' : 'Status'}</span><select class="bp-st" aria-label="Status">${['QUERO', 'LENDO', 'HIBERNANDO', 'LIDO', 'ABANDONEI'].map((st) => `<option value="${st}" ${e.status === st ? 'selected' : ''}>${LIB_LABEL[st]}</option>`).join('')}</select></div>
@@ -5678,7 +5678,7 @@ function editConfig() {
         <button type="button" id="cf-priv">${IC('privacidade', 'ico-a')}<small>Privacidade</small></button>
         ${appInstalled() ? '' : `<button type="button" id="cf-install">${IC('instalar', 'ico-a')}<small>Instalar</small></button>`}
       </div>
-      <div class="cf-foot"><small class="cfg-ver">B.E.A.R ${APP_VERSION}</small><button type="button" id="cf-close" class="pri">Fechar</button></div>`;
+      <div class="cf-foot"><small class="cfg-ver">Livroverso ${APP_VERSION}</small><button type="button" id="cf-close" class="pri">Fechar</button></div>`;
     $$('.cf-rugs button', ed).forEach((b) => b.addEventListener('click', () => { T().rug = b.dataset.v; commit(); draw(); }));
     $('#cf-sound', ed).addEventListener('click', () => { const v = !SFX.on(); SFX.set(v); if (v) setTimeout(() => SFX.play('chime'), 60); draw(); });
     $$('.seg button', ed).forEach((b) => b.addEventListener('click', () => {
@@ -5842,7 +5842,7 @@ document.addEventListener('click', (e) => { const n = e.composedPath ? e.compose
 // sininho quando aparece um aviso de conquista; papel ao abrir os cartões da toca
 { const tn = document.querySelector('#toast'); if (tn) new MutationObserver(() => { if (/^Conquista|conquistas novas/i.test(tn.textContent || '')) SFX.play('chime'); }).observe(tn, { childList: true, characterData: true, subtree: true });
   new MutationObserver(() => { if (!$('#editor').hidden) SFX.play('paper'); }).observe($('#editor'), { attributes: true, attributeFilter: ['hidden'] }); }
-// ===================== B.E.A.R 3.0: app de leitura com cara de rede social (sem a toca) =====================
+// ===================== Livroverso 3.0: app de leitura com cara de rede social (sem a toca) =====================
 // As telas internas (página do livro, catálogo, estantes, notificações, foco) são as mesmas; muda a moldura:
 // uma barra de abas embaixo e telas-raiz limpas no lugar dos cômodos.
 const TABS = [
@@ -5908,7 +5908,7 @@ function drawTab() {
   const box = $('#lista'); box.classList.add('v3');
   const h = drawHud(), Y0 = yearInfo(), L = lib(), cnt = (s) => L.filter((e) => e.status === s).length;
   if (S.tab === 'inicio') {
-    box.innerHTML = `${topbar('<span class="v3-logo">B.E.A.R</span>')}
+    box.innerHTML = `${topbar('<span class="v3-logo">Livroverso</span>')}
       ${nowCard()}
       <section class="v3-feed"><div class="lx-head"><b>Novidades dos amigos</b><button type="button" class="lx-link" id="v3-friends">Amigos ›</button></div><div id="v3-feed-host"></div></section>`;
     bindNow(box);
@@ -5947,7 +5947,7 @@ function drawTab() {
         ${show.length ? `<div class="v3-shelf">${show.map((a) => `<span class="v3-trophy${a.rare ? ' rare' : ''}" title="${esc(a.name)}"><img src="${DECO_IMG[a.reward]}" alt="${esc(a.name)}"></span>`).join('')}</div>` : '<p class="lx-empty">Leia, registre e avalie para ganhar as primeiras.</p>'}</section>
       <button type="button" class="v3-row" id="v3-amigos">${MN('perfil', 'ico-a')}<span><b>Amigos</b><small>${plural(SOC.fr.friends.length, 'amigo', 'amigos')}${SOC.fr.incoming.length ? ` · ${plural(SOC.fr.incoming.length, 'pedido', 'pedidos')}` : ''}</small></span>›</button>
       <button type="button" class="v3-row" id="v3-conta">${IC('privacidade', 'ico-a')}<span><b>Conta e privacidade</b><small>${connected() ? 'Sincronizada' : 'Entre para sincronizar'}</small></span>›</button>
-      <small class="cfg-ver">B.E.A.R ${APP_VERSION}</small>`;
+      <small class="cfg-ver">Livroverso ${APP_VERSION}</small>`;
     $('#v3-cfg', box).addEventListener('click', editConfig);
     $('#v3-edit', box).addEventListener('click', () => screen('perfil'));
     $('#v3-conta', box).addEventListener('click', () => screen('perfil'));
@@ -6648,7 +6648,7 @@ function drawPerfil(box) {
     ${on ? row('pf-sync', IC('atualizar', 'ico-a'), 'Sincronizar agora', `${esc(apiCfg.email || '')}${lastSyncAt ? ' · ' + fmtDateTime(lastSyncAt) : ''}`) : row('pf-login', IC('privacidade', 'ico-a'), 'Entrar ou criar conta', 'Seus dados em todos os aparelhos')}
     <details class="pf-adv"><summary>Avançado</summary><p>Sua conta já guarda tudo. Use o backup só para levar os dados para fora do app.</p><div class="pf-advb"><button type="button" id="pf-exp">Exportar backup</button><button type="button" id="pf-imp">Importar backup</button></div></details>
     ${on ? '<button type="button" class="pf-out" id="pf-out">Sair da conta</button>' : ''}
-    <small class="cfg-ver">B.E.A.R ${APP_VERSION}</small>`;
+    <small class="cfg-ver">Livroverso ${APP_VERSION}</small>`;
   paintCv(box);
   const on_ = (id, fn) => $('#' + id, box)?.addEventListener('click', fn);
   on_('v3-cfg', editConfig); on_('pf-cfg', editConfig); on_('pf-photo', pickPhoto); on_('v3-achs', openAchList);
@@ -7252,7 +7252,7 @@ async function shareYear() {
   let y = 780; const row = (k, v) => { if (!v) return; txt(k, 90, y, 34, '#c9b096', 700); txt(v.length > 34 ? v.slice(0, 33) + '…' : v, 90, y + 52, 46, '#fff3dc', 800); y += 140; };
   row('Média das notas', d.avg != null ? `nota ${String(Math.round(d.avg * 2) / 2).replace('.', ',')}` : '');
   row('Autor mais lido', d.autor ? d.autor[0] : ''); row('Livro mais longo', d.longo ? `${d.longo.title}` : '');
-  txt('Be A Reader', 90, 1280, 40, acc, 900);
+  txt('organizador de leituras', 90, 1280, 40, acc, 900);
   const img = ART && ART.bear_celebrating; if (img) await new Promise((ok) => { const im = new Image(); im.onload = () => { g.drawImage(im, 700, 960, 320, 320); ok(); }; im.onerror = ok; im.src = img; });
   c.toBlob(async (blob) => {
     const file = new File([blob], `meu-ano-em-livros-${d.y}.png`, { type: 'image/png' });
@@ -7864,7 +7864,7 @@ function decorateBookPage(v) {
   const tabOn = (v.querySelector('.bp-tabs button.on') || {}).textContent || '', title = (v.querySelector('.bp-ht h2') || {}).textContent || '', author = (v.querySelector('.bp-ht small') || {}).textContent || '';
   if (!title) return;
   const net = S.bookNet[normT(title).slice(0, 200)], chips = v.querySelector('.bp-chips');
-  if (chips && net && net.avg != null && !chips.querySelector('.bp-net')) chips.insertAdjacentHTML('beforeend', `<span class="bp-chip bp-net" title="Média das notas de quem avaliou no B.E.A.R">média da rede ${pawTxt(net.avg)} · ${net.count} ${net.count === 1 ? 'avaliação' : 'avaliações'}</span>`);
+  if (chips && net && net.avg != null && !chips.querySelector('.bp-net')) chips.insertAdjacentHTML('beforeend', `<span class="bp-chip bp-net" title="Média das notas de quem avaliou no Livroverso">média da rede ${pawTxt(net.avg)} · ${net.count} ${net.count === 1 ? 'avaliação' : 'avaliações'}</span>`);
   if (net === undefined && connected() && socialProfile) bookNetHTML({ title }); // busca a média já no topo
   if (/^Sobre/.test(tabOn) && !v.querySelector('.au-row')) { const sec = v.querySelector('.sl-body'); const h = authorStripHTML({ title, author }); if (h) { sec.insertAdjacentHTML('beforeend', h); paintCv(v); } }
 }
@@ -8092,7 +8092,7 @@ function drawAjustes(box) {
       ${row('aj-imp', 'Restaurar de um arquivo', 'Só para trazer dados de fora da conta')}
     </div>
     ${on ? '<button type="button" class="pf-out" id="aj-out">Sair da conta</button>' : ''}
-    <small class="cfg-ver">B.E.A.R ${APP_VERSION}</small>`;
+    <small class="cfg-ver">Livroverso ${APP_VERSION}</small>`;
   const on_ = (id, fn) => $('#' + id, box)?.addEventListener('click', fn);
   on_('aj-back', () => goTab('inicio')); on_('aj-photo', pickPhoto); on_('aj-name', editName); on_('aj-handle', socialSettingsSheet); on_('aj-bio', editBio);
   on_('aj-flair', flairSheet); on_('aj-rmph', () => { if (confirm('Remover sua foto?')) removePhoto(); }); on_('aj-priv', socialSettingsSheet);
@@ -8708,8 +8708,8 @@ function foldCommunity(box) {
 // 4.4: telas principais (as abas de baixo) mostram só a marca; telas internas mostram o próprio título
 function syncTopTitle() { const v = $('#shelflist'), t = $('#g-t'); if (!t) return; const put = (x, brand) => { t.textContent = x; t.classList.toggle('g-brand', !!brand); };
   const back = v && !v.hidden && v.querySelector('.sl-top .sl-back'), inner = back && back.offsetParent !== null && !v.classList.contains('tabroot'); // tem "‹ Voltar" = tela interna
-  if (inner) { const b = v.querySelector('.sl-top > b'); if (b && b.textContent.trim()) return put(b.textContent.trim()); if (v.querySelector('.bp-hero')) return put('Livro'); return put('B·E·A·R', true); } // tela interna sem título: nunca o nome da aba de baixo
-  put(S.tab === 'perfil' ? (S.ajMode === 'perfil' ? 'Editar perfil' : 'Ajustes') : S.tab === 'progresso' ? 'Estatísticas' : 'B·E·A·R', S.tab !== 'perfil' && S.tab !== 'progresso'); }
+  if (inner) { const b = v.querySelector('.sl-top > b'); if (b && b.textContent.trim()) return put(b.textContent.trim()); if (v.querySelector('.bp-hero')) return put('Livro'); return put('Livroverso', true); } // tela interna sem título: nunca o nome da aba de baixo
+  put(S.tab === 'perfil' ? (S.ajMode === 'perfil' ? 'Editar perfil' : 'Ajustes') : S.tab === 'progresso' ? 'Estatísticas' : 'Livroverso', S.tab !== 'perfil' && S.tab !== 'progresso'); }
 TR.addEventListener('click', () => setTimeout(syncTopTitle, 90));
 { const _pg = paintGtop; paintGtop = function () { _pg(); syncTopTitle(); }; }
 setInterval(syncTopTitle, 1500);
@@ -9563,6 +9563,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -11337,7 +11338,7 @@ loadTrends = function (force) {
   $$('[data-trg]', host).forEach((b) => b.addEventListener('click', () => { const g = b.dataset.trg || null; if (g === S.trG) return; S.trG = g; S.trends = null; paintTrends(); loadTrends(true); }));
   return r;
 }; }
-// ---------- "Para você": começa pelo que os leitores do B.E.A.R estão lendo nos seus gêneros ----------
+// ---------- "Para você": começa pelo que os leitores do Livroverso estão lendo nos seus gêneros ----------
 const TASTE_TO_GENRE = { romance: 'Romance', contemporaneo: 'Romance', dark: 'Romance', romantasia: 'Fantasia', darkfantasy: 'Fantasia', fantasia: 'Fantasia', distopia: 'Ficção científica', ficcao: 'Ficção científica', suspense: 'Suspense e mistério', policial: 'Suspense e mistério', terror: 'Terror', historico: 'História', classicos: 'Clássicos', ya: 'Jovem adulto', poesia: 'Poesia', hq: 'HQ e mangá', biografia: 'Biografia', autoajuda: 'Autoajuda', negocios: 'Não ficção', ciencia: 'Não ficção' };
 { const _tr = tasteRecs; tasteRecs = async function () {
   const base = await _tr.apply(this, arguments);
@@ -12013,7 +12014,7 @@ function inLoad() {
 
 // ---------- tour ----------
 const TOUR = [
-  [null, 'Boas-vindas ao B·E·A·R', 'Um tour rápido pelo app. Leva menos de um minuto.'],
+  [null, 'Boas-vindas ao Livroverso', 'Um tour rápido pelo app. Leva menos de um minuto.'],
   ['#tabbar [data-tab=inicio]', 'Início', 'O livro que você está lendo, sua semana, a meta do ano e o que a rede está comentando. Toque no livro para atualizar a página em que parou.'],
   ['#tabbar [data-tab=estante]', 'Estante', 'Minha biblioteca tem todos os seus livros: lendo, lidos e na fila. Crie estantes suas, como "Clube do livro" ou "Para reler".'],
   ['#tabbar [data-tab=buscar]', 'Buscar', 'Ache um livro e coloque na estante. Começou a ler? Escolha "Estou lendo".'],
@@ -12450,7 +12451,7 @@ async function openRessacaList(kind) {
     v.querySelector('.sl-back').addEventListener('click', () => { try { openCatalog(); } catch { v.hidden = true; } }); };
   shell('<p class="sl-empty">Carregando…</p>'); v.hidden = false; v.scrollTop = 0;
   let items = []; try { const r = await sapi('GET', '/v1/ressaca?kind=' + kind); items = r.status === 200 && r.data ? r.data.items || [] : []; } catch {}
-  const intro = kind === 'curou' ? '<p class="hint" style="margin:.2rem 0 0">Livros que os leitores do B.E.A.R disseram que curaram a ressaca literária.</p>' : '<p class="hint" style="margin:.2rem 0 0">Livros que deixaram os leitores do B.E.A.R de ressaca literária.</p>';
+  const intro = kind === 'curou' ? '<p class="hint" style="margin:.2rem 0 0">Livros que os leitores do Livroverso disseram que curaram a ressaca literária.</p>' : '<p class="hint" style="margin:.2rem 0 0">Livros que deixaram os leitores do Livroverso de ressaca literária.</p>';
   shell(intro + (items.length ? '<div class="rs-list">' + items.map((b) => '<button type="button" class="es-bk" data-book="' + esc(b.title) + '" data-author="' + esc(b.author || '') + '">' + cvh(b.title, b.cover, 'es-cv') + '<small>' + esc(b.title) + '<br>' + plural(b.n, 'voto', 'votos') + '</small></button>').join('') + '</div>'
     : '<p class="sl-empty">Ainda não tem votos suficientes. Quando as pessoas avaliarem dizendo se o livro deu ou curou a ressaca, eles aparecem aqui.</p>'));
   try { paintCv(v); } catch {}
@@ -13025,7 +13026,7 @@ async function reminderSync(e) { try { if (!connected()) return; if (!e || !e.re
     const box = document.createElement('div'); box.style.cssText = 'display:grid;gap:.35rem;border:1px solid var(--line);border-radius:12px;padding:.6rem .7rem;background:var(--panel)';
     box.innerHTML = `<label class="ck-row" style="margin:0"><input type="checkbox" name="rem" ${e.remind ? 'checked' : ''}><span><b>Me lembrar todo dia</b> com quantas páginas faltam</span></label>
       <label style="display:flex;gap:.5rem;align-items:center;margin:0;font-size:.86rem">às <select name="remh" style="width:auto">${times.map(([h, m]) => `<option value="${hhmm(h, m)}" ${hhmm(h, m) === cur ? 'selected' : ''}>${hhmm(h, m)}</option>`).join('')}</select></label>
-      <small class="hint" style="margin:0">${pushOk() ? 'O celular vai pedir permissão para notificar. No iPhone, só funciona com o B.E.A.R instalado na tela de início.' : 'Este navegador não recebe notificações.'}</small>`;
+      <small class="hint" style="margin:0">${pushOk() ? 'O celular vai pedir permissão para notificar. No iPhone, só funciona com o Livroverso instalado na tela de início.' : 'Este navegador não recebe notificações.'}</small>`;
     f.querySelector('.dp').after(box);
     const sub = f.querySelector('button[type=submit]');
     sub.addEventListener('click', async () => { // roda antes do salvar do formulário (que fecha a folha)

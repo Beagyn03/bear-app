@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>B.E.A.R — Nuvem</title>
+<title>Livroverso — Nuvem</title>
 <style>
 :root{color-scheme:light;--bg:#f6ece1;--panel:#fff9f3;--hero:#f0dfcb;--line:#e5d2be;--ink:#4b3326;--ink-2:#8c6e5a;--caramel:#d9ae84;--caramel-deep:#b9824f;--on:#3b2416;--ok:#7d8450;--err:#b4614a;box-sizing:border-box}
 *,*::before,*::after{box-sizing:inherit}
@@ -27,7 +27,7 @@ button:disabled{opacity:.5;cursor:default}
 </head>
 <body>
 <main>
-  <h1>B.E.A.R na nuvem</h1>
+  <h1>Livroverso na nuvem</h1>
   <p class="hint">Envia seus dados para a bear-api ou traz da bear-api para este aparelho.</p>
 
   <section class="panel" id="login">
@@ -142,7 +142,7 @@ button:disabled{opacity:.5;cursor:default}
   }
 
   async function upload(data, btn) {
-    if (!valid(data)) return msg($('#cloud-msg'), 'Esses dados não parecem um backup do B.E.A.R.', false);
+    if (!valid(data)) return msg($('#cloud-msg'), 'Esses dados não parecem um backup do Livroverso.', false);
     if (remote && !confirm(`A nuvem já tem dados (${summary(remote.data)}).\n\nSubstituir pelo que você está enviando (${summary(data)})?`)) return;
     slow(btn, true);
     try {
@@ -160,7 +160,7 @@ button:disabled{opacity:.5;cursor:default}
     fileData = null; $('#btn-up-file').disabled = true;
     const f = e.target.files && e.target.files[0]; if (!f) return;
     try { const d = JSON.parse(await f.text()); if (!valid(d)) throw 0; fileData = d; $('#btn-up-file').disabled = false; msg($('#cloud-msg'), `Backup lido: ${summary(d)}.`, true); }
-    catch { msg($('#cloud-msg'), 'Esse arquivo não é um backup do B.E.A.R.', false); }
+    catch { msg($('#cloud-msg'), 'Esse arquivo não é um backup do Livroverso.', false); }
   });
   $('#btn-up-file').addEventListener('click', (e) => upload(fileData, e.currentTarget));
 

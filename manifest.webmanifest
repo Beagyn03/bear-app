@@ -1,6 +1,6 @@
 {
-  "name": "B.E.A.R — Be A Reader",
-  "short_name": "B.E.A.R",
+  "name": "Livroverso — organizador de leituras",
+  "short_name": "Livroverso",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

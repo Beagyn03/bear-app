@@ -1,4 +1,4 @@
-// B.E.A.R — service worker (4.4, decidido em 14/11/2026).
+// Livroverso — service worker (4.4, decidido em 14/11/2026).
 // Guarda o app (index.html), os ícones e as imagens de img/ no celular: abre na hora e funciona sem internet.
 // A cada abertura confere em segundo plano se há versão nova do app; se houver, guarda a nova e avisa a página,
 // que mostra "Nova versão disponível · Atualizar" (um toque recarrega já com a versão nova).
@@ -49,7 +49,7 @@ async function refreshApp(cached) {
 // lembrete do prazo de leitura (16/11): a API manda {title, body, tag, url}; tocar abre o app já no "Atualizar leitura"
 self.addEventListener('push', (event) => {
   let d = {}; try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : '' }; }
-  event.waitUntil(self.registration.showNotification(d.title || 'B.E.A.R', {
+  event.waitUntil(self.registration.showNotification(d.title || 'Livroverso', {
     body: d.body || 'Hora de ler um pouquinho.', tag: d.tag || 'bear', renotify: true, icon: 'notif-icon.png', badge: 'notif-badge.png',
     data: { url: d.url || './?upd=1' }, actions: [{ action: 'upd', title: 'Atualizar leitura' }, { action: 'foco', title: 'Focar' }],
   }));
@@ -72,9 +72,9 @@ self.addEventListener('message', (event) => {
 
 function offlinePage() {
   return new Response(
-    '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B.E.A.R</title>' +
+    '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Livroverso</title>' +
     '<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#1f140d;color:#f3e4cc;font-family:system-ui,sans-serif;text-align:center;padding:1.5rem">' +
-    '<div><h1 style="font-size:1.3rem">Sem conexão</h1><p>O B.E.A.R precisa de internet para abrir pela primeira vez. Tente de novo em instantes.</p>' +
+    '<div><h1 style="font-size:1.3rem">Sem conexão</h1><p>O Livroverso precisa de internet para abrir pela primeira vez. Tente de novo em instantes.</p>' +
     '<button onclick="location.reload()" style="font:inherit;font-weight:700;padding:.6rem 1.2rem;border-radius:999px;border:0;background:#d9a86c;color:#2a1709">Tentar de novo</button></div></body></html>',
     { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 }
