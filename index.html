@@ -9838,6 +9838,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11591,6 +11592,7 @@ TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closes
 .rd-card header{display:grid;grid-template-columns:auto 1fr auto auto;gap:.5rem;align-items:center}
 .rd-who{min-width:0;border:0;background:none;padding:0;text-align:left;font:inherit;color:var(--ink)}
 .rd-who b{display:block;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rd-who small{font-size:.74rem;color:var(--ink-2)}
+.rd-kpct{display:block;text-align:right;font-size:.8rem;font-weight:900;color:var(--ink);margin-top:.1rem}
 .rd-kind{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--acc)}
 .rd-more{border:0;background:none;color:var(--ink-2);font-weight:900;width:36px;height:36px;font-size:1rem}
 .rd-book{display:grid;grid-template-columns:auto 1fr;gap:.55rem;align-items:center;width:100%;border:0;background:none;padding:.5rem 0 .2rem;text-align:left;font:inherit;color:var(--ink)}
@@ -11683,14 +11685,14 @@ function rdCardHTML(it, i, opts = {}) {
   const kind = it.type === 'review' ? 'Avaliação' : (RD_KINDS.find((k) => k[0] === it.kind) || [, ''])[1];
   const sp = rdSpoil(it), u = it.user || {};
   const fe = (it.feelings || []).length ? `<div class="rd-fe">${it.feelings.map((k) => qtFeel(k)).join('')}</div>` : '';
-  const body = `${it.readerPct != null ? `<div class="rd-pct">${readerPctTxt(it.readerPct)}</div>` : ''}${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
+  const body = `${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
     ${it.text ? `<p>${esc(it.text)}</p>` : ''}
     ${it.book2 ? `<div class="rd-rec"><span>${cvh(it.book.title, it.book.cover)}<b>${esc(it.book.title)}</b></span><em>➜</em><span>${cvh(it.book2.title, it.book2.cover)}<b>${esc(it.book2.title)}</b></span></div>` : ''}
     ${fe}${it.hasImage ? `<div class="rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
   return `<article class="rd-card" data-i="${i}">
     <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
       <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
-      <span class="rd-kc"><span class="rd-kind">${esc(kind)}</span>${it.paws ? `<span class="rd-kmk">${rdMark(it.paws)}</span>` : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
+      <span class="rd-kc"><span class="rd-kind">${esc(kind)}</span>${it.readerPct != null && !it.paws ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${Math.max(0, Math.min(100, Math.round(it.readerPct)))}%</span>` : ''}${it.paws ? `<span class="rd-kmk">${rdMark(it.paws)}</span>` : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
     ${it.book && !it.book2 ? `<button type="button" class="rd-book">${cvh(it.book.title, it.book.cover)}<span><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small></span></button>` : ''}
     <div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>
     ${opts.noFoot ? '' : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" aria-pressed="${!!it.liked}">${it.liked ? '♥' : '♡'} ${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button></footer>`}
