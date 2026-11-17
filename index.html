@@ -4141,7 +4141,7 @@ const saveL = () => { try { localStorage.setItem(LKEY, JSON.stringify(L)); } cat
 let cvN = 0; const cvMap = new Map();
 function cvh(title, coverUrl, cls = '', style = '') {
   const k = 'c' + (cvN++); if (coverUrl) cvMap.set(k, coverUrl);
-  return `<span class="cv ${cls}${coverUrl ? ' img' : ''}" ${coverUrl ? `data-cvk="${k}"` : ''} style="--c:${colorOf(title)};${style}">${coverUrl ? '' : esc(title)}</span>`;
+  return `<span class="cv ${cls}${coverUrl ? ' img' : ''}" ${coverUrl ? `data-cvk="${k}" data-t="${esc(title)}"` : ''} style="--c:${colorOf(title)};${style}">${coverUrl ? '' : esc(title)}</span>`;
 }
 function hiCover(u) {
   u = String(u || '');
@@ -4150,9 +4150,14 @@ function hiCover(u) {
   return u;
 }
 const cvHi = new Map(); // url original -> url em alta (ou a própria, se a maior falhar)
+const cvBad = new Set(), cvOk = new Set();
 function paintCv(root) { $$('[data-cvk]', root).forEach((n) => {
   const u = cvMap.get(n.dataset.cvk); cvMap.delete(n.dataset.cvk); n.removeAttribute('data-cvk'); if (!u) return;
-  const known = cvHi.get(u); n.style.backgroundImage = cssUrl(known || u); if (known) return;
+  const known = cvHi.get(u); n.style.backgroundImage = cssUrl(known || u);
+  // capa que não carrega (link quebrado, limite do site): volta para a capa de cor com o título (16/11)
+  const fail = () => { cvBad.add(u); if (!n.isConnected) return; n.style.backgroundImage = ''; n.classList.remove('img'); if (!n.textContent.trim() && n.dataset.t) n.textContent = n.dataset.t; };
+  if (cvBad.has(u)) return fail(); if (!cvOk.has(u)) { const t = new Image(); t.onload = () => { if (t.naturalWidth <= 2) fail(); else cvOk.add(u); }; t.onerror = fail; t.src = u; }
+  if (known) return;
   const hi = hiCover(u); if (hi === u) return cvHi.set(u, u);
   const img = new Image(); img.onload = () => { const ok = img.naturalWidth > 140; cvHi.set(u, ok ? hi : u); if (ok && n.isConnected) n.style.backgroundImage = cssUrl(hi); }; img.onerror = () => cvHi.set(u, u); img.src = hi;
 }); }
