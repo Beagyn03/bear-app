@@ -9819,6 +9819,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14312,6 +14313,11 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
 
 // a linha do prazo pode chegar depois dos atalhos: mantém os atalhos acima dela
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => TR.querySelectorAll('.v3-now:not(.empty)').forEach((c) => { const q = c.querySelector('.v3-quick'), ln = c.querySelector('.due-cards') || c.querySelector('.due-ln'); if (q && ln && (q.compareDocumentPosition(ln) & Node.DOCUMENT_POSITION_PRECEDING)) ln.before(q); }), 120); }).observe(TR, { childList: true, subtree: true }); }
+// --- 83_busca_atalhos_ocultos.js ---
+// Atalhos da busca (Curam/Dão ressaca, Muito suspense…) ficam escondidos por enquanto (Bia, 17/11): só fazem sentido quando
+// houver classificações de mais de 5 pessoas. O código continua; para mostrar de novo, trocar BUSCA_ATALHOS para true.
+const BUSCA_ATALHOS = false;
+if (!BUSCA_ATALHOS) { const st = document.createElement('style'); st.textContent = '.rs-chips,.nv-chips{display:none!important}'; TR.append(st); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
