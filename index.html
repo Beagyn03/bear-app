@@ -9834,6 +9834,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14733,6 +14734,9 @@ function tlHTML(e, all) {
 { const i = HOME_SECS.findIndex((x) => x[0] === 'ano'); if (i >= 0) HOME_SECS.splice(i, 1); }
 // "Sua semana" sai do Início (Bia, 17/11): com prazo, os dias já aparecem no cartão da leitura; sem prazo, está em Estatísticas.
 inSemana = function () { return ''; };
+// "Na Rede" sai do Início (Bia, 17/11): já está em Comunidade. Some também da lista de personalizar o Início, junto com "Sua semana".
+['rede', 'semana'].forEach((k) => { const i = HOME_SECS.findIndex((x) => x[0] === k); if (i >= 0) HOME_SECS.splice(i, 1); });
+{ const st = document.createElement('style'); st.textContent = '#lista [data-in=rede],#lista [data-in=semana]{display:none!important}'; TR.append(st); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
