@@ -9854,6 +9854,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11595,7 +11596,7 @@ TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closes
 .rd-seg{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:.2rem;margin:.1rem 0 .8rem}
 .rd-seg button{border:0;background:none;border-radius:999px;height:36px;font:inherit;font-weight:800;font-size:.88rem;color:var(--ink-2)}
 .rd-seg button.on{background:var(--acc);color:#fff}
-#lista.rd-on > *:not(.rd-seg):not(#rd-host):not(.gtop-sp){display:none!important}
+#lista.rd-on > *:not(.rd-seg):not(#rd-host):not(.gtop-sp):not(.cm-new){display:none!important}
 #rd-host{display:grid;gap:.7rem}
 .rd-new{display:grid;grid-template-columns:auto 1fr;gap:.6rem;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:.75rem .85rem;color:var(--ink);font:inherit}
 .rd-new b{display:block;font-size:.95rem}.rd-new small{font-size:.8rem;color:var(--ink-2)}
@@ -11738,9 +11739,10 @@ function rdShelfBtn(it) {
 }
 function rdCardHTML(it, i, opts = {}) {
   const isRev = it.type === 'review';
-  const kind = isRev ? 'Avaliou' : it.kind === 'question' ? 'Pergunta' : it.kind === 'rec' ? 'Indicação' : 'Lendo';
+  const isAct = it.type === 'activity', isAch = it.type === 'achievement';
+  const kind = isAch ? 'Conquista' : isAct ? (it.act === 'FINISHED' ? 'Terminou' : 'Lendo') : isRev ? 'Avaliou' : it.kind === 'question' ? 'Pergunta' : it.kind === 'rec' ? 'Indicação' : 'Lendo';
   const sp = rdSpoil(it), u = it.user || {};
-  const pct = it.readerPct != null && !it.paws ? Math.max(0, Math.min(100, Math.round(it.readerPct))) : null;
+  const pct = it.readerPct != null && !it.paws && !(isAct && it.act === 'FINISHED') ? Math.max(0, Math.min(100, Math.round(it.readerPct))) : null;
   const fe = (it.feelings || []).length ? `<div class="rd-fe">${it.feelings.map((k) => qtFeel(k)).join('')}</div>` : '';
   const sp0 = rdSpoil(it); // com spoiler, as emoções ficam fora do embaçado (Bia, 17/11)
   const txt = it.text || (fe && !sp0) ? `<div class="rd-tx">${it.text ? `<p>${esc(it.text)}</p>` : ''}${sp0 ? '' : fe}</div>` : '';
@@ -11753,10 +11755,11 @@ function rdCardHTML(it, i, opts = {}) {
   return `<article class="rd-card rd2" data-i="${i}">
     <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
       <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
-      <span class="rd-kc"><span class="rd-tag${isRev ? ' rv' : ''}">${esc(kind)}</span>${pct != null ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${pct}%</span>` : ''}${it.paws ? rdMk(it.paws) : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
-    ${it.book && !it.book2 ? `<button type="button" class="rd-book">${cvh(it.book.title, it.book.cover)}<span><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small>${fr || fim ? `<em>${esc([fr, fim].filter(Boolean).join(' · '))}</em>` : ''}</span></button>` : ''}
+      <span class="rd-kc"><span class="rd-tag${isRev || isAch || (isAct && it.act === 'FINISHED') ? ' rv' : ''}">${esc(kind)}</span>${pct != null ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${pct}%</span>` : ''}${it.paws ? rdMk(it.paws) : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
+    ${isAch ? `<div class="rd-ach">${it.reward && typeof DECO_IMG !== 'undefined' && DECO_IMG[it.reward] ? `<img src="${DECO_IMG[it.reward]}" alt="">` : '<span></span>'}<span><b>${esc(it.name || '')}</b><small>ganhou esta conquista</small></span></div>` : ''}
+    ${isAct && it.act === 'STARTED' ? '' : ''}${it.book && !it.book2 ? `<button type="button" class="rd-book">${cvh(it.book.title, it.book.cover)}<span><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small>${isAct ? `<em>${it.act === 'STARTED' ? 'começou a ler' : it.act === 'FINISHED' ? 'terminou o livro 🎉' : it.pages ? 'chegou na pág. ' + it.pages : 'avançou na leitura'}</em>` : ''}${fr || fim ? `<em>${esc([fr, fim].filter(Boolean).join(' · '))}</em>` : ''}</span></button>` : ''}
     <div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}
-    ${opts.noFoot ? '' : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" data-ic2="1" aria-label="Curtir" aria-pressed="${!!it.liked}"><img class="rd-hi" src="img/bt_curtir.webp" alt="">${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button>
+    ${opts.noFoot || isAch ? '' : isAct ? `<footer><span class="rd-sp"></span><button type="button" class="rd-save${saved ? ' on' : ''}" aria-pressed="${saved}" aria-label="Salvar"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></button>${rdShelfBtn(it)}</footer>` : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" data-ic2="1" aria-label="Curtir" aria-pressed="${!!it.liked}"><img class="rd-hi" src="img/bt_curtir.webp" alt="">${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button>
       <span class="rd-sp"></span><button type="button" class="rd-save${saved ? ' on' : ''}" aria-pressed="${saved}" aria-label="${saved ? 'Tirar dos salvos' : 'Salvar post'}" title="${saved ? 'Salvo' : 'Salvar'}"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></button><button type="button" class="rd-share" aria-label="Compartilhar" title="Compartilhar"><svg viewBox="0 0 24 24"><path d="M14 5l7 7-7 7M21 12H9a6 6 0 0 0-6 6"/></svg></button>${rdShelfBtn(it)}</footer>`}
   </article>`;
 }
@@ -11893,6 +11896,14 @@ function paintRede() {
 }
 function rdMenu(it, after, anchor) {
   const u = it.user || {}, items = [];
+  if (it.type === 'activity' || it.type === 'achievement') {
+    if (!it.mine) { items.push(['Ocultar', () => { rdSetPref('rdHide', [...rdPrefs().hide, it.type + it.id].slice(-300)); toast('Ocultado'); after(); }]);
+      if (u.handle) items.push([`Silenciar @${u.handle}`, () => { rdSetPref('rdMuteU', [...new Set([...rdPrefs().muteU, String(u.handle).toLowerCase()])].slice(-300)); toast(`Você não verá mais os posts de @${u.handle}`); after(); }]); }
+    if (it.book) items.push(['Ver o livro', () => openAnyBook(it.book.title, it.book.author, it.book.cover)]);
+    if (!items.length) return;
+    if (anchor && typeof popMenu === 'function') return popMenu(anchor, items.map(([label, fn]) => ({ label, fn })));
+    return sheet('Novidade', items);
+  }
   // minha avaliação: editar direto daqui (Bia, 17/11)
   if (it.mine && it.type === 'review') { const le = lib().find((x) => x.id === it.libId) || lib().find((x) => it.book && bookKeyRede(x.title) === bookKeyRede(it.book.title)); if (le) items.push(['Editar avaliação', () => rateForm(le, { logs: [] }, () => { try { after(); } catch {} })]); }
   if (it.mine || S.rd.admin) items.push([it.mine ? 'Apagar' : 'Apagar (moderação)', async () => {
@@ -15135,6 +15146,65 @@ inSemana = function () { return ''; };
       ]; popMenu(b, items); });
     }); };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 70); }).observe(TR, { childList: true, subtree: true }); }
+// --- 96_amigos_layout.js ---
+// Aba Amigos da Comunidade com o mesmo cartão da Comunidade (Bia, 17/11): os avisos automáticos dos amigos (começou, avançou,
+// terminou, conquista), as avaliações e os posts que os amigos escreveram, numa lista só, por data e separada por dia,
+// com os mesmos filtros (Tudo · Lendo · Avaliações · Salvos). O "Em alta" sai daqui. Os dados vêm do feed antigo (SOC.feed),
+// que continua sendo carregado por baixo, e dos posts da Comunidade (S.rd.items) feitos por amigos.
+{ const st = document.createElement('style'); st.textContent = `
+#lista.am-on > *:not(.rd-seg):not(#am-host):not(.gtop-sp):not(.cm-new){display:none!important}
+#am-host{display:grid;gap:.7rem}
+.rd-ach{display:grid;grid-template-columns:64px minmax(0,1fr);gap:.8rem;align-items:center;padding:.6rem 0 .5rem}
+.rd-ach img{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+.rd-ach b{display:block;font-size:1rem}.rd-ach small{display:block;font-size:.78rem;color:var(--ink-2);font-weight:700;margin-top:.1rem}
+`; TR.append(st); }
+function amItems() {
+  const fr = new Set(((SOC.fr && SOC.fr.friends) || []).map((f) => String(f.handle || '').toLowerCase()));
+  const me = socialProfile && socialProfile.handle ? String(socialProfile.handle).toLowerCase() : '';
+  const out = [], seen = new Set(), add = (x) => { const k = x.type + x.id; if (seen.has(k)) return; seen.add(k); out.push(x); };
+  let feed = []; try { feed = mergeFeed(SOC.feed || []); } catch { feed = SOC.feed || []; }
+  feed.forEach((p) => {
+    const user = p.user || (p.mine && socialProfile ? { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME } : {});
+    const book = { title: p.title, author: p.author || null, cover: p.cover || null, key: normT(p.title || '') };
+    if (p.type === 'achievement') return add({ type: 'achievement', id: p.id, name: p.name, reward: p.reward, user: p.user || user, mine: p.mine, createdAt: p.updatedAt });
+    if (p.type === 'buddy_done') return;
+    if (p.type === 'activity') return add({ type: 'activity', id: p.id, act: p.kind, book, user, mine: p.mine, createdAt: p.updatedAt, readerPct: p.kind === 'FINISHED' ? 100 : p.kind === 'STARTED' ? 0 : p.pct != null ? Number(p.pct) : null, pages: p.pages });
+    add({ type: 'review', id: p.id, libId: p.libId, text: p.text, paws: p.paws, book, user, mine: p.mine, createdAt: p.updatedAt || p.createdAt, likes: p.likes, liked: p.liked, replies: p.comments, spoiler: p.spoiler ? (typeof p.spoiler === 'object' ? p.spoiler : { kind: 'yes' }) : null });
+  });
+  (S.rd.items || []).forEach((it) => { const h = String((it.user && it.user.handle) || '').toLowerCase(); if (h && (fr.has(h) || h === me)) add(it); });
+  return rdVisible(out).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+function paintAmigos() {
+  const box = $('#lista'); if (!box || S.tab !== 'comunidade') return;
+  let host = box.querySelector('#am-host'); if (!host) { host = document.createElement('div'); host.id = 'am-host'; const seg = box.querySelector('.rd-seg'); if (seg) seg.after(host); else box.prepend(host); }
+  if (!connected() || !socialProfile) { host.innerHTML = '<p class="rd-empty">Entre na sua conta para ver as novidades dos seus amigos.</p>'; return; }
+  const F = S.rdF || 'tudo', base = F === 'salvos' ? rdSavedList().map((x) => x.it) : amItems();
+  const list = F === 'lendo' ? base.filter((x) => x.type !== 'review' && x.type !== 'achievement') : F === 'aval' ? base.filter((x) => x.type === 'review') : base;
+  const loading = !Array.isArray(SOC.feed) || !S.feedAt;
+  host.innerHTML = `<div class="rd-fl">${[['tudo', 'Tudo'], ['lendo', 'Lendo'], ['aval', 'Avaliações'], ['salvos', 'Salvos']].map(([k, n]) => `<button type="button" data-f="${k}" class="${F === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+    ${list.length ? rdDays(list) : `<p class="rd-empty">${F === 'salvos' ? 'Toque no marca-página de um post para guardar e voltar nele depois.' : loading ? 'Carregando as novidades…' : (SOC.fr && (SOC.fr.friends || []).length) ? 'Nada por aqui ainda.' : 'Adicione amigos para ver o que eles estão lendo.'}</p>`}`;
+  $$('.rd-fl [data-f]', host).forEach((b) => b.addEventListener('click', () => { S.rdF = b.dataset.f; paintAmigos(); }));
+  rdBind(host, list, paintAmigos);
+}
+// troca de aba: liga/desliga o modo Amigos e pede os dados que faltam (o feed antigo carrega por baixo)
+{ let tm = 0, asked = 0; const sync = () => {
+    const box = $('#lista'); if (!box) return; const on = S.tab === 'comunidade' && S.comSeg === 'amigos';
+    box.classList.toggle('am-on', on); if (!on) return;
+    if (!box.querySelector('#am-host') || box.querySelector('#am-host').dataset.v !== String(S.feedAt || 0) + (S.rd.at || 0)) {
+      paintAmigos(); const h = box.querySelector('#am-host'); if (h) h.dataset.v = String(S.feedAt || 0) + (S.rd.at || 0); }
+    if ((!S.rd.at || Date.now() - S.rd.at > 60000) && Date.now() - asked > 15000) { asked = Date.now(); try { rdLoad(); } catch {} }
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(sync, 50); }).observe(TR, { childList: true, subtree: true });
+  TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closest('[data-seg]')) setTimeout(sync, 0); }); }
+// "Pergunte à comunidade…" sobe para cima das abas Comunidade | Amigos (Bia, 17/11): vale para as duas, e dentro
+// a pessoa escolhe se o post vai para todos ou só para amigos.
+{ const st = document.createElement('style'); st.textContent = '#rd-host > .rd-new{display:none!important}#lista > .cm-new{margin:.1rem 0 .7rem}'; TR.append(st);
+  let tm = 0; const put = () => { const box = $('#lista'); if (!box || S.tab !== 'comunidade') return; const seg = box.querySelector('.rd-seg'); if (!seg || box.querySelector(':scope > .cm-new')) return;
+    let pr = 'Pergunte à comunidade o que ler depois'; try { pr = RD_PROMPTS[Math.floor(Date.now() / 3600000) % RD_PROMPTS.length]; } catch {}
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'rd-new cm-new';
+    b.innerHTML = '<i>+</i><span><b>' + esc(pr) + '</b><small>Comentário, trecho, pergunta ou indicação</small></span>';
+    b.addEventListener('click', () => openRdComposer()); seg.before(b); };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 40); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
