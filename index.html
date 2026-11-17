@@ -9835,6 +9835,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14469,21 +14470,23 @@ function yvLayout(stored, list) {
   return L;
 }
 function yvViews(sec, root, items, own) {
-  if (!sec || sec.dataset.yv) return; sec.dataset.yv = yvSig(); YV_CTX.set(sec, { root, items, own });
-  const P = db.prefs || {}, view = P.ysView || 'faixa', lines = P.ysLines === 2 ? 2 : 1;
+  if (!sec || sec.dataset.yv) return; sec.dataset.yv = own ? yvSig() : 'v'; YV_CTX.set(sec, { root, items, own });
+  // quem visita vê a vista que a pessoa escolheu (vai no resumo do perfil), sem opção de trocar
+  const fsh = !own && S.fpData && S.fpData.shelf, P = own ? db.prefs || {} : { ysView: fsh && fsh.ysView, ysLines: fsh && fsh.ysLines };
+  const view = ['faixa', 'cal', 'estante'].includes(P.ysView) ? P.ysView : 'faixa', lines = P.ysLines === 2 ? 2 : 1;
   const y = Number(sec.querySelector('.ys-y > b')?.textContent) || S.ysYear || Number(todayISO().slice(0, 4));
   const list = items.filter((x) => Number(String(x.d).slice(0, 4)) === y).sort((a, b) => String(a.d).localeCompare(String(b.d)));
   YV_LAST = { root, items, own };
   const cnt = sec.querySelector('.es5-c'); const tb = document.createElement('div'); tb.className = 'yv-tb';
   if (cnt) { cnt.before(tb); tb.append(cnt); } else sec.querySelector('.ys-h').after(tb);
-  if (view === 'faixa') {
+  if (view === 'faixa' && own) {
     const ln = document.createElement('div'); ln.className = 'yv-ln';
     ln.innerHTML = '<button type="button" data-l="1" class="' + (lines === 1 ? 'on' : '') + '">1 linha</button><button type="button" data-l="2" class="' + (lines === 2 ? 'on' : '') + '">2 linhas</button>';
     tb.append(ln);
   }
   const seg = document.createElement('div'); seg.className = 'yv-seg';
   seg.innerHTML = [['faixa', 'Faixa'], ['cal', 'Calendário'], ['estante', 'Estante']].map(([k, n]) => '<button type="button" data-v="' + k + '" class="' + (view === k ? 'on' : '') + '">' + n + '</button>').join('');
-  tb.after(seg);
+  if (own) tb.after(seg);
   const row = sec.querySelector('.ys-row'), leg = sec.querySelector('.ys-leg'); if (!row) return;
   if (view === 'faixa') { if (lines === 2) yvTwoLines(sec, row); return; }
   row.style.display = 'none'; if (leg) leg.style.display = 'none';
@@ -14574,13 +14577,14 @@ const YV_MOUNT = { f: null };
     try { const sec = root && root.querySelector('.ys'); if (sec) yvViews(sec, root, items, own); } catch (err) { console.warn('vistas das leituras', err); }
   }; }
 { const _ps3 = profShelvesSnap; profShelvesSnap = function (snapshot) { _ps3.apply(this, arguments);
-    try { const y = Number(todayISO().slice(0, 4)), L = (db.estante || {})[y]; if (L && snapshot.shelf) snapshot.shelf.estante = { y, wood: L.wood, lights: L.lights, rows: L.rows }; } catch {} }; }
+    try { const y = Number(todayISO().slice(0, 4)), L = (db.estante || {})[y]; if (L && snapshot.shelf) snapshot.shelf.estante = { y, wood: L.wood, lights: L.lights, rows: L.rows };
+      const P = db.prefs || {}; if (snapshot.shelf) { snapshot.shelf.ysView = P.ysView || 'faixa'; snapshot.shelf.ysLines = P.ysLines === 2 ? 2 : 1; } } catch {} }; }
 
 // botões das vistas por delegação, e refaz a seção quando o perfil volta com uma cópia antiga dela
 const yvRemount = (sec) => { const c = YV_CTX.get(sec) || YV_LAST; if (!c) return; const tmp = document.createElement('div'); sec.before(tmp); sec.remove(); try { YV_MOUNT.f(tmp.parentElement, tmp, c.items, c.own); } finally { tmp.remove(); } };
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('.yv-ln button, .yv-seg button'); if (!b) return; const sec = b.closest('.ys'); if (!sec) return;
   if (b.dataset.l) yvPref('ysLines', Number(b.dataset.l)); else if (b.dataset.v) yvPref('ysView', b.dataset.v); yvRemount(sec); });
-{ let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => TR.querySelectorAll('.ys[data-yv]').forEach((sec) => { if (sec.dataset.yv !== yvSig() || !YV_CTX.has(sec)) yvRemount(sec); }), 60); }).observe(TR, { childList: true, subtree: true }); }
+{ let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => TR.querySelectorAll('.ys[data-yv]').forEach((sec) => { if (!YV_CTX.has(sec) || (sec.dataset.yv !== 'v' && sec.dataset.yv !== yvSig())) yvRemount(sec); }), 60); }).observe(TR, { childList: true, subtree: true }); }
 // passar o dedo/mouse: no calendário a capa sai do leque (endireita e cresce); na estante a lombada sobe e abre mostrando a capa
 { const st = document.createElement('style'); st.textContent = `
 .yv-cm{overflow:visible!important}
