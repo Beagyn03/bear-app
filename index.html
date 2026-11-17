@@ -9782,6 +9782,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13059,9 +13060,9 @@ function dueCard(e, o, btn) {
   const pg = o.off ? 'folga' : o.fut ? o.tg + ' pág.' : (o.r || 0) + ' de ' + o.tg;
   const tag = btn ? 'button type="button"' : 'span', end = btn ? 'button' : 'span';
   return '<' + tag + ' class="dk' + (o.off ? ' off' : '') + (o.hoje ? ' hoje' : '') + (o.fim ? ' fim' : '') + (ok ? ' ok' : '') + '" data-w="' + o.w + '" title="' + (o.off ? 'folga' : 'meta ' + o.tg + ' pág. · ler até a pág. ' + o.ate) + '">'
-    + '<small>' + (o.hoje ? 'hoje' : DD[o.w]) + '</small><em>' + dm + '</em>'
+    + '<small>' + (o.hoje ? 'hoje' : DD[o.w]) + '</small>' + (o.compact ? '' : '<em>' + dm + '</em>')
     + '<span class="dk-c">' + cv + '<span class="dk-gray" style="height:' + Math.round((1 - pct) * 100) + '%"></span>' + (o.fim ? '<u>★</u>' : '') + '</span>'
-    + '<b>' + pg + '</b>' + (o.off ? '' : '<i>até ' + o.ate + '</i>') + '</' + end + '>';
+    + (o.compact ? '<b>' + (o.off ? 'folga' : o.fut ? (o.ate || '') : (o.r || 0) + '/' + o.tg) + '</b>' : '<b>' + pg + '</b>' + (o.off ? '' : '<i>até ' + o.ate + '</i>')) + '</' + end + '>';
 }
 function dueRow(p, e) {
   const t = todayISO(), last = p.list.length ? p.list[p.list.length - 1].iso : t;
@@ -13121,8 +13122,8 @@ function dueSheet(e) {
       if (e.dueAt) { const p = duePlan(e, e.dueAt); row.classList.toggle('late', p.late);
         row.innerHTML = p.late ? `<span>Prazo de ${dueLabel(e.dueAt)} passou · <b>faltam ${p.rem} pág.</b></span><button type="button">Novo prazo</button>`
           : !p.rem ? `<span>Pronto para terminar até ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>`
-          : p.todayOff ? `<span>Prazo: <b>${dueLong(e.dueAt)}</b> · hoje é folga</span><button type="button">Mudar</button>`
-          : (() => { const h = dueToday(e); return h && h.done ? `<span>Prazo: <b>${dueLong(e.dueAt)}</b> · meta de hoje cumprida</span><button type="button">Mudar</button>` : `<span>Prazo: <b>${dueLong(e.dueAt)}</b> · hoje leia até a <b>pág. ${h ? h.target : '—'}</b></span><button type="button">Mudar</button>`; })();
+          : p.todayOff ? `<span>Hoje é folga · prazo ${dueLong(e.dueAt)}</span><button type="button">Mudar</button>`
+          : (() => { const h = dueToday(e); return h && h.done ? `<span><b>Meta de hoje cumprida</b> · prazo ${dueLong(e.dueAt)}</span><button type="button">Mudar</button>` : `<span><b>Até a pág. ${h ? h.target : '—'} hoje</b> · prazo ${dueLong(e.dueAt)}</span><button type="button">Mudar</button>`; })();
       } else row.innerHTML = '<span></span><button type="button">+ Prazo para terminar</button>';
       const acts = card.querySelector('.v3-now-acts'); if (acts) acts.before(row); else card.append(row);
       row.querySelector('button').addEventListener('click', (ev) => { ev.stopPropagation(); dueSheet(e); });
@@ -13388,8 +13389,10 @@ function prazoRowHTML(e, R) {
     const cardsH = rowDays.map((d) => { const w = new Date(d + 'T12:00:00Z').getUTCDay(), off1 = isOff(d), fut = d > t, br = book.get(d) || 0;
       const tg = off1 ? 0 : d < t ? base : d === t && h ? h.per : (plan.list.find((x) => x.iso === d) || {}).n || 0;
       if (!off1 && d < t) { due++; if (br >= tg) hit++; }
-      return dueCard(e, { iso: d, w, off: off1, tg, r: br, ate: d < t ? '' : (ateMap.get(d) || ''), hoje: d === t, fim: d === e.dueAt, fut }, false).replace('<i>até </i>', ''); }).join('');
-    return '<div class="pz-mn" style="font-size:.7rem;font-weight:700;color:var(--ink-2);margin:.45rem 0 .3rem">' + (due ? 'Meta batida em ' + hit + ' de ' + due + ' dias · ' : '') + 'a capa ganha cor conforme você lê</div><div class="dk-row">' + cardsH + '</div>';
+      return dueCard(e, { iso: d, w, off: off1, tg, r: br, ate: d < t ? '' : (ateMap.get(d) || ''), hoje: d === t, fim: d === e.dueAt, fut, compact: true }, false).replace('<i>até </i>', ''); }).join('');
+    let hint = false; try { hint = !localStorage.getItem('lv.capaDica'); if (hint) localStorage.setItem('lv.capaDica', '1'); } catch {}
+    const info = [due ? 'Meta batida em ' + hit + ' de ' + due + ' dias' : '', hint ? 'a capa ganha cor conforme você lê' : ''].filter(Boolean).join(' · ');
+    return (info ? '<div class="pz-mn" style="font-size:.7rem;font-weight:700;color:var(--ink-2);margin:.4rem 0 .25rem">' + info + '</div>' : '<div style="height:.4rem"></div>') + '<div class="dk-row">' + cardsH + '</div>';
 }
 // com prazo, o bloco separado some do Início (os dias ficam dentro do cartão da leitura)
 { const _isw2 = inSemana; inSemana = function () { try { const R = reading(), e = R && R.e; if (e && e.status === 'LENDO' && e.dueAt && e.dueAt >= todayISO()) return ''; } catch {} return _isw2.apply(this, arguments); }; }
@@ -13398,8 +13401,20 @@ function prazoRowHTML(e, R) {
     TR.querySelectorAll('.due-ln').forEach((ln) => { if (ln.nextElementSibling && ln.nextElementSibling.classList.contains('due-cards')) return;
       const box = document.createElement('div'); box.className = 'due-cards'; try { box.innerHTML = prazoRowHTML(R.e, R); } catch (err) { console.warn('dias do prazo', err); return; }
       ln.after(box); try { paintCv(box); } catch {} });
+    TR.querySelectorAll('.v3-now:not(.empty)').forEach((card) => {
+      card.querySelectorAll('.v3-au').forEach((x) => { if (/No seu ritmo/.test(x.textContent)) x.style.display = 'none'; });
+    });
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 90); }).observe(TR, { childList: true, subtree: true }); setTimeout(paint, 1600); }
+
+// "Convidar alguém para ler junto" vira um ícone ao lado do ••• (sempre, não só com prazo)
+{ const st = document.createElement('style'); st.textContent = '.v3-now .v3-bud:has(> .v3-bud-inv:only-child){display:none!important}.v3-inv-ic{position:absolute;top:.45rem;right:2.6rem;width:34px;height:34px;border-radius:50%;border:0;background:none;color:var(--ink-2);display:grid;place-items:center;padding:0;cursor:pointer}.v3-inv-ic svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'; TR.append(st);
+  let tm = 0; const put = () => TR.querySelectorAll('.v3-now:not(.empty)').forEach((card) => {
+    const inv = card.querySelector('#v3-bud-inv'); if (!inv || card.querySelector('.v3-inv-ic')) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'v3-inv-ic'; b.setAttribute('aria-label', 'Convidar alguém para ler junto'); b.title = 'Ler junto';
+    b.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><path d="M18 8v6M15 11h6"/></svg>';
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); inv.click(); }); card.append(b); });
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 80); }).observe(TR, { childList: true, subtree: true }); setTimeout(put, 1500); }
 // --- 60_sem_urso.js ---
 // Sem urso (Bia, 17/11): o visual é só tipografia. Ilustrações do urso viraram um pixel transparente (ART/A) e somem do layout;
 // o cartão "Dica" (antigo "Bear diz") fica só com o texto.
