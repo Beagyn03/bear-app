@@ -46,6 +46,24 @@ async function refreshApp(cached) {
   } catch (e) { return null; }
 }
 
+// lembrete do prazo de leitura (16/11): a API manda {title, body, tag, url}; tocar abre o app já no "Atualizar leitura"
+self.addEventListener('push', (event) => {
+  let d = {}; try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : '' }; }
+  event.waitUntil(self.registration.showNotification(d.title || 'B.E.A.R', {
+    body: d.body || 'Hora de ler um pouquinho.', tag: d.tag || 'bear', renotify: true, icon: 'icon-192.png', badge: 'icon-192.png',
+    data: { url: d.url || './?upd=1' }, actions: [{ action: 'upd', title: 'Atualizar leitura' }],
+  }));
+});
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = new URL((event.notification.data && event.notification.data.url) || './?upd=1', self.registration.scope).href;
+  event.waitUntil((async () => {
+    const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of list) { if ('focus' in c) { await c.focus(); c.postMessage({ type: 'bear-upd' }); return; } }
+    await self.clients.openWindow(url);
+  })());
+});
+
 // a página pede para conferir (ao trocar de menu ou voltar ao app); se houver versão nova, ela recarrega sozinha
 self.addEventListener('message', (event) => {
   if (!event.data || event.data.type !== 'bear-check') return;
