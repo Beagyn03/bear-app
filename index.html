@@ -9831,6 +9831,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14711,6 +14712,13 @@ function tlHTML(e, all) {
     m.append(row); try { paintCv(row); } catch {}
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 70); }).observe(TR, { childList: true, subtree: true }); }
+// --- 88_fila_sem_leitura.js ---
+// Início (Bia, 17/11): a lista "Na fila" só aparece quando não há nenhum livro sendo lido.
+{ let tm = 0; const paint = () => {
+    let lendo = false; try { lendo = lib().some((e) => e.status === 'LENDO'); } catch {}
+    TR.querySelectorAll('#lista .yo-fsh').forEach((sh) => { [sh, sh.nextElementSibling].forEach((n) => { if (n) n.style.display = lendo ? 'none' : ''; }); });
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 60); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
