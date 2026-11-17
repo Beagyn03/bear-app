@@ -3,7 +3,7 @@
 // A cada abertura confere em segundo plano se há versão nova do app; se houver, guarda a nova e avisa a página,
 // que mostra "Nova versão disponível · Atualizar" (um toque recarrega já com a versão nova).
 // API, capas de outros sites e o resto seguem direto para a rede, sem cache.
-const CACHE = 'livroverso-1'; // nome novo: renova ícones em cache (17/11)
+const CACHE = 'livroverso-2'; // nome novo: renova ícones em cache (17/11)
 const SHELL = ['./', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 const APP_KEY = () => new URL('./', self.registration.scope).href; // toda navegação usa a mesma chave (sem ?query nem #)
 
