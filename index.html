@@ -9793,6 +9793,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13951,7 +13952,7 @@ function statusSheet(e, want, after) {
       + '<label class="ss-nd"><input type="checkbox" class="ss-ndk"' + (e.noDate ? ' checked' : '') + '> Não lembro as datas</label>'
       + '<div class="ss-nrow"><div class="ss-nota"><div class="ss-stars"></div><small class="ss-fr"></small></div><button type="button" class="ss-nvb"></button></div><div class="ss-nvs"></div>'
       + '<label class="ss-lb">Resenha (opcional)<textarea class="ss-rv" maxlength="2000" rows="3" placeholder="O que você achou?">' + esc(rv0.texto || '') + '</textarea></label><small class="ss-rvc"></small>'
-      + '<label class="ss-ck ss-rsp"' + (rv0.texto ? '' : ' hidden') + '><input type="checkbox" class="ss-rspk"' + (rv0.spoiler ? ' checked' : '') + '> Contém spoiler <small>quem não leu vê um aviso antes</small></label>'
+      + '<label class="ss-ck ss-rsp"><input type="checkbox" class="ss-rspk"' + (rv0.spoiler ? ' checked' : '') + '> Contém spoiler <small>quem não leu vê um aviso antes</small></label>'
       + '<label class="ss-ck"><input type="checkbox" class="ss-prv"' + (rv0.share === false ? ' checked' : '') + '> Avaliação privada <small>só você vê</small></label>'
       + '<div class="ss-lb">Ressaca literária</div><div class="ss-rs"><button type="button" data-r="deu"' + (rv0.ressaca === 'deu' ? ' class="on"' : '') + '>Me deu ressaca</button><button type="button" data-r="curou"' + (rv0.ressaca === 'curou' ? ' class="on"' : '') + '>Curou minha ressaca</button></div>'
       + '<button type="button" class="ss-go green" data-a="lido">Marcar como lido</button>';
@@ -13984,7 +13985,7 @@ function statusSheet(e, want, after) {
       pNv();
       ed.querySelectorAll('.ss-rs button').forEach((b) => b.addEventListener('click', () => { ress = ress === b.dataset.r ? null : b.dataset.r; ed.querySelectorAll('.ss-rs button').forEach((x) => x.classList.toggle('on', x.dataset.r === ress)); }));
       const rvt = ed.querySelector('.ss-rv'), rvc = ed.querySelector('.ss-rvc'), rsp = ed.querySelector('.ss-rsp');
-      const uRv = () => { rvc.textContent = rvt.value.length ? rvt.value.length + '/2000' : ''; rsp.hidden = !rvt.value.trim(); }; rvt.addEventListener('input', uRv); uRv();
+      const uRv = () => { rvc.textContent = rvt.value.length ? rvt.value.length + '/2000' : ''; }; rvt.addEventListener('input', uRv); uRv();
       const nd = ed.querySelector('.ss-ndk'), di = ed.querySelectorAll('.ss-dates input'); const syncNd = () => di.forEach((x) => { x.disabled = nd.checked; x.closest('label').style.opacity = nd.checked ? '.4' : ''; }); nd.addEventListener('change', syncNd); syncNd(); }
     const mot = ed.querySelector('.ss-mot');
     if (mot) { const cnt = ed.querySelector('.ss-cnt'), sp = ed.querySelector('.ss-sp'); const upd = () => { cnt.textContent = mot.value.length ? mot.value.length + '/280' : ''; sp.hidden = !mot.value.trim(); }; mot.addEventListener('input', upd); upd(); }
@@ -14001,7 +14002,7 @@ function statusSheet(e, want, after) {
         const cleanNiv = Object.fromEntries(Object.entries(niv).filter(([, n]) => n > 0));
         if (nota || texto || ress || Object.keys(cleanNiv).length || prv) {
           let rv = (typeof reviewOfLib === 'function' ? reviewOfLib(e) : e.review); if (!rv) rv = e.review = { paws: 0, mel: [], frase: '' };
-          rv.paws = nota; if (texto) { rv.texto = texto; rv.spoiler = spk; if (spk) rv.spoilerKind = 'end'; } else { delete rv.texto; delete rv.spoiler; }
+          rv.paws = nota; if (texto) rv.texto = texto; else delete rv.texto; rv.spoiler = spk; if (spk) rv.spoilerKind = 'end'; else delete rv.spoilerKind;
           rv.share = !prv; if (ress) rv.ressaca = ress; else delete rv.ressaca; if (Object.keys(cleanNiv).length) rv.niveis = cleanNiv; else delete rv.niveis;
           try { publishReview(e); } catch {} }
         if (a === 'lidoav') { save(); closeEd(); return rateForm(e, { logs: [] }, () => { try { after(); } catch {} }); }
