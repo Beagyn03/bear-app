@@ -9811,6 +9811,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14259,6 +14260,8 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
 .v3-quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;margin-top:.6rem;width:100%}
 .v3-quick button{display:flex;align-items:center;justify-content:center;gap:.35rem;height:38px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;min-width:0;white-space:nowrap}
 .v3-now .due-cards{border-top:1px solid var(--line);padding-top:.5rem;margin-top:.65rem}.v3-now .due-ln{margin-top:.35rem!important;font-size:.74rem!important}.v3-now .due-ln:not(:has(+ *)):first-of-type{}
+.v3-now .due-ln:has(> span:empty){justify-content:center!important;margin-top:.45rem!important}.v3-now .due-ln > span:empty{display:none}
+.v3-now .due-ln:has(> span:empty) button{width:100%!important;height:38px!important;border:1.5px dashed var(--acc)!important;border-radius:12px!important;text-align:center;font-size:.82rem!important;background:color-mix(in srgb,var(--acc) 6%,transparent)!important}
 .v3-quick button.pri{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
 .v3-quick button.ok{border-color:#2f8a52;color:#2f8a52}
 .v3-quick svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}`; TR.append(st); }
