@@ -9768,6 +9768,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13184,7 +13185,7 @@ async function pushSubscribe() {
   const j = sub.toJSON(); const r = await sapi('POST', '/v1/push/subscribe', { endpoint: j.endpoint, keys: j.keys });
   if (r.status !== 200) throw new Error('inscrição');
 }
-const reminderBody = (e) => { const i = readingInfo(e), total = i.total || Number(e.totalPages) || 0; return total ? { title: String(e.title).slice(0, 200), dueAt: e.dueAt, total, page: Math.min(total, i.now || 0), hour: e.remind.hour, minute: e.remind.minute || 0, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo', off: (e.dueOff || []).slice(0, 7) } : null; };
+const reminderBody = (e) => { const i = readingInfo(e), total = i.total || Number(e.totalPages) || 0; return total ? { title: String(e.title).slice(0, 200), dueAt: e.dueAt, total, page: Math.min(total, (() => { try { const h = dueToday(e); return h ? h.start : (i.now || 0); } catch { return i.now || 0; } })()), // página do começo do dia: a notificação diz a mesma página-alvo do app hour: e.remind.hour, minute: e.remind.minute || 0, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo', off: (e.dueOff || []).slice(0, 7) } : null; };
 async function reminderSync(e) { try { if (!connected()) return; if (!e || !e.remind || !e.dueAt || e.status !== 'LENDO') { await sapi('DELETE', '/v1/me/reminder'); return; } const b = reminderBody(e); if (b) { const r = await sapi('PUT', '/v1/me/reminder', b); if (r && r.status >= 300) return; e.remind.sent = b.page + '|' + b.dueAt + '|' + b.hour + ':' + b.minute + '|' + b.off.join(''); save(); } } catch {} }
 // opção no "Quando quer terminar?"
 { const _ds = dueSheet; dueSheet = function (e) {
