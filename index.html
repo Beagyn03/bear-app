@@ -9766,6 +9766,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12994,6 +12995,16 @@ function duePlan(e, due, offIn) {
   for (const x of all) { x.n = x.off ? 0 : Math.min(per, left); left -= x.n; }
   return { rem, days: dd, work, perDay: per, late: false, list: all, todayOff: all[0].off };
 }
+// até qual página ler hoje: parte da página em que o dia começou + a cota do dia (dias de folga não contam)
+function dueToday(e) {
+  const info = readingInfo(e), total = info.total || Number(e.totalPages) || 0, now = info.now || 0, t = todayISO();
+  const readToday = (e.readLog || []).filter((l) => l.date === t).reduce((a, l) => a + (Number(l.pages) || 0), 0);
+  const start = Math.max(0, now - readToday), off = e.dueOff || [];
+  const dd = Math.round((Date.parse(e.dueAt) - Date.parse(t)) / 864e5) + 1; if (!total || dd < 1) return null;
+  const ws = Array.from({ length: dd }, (_, i) => new Date(Date.parse(t) + i * 864e5).getUTCDay()); let work = ws.filter((w) => !off.includes(w)).length; const todayOff = work > 0 && off.includes(ws[0]); if (!work) work = dd;
+  const per = Math.ceil(Math.max(0, total - start) / work), target = todayOff ? start : Math.min(total, start + per);
+  return { total, now, start, per, target, todayOff, done: now >= target };
+}
 const dueLabel = (iso) => { const d = new Date(iso + 'T12:00:00Z'); return `${DOW[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
 function dueSheet(e) {
   const t = todayISO(), add = (n) => new Date(Date.parse(t) + n * 864e5).toISOString().slice(0, 10);
@@ -13010,9 +13021,9 @@ function dueSheet(e) {
   let off = [...(e.dueOff || [])];
   const show = () => { const v = inp.value; if (!v) { out.innerHTML = ''; return; } const p = duePlan(e, v, off);
     if (!p.rem) { out.innerHTML = 'Você já está na última página.'; return; } if (p.days < 1) { out.innerHTML = 'Escolha hoje ou um dia depois.'; return; }
-    const mx = Math.max(1, ...p.list.map((x) => x.n));
+    const mx = Math.max(1, ...p.list.map((x) => x.n)); { let acc = (readingInfo(e).now || 0); for (const x of p.list) { acc += x.n; x.ate = Math.min(acc, readingInfo(e).total || Number(e.totalPages) || acc); } }
     out.innerHTML = `<div class="dp-sum"><b>${p.perDay}</b> páginas por dia<small>${p.rem} páginas em ${plural(p.work, 'dia de leitura', 'dias de leitura')}${p.work < p.days ? ' · ' + plural(p.days - p.work, 'folga', 'folgas') : ''}</small></div>
-      <div class="dp-days">${p.list.map((x) => `<button type="button" class="dp-d${x.off ? ' off' : ''}${x.iso === todayISO() ? ' hoje' : ''}" data-w="${x.w}" aria-pressed="${x.off}" title="${x.off ? 'Folga: toque para ler neste dia' : 'Toque para marcar folga'}"><small>${x.iso === todayISO() ? 'hoje' : x.dow}</small><i><u style="height:${x.off ? 0 : Math.max(10, Math.round(x.n / mx * 100))}%"></u></i><b>${x.off ? 'folga' : x.n}</b><em>${x.iso.slice(8, 10)}</em></button>`).join('')}</div>
+      <div class="dp-days">${p.list.map((x) => `<button type="button" class="dp-d${x.off ? ' off' : ''}${x.iso === todayISO() ? ' hoje' : ''}" data-w="${x.w}" aria-pressed="${x.off}" title="${x.off ? 'Folga: toque para ler neste dia' : 'Toque para marcar folga'}"><small>${x.iso === todayISO() ? 'hoje' : x.dow}</small><i><u style="height:${x.off ? 0 : Math.max(10, Math.round(x.n / mx * 100))}%"></u></i><b>${x.off ? 'folga' : x.n}</b><em>${x.off ? x.iso.slice(8, 10) : 'até ' + x.ate}</em></button>`).join('')}</div>
       <small class="hint" style="margin:0">Toque num dia para marcar folga (vale para esse dia da semana até o prazo).</small>`;
     out.querySelectorAll('.dp-d').forEach((b) => b.addEventListener('click', () => { const w = Number(b.dataset.w); off = off.includes(w) ? off.filter((x) => x !== w) : [...off, w]; show(); })); };
   inp.value = e.dueAt || ''; show(); inp.addEventListener('input', show);
@@ -13031,8 +13042,8 @@ function dueSheet(e) {
       if (e.dueAt) { const p = duePlan(e, e.dueAt); row.classList.toggle('late', p.late);
         row.innerHTML = p.late ? `<span>Prazo de ${dueLabel(e.dueAt)} passou · <b>faltam ${p.rem} pág.</b></span><button type="button">Novo prazo</button>`
           : !p.rem ? `<span>Pronto para terminar até ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>`
-          : p.todayOff ? `<span>Hoje é folga · até ${dueLabel(e.dueAt)}: <b>${p.perDay} pág. nos dias de leitura</b></span><button type="button">Mudar</button>`
-          : `<span>Até ${dueLabel(e.dueAt)}: <b>${p.perDay} pág. por dia</b></span><button type="button">Mudar</button>`;
+          : p.todayOff ? `<span>Hoje é folga · prazo ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>`
+          : (() => { const h = dueToday(e); return h && h.done ? `<span>Meta de hoje cumprida (pág. ${h.target}) · prazo ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>` : `<span>Hoje: leia até a <b>pág. ${h ? h.target : '—'}</b> · prazo ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>`; })();
       } else row.innerHTML = '<span></span><button type="button">+ Prazo para terminar</button>';
       const acts = card.querySelector('.v3-now-acts'); if (acts) acts.before(row); else card.append(row);
       row.querySelector('button').addEventListener('click', (ev) => { ev.stopPropagation(); dueSheet(e); });
@@ -13260,7 +13271,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
         <span class="bx">${x.tg ? `<i class="tg" style="height:${Math.round(x.tg / mx * 100)}%"></i>` : ''}${x.r ? `<i class="rd" style="height:${Math.max(6, Math.round(x.r / mx * 100))}%"></i>` : ''}</span>
         <span class="dw">${x.d === t ? 'hoje' : WD[x.w]}</span><b>${x.isOff ? 'folga' : x.fut ? x.tg : x.r}</b><em>${x.d.slice(8, 10)}</em></span>`).join('')}</div>
       <div class="pz-lg"><span><i style="border:1.5px dashed var(--acc)"></i>meta do dia</span><span><i style="background:var(--acc)"></i>lido</span><span><i style="background:#2f8a52"></i>bateu a meta</span></div>
-      <div class="pz-ft"><span>${hoje.tg ? `Hoje: <b>${hoje.r} de ${hoje.tg}</b> páginas${hoje.r >= hoje.tg ? ' · meta do dia batida!' : ''}` : 'Hoje é folga'}</span><button type="button" class="pz-plan">Ver plano</button></div></div></section>`;
+      <div class="pz-ft"><span>${hoje.tg ? (() => { const h = dueToday(e); return hoje.r >= hoje.tg ? `Meta de hoje batida! <b>${hoje.r} de ${hoje.tg}</b> páginas` : `Hoje: leia até a <b>pág. ${h ? h.target : '—'}</b> · faltam ${hoje.tg - hoje.r}`; })() : 'Hoje é folga'}</span><button type="button" class="pz-plan">Ver plano</button></div></div></section>`;
   } catch (err) { console.warn('semana do prazo', err); return _isw.apply(this, arguments); }
 }; }
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { TR.querySelectorAll('.pz-plan:not([data-b])').forEach((b) => { b.dataset.b = 1; b.addEventListener('click', () => { const R = reading(); if (R) dueSheet(R.e); }); }); }, 100); }).observe(TR, { childList: true, subtree: true }); }
