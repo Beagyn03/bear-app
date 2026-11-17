@@ -9773,6 +9773,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12992,7 +12993,17 @@ function myStatsSnap() {
 .dp-d.off{opacity:.55;border-style:dashed}.dp-d.off b{font-size:.68rem;color:var(--ink-2)}.dp-d.hoje{border-color:var(--acc)}
 .due-sh .box{overflow-x:hidden}.due-sh form{min-width:0;max-width:100%}.due-sh form > *{min-width:0;max-width:100%}.due-sh .dp{min-width:0;max-width:100%;overflow:hidden}.due-sh .dp-days{max-width:100%}.due-sh .hint{overflow-wrap:anywhere}
 .dp-d em{white-space:nowrap}
-.dc{margin:.2rem 0 .35rem;display:grid;gap:.6rem}.dc-mn{font-size:.82rem;font-weight:900;color:var(--ink);text-transform:capitalize;margin:0 0 .2rem}
+.dk-row{display:flex;gap:.35rem;overflow-x:auto;padding:.1rem 0 .35rem;scrollbar-width:none;max-width:100%}.dk-row::-webkit-scrollbar{display:none}
+html .dk{flex:0 0 62px;display:grid;justify-items:center;gap:.12rem;border:1px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;border-radius:12px!important;padding:.35rem .2rem!important;font:inherit;height:auto!important;min-height:0!important;box-shadow:none!important;cursor:pointer}
+.dk small{font-size:.62rem;font-weight:900;text-transform:uppercase;color:var(--ink-2)}.dk em{font-style:normal;font-size:.62rem;font-weight:700;color:var(--ink-2)}
+.dk-c{position:relative;width:38px;height:56px;border-radius:5px;overflow:hidden;display:block}.dk-c > span{position:absolute;inset:0;display:block}
+.dk-c .dk-cv{width:100%!important;height:100%!important;margin:0!important;border-radius:0!important;box-shadow:none!important;font-size:.36rem!important}.dk-c .dk-cv img{width:100%;height:100%;object-fit:cover}
+.dk-g{filter:grayscale(1) brightness(1.05);opacity:.55}.dk-k{transition:clip-path .4s ease}
+.dk-c u{position:absolute;top:1px;right:2px;z-index:2;text-decoration:none;font-size:.7rem;color:#f5b84a;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.dk b{font-size:.68rem;font-weight:900;white-space:nowrap}.dk i{font-style:normal;font-size:.6rem;font-weight:800;color:var(--acc);white-space:nowrap}
+html .dk.hoje{border:2px solid var(--acc)!important}html .dk.off{border-style:dashed!important;background:none!important;opacity:.6}html .dk.ok{border-color:#2f8a52!important}.dk.ok b{color:#2f8a52}
+.dc{margin:.2rem 0 .35rem;display:grid;gap:.6rem}.dc-m[hidden]{display:none!important}.dc-mn{display:flex;align-items:center;justify-content:space-between;font-size:.86rem;font-weight:900;color:var(--ink);text-transform:capitalize;margin:0 0 .3rem}
+html .dc-nav{display:grid!important;place-items:center!important;width:32px!important;height:32px!important;min-height:0!important;border-radius:50%!important;border:1px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;font:inherit!important;font-size:1.1rem!important;font-weight:900!important;padding:0!important;line-height:1!important;cursor:pointer}html .dc-nav:disabled{opacity:.3;cursor:default}
 .dc-hs,.dc-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.dc-hs{margin-bottom:3px}
 .dc-h{border:0;background:none;color:var(--ink-2);font:inherit;font-size:.66rem;font-weight:800;padding:.2rem 0;border-radius:8px;cursor:pointer}.dc-h.off{opacity:.45;text-decoration:line-through}
 .dc-d{position:relative;display:grid;place-items:center;min-width:0;height:48px;border:1px solid transparent;background:color-mix(in srgb,var(--ink) 5%,transparent);color:var(--ink);border-radius:9px;padding:0;font:inherit;cursor:pointer;overflow:hidden}
@@ -13024,19 +13035,37 @@ function dueToday(e) {
   return { total, now, start, per, target, todayOff, done: now >= target };
 }
 const dueLabel = (iso) => { const d = new Date(iso + 'T12:00:00Z'); return `${DOW[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
+// cartão de um dia: o = { iso, w, off, tg (meta de páginas), r (lidas), ate, hoje, fim, fut }
+function dueCard(e, o, btn) {
+  const DD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'], dm = o.iso.slice(8, 10) + '/' + o.iso.slice(5, 7);
+  const pct = o.off ? 0 : o.tg ? Math.max(0, Math.min(1, (o.r || 0) / o.tg)) : 0, ok = !o.off && o.tg && (o.r || 0) >= o.tg;
+  const cv = cvh(e.title, e.cover, 'dk-cv');
+  const pg = o.off ? 'folga' : o.fut ? o.tg + ' pág.' : (o.r || 0) + ' de ' + o.tg;
+  const tag = btn ? 'button type="button"' : 'span', end = btn ? 'button' : 'span';
+  return '<' + tag + ' class="dk' + (o.off ? ' off' : '') + (o.hoje ? ' hoje' : '') + (o.fim ? ' fim' : '') + (ok ? ' ok' : '') + '" data-w="' + o.w + '" title="' + (o.off ? 'folga' : 'meta ' + o.tg + ' pág. · ler até a pág. ' + o.ate) + '">'
+    + '<small>' + (o.hoje ? 'hoje' : DD[o.w]) + '</small><em>' + dm + '</em>'
+    + '<span class="dk-c"><span class="dk-g">' + cv + '</span><span class="dk-k" style="clip-path:inset(' + Math.round((1 - pct) * 100) + '% 0 0 0)">' + cv + '</span>' + (o.fim ? '<u>★</u>' : '') + '</span>'
+    + '<b>' + pg + '</b>' + (o.off ? '' : '<i>até ' + o.ate + '</i>') + '</' + end + '>';
+}
+function dueRow(p, e) {
+  const t = todayISO(), last = p.list.length ? p.list[p.list.length - 1].iso : t;
+  const readT = (e.readLog || []).filter((l) => l.date === t).reduce((a, l) => a + (Number(l.pages) || 0), 0);
+  return '<div class="dk-row">' + p.list.map((x) => dueCard(e, { iso: x.iso, w: x.w, off: x.off, tg: x.n, r: x.iso === t ? readT : 0, ate: x.ate, hoje: x.iso === t, fim: x.iso === last, fut: x.iso > t }, true)).join('') + '</div>';
+}
 function dueCal(p) {
   const t = todayISO(), last = p.list.length ? p.list[p.list.length - 1].iso : t, byIso = new Map(p.list.map((x) => [x.iso, x]));
   const offW = new Set(p.list.filter((x) => x.off).map((x) => x.w)), MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
   const ORD = [1, 2, 3, 4, 5, 6, 0], NOME = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
   const head = '<div class="dc-hs">' + ORD.map((w) => '<button type="button" class="dc-h' + (offW.has(w) ? ' off' : '') + '" data-w="' + w + '" aria-label="' + DOW[w] + (offW.has(w) ? ': folga' : '') + '">' + NOME[w] + '</button>').join('') + '</div>';
   const months = []; for (let y = Number(t.slice(0, 4)), m = Number(t.slice(5, 7)) - 1; ; m++) { if (m > 11) { m = 0; y++; } const key = y + '-' + String(m + 1).padStart(2, '0'); months.push([y, m]); if (key >= last.slice(0, 7)) break; }
-  return '<div class="dc">' + months.map(([y, m]) => {
+  const cur = Math.max(0, Math.min(months.length - 1, window.__dcM || 0));
+  return '<div class="dc">' + months.map(([y, m], mi) => {
     const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7; const cells = [];
     for (let i = 0; i < lead; i++) cells.push('<span class="dc-d blank"></span>');
     for (let d = 1; d <= days; d++) { const iso = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'), x = byIso.get(iso);
       if (!x) { cells.push('<span class="dc-d out"><i>' + d + '</i></span>'); continue; }
       cells.push('<button type="button" class="dc-d' + (x.off ? ' off' : '') + (iso === t ? ' hoje' : '') + (iso === last ? ' fim' : '') + '" data-w="' + x.w + '" title="' + (x.off ? 'folga' : 'até a pág. ' + x.ate) + '"><i>' + d + '</i>' + (x.off ? '<small>folga</small>' : '<b>' + x.ate + '</b>') + (iso === last ? '<em>prazo</em>' : '') + '</button>'); }
-    return '<div class="dc-m">' + (months.length > 1 ? '<div class="dc-mn">' + MES[m] + '</div>' : '') + head + '<div class="dc-g">' + (() => { const rows = []; for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7)); while (rows.length > 1 && !rows[0].some((c) => c.startsWith('<button'))) rows.shift(); return rows.flat().join(''); })() + '</div></div>';
+    return '<div class="dc-m" data-i="' + mi + '"' + (mi === cur ? '' : ' hidden') + '>' + (months.length > 1 ? '<div class="dc-mn"><button type="button" class="dc-nav" data-s="-1"' + (mi === 0 ? ' disabled' : '') + ' aria-label="Mês anterior">‹</button><span>' + MES[m] + ' ' + y + '</span><button type="button" class="dc-nav" data-s="1"' + (mi === months.length - 1 ? ' disabled' : '') + ' aria-label="Próximo mês">›</button></div>' : '') + head + '<div class="dc-g">' + (() => { const rows = []; for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7)); while (rows.length > 1 && !rows[0].some((c) => c.startsWith('<button'))) rows.shift(); return rows.flat().join(''); })() + '</div></div>';
   }).join('') + '<p class="dc-leg">O número em cada dia é a página até onde ler.</p></div>';
 }
 function dueSheet(e) {
@@ -13056,9 +13085,9 @@ function dueSheet(e) {
     if (!p.rem) { out.innerHTML = 'Você já está na última página.'; return; } if (p.days < 1) { out.innerHTML = 'Escolha hoje ou um dia depois.'; return; }
     const mx = Math.max(1, ...p.list.map((x) => x.n)); { let acc = (readingInfo(e).now || 0); for (const x of p.list) { acc += x.n; x.ate = Math.min(acc, readingInfo(e).total || Number(e.totalPages) || acc); } }
     out.innerHTML = `<div class="dp-sum"><b>${p.perDay}</b> páginas por dia<small>${p.rem} páginas em ${plural(p.work, 'dia de leitura', 'dias de leitura')}${p.work < p.days ? ' · ' + plural(p.days - p.work, 'folga', 'folgas') : ''}</small></div>
-      ${dueCal(p)}
-      <small class="hint" style="margin:0">Toque num dia da semana (no topo) ou num dia para marcar folga; vale para aquele dia até o prazo.</small>`;
-    out.querySelectorAll('.dc-d[data-w], .dc-h[data-w]').forEach((b) => b.addEventListener('click', () => { const w = Number(b.dataset.w); off = off.includes(w) ? off.filter((x) => x !== w) : [...off, w]; show(); })); };
+      ${dueRow(p, e)}
+      <small class="hint" style="margin:0">Toque num dia para marcar folga (vale para esse dia da semana até o prazo). A capa ganha cor conforme você lê.</small>`;
+    out.querySelectorAll('.dk[data-w], .dc-d[data-w], .dc-h[data-w]').forEach((b) => b.addEventListener('click', () => { const w = Number(b.dataset.w); off = off.includes(w) ? off.filter((x) => x !== w) : [...off, w]; show(); })); };
   inp.value = e.dueAt || ''; show(); inp.addEventListener('input', show);
   f.querySelectorAll('.dq').forEach((b) => b.addEventListener('click', () => { inp.value = b.dataset.d; show(); }));
   const close = () => wrap.remove(); wrap.addEventListener('click', (ev) => { if (ev.target === wrap) close(); }); f.querySelector('.cancel').addEventListener('click', close);
@@ -13309,6 +13338,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
 }; }
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { TR.querySelectorAll('.pz-plan:not([data-b])').forEach((b) => { b.dataset.b = 1; b.addEventListener('click', () => { const R = reading(); if (R) dueSheet(R.e); }); }); }, 100); }).observe(TR, { childList: true, subtree: true }); }
 // --- 59b_calendario_inicio.js ---
+{ const st = document.createElement('style'); st.textContent = ".dk-row{display:flex;gap:.35rem;overflow-x:auto;padding:.1rem 0 .35rem;scrollbar-width:none;max-width:100%}.dk-row::-webkit-scrollbar{display:none}\n.in-sec .dk{flex:0 0 62px;display:grid;justify-items:center;gap:.12rem;border:1px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;border-radius:12px!important;padding:.35rem .2rem!important;font:inherit;height:auto!important;min-height:0!important;box-shadow:none!important;cursor:pointer}\n.dk small{font-size:.62rem;font-weight:900;text-transform:uppercase;color:var(--ink-2)}.dk em{font-style:normal;font-size:.62rem;font-weight:700;color:var(--ink-2)}\n.dk-c{position:relative;width:38px;height:56px;border-radius:5px;overflow:hidden;display:block}.dk-c > span{position:absolute;inset:0;display:block}\n.dk-c .dk-cv{width:100%!important;height:100%!important;margin:0!important;border-radius:0!important;box-shadow:none!important;font-size:.36rem!important}.dk-c .dk-cv img{width:100%;height:100%;object-fit:cover}\n.dk-g{filter:grayscale(1) brightness(1.05);opacity:.55}.dk-k{transition:clip-path .4s ease}\n.dk-c u{position:absolute;top:1px;right:2px;z-index:2;text-decoration:none;font-size:.7rem;color:#f5b84a;text-shadow:0 1px 2px rgba(0,0,0,.6)}\n.dk b{font-size:.68rem;font-weight:900;white-space:nowrap}.dk i{font-style:normal;font-size:.6rem;font-weight:800;color:var(--acc);white-space:nowrap}\n.in-sec .dk.hoje{border:2px solid var(--acc)!important}.in-sec .dk.off{border-style:dashed!important;background:none!important;opacity:.6}.in-sec .dk.ok{border-color:#2f8a52!important}.dk.ok b{color:#2f8a52}\n.dk-c .dk-cv{display:grid!important;place-items:center;background:#8a6a4a;color:#fff;text-align:center;line-height:1.1;padding:2px;box-sizing:border-box;overflow:hidden}"; TR.append(st); const st3 = document.createElement('style'); st3.textContent = ".dk-c .dk-cv{display:grid!important;place-items:center;background:#8a6a4a;color:#fff;text-align:center;line-height:1.1;padding:2px;box-sizing:border-box;overflow:hidden}"; document.head.append(st3); }
 // Placar do prazo no Início vira calendário do mês (Bia, 17/11): cada dia mostra quantas páginas foram lidas
 // (todos os livros); nos dias do prazo, fica verde quando bateu a meta do livro do prazo; dias que vêm mostram
 // até qual página ler; folga tracejada; hoje com contorno; prazo com estrela.
@@ -13321,37 +13351,33 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
 .ic-d.blank{background:none}.ic-d.fut{background:none;border:1px solid var(--line)}.ic-d.pz{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--acc) 55%,transparent)}
 .ic-d.ok{background:color-mix(in srgb,#2f8a52 22%,transparent)}.ic-d.ok b{color:#2f8a52}.ic-d.miss b{color:var(--acc)}
 .ic-d.off{background:none;border:1px dashed var(--line)}.ic-d.hj{outline:2px solid var(--acc);outline-offset:-2px}.ic-d.fim i::after{content:' ★';color:var(--acc)}
+.ic-d{height:58px!important}.ic-d .ic-cv{position:absolute;inset:0;width:100%!important;height:100%!important;border-radius:0!important;margin:0!important;box-shadow:none!important;font-size:.42rem!important;overflow:hidden}
+.ic-d .ic-cv img{width:100%;height:100%;object-fit:cover}
+.ic-d.has::after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 35%,rgba(0,0,0,.6))}
+.ic-d.has i{z-index:2;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7)}.ic-d.has b{position:absolute;bottom:2px;left:0;right:0;z-index:2;margin:0;text-align:center;color:#fff!important;font-size:.72rem;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+.ic-d.has u{position:absolute;top:3px;right:4px;z-index:2;text-decoration:none;font-size:.55rem;font-weight:900;color:#fff;background:rgba(0,0,0,.55);border-radius:99px;padding:0 4px}
+.ic-d.has.ok{box-shadow:inset 0 0 0 2px #2f8a52}.ic-d.has.ok b{color:#9fe3b6!important}
 .ic-lg{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:.45rem;font-size:.66rem;font-weight:800;color:var(--ink-2)}.ic-lg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:.25rem;vertical-align:-1px}`; TR.append(st); }
 { const _isw2 = inSemana; inSemana = function () {
   try {
     const R = reading(), e = R && R.e, t = todayISO();
     if (!e || e.status !== 'LENDO' || !e.dueAt || e.dueAt < t) return _isw2.apply(this, arguments);
-    const all = pagesByDay(), book = new Map(bookSeries(e).map((x) => [x.d, x.p])), off = e.dueOff || [];
+    const book = new Map(bookSeries(e).map((x) => [x.d, x.p])), off = e.dueOff || [];
     const since = e.dueSince && e.dueSince <= t ? e.dueSince : t, total = R.total || Number(e.totalPages) || 0;
     // meta de cada dia do prazo: dias passados pela conta do dia em que foi marcado; de hoje em diante pela conta atual
     const pd = []; for (let d = since; d <= e.dueAt; d = inAddDays(d, 1)) pd.push(d);
     const isOff = (d) => off.includes(new Date(d + 'T12:00:00Z').getUTCDay());
     const base = total ? Math.ceil(Math.max(0, total - (e.dueStartPage || 0)) / (pd.filter((d) => !isOff(d)).length || pd.length)) : 0;
     const h = dueToday(e), plan = duePlan(e, e.dueAt); const ateMap = new Map(); { let acc = h ? h.start : (R.now || 0); for (const x of plan.list) { acc += x.n; ateMap.set(x.iso, Math.min(acc, total || acc)); } }
-    const y = Number(t.slice(0, 4)), m = Number(t.slice(5, 7)) - 1, days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7;
-    const MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-    const cells = []; for (let i = 0; i < lead; i++) cells.push('<span class="ic-d blank"></span>');
-    let read = 0, hit = 0, due = 0;
-    for (let dn = 1; dn <= days; dn++) {
-      const d = t.slice(0, 8) + String(dn).padStart(2, '0'), inPz = d >= since && d <= e.dueAt, off1 = inPz && isOff(d), p = all[d] || 0, fut = d > t;
-      const tg = inPz && !off1 ? (d < t ? base : (plan.list.find((x) => x.iso === d) || {}).n || 0) : 0, br = book.get(d) || 0;
-      if (!fut) read += p; if (inPz && !off1 && !fut && d !== t) { due++; if (br >= tg) hit++; }
-      const ok = inPz && !off1 && !fut && tg && br >= tg, miss = inPz && !off1 && !fut && d !== t && tg && br < tg;
-      const cls = 'ic-d' + (fut ? ' fut' : '') + (inPz ? ' pz' : '') + (off1 ? ' off' : '') + (ok ? ' ok' : '') + (miss ? ' miss' : '') + (d === t ? ' hj' : '') + (d === e.dueAt ? ' fim' : '');
-      const body = off1 ? '<small style="color:var(--ink-2)">folga</small>' : fut ? (inPz ? '<small>até ' + (ateMap.get(d) || '') + '</small>' : '') : (p ? '<b>' + p + '</b>' : d === t && inPz && h && !h.todayOff ? '<small>até ' + h.target + '</small>' : (inPz && d !== t ? '<b style="opacity:.35">0</b>' : ''));
-      cells.push('<span class="' + cls + '" title="' + (fut ? (inPz ? 'ler até a pág. ' + (ateMap.get(d) || '') : '') : p + ' páginas lidas' + (tg ? ' · meta ' + tg : '')) + '"><i>' + dn + '</i>' + body + '</span>');
-    }
-    if (e.dueAt.slice(0, 7) !== t.slice(0, 7)) cells.push(''); // o prazo passa do mês: o rodapé avisa
+    const rowDays = pd.length > 21 ? pd.slice(Math.max(0, pd.indexOf(t) - 3), Math.max(0, pd.indexOf(t) - 3) + 21) : pd; let hit = 0, due = 0;
+    const cardsH = rowDays.map((d) => { const w = new Date(d + 'T12:00:00Z').getUTCDay(), off1 = isOff(d), fut = d > t, br = book.get(d) || 0;
+      const tg = off1 ? 0 : d < t ? base : (plan.list.find((x) => x.iso === d) || {}).n || 0;
+      if (!off1 && d < t) { due++; if (br >= tg) hit++; }
+      return dueCard(e, { iso: d, w, off: off1, tg, r: br, ate: d < t ? '' : (ateMap.get(d) || ''), hoje: d === t, fim: d === e.dueAt, fut }, false).replace('<i>até </i>', ''); }).join('');
     const foot = h && h.todayOff ? 'Hoje é folga' : h && h.done ? `Meta de hoje cumprida (pág. ${h.target})` : `Hoje: leia até a <b>pág. ${h ? h.target : '—'}</b>`;
     return `<section class="in-sec" data-in="semana"><div class="in-h"><b>Rumo a ${esc(dueLabel(e.dueAt))}</b></div><div class="in-card">
-      <div class="pz-mn" style="font-size:.8rem;font-weight:900;margin-bottom:.35rem;">${MES[m][0].toUpperCase() + MES[m].slice(1)} · ${read} páginas lidas${due ? ` · meta batida em ${hit} de ${due} dias` : ''}</div>
-      <div class="ic-hs">${['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map((n) => '<span>' + n + '</span>').join('')}</div><div class="ic-g">${cells.join('')}</div>
-      <div class="ic-lg"><span><i style="background:color-mix(in srgb,#2f8a52 40%,transparent)"></i>bateu a meta</span><span><i style="background:none;border:1px solid var(--line)"></i>até onde ler</span><span><i style="box-shadow:inset 0 -3px 0 var(--acc)"></i>dias do prazo</span></div>
+      <div class="pz-mn" style="font-size:.78rem;font-weight:800;color:var(--ink-2);margin-bottom:.35rem">${due ? `Meta batida em ${hit} de ${due} dias · ` : ''}a capa ganha cor conforme você lê</div>
+      <div class="dk-row">${cardsH}</div>
       <div class="pz-ft"><span>${foot}${e.dueAt.slice(0, 7) !== t.slice(0, 7) ? ' · o prazo continua no mês que vem' : ''}</span><button type="button" class="pz-plan">Ver plano</button></div></div></section>`;
   } catch (err) { console.warn('calendário do prazo', err); return _isw2.apply(this, arguments); }
 }; }
@@ -13665,11 +13691,95 @@ html .due-sh .dx{background:none!important;border:0!important;color:#c0392b!impo
       const f = wrap.querySelector('form'), h3 = f.querySelector('h3');
       const top = document.createElement('div'); top.className = 'dp-top'; top.innerHTML = '<button type="button" class="dp-back">Voltar</button>'; h3.before(top); top.append(h3);
       top.querySelector('.dp-back').addEventListener('click', () => wrap.remove());
+      window.__dcM = 0; // abre sempre no mês de hoje
+      wrap.addEventListener('click', (ev) => { const nb = ev.target.closest && ev.target.closest('.dc-nav'); if (!nb || nb.disabled) return; ev.preventDefault();
+        const ms = [...wrap.querySelectorAll('.dc-m')], n = ms.length, cur = Math.max(0, Math.min(n - 1, (window.__dcM || 0) + Number(nb.dataset.s))); window.__dcM = cur;
+        ms.forEach((m) => { m.hidden = Number(m.dataset.i) !== cur; }); });
       const rb = [...f.children].find((x) => x.querySelector && x.querySelector('input[name=rem]')); if (rb) rb.classList.add('rem-box');
       const dx = f.querySelector('.dx'); if (dx) dx.textContent = 'Tirar o prazo';
     } catch (err) { console.warn('prazo em página', err); }
     return r;
   }; }
+// --- 72_niveis_rede.js ---
+// Níveis do enredo na comunidade (Bia, 17/11): a avaliação publicada leva os níveis; a página do livro mostra a média de
+// quem avaliou (bolinhas 1–5 e nº de votos); na Buscar, atalhos "Muito suspense", "Muito romance"… com a lista de livros.
+S.nvBook = S.nvBook || {};
+{ const st = document.createElement('style'); st.textContent = `
+.nv-term{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.75rem .85rem;margin:0 0 .8rem;display:grid;gap:.4rem}
+.nv-term .nv-h{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}.nv-term .nv-h b{font-size:.95rem}.nv-term .nv-h small{font-size:.75rem;color:var(--ink-2);font-weight:700}
+.nv-term .nv-r{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.5rem;font-size:.84rem;font-weight:800;color:var(--ink)}
+.nv-term .nv-r small{font-size:.7rem;color:var(--ink-2);font-weight:700;min-width:3.6em;text-align:right}
+.nv-term .nv-dots i{width:9px;height:9px}
+.nv-term .nv-empty{font-size:.82rem;color:var(--ink-2);margin:0}
+.nv-dots{display:inline-flex;gap:2px}.nv-dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}.nv-dots i.on{background:var(--acc)}
+.nv-chips{display:flex;gap:.45rem;flex-wrap:wrap;margin:.2rem 0 .2rem}
+.nv-chips button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.45rem .9rem;font:inherit;font-weight:800;font-size:.86rem}`; TR.append(st); }
+const NV_NOME = Object.fromEntries(NIVEIS);
+// 1) publicar: a avaliação leva os níveis; se a API ainda não conhecer o campo (400), reenvia sem ele
+{ const _pr = publishReview; let nivFor = null;
+  publishReview = async function (b) { await new Promise((ok) => setTimeout(ok, 0)); /* deixa o salvar dos níveis (bloco 70) rodar antes */ const rv = (b && b.review) || null; nivFor = rv && rv.niveis && Object.keys(rv.niveis).length ? rv.niveis : null; try { return await _pr.apply(this, arguments); } finally { nivFor = null; } };
+  const _sa = sapi;
+  sapi = async function (method, path, body) {
+    if (method === 'PUT' && /^\/v1\/reviews\/[^/]+$/.test(path) && body && typeof body === 'object' && nivFor && S.nivApiOk !== false) {
+      const r = await _sa.call(this, method, path, { ...body, niveis: nivFor });
+      if (r && r.status === 400) { S.nivApiOk = false; return _sa.call(this, method, path, body); }
+      return r;
+    }
+    return _sa.apply(this, arguments);
+  }; }
+// 2) página do livro: níveis de quem avaliou
+async function nvBookData(title) {
+  const k = rsKey(title), c = S.nvBook[k]; if (c && Date.now() - c.at < 10 * 60000) return c.d;
+  if (!connected()) return null;
+  try { const r = await sapi('GET', '/v1/niveis/book?title=' + encodeURIComponent(String(title).slice(0, 200))); if (r.status !== 200 || !r.data) return null; S.nvBook[k] = { d: r.data, at: Date.now() }; return r.data; } catch { return null; }
+}
+function nvTermHTML(d) {
+  const it = (d.items || []).filter((x) => NV_NOME[x.k]);
+  if (!it.length) return '<div class="nv-h"><b>Níveis do enredo</b></div><p class="nv-empty">Ninguém marcou ainda. Ao avaliar, conte quanto o livro tem de romance, suspense, hot…</p>';
+  const tot = Math.max(...it.map((x) => x.n));
+  return '<div class="nv-h"><b>Níveis do enredo</b><small>quem avaliou</small></div>'
+    + it.slice(0, 8).map((x) => '<div class="nv-r"><span>' + esc(NV_NOME[x.k]) + '</span>' + nivDots(Math.round(x.avg)) + '<small>' + plural(x.n, 'voto', 'votos') + '</small></div>').join('');
+}
+// 3) Buscar: atalhos por elemento
+const NV_ATALHOS = [['suspense', 'Muito suspense'], ['romance', 'Muito romance'], ['hot', 'Muito hot'], ['terror', 'Muito terror'], ['choro', 'Me fez chorar'], ['plot', 'Cheio de reviravoltas']];
+async function openNivelList(k, title) {
+  const v = $('#shelflist'); closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page');
+  const shell = (body) => { v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back" data-own="1">‹ Voltar</button><b>' + esc(title) + '</b><span></span></div>' + body;
+    v.querySelector('.sl-back').addEventListener('click', () => { try { openCatalog(); } catch { v.hidden = true; } }); };
+  shell('<p class="sl-empty">Carregando…</p>'); v.hidden = false; v.scrollTop = 0;
+  let items = []; try { const r = await sapi('GET', '/v1/niveis?k=' + encodeURIComponent(k) + '&min=4'); items = r.status === 200 && r.data ? r.data.items || [] : []; } catch {}
+  shell('<p class="hint" style="margin:.2rem 0 0">Livros em que os leitores do Livroverso marcaram ' + esc((NV_NOME[k] || k).toLowerCase()) + ' nível 4 ou 5.</p>'
+    + (items.length ? '<div class="rs-list">' + items.map((b) => '<button type="button" class="es-bk" data-book="' + esc(b.title) + '" data-author="' + esc(b.author || '') + '">' + cvh(b.title, b.cover, 'es-cv') + '<small>' + esc(b.title) + '<br>' + nivDots(Math.round(b.avg)) + ' ' + plural(b.n, 'voto', 'votos') + '</small></button>').join('') + '</div>'
+      : '<p class="sl-empty">Ainda não tem votos suficientes. Quando as pessoas avaliarem marcando os níveis do enredo, os livros aparecem aqui.</p>'));
+  try { paintCv(v); } catch {}
+}
+{ const v = $('#shelflist'); let tm = 0;
+  const fill = async () => {
+    const body = v.querySelector('.sl-body'); if (!body || v.hidden) return;
+    const rs = body.querySelector('.rs-term');
+    if (rs && S.rsTitle && !body.querySelector('.nv-term')) {
+      const box = document.createElement('div'); box.className = 'nv-term'; box.innerHTML = '<div class="nv-h"><b>Níveis do enredo</b></div><p class="nv-empty">Carregando…</p>'; rs.after(box);
+      const t = S.rsTitle, d = await nvBookData(t);
+      if (!box.isConnected || t !== S.rsTitle) return;
+      if (!d) { box.remove(); return; }
+      box.innerHTML = nvTermHTML(d);
+    }
+    const ch0 = body.querySelector('.rs-chips');
+    if (ch0 && !body.querySelector('.nv-chips')) {
+      const ch = document.createElement('div'); ch.className = 'nv-chips'; ch.innerHTML = NV_ATALHOS.map(([k, n]) => '<button type="button" data-nvk="' + k + '">' + esc(n) + '</button>').join(''); ch0.after(ch);
+      ch.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => openNivelList(b.dataset.nvk, b.textContent)));
+    }
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(fill, 90); }).observe(v, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+}
+// 4) avaliação aberta para ler (rt-view): mostra os níveis marcados embaixo da nota (a folha troca de modo sem reabrir)
+{ let tm = 0; const paint = () => { document.querySelectorAll('body > .sheet.rt-view .rv-paws').forEach((pw) => {
+      const wrap = pw.closest('.sheet'); if (wrap.querySelector('.nv-view')) return;
+      const t = (wrap.querySelector('.rtf-info b') || {}).textContent || ''; const e = lib().find((x) => x.title === t); if (!e) return;
+      const nv = ((reviewOfLib(e) || {}).niveis) || {}, ks = NIVEIS.filter(([k]) => nv[k] > 0); if (!ks.length) return;
+      const sum = document.createElement('div'); sum.className = 'nv-sum nv-view'; sum.style.cssText = 'justify-content:center;margin:.2rem 0 .4rem';
+      sum.innerHTML = ks.map(([k, n]) => '<span class="nv-tag">' + esc(n) + nivDots(nv[k]) + '</span>').join(''); pw.after(sum); }); };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 60); }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
