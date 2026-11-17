@@ -9816,6 +9816,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13251,32 +13252,32 @@ function openCommonReads(d) {
 .dy{display:grid;gap:.5rem}.dy-it{border-left:3px solid var(--acc);padding:.15rem 0 .15rem .65rem}.dy-it small{display:block;font-size:.72rem;font-weight:800;color:var(--ink-2)}.dy-it p{margin:.15rem 0 0;font-size:.88rem;line-height:1.45;white-space:pre-line}
 .dy-fe{font-size:.75rem;font-weight:800;color:var(--acc)}
 `; TR.append(st); }
-S.upNote = { text: '', fe: [], vis: (() => { try { return localStorage.getItem('lv.upVis') || 'public'; } catch { return 'public'; } })(), sp: false };
+S.upNote = { text: '', fe: [], vis: (() => { try { const v = localStorage.getItem('lv.upVis'); return v === 'friends' ? 'friends' : 'public'; } catch { return 'public'; } })(), sp: false };
 { const ed = $('#editor');
   const inject = () => {
     const body = ed.querySelector('.ed-body'); if (ed.hidden || !body || !body.querySelector('#up-save') || body.querySelector('.up-note')) return;
     const N = S.upNote, wrap = document.createElement('div'); wrap.className = 'up-note';
     wrap.innerHTML = `<textarea maxlength="280" placeholder="O que está achando desta parte? (opcional)"></textarea>
       <div class="up-fe">${QT_FEELS.map(([k, n]) => `<button type="button" data-f="${k}" class="${N.fe.includes(k) ? 'on' : ''}">${esc(n)}</button>`).join('')}</div>
-      <div class="up-vis"><span>Quem vê</span><div class="up-vs">${[['me', 'Só eu'], ['friends', 'Amigos'], ['public', 'Todos']].map(([k, n]) => `<button type="button" data-v="${k}" class="${N.vis === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
-      <label class="up-pub"${N.vis === 'me' ? ' hidden' : ''}><input type="checkbox" ${N.sp ? 'checked' : ''}> Contém spoiler <small>(quem não chegou nesta página vê embaçado)</small></label>`;
+      <div class="up-vis"><span>Quem vê</span><div class="up-vs">${[['friends', 'Amigos'], ['public', 'Todos']].map(([k, n]) => `<button type="button" data-v="${k}" class="${N.vis === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+      <label class="up-pub"><input type="checkbox" ${N.sp ? 'checked' : ''}> Contém spoiler <small>(quem não chegou nesta página vê embaçado)</small></label>`;
     const ta = wrap.querySelector('textarea'); ta.value = N.text; ta.addEventListener('input', () => { N.text = ta.value; });
     wrap.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.f; if (N.fe.includes(k)) N.fe = N.fe.filter((x) => x !== k); else if (N.fe.length < 3) N.fe.push(k); else return toast('Até 3 emoções'); b.classList.toggle('on', N.fe.includes(k)); }));
     wrap.querySelector('.up-pub input').addEventListener('change', (ev) => { N.sp = ev.target.checked; });
     wrap.querySelectorAll('.up-vs button').forEach((b) => b.addEventListener('click', () => { N.vis = b.dataset.v; try { localStorage.setItem('lv.upVis', N.vis); } catch {}
-      wrap.querySelectorAll('.up-vs button').forEach((x) => x.classList.toggle('on', x === b)); wrap.querySelector('.up-pub').hidden = N.vis === 'me'; }));
+      wrap.querySelectorAll('.up-vs button').forEach((x) => x.classList.toggle('on', x === b)); }));
     const row = body.querySelector('.up-row'); if (row) row.before(wrap); else body.append(wrap);
   };
   new MutationObserver(inject).observe(ed, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
   // ao salvar: guarda no diário e posta (antes do editor fechar)
   ed.addEventListener('click', (ev) => {
     const t = ev.target.closest && ev.target.closest('#up-save, #up-fin'); if (!t || t.disabled) return;
-    const N = S.upNote, text = String(N.text || '').trim(), fe = [...N.fe]; S.upNote = { text: '', fe: [], vis: N.vis, sp: false };
+    const N = S.upNote, text = String(N.text || '').trim(), fe = [...N.fe]; S.upNote = { text: '', fe: [], vis: N.vis === 'me' ? 'public' : N.vis, sp: false };
     if (!text && !fe.length) return;
     const R = (() => { try { return reading(); } catch { return null; } })(); if (!R) return;
     const r = $('#up-r', ed), page = t.id === 'up-fin' ? R.total : Math.max(0, Math.min(R.total, Number(r && r.value) || R.now)), pct = R.total ? Math.round(page / R.total * 100) : 0;
     const e = R.e; e.diary = [...(e.diary || []), { d: todayISO(), page, pct, text, fe }].slice(-200); save();
-    if (N.vis !== 'me' && connected() && socialProfile) {
+    if (text && N.vis !== 'me' && connected() && socialProfile) { // só o comentário escrito vai para a Rede; emoções sozinhas ficam no diário
       const names = fe.map((k) => (QT_FEELS.find((x) => x[0] === k) || [, k])[1]);
       sapi('POST', '/v1/posts', { kind: 'comment', text: (text || names.join(' · ')).slice(0, 280), feelings: fe.slice(0, 3), visibility: N.vis === 'friends' ? 'friends' : 'public', readerPct: Math.min(100, pct),
         book: { title: String(e.title).slice(0, 200), author: e.author ? String(e.author).slice(0, 120) : null, cover: /^https:\/\//.test(e.cover || '') ? e.cover : null },
