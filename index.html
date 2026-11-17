@@ -9620,6 +9620,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12153,6 +12154,15 @@ async function modCoverSheet(x) {
     : '<p class="hint" style="grid-column:1/-1">Não achei outras capas. Cole o link de uma imagem.</p>';
   grid.querySelectorAll('button[data-i]').forEach((b) => b.addEventListener('click', () => put(covers[Number(b.dataset.i)])));
 }
+// A capa corrigida vale em qualquer lugar (perfil de outra pessoa, Rede, catálogo), não só na própria estante (16/11).
+// Quem escolheu outra edição para o próprio livro (coverOwn) continua vendo a dela.
+{ const _cvh = cvh; cvh = function (title, coverUrl, cls, style) {
+  try {
+    if (COVM.map.size) { const k = covKey(title), ov = COVM.map.get(k);
+      if (ov && ov !== coverUrl) { const own = lib().find((e) => e.coverOwn && covKey(e.title) === k && e.cover === coverUrl); if (!own) coverUrl = ov; } }
+  } catch {}
+  return _cvh.call(this, title, coverUrl, cls, style);
+}; }
 // --- 44_top5.js ---
 // Top 5 (Bia, 16/11): a seção "Melhores avaliados" do perfil passa a ser o top 5 que a pessoa escolhe (o mesmo do primeiro acesso),
 // numerado e na ordem dela; no próprio perfil tem "Editar" para trocar livros e mudar a ordem. Sem top 5, continua mostrando os mais bem avaliados.
