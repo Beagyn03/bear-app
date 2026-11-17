@@ -4992,7 +4992,7 @@ function openBookPage(e, tab = 'sobre') {
     const days = e.startedAt ? Math.max(1, between(e.startedAt, e.finishedAt || todayISO()) + 1) : 0, ser = bookSeries(e);
     const foc = (db.focus || []).filter((f) => f.libId === e.id), focMin = foc.reduce((a, f) => a + (f.minutes || 0), 0);
     if (tab === 'trechos') tab = e._preview ? 'comunidade' : 'minha'; // trechos pessoais ficam em Minha leitura; comentários entraram na Rede
-    const tabs = e._preview ? [['sobre', 'Sobre'], ['enredo', 'Enredo'], ['comunidade', 'Rede']] : [['sobre', 'Sobre'], ['enredo', 'Enredo'], ['minha', 'Minha leitura'], ['comunidade', 'Rede']]; // Enredo: ressaca e níveis (Bia, 17/11)
+    const tabs = e._preview ? [['sobre', 'Sobre'], ['enredo', 'Enredo'], ['comunidade', 'Comunidade']] : [['sobre', 'Sobre'], ['enredo', 'Enredo'], ['minha', 'Minha leitura'], ['comunidade', 'Comunidade']]; // Enredo: ressaca e níveis (Bia, 17/11)
     let body = '';
     if (tab === 'sobre' || tab === 'enredo') {
       const rows = [['Páginas', info.total || e.totalPages], ['Gênero', e.genre || (m && m.cat)], ['Publicação', m && m.pub], ['Publicado em', m && m.date && (m.date.length >= 10 ? fmt(m.date) : m.date)], ['Idioma', m && m.lang && (LANGS[m.lang] || m.lang)], ['ISBN', e.isbn]].filter((x) => x[1]);
@@ -5771,7 +5771,7 @@ function editConfig() {
       draw();
     }));
     $('#cf-perfil', ed).addEventListener('click', () => { closeEd(); screen('perfil'); });
-    $('#cf-priv', ed).addEventListener('click', () => { closeEd(); if (!connected()) return toast('Entre na sua conta para ajustar a privacidade'); socialSettingsSheet(); });
+    $('#cf-priv', ed).addEventListener('click', () => { closeEd(); if (!connected()) return toast('Entre na sua conta para ajustar a privacidade'); socialSettingsSheet('privacidade'); });
     $('#cf-install', ed)?.addEventListener('click', () => { closeEd(); installApp(); });
     $('#cf-close', ed).addEventListener('click', closeEd);
   };
@@ -9796,6 +9796,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10067,7 +10068,7 @@ TR.addEventListener('click', (ev) => {
       if (sp && !sp.textContent.trim()) sp.outerHTML = btn; else top.insertAdjacentHTML('beforeend', btn);
       $('#me-more', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [
         { label: 'Editar perfil', sub: 'foto, nome, frase, moldura e selo', fn: () => { v.hidden = true; S.ajMode = 'perfil'; goTab('perfil'); } },
-        { label: 'O que aparece no meu perfil', sub: 'quem vê leituras, estante, conquistas e avaliações', fn: () => socialSettingsSheet() },
+        { label: 'Organizar meu perfil', sub: 'o que aparece: leituras, estantes, conquistas e avaliações', fn: () => socialSettingsSheet('perfil') },
         { label: 'Moldura e selo', fn: () => flairSheet() },
       ]));
     }
@@ -14046,6 +14047,25 @@ function statusSheet(e, want, after) {
       ck.addEventListener('change', sync); if (ck.checked) sync();
       form.addEventListener('submit', () => { try { if (ck.checked) { delete e.startedAt; delete e.finishedAt; delete e.dateApprox; e.noDate = true; } else delete e.noDate; save(); } catch {} });
     } catch (err) { console.warn('não lembro as datas', err); }
+    return r;
+  }; }
+// --- 76_organizar_perfil.js ---
+// Organizar perfil × privacidade (Bia, 17/11): a mesma folha abre em dois modos.
+// 'perfil' (no ••• do perfil): só o que aparece na página do perfil. 'privacidade' (Ajustes): só quem vê.
+{ const _sss = socialSettingsSheet; socialSettingsSheet = async function (mode) {
+    const r = await _sss.apply(this, arguments);
+    try {
+      if (mode !== 'perfil' && mode !== 'privacidade') return r;
+      const f = [...document.querySelectorAll('body > .sheet form.pv2')].pop(); if (!f) return r;
+      const kids = [...f.children], h3 = f.querySelector('h3');
+      const iQ = kids.findIndex((x) => x.classList.contains('group') && /Quem vê/.test(x.textContent));
+      const iO = kids.findIndex((x) => x.classList.contains('group') && /O que aparece/.test(x.textContent));
+      const iEnd = kids.findIndex((x, i) => i > iO && (x.querySelector && x.querySelector('button[type=submit]') || (x.matches && x.matches('p.hint') && !x.textContent.trim())));
+      if (iQ < 0 || iO < 0) return r;
+      const hide = (a, b) => kids.slice(a, b).forEach((x) => { x.style.setProperty('display', 'none', 'important'); });
+      if (mode === 'perfil') { hide(iQ, iO); if (h3) h3.textContent = 'Organizar meu perfil'; kids[iO].style.setProperty('display', 'none', 'important'); }
+      else { hide(iO, iEnd < 0 ? kids.length - 1 : iEnd); if (h3) h3.textContent = 'Privacidade'; }
+    } catch (err) { console.warn('organizar perfil', err); }
     return r;
   }; }
 // ==== 4.4 rodada 2 (fim) ====
