@@ -9800,6 +9800,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14045,6 +14046,7 @@ function statusSheet(e, want, after) {
     const ed = TR.querySelector('#editor'); if (!ed || ed.hidden) return; const h = ed.querySelector('.ed-body > .up-h'); if (!h || ed.querySelector('.ss-chips')) return;
     const R = (() => { try { return reading(); } catch { return null; } })(); if (!R) return; const e = R.e;
     const w = document.createElement('div'); w.innerHTML = ssChips('LENDO'); const ch = w.firstChild; const sub = ed.querySelector('.ed-body > .up-s'); (sub || h).after(ch);
+    { const sub2 = ed.querySelector('.ed-body > .up-s'), info = (() => { try { return readingInfo(e); } catch { return { now: 0 }; } })(); const hd = document.createElement('div'); hd.className = 'ss-hd'; hd.innerHTML = cvh(e.title, e.cover, 'ss-cv', 'width:40px;height:60px;flex:none;font-size:.4rem') + '<div><b>' + esc(e.title) + '</b><small>lendo · pág. ' + (info.now || 0) + (info.total ? ' de ' + info.total : '') + '</small></div>'; h.before(hd); h.style.display = 'none'; if (sub2) sub2.style.display = 'none'; try { paintCv(hd); } catch {} }
     ch.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { if (b.dataset.s !== 'LENDO') statusSheet(e, b.dataset.s); }));
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 25); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
