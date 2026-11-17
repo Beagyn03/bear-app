@@ -8899,7 +8899,7 @@ function bookMenuOpen(anchor, b) {
     const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw();
     refresh(); toast(`Progresso e avaliação de “${e.title}” apagados. Ele está em Quero ler.`);
   };
-  const rateIt = ['paw', rv && rv.paws ? 'Minha avaliação' : 'Avaliar', () => rateForm(e, { logs: [] }, () => renderHome(todayISO())), rv && rv.paws ? pawTxt(rv.paws) : ''];
+  const rateIt = ['paw', rv && rv.paws ? 'Minha avaliação' : 'Avaliar', () => rateForm(e, { logs: [] }, () => renderHome(todayISO())), ''];
   const canReset = !!(e && (pg > 0 || rv || (e.status !== 'QUERO') || (e.readLog || []).length));
   // o que se faz o tempo todo fica à vista; o resto em grupos que abrem no lugar (um por vez)
   // item: [ícone, texto, ação, detalhe, classe, fica aberto (abre outro passo do menu)]
@@ -9640,6 +9640,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
