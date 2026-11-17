@@ -9833,6 +9833,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14600,7 +14601,7 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
   TR.addEventListener('touchend', () => setTimeout(() => up(null), 700), { passive: true }); }
 // --- 86_historico_diario.js ---
 // Histórico no Diário de leitura (Bia, 17/11): embaixo das ações, uma linha do tempo do livro, do mais novo para o mais antigo.
-// Cada dia tem o marca-página do prazo (enche com as páginas do dia; dourado com estrela quando bateu a meta; tracejado na folga)
+// Cada dia é uma estrela da constelação: dourada quando bateu a meta, lilás quando leu (mais forte quanto mais perto da meta), vazada na folga
 // e o que aconteceu: páginas lidas, emoções, comentários, trechos, início da leitura e prazo definido.
 { const st = document.createElement('style'); st.textContent = `
 #editor .tl{margin:.2rem 0 .4rem}
@@ -14611,7 +14612,13 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 #editor .tl-tabs button.on{color:var(--acc)!important;border-bottom-color:var(--acc)!important}
 #editor .tl-h{display:flex;justify-content:flex-end;align-items:baseline;margin:0 0 .6rem}#editor .tl-h b{display:none}#editor .tl-h small{font-size:.7rem;color:var(--ink-2);font-weight:700}
 #editor .tl-d{display:grid;grid-template-columns:30px minmax(0,1fr);gap:.65rem;position:relative;padding-bottom:.85rem}
-#editor .tl-d::before{content:"";position:absolute;left:14px;top:52px;bottom:4px;width:2px;background:var(--line);border-radius:2px}
+#editor .tl-d::before{content:"";position:absolute;left:14px;top:30px;bottom:-2px;width:0;border-left:2px dashed color-mix(in srgb,var(--acc) 35%,var(--line))}
+#editor .tl-d.ok-ok::before{border-left:2px solid #f2c94c}
+#editor .tl-st{display:block;width:30px;text-align:center;font-size:24px;line-height:28px;color:color-mix(in srgb,var(--ink) 22%,transparent)}
+#editor .tl-st.ok{color:#f2c94c;text-shadow:0 0 8px rgba(242,201,76,.8),0 0 2px rgba(242,201,76,.9)}
+#editor .tl-st.mid{color:#b69cff}
+#editor .tl-st.off{font-size:20px}
+#editor .tl-st.ev{font-size:14px}
 #editor .tl-d:last-child::before{display:none}
 #editor .tl-rib{position:relative;display:block;width:24px;height:46px;margin:2px auto 0;background:color-mix(in srgb,var(--ink) 12%,transparent);clip-path:polygon(0 0,100% 0,100% 100%,50% 80%,0 100%);overflow:hidden}
 #editor .tl-rib i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(var(--acc),color-mix(in srgb,var(--acc) 70%,#000))}
@@ -14661,12 +14668,13 @@ function tlHTML(e, all) {
   const list = tlEvents(e); if (!list.length) return '<div class="tl"><div class="tl-h"><b>Histórico</b></div><p class="tl-empty">Suas atualizações deste livro aparecem aqui, dia a dia.</p></div>';
   const show = all ? list : list.slice(0, 14);
   const names = (fe) => (fe || []).map((k) => (QT_FEELS.find((y) => y[0] === k) || [, k])[1]);
+  show.forEach((x, i) => { x.prevOk = !!(show[i + 1] && show[i + 1].ok); });
   const rows = show.map((x) => {
-    const rib = x.pages || x.inDue ? '<span class="tl-rib' + (x.ok ? ' ok' : '') + (x.off ? ' off' : '') + '"><i style="height:' + Math.round(x.fill * 100) + '%"></i>' + (x.ok ? '<u>★</u>' : '') + '</span>' : '<span class="tl-rib dot"></span>';
+    const rib = x.ok ? '<span class="tl-st ok">★</span>' : x.off ? '<span class="tl-st off">☆</span>' : x.pages ? '<span class="tl-st mid" style="opacity:' + (0.45 + 0.55 * Math.min(1, x.fill)).toFixed(2) + '">★</span>' : '<span class="tl-st ev">✦</span>';
     const pg = x.pages ? '<div class="tl-pg' + (x.ok ? ' ok' : '') + '">+' + x.pages + ' pág. · até a pág. ' + x.end + (x.inDue && x.per ? (x.ok ? ' · meta do dia batida' : ' · meta era ' + x.per) : '') + '</div>' : (x.off ? '<div class="tl-ev">Dia de folga</div>' : '');
     const its = x.items.map(({ k, x: y }) => k === 'qt' ? '<div class="tl-it"><small>Trecho' + (y.p ? ' · pág. ' + y.p : '') + '</small><p><q>' + esc(y.t) + '</q></p></div>'
       : '<div class="tl-it"><small>' + (y.text ? 'Comentário' : 'Emoções') + ' · pág. ' + (y.page || 0) + '</small>' + (y.fe && y.fe.length ? '<div class="tl-fe">' + names(y.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : '') + (y.text ? '<p>' + esc(y.text) + '</p>' : '') + '</div>').join('');
-    return '<div class="tl-d">' + rib + '<div><div class="tl-t">' + tlDay(x.d) + '</div>' + pg + its + x.ev.map((v) => '<div class="tl-ev">' + esc(v) + '</div>').join('') + '</div></div>';
+    return '<div class="tl-d' + (x.ok && x.prevOk ? ' ok-ok' : '') + '">' + rib + '<div><div class="tl-t">' + tlDay(x.d) + '</div>' + pg + its + x.ev.map((v) => '<div class="tl-ev">' + esc(v) + '</div>').join('') + '</div></div>';
   }).join('');
   const hit = list.filter((x) => x.ok).length, dueDays = list.filter((x) => x.inDue && !x.off && x.d < todayISO()).length;
   return '<div class="tl"><div class="tl-h"><b>Histórico</b>' + (e.dueAt ? '<small>meta batida em ' + hit + ' dia' + (hit === 1 ? '' : 's') + '</small>' : '') + '</div>' + rows
@@ -14723,6 +14731,8 @@ function tlHTML(e, all) {
 // Leituras por mês sai do Início (Bia, 17/11): já aparece no perfil.
 { const st = document.createElement('style'); st.textContent = '#lista .ini-ano{display:none!important}'; TR.append(st); }
 { const i = HOME_SECS.findIndex((x) => x[0] === 'ano'); if (i >= 0) HOME_SECS.splice(i, 1); }
+// "Sua semana" sai do Início (Bia, 17/11): com prazo, os dias já aparecem no cartão da leitura; sem prazo, está em Estatísticas.
+inSemana = function () { return ''; };
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
