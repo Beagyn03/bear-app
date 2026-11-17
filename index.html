@@ -9809,6 +9809,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13161,7 +13162,7 @@ function dueSheet(e) {
         row.innerHTML = p.late ? `<span>Prazo de ${dueLabel(e.dueAt)} passou · <b>faltam ${p.rem} pág.</b></span><button type="button">Novo prazo</button>`
           : !p.rem ? `<span>Pronto para terminar até ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>`
           : p.todayOff ? `<span>Hoje é folga · prazo ${dueLong(e.dueAt)}</span><button type="button">Mudar</button>`
-          : (() => { const h = dueToday(e); return h && h.done ? `<span><b>Meta de hoje cumprida</b> · prazo ${dueLong(e.dueAt)}</span><button type="button">Mudar</button>` : (() => { const falta = h ? Math.max(0, h.target - h.now) : 0, lidoHoje = h ? h.now - h.start : 0; return `<span><b>${lidoHoje > 0 ? 'Leia mais ' : 'Leia '}${falta} ${falta === 1 ? 'página' : 'páginas'} hoje</b> (até a pág. ${h ? h.target : '—'}) · prazo ${dueLong(e.dueAt)}</span>`; })() + `<button type="button">Mudar</button>`; })();
+          : (() => { const h = dueToday(e); return h && h.done ? `<span><b>Meta de hoje cumprida</b> · prazo ${dueLong(e.dueAt)}</span><button type="button">Mudar</button>` : (() => { const falta = h ? Math.max(0, h.target - h.now) : 0, lidoHoje = h ? h.now - h.start : 0; return `<span><b>Leia até a pág. ${h ? h.target : '—'}</b> para bater a meta de ${h ? h.per : 0} páginas hoje${lidoHoje > 0 ? ` (faltam ${falta})` : ''} · prazo ${dueLong(e.dueAt)}</span>`; })() + `<button type="button">Mudar</button>`; })();
       } else row.innerHTML = '<span></span><button type="button">+ Prazo para terminar</button>';
       const acts = card.querySelector('.v3-now-acts'); if (acts) acts.before(row); else card.append(row);
       row.querySelector('button').addEventListener('click', (ev) => { ev.stopPropagation(); dueSheet(e); });
