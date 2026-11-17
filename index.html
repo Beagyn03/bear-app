@@ -12969,8 +12969,10 @@ setInterval(() => { try {
 } catch {} }, 30000);
 // a notificação abre o app no "Atualizar leitura"
 const openUpd = () => { try { const R = reading(); if (R) editLeitura(); } catch {} };
+const openFoco = () => { try { const R = reading(); if (R) startFocus(); } catch {} };
 if (/[?&]upd=1/.test(location.search)) { setTimeout(openUpd, 2200); try { history.replaceState(null, '', location.pathname); } catch {} }
-if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (ev) => { if (ev.data && ev.data.type === 'bear-upd') openUpd(); });
+if (/[?&]foco=1/.test(location.search)) { setTimeout(openFoco, 2200); try { history.replaceState(null, '', location.pathname); } catch {} }
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (ev) => { if (ev.data && ev.data.type === 'bear-upd') openUpd(); if (ev.data && ev.data.type === 'bear-foco') openFoco(); });
 // cartão do Início: mostra que o lembrete está ligado
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { TR.querySelectorAll('.due-ln span:first-child').forEach((s) => { const R = reading(); if (R && R.e.remind && !s.dataset.bell) { s.dataset.bell = 1; s.insertAdjacentHTML('beforeend', ' <small style="font-weight:700;opacity:.75">· lembrete às ' + String(R.e.remind.hour).padStart(2, '0') + ':' + String(R.e.remind.minute || 0).padStart(2, '0') + '</small>'); } }); }, 120); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====

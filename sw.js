@@ -50,16 +50,16 @@ async function refreshApp(cached) {
 self.addEventListener('push', (event) => {
   let d = {}; try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : '' }; }
   event.waitUntil(self.registration.showNotification(d.title || 'B.E.A.R', {
-    body: d.body || 'Hora de ler um pouquinho.', tag: d.tag || 'bear', renotify: true, icon: 'icon-192.png', badge: 'icon-192.png',
-    data: { url: d.url || './?upd=1' }, actions: [{ action: 'upd', title: 'Atualizar leitura' }],
+    body: d.body || 'Hora de ler um pouquinho.', tag: d.tag || 'bear', renotify: true, icon: 'notif-icon.png', badge: 'notif-badge.png',
+    data: { url: d.url || './?upd=1' }, actions: [{ action: 'upd', title: 'Atualizar leitura' }, { action: 'foco', title: 'Focar' }],
   }));
 });
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = new URL((event.notification.data && event.notification.data.url) || './?upd=1', self.registration.scope).href;
+  const foco = event.action === 'foco', url = new URL(foco ? './?foco=1' : ((event.notification.data && event.notification.data.url) || './?upd=1'), self.registration.scope).href;
   event.waitUntil((async () => {
     const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const c of list) { if ('focus' in c) { await c.focus(); c.postMessage({ type: 'bear-upd' }); return; } }
+    for (const c of list) { if ('focus' in c) { await c.focus(); c.postMessage({ type: foco ? 'bear-foco' : 'bear-upd' }); return; } }
     await self.clients.openWindow(url);
   })());
 });
