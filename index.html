@@ -3295,7 +3295,7 @@ const fmtR = (r) => `nota ${String(r).replace('.', ',')}`;
 let pawN = 0;
 function paw(f) {
   const id = 'pw' + (pawN++), s = document.createElement('span');
-  s.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="${id}"><stop offset="${f}" style="stop-color:var(--honey)"/><stop offset="${f}" style="stop-color:var(--line)"/></linearGradient></defs><g fill="url(#${id})"><ellipse cx="12" cy="16.5" rx="5.5" ry="4.5"/><circle cx="5.5" cy="10" r="2.2"/><circle cx="9.5" cy="5.8" r="2.2"/><circle cx="14.5" cy="5.8" r="2.2"/><circle cx="18.5" cy="10" r="2.2"/></g></svg>`;
+  s.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="${id}"><stop offset="${f}" style="stop-color:var(--honey)"/><stop offset="${f}" style="stop-color:var(--line)"/></linearGradient></defs><path fill="url(#${id})" stroke="var(--honey)" stroke-width=".6" stroke-linejoin="round" d="M12 2.6l2.85 5.8 6.4.93-4.63 4.5 1.1 6.37L12 17.2l-5.72 3l1.1-6.37-4.63-4.5 6.4-.93z"/></svg>`;
   return s.firstChild;
 }
 const pawFill = (r, i) => Math.max(0, Math.min(1, r - (i - 1)));
@@ -9643,6 +9643,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
