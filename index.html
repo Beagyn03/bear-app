@@ -9765,6 +9765,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13433,8 +13434,9 @@ img[src^="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP"]{display:none!important}
 { const st = document.createElement('style'); st.textContent = `
 .rtf-rv-mini{width:100%;box-sizing:border-box;min-height:56px;max-height:84px;overflow:hidden;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;font-size:.9rem;padding:.6rem .75rem;cursor:text;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;white-space:pre-wrap}
 .rtf-rv-mini.ph{color:var(--ink-2);font-weight:600}
-.rv-editor{position:fixed;inset:0;z-index:100000;background:var(--bg);display:grid;grid-template-rows:auto 1fr auto;gap:.6rem;padding:max(14px,env(safe-area-inset-top)) 16px max(14px,env(safe-area-inset-bottom))}
-.rv-editor header{display:flex;justify-content:space-between;align-items:center}.rv-editor header b{font-size:1.05rem;color:var(--ink)}.rv-editor header small{color:var(--ink-2);font-size:.75rem}
+.rv-editor{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
+.rv-editor .rv-card{width:100%;max-width:640px;height:min(62vh,520px);box-sizing:border-box;background:var(--bg);border-radius:20px 20px 0 0;display:grid;grid-template-rows:auto 1fr auto;gap:.6rem;padding:14px 16px max(14px,env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+.rv-editor header{display:flex;justify-content:space-between;align-items:center}.rv-editor header b{font-size:1.05rem;color:var(--ink)}.rv-editor header small{color:var(--ink-2);font-size:.75rem;font-weight:700}.rv-editor header small.lim{color:#c0392b}
 .rv-editor textarea{width:100%;height:100%;box-sizing:border-box;resize:none;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);font:inherit;font-size:1rem;line-height:1.5;padding:.8rem}
 .rv-editor .rv-ok{height:48px;border:0;border-radius:14px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;font-size:1rem}
 .rtf-end{margin:.1rem 0 .5rem!important}.rtf-end button{padding:.4rem .3rem!important}
@@ -13456,12 +13458,12 @@ label.rtf-sp{padding:.45rem .7rem!important}label.rtf-sp .rtf-sp-h{font-size:.68
       const paint = () => { const v = ta.value.trim(); mini.textContent = v || 'Toque para escrever o que achou (opcional)'; mini.classList.toggle('ph', !v); };
       mini.addEventListener('click', () => {
         const ed = document.createElement('div'); ed.className = 'rv-editor'; ed.setAttribute('role', 'dialog');
-        ed.innerHTML = '<header><b>Resenha</b><small class="rv-cnt"></small></header><textarea placeholder="O que você achou? Conte do seu jeito."></textarea><button type="button" class="rv-ok">Concluir</button>';
-        const t2 = ed.querySelector('textarea'), cnt = ed.querySelector('.rv-cnt'); t2.value = ta.value; if (ta.maxLength > 0) t2.maxLength = ta.maxLength;
-        const upd = () => { const n = t2.value.trim().split(/\s+/).filter(Boolean).length; cnt.textContent = n ? n + (n === 1 ? ' palavra' : ' palavras') : ''; };
+        ed.innerHTML = '<div class="rv-card"><header><b>Resenha</b><small class="rv-cnt"></small></header><textarea maxlength="2000" placeholder="O que você achou? Conte do seu jeito."></textarea><button type="button" class="rv-ok">Concluir</button></div>';
+        const t2 = ed.querySelector('textarea'), cnt = ed.querySelector('.rv-cnt'); t2.value = ta.value.slice(0, 2000);
+        const upd = () => { const n = t2.value.length; cnt.textContent = n + '/2000'; cnt.classList.toggle('lim', n >= 1900); };
         t2.addEventListener('input', upd); upd();
         const done = () => { ta.value = t2.value; ta.dispatchEvent(new Event('input', { bubbles: true })); paint(); ed.remove(); };
-        ed.querySelector('.rv-ok').addEventListener('click', done);
+        ed.querySelector('.rv-ok').addEventListener('click', done); ed.addEventListener('click', (ev) => { if (ev.target === ed) done(); });
         document.body.append(ed); setTimeout(() => { t2.focus(); t2.setSelectionRange(t2.value.length, t2.value.length); }, 50);
       });
       paint();
