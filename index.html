@@ -2610,7 +2610,7 @@ async function socialSettingsSheet() {
   const ck = (k, t) => { const i = el('input', { type: 'checkbox', ...(pv[k] ? { checked: '' } : {}), onchange: (ev) => { pv[k] = ev.target.checked; } }); return el('label', { class: 'ck-row' }, [i, el('span', { text: t })]); };
   const msg = el('p', { class: 'hint' });
   const form = el('form', { class: 'form pv2' }, [el('h3', { text: 'O que aparece no meu perfil' }),
-    el('div', { class: 'group', text: 'Quem vê' }), ck('public', 'Perfil público: qualquer pessoa vê seu perfil e suas avaliações'), el('p', { class: 'hint', style: 'margin:-.2rem 0 .3rem', text: 'Desligado, só seus amigos veem. Seu nome e @ aparecem na busca de qualquer jeito.' }), el('div', { class: 'group', text: 'O que aparece na página do perfil' }), el('p', { class: 'hint', style: 'margin:-.2rem 0 .3rem', text: 'Só organiza a sua página de perfil. O que vai para a Rede você escolhe em cada avaliação (privada ou não) e em cada comentário (só eu, amigos ou todos).' }),
+    el('div', { class: 'group', text: 'Quem vê' }), ck('public', 'Perfil público: qualquer pessoa vê seu perfil e suas avaliações'), el('p', { class: 'hint', style: 'margin:-.2rem 0 .3rem', text: 'Desligado, só seus amigos veem. Seu nome e @ aparecem na busca de qualquer jeito.' }), el('div', { class: 'group', text: 'O que aparece na página do perfil' }), el('p', { class: 'hint', style: 'margin:-.2rem 0 .3rem', text: 'Só organiza a sua página de perfil. O que vai para a Comunidade você escolhe em cada avaliação (privada ou não) e em cada comentário (só eu, amigos ou todos).' }),
     ck('reading', 'Lendo agora'), ck('shelf', 'Estantes'), ck('achievements', 'Conquistas'), ck('reviews', 'Avaliações'),
     
     msg, el('div', { class: 'pv2-btns' }, [el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }), el('button', { type: 'submit', class: 'primary', text: 'Salvar' })])]);
@@ -7768,8 +7768,8 @@ S.bookNet = S.bookNet || {};
 function bookNetHTML(e) {
   if (!connected() || !socialProfile) return '';
   const key = normT(e.title).slice(0, 200), c = S.bookNet[key];
-  if (!c) { S.bookNet[key] = { loading: true }; sapi('GET', `/v1/books/reviews?key=${encodeURIComponent(key)}`).then((r) => { S.bookNet[key] = r.status === 200 && r.data ? r.data : { err: true }; if (!$('#shelflist').hidden && S.listRedraw) S.listRedraw(); }).catch(() => { S.bookNet[key] = { err: true }; }); return '<section class="bp-card"><p class="bp-load">Carregando as avaliações da sua rede…</p></section>'; }
-  if (c.loading) return '<section class="bp-card"><p class="bp-load">Carregando as avaliações da sua rede…</p></section>';
+  if (!c) { S.bookNet[key] = { loading: true }; sapi('GET', `/v1/books/reviews?key=${encodeURIComponent(key)}`).then((r) => { S.bookNet[key] = r.status === 200 && r.data ? r.data : { err: true }; if (!$('#shelflist').hidden && S.listRedraw) S.listRedraw(); }).catch(() => { S.bookNet[key] = { err: true }; }); return '<section class="bp-card"><p class="bp-load">Carregando as avaliações da comunidade…</p></section>'; }
+  if (c.loading) return '<section class="bp-card"><p class="bp-load">Carregando as avaliações da comunidade…</p></section>';
   if (c.err) return '';
   const lido = iReadT(e.title), open = S.bnOpen || (S.bnOpen = new Set());
   const item = (x) => { const hide = x.text && !x.mine && !open.has(x.id) && (x.spoiler || !lido) ? (x.spoiler ? 'Contém spoiler' : 'Você ainda não leu este livro') : '';
@@ -7778,7 +7778,7 @@ function bookNetHTML(e) {
       ${x.text ? (hide ? `<button type="button" class="fd-sp bn-see" data-id="${esc(x.id)}">${IC('spoiler', 'ico-b')}${hide} · toque para ver</button>` : `<p class="bn-tx">${esc(x.text)}</p>`) : ''}
       <small>${esc(relTime(x.updatedAt))}</small></div></div>`; };
   const others = (c.friends || []).length + (c.public || []).length;
-  return `<section class="bp-card"><div class="bn-head">${c.avg != null ? `<b>${pawTxt(c.avg)}</b><small>média de ${plural(c.count, 'avaliação', 'avaliações')}</small>` : '<small>Ninguém da sua rede avaliou este livro ainda.</small>'}</div>
+  return `<section class="bp-card"><div class="bn-head">${c.avg != null ? `<b>${pawTxt(c.avg)}</b><small>média de ${plural(c.count, 'avaliação', 'avaliações')}</small>` : '<small>Ninguém da comunidade avaliou este livro ainda.</small>'}</div>
     ${(() => { const lr = reviewOfLib(e) || (lib().find((x) => normT(x.title) === normT(e.title)) || {}).review || null; const me = c.mine || (lr && (lr.paws || lr.texto) ? { id: 'me', paws: lr.paws || null, text: lr.texto || null, spoiler: !!lr.spoiler, mine: true, updatedAt: e.finishedAt || todayISO(), user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME } } : null); return me ? `<div class="bn-sub">Você${!c.mine && lr && lr.share === false ? ' · avaliação privada' : ''}</div>${item(me)}` : ''; })()}
     ${(c.friends || []).length ? `<div class="bn-sub">Amigos</div>${c.friends.map(item).join('')}` : ''}
     ${(c.public || []).length ? `<div class="bn-sub">Outros leitores</div>${c.public.map(item).join('')}` : ''}
@@ -7913,7 +7913,7 @@ TR.addEventListener('click', (ev) => {
   const sb = ev.target.closest('.st-ov .st-book'); if (sb) { const t = sb.querySelector('b'); if (t) { closeStories(); openAnyBook(t.textContent); } }
 });
 { const st = document.createElement('style'); st.textContent = '.fd-post .nv-cv,.st-book,.fr-read{cursor:pointer}'; TR.append(st); }
-// ---------- 3.7.2: página do livro pelo catálogo completa (dados, média da rede, marcadores, mais do autor) ----------
+// ---------- 3.7.2: página do livro pelo catálogo completa (dados, média da comunidade, marcadores, mais do autor) ----------
 { const st = document.createElement('style'); st.textContent = '.au-row .es-bk small{font-size:.62rem;color:var(--ink-2);font-weight:700}'; TR.append(st); }
 // completa um livro aberto só pelo título (Novidades, Em alta, amigo): páginas, ISBN, capa e editora
 function enrichPreview(e) {
@@ -7945,7 +7945,7 @@ function decorateBookPage(v) {
   const tabOn = (v.querySelector('.bp-tabs button.on') || {}).textContent || '', title = (v.querySelector('.bp-ht h2') || {}).textContent || '', author = (v.querySelector('.bp-ht small') || {}).textContent || '';
   if (!title) return;
   const net = S.bookNet[normT(title).slice(0, 200)], chips = v.querySelector('.bp-chips');
-  if (chips && net && net.avg != null && !chips.querySelector('.bp-net')) chips.insertAdjacentHTML('beforeend', `<span class="bp-chip bp-net" title="Média das notas de quem avaliou no Livroverso">média da rede ${pawTxt(net.avg)} · ${net.count} ${net.count === 1 ? 'avaliação' : 'avaliações'}</span>`);
+  if (chips && net && net.avg != null && !chips.querySelector('.bp-net')) chips.insertAdjacentHTML('beforeend', `<span class="bp-chip bp-net" title="Média das notas de quem avaliou no Livroverso">média da comunidade ${pawTxt(net.avg)} · ${net.count} ${net.count === 1 ? 'avaliação' : 'avaliações'}</span>`);
   if (net === undefined && connected() && socialProfile) bookNetHTML({ title }); // busca a média já no topo
   if (/^Sobre/.test(tabOn) && !v.querySelector('.au-row')) { const sec = v.querySelector('.sl-body'); const h = authorStripHTML({ title, author }); if (h) { sec.insertAdjacentHTML('beforeend', h); paintCv(v); } }
 }
@@ -9648,6 +9648,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -11797,7 +11798,7 @@ function rdSendToFriend(it) {
     let d = null; try { d = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch { return; }
     const it = { type: d.t, id: d.id, kind: d.k, user: { handle: d.h, displayName: d.n }, book: { title: d.b, author: d.a, cover: d.c || null, key: normT(d.b) }, text: d.x, quote: d.q, page: d.pg, readerPct: d.p, paws: d.s, spoiler: d.sp, createdAt: new Date().toISOString() };
     const sm = b.querySelector('small'), time = sm ? sm.outerHTML : '';
-    b.innerHTML = '<button type="button" class="rdm">' + cvh(d.b, d.c || null, '') + '<span><b>' + esc(d.b) + '</b><small>' + esc((d.n || '@' + d.h) + (d.t === 'review' ? ' · avaliou' : ' · post na Rede')) + '</small>' + (d.sp ? '<p>Tem spoiler · toque para abrir</p>' : (d.x || d.q ? '<p>' + esc(d.x || '“' + d.q + '”') + '</p>' : '')) + '</span></button>' + time;
+    b.innerHTML = '<button type="button" class="rdm">' + cvh(d.b, d.c || null, '') + '<span><b>' + esc(d.b) + '</b><small>' + esc((d.n || '@' + d.h) + (d.t === 'review' ? ' · avaliou' : ' · post na Comunidade')) + '</small>' + (d.sp ? '<p>Tem spoiler · toque para abrir</p>' : (d.x || d.q ? '<p>' + esc(d.x || '“' + d.q + '”') + '</p>' : '')) + '</span></button>' + time;
     try { paintCv(b); } catch {}
     b.querySelector('.rdm').addEventListener('click', () => { try { $('#shelflist').hidden = false; openRdThread(it); } catch {} });
   });
@@ -11846,20 +11847,20 @@ async function rdLoad(more) {
   } catch { S.rd.err = true; } finally { S.rd.busy = false; }
   paintRede();
 }
-const RD_PROMPTS = ['Que página te pegou hoje?', 'Qual personagem você levaria para casa?', 'Um trecho que você não esquece', 'Que livro você indicaria para quem amou o último que leu?', 'Que final te deixou sem chão?', 'Pergunte à rede o que ler depois'];
+const RD_PROMPTS = ['Que página te pegou hoje?', 'Qual personagem você levaria para casa?', 'Um trecho que você não esquece', 'Que livro você indicaria para quem amou o último que leu?', 'Que final te deixou sem chão?', 'Pergunte à comunidade o que ler depois'];
 const RD_DOW = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 function rdDayLbl(iso) { const d = new Date(iso); if (isNaN(d)) return ''; const k = (x) => x.getFullYear() + '-' + x.getMonth() + '-' + x.getDate(), now = new Date(), y = new Date(Date.now() - 864e5);
   if (k(d) === k(now)) return 'Hoje'; if (k(d) === k(y)) return 'Ontem'; const diff = (now - d) / 864e5; return diff < 7 ? RD_DOW[d.getDay()] : String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + (d.getFullYear() !== now.getFullYear() ? '/' + d.getFullYear() : ''); }
 function rdDays(list) { let last = ''; return list.map((it, i) => { const d = rdDayLbl(it.createdAt), h = d && d !== last ? '<div class="rd-day">' + esc(d) + '</div>' : ''; if (d) last = d; return h + rdCardHTML(it, i); }).join(''); }
 function paintRede() {
   const host = $('#lista #rd-host'); if (!host) return;
-  if (!connected() || !socialProfile) { host.innerHTML = `<p class="rd-empty">Entre na sua conta para ver e postar na Rede.</p>`; return; }
+  if (!connected() || !socialProfile) { host.innerHTML = `<p class="rd-empty">Entre na sua conta para ver e postar na Comunidade.</p>`; return; }
   const F = S.rdF || 'tudo', base = F === 'salvos' ? rdSavedList().map((x) => x.it) : rdVisible(S.rd.items);
   const P = rdPrefs(), list = F === 'lendo' ? base.filter((x) => x.type !== 'review') : F === 'aval' ? base.filter((x) => x.type === 'review') : base, pr = RD_PROMPTS[Math.floor(Date.now() / 3600000) % RD_PROMPTS.length];
   host.innerHTML = `<button type="button" class="rd-new" id="rd-new"><i>+</i><span><b>${esc(pr)}</b><small>Comentário, trecho, pergunta ou indicação</small></span></button>
     <div class="rd-opts"><button type="button" class="rd-opt${P.hideReading ? ' on' : ''}" id="rd-hr" aria-pressed="${P.hideReading}">Esconder livros que estou lendo</button>${S.rd.admin ? '<button type="button" class="rd-opt" id="rd-mod">Denúncias</button>' : ''}</div>
     <div class="rd-fl">${[['tudo', 'Tudo'], ['lendo', 'Lendo'], ['aval', 'Avaliações'], ['salvos', 'Salvos']].map(([k, n]) => `<button type="button" data-f="${k}" class="${F === k ? 'on' : ''}">${n}</button>`).join('')}</div>
-    ${list.length ? rdDays(list) : `<p class="rd-empty">${F === 'salvos' ? 'Toque no marca-página de um post para guardar e voltar nele depois.' : S.rd.busy || !S.rd.at ? 'Carregando a Rede…' : S.rd.err ? 'Não consegui carregar agora. Tente de novo em instantes.' : F !== 'tudo' ? 'Nada por aqui ainda.' : 'Ainda não tem nada aqui. Que tal começar a conversa?'}</p>`}
+    ${list.length ? rdDays(list) : `<p class="rd-empty">${F === 'salvos' ? 'Toque no marca-página de um post para guardar e voltar nele depois.' : S.rd.busy || !S.rd.at ? 'Carregando a Comunidade…' : S.rd.err ? 'Não consegui carregar agora. Tente de novo em instantes.' : F !== 'tudo' ? 'Nada por aqui ainda.' : 'Ainda não tem nada aqui. Que tal começar a conversa?'}</p>`}
     ${S.rd.more && F !== 'salvos' ? '<button type="button" class="rd-moreb" id="rd-moreb">Ver mais</button>' : ''}`;
   $$('.rd-fl [data-f]', host).forEach((b) => b.addEventListener('click', () => { S.rdF = b.dataset.f; paintRede(); }));
   $('#rd-new', host).addEventListener('click', () => openRdComposer());
@@ -11935,7 +11936,7 @@ function openRdThread(it) {
 const RD_SPOIL_RE = /\b(morre|morreu|morrem|mata|matou|assassin[oa] (é|era)|no final|o final|final (é|foi)|descobre que|revela que|reviravolta|plot twist|termina com|acaba com|no fim)\b/i;
 function rdPlaceholder(k, b) {
   const t = b ? `“${b.title}”` : 'esse livro';
-  return k === 'quote' ? 'O que esse trecho fez com você?' : k === 'question' ? (b ? `Pergunte à rede sobre ${t}` : 'Alguém leu…? Me indiquem um…') : k === 'rec' ? 'Por que quem gostou de um vai gostar do outro?' : `O que ${t} te fez sentir?`;
+  return k === 'quote' ? 'O que esse trecho fez com você?' : k === 'question' ? (b ? `Pergunte à comunidade sobre ${t}` : 'Alguém leu…? Me indiquem um…') : k === 'rec' ? 'Por que quem gostou de um vai gostar do outro?' : `O que ${t} te fez sentir?`;
 }
 function rdPickBook(title, onPick) {
   const L = lib().filter((e) => e.title), byS = (s) => L.filter((e) => e.status === s);
@@ -11980,7 +11981,7 @@ function openRdComposer(pre = {}) {
             <label><input type="radio" name="spk" value="yes"${R.spk === 'yes' ? ' checked' : ''}> Tem spoiler, não sei dizer até onde</label>
             <small style="color:var(--ink-2);font-size:.76rem">Quem ainda não chegou nesse ponto vê o post embaçado. Quem já leu vê normal.</small>` : ''}
         </div>
-        <div class="rdc-chips" role="group" aria-label="Quem vê">${[['public', 'Toda a rede'], ['friends', 'Só amigos']].map(([k, n]) => `<button type="button" data-vis="${k}" class="${R.vis === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+        <div class="rdc-chips" role="group" aria-label="Quem vê">${[['public', 'Toda a comunidade'], ['friends', 'Só amigos']].map(([k, n]) => `<button type="button" data-vis="${k}" class="${R.vis === k ? 'on' : ''}">${n}</button>`).join('')}</div>
         <button type="button" class="rdc-go" id="rdc-go">Publicar</button>
       </div>`;
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
@@ -12017,7 +12018,7 @@ function openRdComposer(pre = {}) {
     busy = true; const go = $('#rdc-go', v); if (go) { go.disabled = true; go.textContent = 'Publicando…'; }
     try {
       const r = await sapi('POST', '/v1/posts', body);
-      if (r.status === 201) { toast('Publicado na Rede'); S.nav.st = []; S.nav.cur = null; v.hidden = true; S.comSeg = 'rede'; if (S.tab !== 'comunidade') goTab('comunidade'); else drawTab(); rdLoad(); return; }
+      if (r.status === 201) { toast('Publicado na Comunidade'); S.nav.st = []; S.nav.cur = null; v.hidden = true; S.comSeg = 'rede'; if (S.tab !== 'comunidade') goTab('comunidade'); else drawTab(); rdLoad(); return; }
       toast(r.status === 409 ? 'Crie seu @usuário primeiro' : r.status === 413 ? 'A foto ficou grande demais' : 'Não consegui publicar agora');
     } catch { toast('Não consegui publicar agora'); }
     busy = false; if (go) { go.disabled = false; go.textContent = 'Publicar'; }
@@ -12049,7 +12050,7 @@ async function openRdMod() {
   if (S.tab !== 'comunidade') { box.classList.remove('rd-on'); return r; }
   if (!box.querySelector('.rd-seg')) {
     const sp = box.querySelector('.gtop-sp');
-    const html = `<div class="rd-seg" role="tablist"><button type="button" data-seg="rede" role="tab">Rede</button><button type="button" data-seg="amigos" role="tab">Amigos</button></div><div id="rd-host"></div>`;
+    const html = `<div class="rd-seg" role="tablist"><button type="button" data-seg="rede" role="tab">Comunidade</button><button type="button" data-seg="amigos" role="tab">Amigos</button></div><div id="rd-host"></div>`;
     if (sp) sp.insertAdjacentHTML('afterend', html); else box.insertAdjacentHTML('afterbegin', html);
     $$('[data-seg]', box).forEach((b) => b.addEventListener('click', () => { S.comSeg = b.dataset.seg; segPaint(); }));
   }
@@ -12266,7 +12267,7 @@ fillMissingCovers = async function (manual) {
 .tour .tip .tb button{border:0;border-radius:999px;min-height:40px;padding:0 1rem;font:inherit;font-weight:800}
 .tour .tip .tb .sk{background:none;color:var(--ink-2)}.tour .tip .tb .nx{background:var(--acc);color:#fff}
 `; TR.append(st); }
-HOME_SECS.push(['comece', 'Comece por aqui'], ['semana', 'Sua semana'], ['rede', 'Na Rede'], ['alta', 'Em alta']);
+HOME_SECS.push(['comece', 'Comece por aqui'], ['semana', 'Sua semana'], ['rede', 'Na Comunidade'], ['alta', 'Em alta']);
 if (!(db.prefs && db.prefs.home)) db.prefs = { ...(db.prefs || {}), home: { order: ['comece', 'semana', 'meta', 'recs', 'tambem', 'fila', 'rede', 'alta', 'ano', 'conq'], off: [] } };
 const inAddDays = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 function inSemana() {
@@ -12292,7 +12293,7 @@ function inMetaCta() {
 function inRede() {
   if (!connected() || !socialProfile) return '';
   const list = (typeof rdVisible === 'function' ? rdVisible(S.rd.items || []) : []).slice(0, 3);
-  return `<section class="in-sec in-rd" data-in="rede"><div class="in-h"><b>Na Rede</b><button type="button" data-go="rede">Ver tudo</button></div>
+  return `<section class="in-sec in-rd" data-in="rede"><div class="in-h"><b>Na Comunidade</b><button type="button" data-go="rede">Ver tudo</button></div>
     ${list.length ? list.map((it, i) => rdCardHTML(it, i, { noFoot: true })).join('') : (S.rd.at ? '<button type="button" class="rd-new" data-go="post"><i>+</i><span><b>Ainda não tem posts</b><small>Toque para começar a conversa</small></span></button>' : '<div class="in-card"><p class="in-empty">Carregando…</p></div>')}</section>`;
 }
 function inAlta() {
@@ -12349,10 +12350,10 @@ function inLoad() {
 // ---------- tour ----------
 const TOUR = [
   [null, 'Boas-vindas ao Livroverso', 'Um tour rápido pelo app. Leva menos de um minuto.'],
-  ['#tabbar [data-tab=inicio]', 'Início', 'O livro que você está lendo, sua semana, a meta do ano e o que a rede está comentando. Toque no livro para atualizar a página em que parou.'],
+  ['#tabbar [data-tab=inicio]', 'Início', 'O livro que você está lendo, sua semana, a meta do ano e o que a comunidade está comentando. Toque no livro para atualizar a página em que parou.'],
   ['#tabbar [data-tab=estante]', 'Estante', 'Minha biblioteca tem todos os seus livros: lendo, lidos e na fila. Crie estantes suas, como "Clube do livro" ou "Para reler".'],
   ['#tabbar [data-tab=buscar]', 'Buscar', 'Ache um livro e coloque na estante. Começou a ler? Escolha "Estou lendo".'],
-  ['#tabbar [data-tab=comunidade]', 'Comunidade', 'Na Rede, comentários, trechos e indicações sobre livros, com controle de spoiler. Em Amigos, quem você segue e as leituras conjuntas.'],
+  ['#tabbar [data-tab=comunidade]', 'Comunidade', 'Na Comunidade, comentários, trechos e indicações sobre livros, com controle de spoiler. Em Amigos, quem você segue e as leituras conjuntas.'],
   ['#tabbar [data-tab=eu]', 'Perfil', 'Seu @usuário, conquistas e o que você já leu.'],
   ['#g-av', 'Menu', 'Metas, estatísticas, conquistas, trazer seu histórico de outro app e ajustes.'],
   [null, 'Pronto!', 'Comece buscando o livro que você está lendo agora. Boa leitura!'],
@@ -13429,7 +13430,7 @@ S.upNote = { text: '', fe: [], vis: (() => { try { const v = localStorage.getIte
       sapi('POST', '/v1/posts', { kind: 'comment', text: (text || names.join(' · ')).slice(0, 280), feelings: fe.slice(0, 3), visibility: N.vis === 'friends' ? 'friends' : 'public', readerPct: Math.min(100, pct),
         book: { title: String(e.title).slice(0, 200), author: e.author ? String(e.author).slice(0, 120) : null, cover: /^https:\/\//.test(e.cover || '') ? e.cover : null },
         ...(N.sp ? (page > 0 && page < R.total ? { spoiler: { kind: 'page', at: page } } : page >= R.total ? { spoiler: { kind: 'end' } } : { spoiler: { kind: 'yes' } }) : {}) })
-        .then((x) => { if (x.status === 201) toast('Comentário postado na Rede'); else if (x.status >= 400) toast('Salvo no seu diário (não deu para postar agora)'); }).catch(() => {});
+        .then((x) => { if (x.status === 201) toast('Comentário postado na Comunidade'); else if (x.status >= 400) toast('Salvo no seu diário (não deu para postar agora)'); }).catch(() => {});
     }
   }, true);
 }
@@ -14390,7 +14391,7 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
       dates.before(dl); dl.querySelector('button').addEventListener('click', () => { dates.classList.remove('lz-hide'); dl.remove(); }); }
     // três ações
     const acts = document.createElement('div'); acts.className = 'lz-acts';
-    acts.innerHTML = '<button type="button" data-p="nota"><span>✎</span>Anotação<small>só você vê</small></button><button type="button" data-p="trecho"><span>❝</span>Trecho<small>guardar uma frase</small></button><button type="button" data-p="emo"><span>✨</span>Emoções<small>até 3</small></button><button type="button" data-p="coment"><span>💬</span>Comentar<small>vai para a Rede</small></button>';
+    acts.innerHTML = '<button type="button" data-p="nota"><span>✎</span>Anotação<small>só você vê</small></button><button type="button" data-p="trecho"><span>❝</span>Trecho<small>guardar uma frase</small></button><button type="button" data-p="emo"><span>✨</span>Emoções<small>até 3</small></button><button type="button" data-p="coment"><span>💬</span>Comentar<small>vai para a Comunidade</small></button>';
     const pNota = document.createElement('div'); pNota.className = 'lz-pane'; pNota.hidden = true;
     pNota.innerHTML = '<textarea maxlength="2000" placeholder="Uma anotação sobre o livro (só você vê)"></textarea><div class="lz-row"><span>fica salva no livro</span></div>';
     const tn = pNota.querySelector('textarea'); tn.value = e.note || ''; tn.addEventListener('input', () => { e.note = tn.value.trim() ? tn.value : undefined; if (!e.note) delete e.note; save(); });
