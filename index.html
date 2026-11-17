@@ -9780,6 +9780,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13044,6 +13045,7 @@ function dueToday(e) {
   const per = Math.ceil(Math.max(0, total - start) / work), target = todayOff ? start : Math.min(total, start + per);
   return { total, now, start, per, target, todayOff, done: now >= target };
 }
+const dueLong = (iso) => { const d = new Date(iso + "T12:00:00Z"); return ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"][d.getUTCDay()] + ", " + iso.slice(8, 10) + "/" + iso.slice(5, 7); };
 const dueLabel = (iso) => { const d = new Date(iso + 'T12:00:00Z'); return `${DOW[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
 // cartão de um dia: o = { iso, w, off, tg (meta de páginas), r (lidas), ate, hoje, fim, fut }
 function dueCard(e, o, btn) {
@@ -13115,8 +13117,8 @@ function dueSheet(e) {
       if (e.dueAt) { const p = duePlan(e, e.dueAt); row.classList.toggle('late', p.late);
         row.innerHTML = p.late ? `<span>Prazo de ${dueLabel(e.dueAt)} passou · <b>faltam ${p.rem} pág.</b></span><button type="button">Novo prazo</button>`
           : !p.rem ? `<span>Pronto para terminar até ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>`
-          : p.todayOff ? `<span>Hoje é folga · prazo ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>`
-          : (() => { const h = dueToday(e); return h && h.done ? `<span>Meta de hoje cumprida (pág. ${h.target}) · prazo ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>` : `<span>Hoje: leia até a <b>pág. ${h ? h.target : '—'}</b> · prazo ${dueLabel(e.dueAt)}</span><button type="button">Mudar</button>`; })();
+          : p.todayOff ? `<span>Prazo: <b>${dueLong(e.dueAt)}</b> · hoje é folga</span><button type="button">Mudar</button>`
+          : (() => { const h = dueToday(e); return h && h.done ? `<span>Prazo: <b>${dueLong(e.dueAt)}</b> · meta de hoje cumprida</span><button type="button">Mudar</button>` : `<span>Prazo: <b>${dueLong(e.dueAt)}</b> · hoje leia até a <b>pág. ${h ? h.target : '—'}</b></span><button type="button">Mudar</button>`; })();
       } else row.innerHTML = '<span></span><button type="button">+ Prazo para terminar</button>';
       const acts = card.querySelector('.v3-now-acts'); if (acts) acts.before(row); else card.append(row);
       row.querySelector('button').addEventListener('click', (ev) => { ev.stopPropagation(); dueSheet(e); });
@@ -13349,7 +13351,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
 }; }
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { TR.querySelectorAll('.pz-plan:not([data-b])').forEach((b) => { b.dataset.b = 1; b.addEventListener('click', () => { const R = reading(); if (R) dueSheet(R.e); }); }); }, 100); }).observe(TR, { childList: true, subtree: true }); }
 // --- 59b_calendario_inicio.js ---
-{ const st = document.createElement('style'); st.textContent = ".dk-row{display:flex;gap:.35rem;overflow-x:auto;padding:.1rem 0 .35rem;scrollbar-width:none;max-width:100%}.dk-row::-webkit-scrollbar{display:none}\n.in-sec .dk{flex:0 0 62px;display:grid;justify-items:center;gap:.12rem;border:1px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;border-radius:12px!important;padding:.35rem .2rem!important;font:inherit;height:auto!important;min-height:0!important;box-shadow:none!important;cursor:pointer}\n.dk small{font-size:.62rem;font-weight:900;text-transform:uppercase;color:var(--ink-2)}.dk em{font-style:normal;font-size:.62rem;font-weight:700;color:var(--ink-2)}\n.dk-c{position:relative;width:38px;height:56px;border-radius:5px;overflow:hidden;display:block}.dk-c > .dk-cv{position:absolute;inset:0}\n.dk-c .dk-cv{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;width:100%!important;height:100%!important;margin:0!important;border-radius:0!important;box-shadow:none!important;font-size:.36rem!important}.dk-c .dk-cv img{width:100%;height:100%;object-fit:cover}\n.dk-c > .dk-gray{position:absolute;left:0;right:0;top:0;bottom:auto;z-index:1;-webkit-backdrop-filter:grayscale(1) brightness(.95);backdrop-filter:grayscale(1) brightness(.95);background:rgba(128,128,128,.18);transition:height .4s ease}\n.dk-c u{position:absolute;top:1px;right:2px;z-index:2;text-decoration:none;font-size:.7rem;color:#f5b84a;text-shadow:0 1px 2px rgba(0,0,0,.6)}\n.dk b{font-size:.68rem;font-weight:900;white-space:nowrap}.dk i{font-style:normal;font-size:.6rem;font-weight:800;color:var(--acc);white-space:nowrap}\n.in-sec .dk.hoje{border:2px solid var(--acc)!important}.in-sec .dk.off{border-style:dashed!important;background:none!important;opacity:.6}.in-sec .dk.ok{border-color:#2f8a52!important}.dk.ok b{color:#2f8a52}\n.dk-c .dk-cv{display:grid!important;place-items:center;background:#8a6a4a;color:#fff;text-align:center;line-height:1.1;padding:2px;box-sizing:border-box;overflow:hidden}"; TR.append(st); const st3 = document.createElement('style'); st3.textContent = ".dk-c .dk-cv{display:grid!important;place-items:center;background:#8a6a4a;color:#fff;text-align:center;line-height:1.1;padding:2px;box-sizing:border-box;overflow:hidden}"; document.head.append(st3); }
+{ const st = document.createElement('style'); st.textContent = ".dk-row{display:flex;gap:.35rem;overflow-x:auto;padding:.1rem 0 .35rem;scrollbar-width:none;max-width:100%}.dk-row::-webkit-scrollbar{display:none}\n.dk{flex:0 0 62px;display:grid;justify-items:center;gap:.12rem;border:1px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;border-radius:12px!important;padding:.35rem .2rem!important;font:inherit;height:auto!important;min-height:0!important;box-shadow:none!important;cursor:pointer}\n.dk small{font-size:.62rem;font-weight:900;text-transform:uppercase;color:var(--ink-2)}.dk em{font-style:normal;font-size:.62rem;font-weight:700;color:var(--ink-2)}\n.dk-c{position:relative;width:38px;height:56px;border-radius:5px;overflow:hidden;display:block}.dk-c > .dk-cv{position:absolute;inset:0}\n.dk-c .dk-cv{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;width:100%!important;height:100%!important;margin:0!important;border-radius:0!important;box-shadow:none!important;font-size:.36rem!important}.dk-c .dk-cv img{width:100%;height:100%;object-fit:cover}\n.dk-c > .dk-gray{position:absolute;left:0;right:0;top:0;bottom:auto;z-index:1;-webkit-backdrop-filter:grayscale(1) brightness(.95);backdrop-filter:grayscale(1) brightness(.95);background:rgba(128,128,128,.18);transition:height .4s ease}\n.dk-c u{position:absolute;top:1px;right:2px;z-index:2;text-decoration:none;font-size:.7rem;color:#f5b84a;text-shadow:0 1px 2px rgba(0,0,0,.6)}\n.dk b{font-size:.68rem;font-weight:900;white-space:nowrap}.dk i{font-style:normal;font-size:.6rem;font-weight:800;color:var(--acc);white-space:nowrap}\n.dk.hoje{border:2px solid var(--acc)!important}.dk.off{border-style:dashed!important;background:none!important;opacity:.6}.dk.ok{border-color:#2f8a52!important}.dk.ok b{color:#2f8a52}\n.dk-c .dk-cv{display:grid!important;place-items:center;background:#8a6a4a;color:#fff;text-align:center;line-height:1.1;padding:2px;box-sizing:border-box;overflow:hidden}"; TR.append(st); const st3 = document.createElement('style'); st3.textContent = ".dk-c .dk-cv{display:grid!important;place-items:center;background:#8a6a4a;color:#fff;text-align:center;line-height:1.1;padding:2px;box-sizing:border-box;overflow:hidden}"; document.head.append(st3); }
 // Placar do prazo no Início vira calendário do mês (Bia, 17/11): cada dia mostra quantas páginas foram lidas
 // (todos os livros); nos dias do prazo, fica verde quando bateu a meta do livro do prazo; dias que vêm mostram
 // até qual página ler; folga tracejada; hoje com contorno; prazo com estrela.
@@ -13369,10 +13371,8 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
 .ic-d.has u{position:absolute;top:3px;right:4px;z-index:2;text-decoration:none;font-size:.55rem;font-weight:900;color:#fff;background:rgba(0,0,0,.55);border-radius:99px;padding:0 4px}
 .ic-d.has.ok{box-shadow:inset 0 0 0 2px #2f8a52}.ic-d.has.ok b{color:#9fe3b6!important}
 .ic-lg{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:.45rem;font-size:.66rem;font-weight:800;color:var(--ink-2)}.ic-lg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:.25rem;vertical-align:-1px}`; TR.append(st); }
-{ const _isw2 = inSemana; inSemana = function () {
-  try {
-    const R = reading(), e = R && R.e, t = todayISO();
-    if (!e || e.status !== 'LENDO' || !e.dueAt || e.dueAt < t) return _isw2.apply(this, arguments);
+function prazoRowHTML(e, R) {
+  const t = todayISO();
     const book = new Map(bookSeries(e).map((x) => [x.d, x.p])), off = e.dueOff || [];
     const since = e.dueSince && e.dueSince <= t ? e.dueSince : t, total = R.total || Number(e.totalPages) || 0;
     // meta de cada dia do prazo: dias passados pela conta do dia em que foi marcado; de hoje em diante pela conta atual
@@ -13385,14 +13385,17 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
       const tg = off1 ? 0 : d < t ? base : d === t && h ? h.per : (plan.list.find((x) => x.iso === d) || {}).n || 0;
       if (!off1 && d < t) { due++; if (br >= tg) hit++; }
       return dueCard(e, { iso: d, w, off: off1, tg, r: br, ate: d < t ? '' : (ateMap.get(d) || ''), hoje: d === t, fim: d === e.dueAt, fut }, false).replace('<i>até </i>', ''); }).join('');
-    const foot = h && h.todayOff ? 'Hoje é folga' : h && h.done ? `Meta de hoje cumprida (pág. ${h.target})` : `Hoje: leia até a <b>pág. ${h ? h.target : '—'}</b>`;
-    return `<section class="in-sec" data-in="semana"><div class="in-h"><b>Prazo de leitura</b></div><div class="in-card">
-      <div class="pz-tt" style="font-size:.92rem;font-weight:700;color:var(--ink);margin-bottom:.15rem">Terminar <b>${esc(String(e.title).split(/\s[-–:]\s|:\s/)[0].slice(0, 40))}</b> até ${['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][new Date(e.dueAt + 'T12:00:00Z').getUTCDay()]}, ${e.dueAt.slice(8, 10)}/${e.dueAt.slice(5, 7)}</div>
-      <div class="pz-mn" style="font-size:.72rem;font-weight:700;color:var(--ink-2);margin-bottom:.4rem">${due ? `Meta batida em ${hit} de ${due} dias · ` : ''}a capa ganha cor conforme você lê</div>
-      <div class="dk-row">${cardsH}</div>
-      <div class="pz-ft"><span>${foot}${e.dueAt.slice(0, 7) !== t.slice(0, 7) ? ' · o prazo continua no mês que vem' : ''}</span><button type="button" class="pz-plan">Ver plano</button></div></div></section>`;
-  } catch (err) { console.warn('calendário do prazo', err); return _isw2.apply(this, arguments); }
-}; }
+    return '<div class="pz-mn" style="font-size:.7rem;font-weight:700;color:var(--ink-2);margin:.45rem 0 .3rem">' + (due ? 'Meta batida em ' + hit + ' de ' + due + ' dias · ' : '') + 'a capa ganha cor conforme você lê</div><div class="dk-row">' + cardsH + '</div>';
+}
+// com prazo, o bloco separado some do Início (os dias ficam dentro do cartão da leitura)
+{ const _isw2 = inSemana; inSemana = function () { try { const R = reading(), e = R && R.e; if (e && e.status === 'LENDO' && e.dueAt && e.dueAt >= todayISO()) return ''; } catch {} return _isw2.apply(this, arguments); }; }
+{ let tm = 0; const paint = () => {
+    const R = (() => { try { return reading(); } catch { return null; } })(); if (!R || !R.e || R.e.status !== 'LENDO' || !R.e.dueAt || R.e.dueAt < todayISO()) return;
+    TR.querySelectorAll('.due-ln').forEach((ln) => { if (ln.nextElementSibling && ln.nextElementSibling.classList.contains('due-cards')) return;
+      const box = document.createElement('div'); box.className = 'due-cards'; try { box.innerHTML = prazoRowHTML(R.e, R); } catch (err) { console.warn('dias do prazo', err); return; }
+      ln.after(box); try { paintCv(box); } catch {} });
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 90); }).observe(TR, { childList: true, subtree: true }); setTimeout(paint, 1600); }
 // --- 60_sem_urso.js ---
 // Sem urso (Bia, 17/11): o visual é só tipografia. Ilustrações do urso viraram um pixel transparente (ART/A) e somem do layout;
 // o cartão "Dica" (antigo "Bear diz") fica só com o texto.
