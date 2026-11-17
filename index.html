@@ -9840,6 +9840,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14665,6 +14666,10 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 #editor .tl-eh{display:flex;flex-wrap:wrap;align-items:baseline;gap:.15rem .5rem;line-height:28px}#editor .tl-eh b{font-size:.84rem;color:var(--ink)}#editor .tl-eh span{font-size:.8rem;font-weight:800;color:var(--acc)}#editor .tl-eh i{font-style:normal;font-size:.72rem;font-weight:700;color:var(--ink-2)}#editor .tl-eh em{font-style:normal;font-size:.7rem;font-weight:900;color:#c08a12}
 #editor .tl-d{padding-bottom:.55rem}#editor .tl-d .tl-c:first-of-type{margin-top:.1rem}
 `; TR.append(st); }
+// recarregar o navegador com o diário aberto (Bia, 17/11): o app lembra o livro e a aba (Atualizar/Histórico) e reabre
+const TL_KEY = 'lv.diarioAberto';
+const tlRemember = (e, tab) => { try { sessionStorage.setItem(TL_KEY, JSON.stringify({ id: e.id, tab })); } catch {} };
+const TL_BOOT = (() => { try { return JSON.parse(sessionStorage.getItem(TL_KEY) || 'null'); } catch { return null; } })();
 const TL_DOW = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 const tlDay = (iso) => { const t = todayISO(); if (iso === t) return 'Hoje'; if (iso === new Date(Date.parse(t) - 864e5).toISOString().slice(0, 10)) return 'Ontem'; const d = new Date(iso + 'T12:00:00Z'); return TL_DOW[d.getUTCDay()] + ', ' + iso.slice(8, 10) + '/' + iso.slice(5, 7); };
 function tlEvents(e) {
@@ -14753,14 +14758,14 @@ function tlHTML(e, all) {
     } catch {} }, 150);
   }, true);
 }
-{ const _el = editLeitura; editLeitura = function () { try { const R = reading(); S.tlE = R && R.e; S.tlAll = false; S.tlTab = 'up'; } catch {} return _el.apply(this, arguments); }; }
+{ const _el = editLeitura; editLeitura = function () { try { const R = reading(); S.tlE = R && R.e; S.tlAll = false; S.tlTab = S.tlTabNext || 'up'; S.tlTabNext = null; } catch {} return _el.apply(this, arguments); }; }
 { const ed = $('#editor'); let tm = 0;
   const paint = () => {
     const body = ed.querySelector('.ed-body'); if (ed.hidden || !body || !body.querySelector('#up-save') || body.querySelector('.tl')) return;
     const e = S.tlE; if (!e) return;
     body.querySelectorAll('.tl-tabs').forEach((x) => x.remove());
     const tabs = document.createElement('div'); tabs.className = 'tl-tabs'; tabs.innerHTML = '<button type="button" data-t="up">Atualizar</button><button type="button" data-t="hist">Histórico</button>';
-    const set = (k) => { S.tlTab = k; body.classList.toggle('tl-on', k === 'hist'); tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.t === k)); };
+    const set = (k) => { S.tlTab = k; tlRemember(e, k); body.classList.toggle('tl-on', k === 'hist'); tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.t === k)); };
     tabs.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => set(b.dataset.t)));
     const hd = body.querySelector('.ss-hd'); if (hd) hd.after(tabs); else body.prepend(tabs); set(S.tlTab || 'up');
     const t = document.createElement('div'); t.innerHTML = tlHTML(e, S.tlAll); const tl = t.firstElementChild; body.append(tl);
@@ -14791,6 +14796,11 @@ function tlEditClick(ev, e, redraw) {
     if (k === 'qt') { if (!t.trim()) return toast('Escreva o trecho ou toque em Apagar'); x.t = t.trim(); const p = Number((c.querySelector('.tl-ed input') || {}).value) || 0; if (p > 0) x.p = Math.round(p); else delete x.p; }
     else { const N = c._N || { fe: x.fe || [] }; if (!t.trim() && !N.fe.length) return toast('Escreva algo, escolha uma emoção ou toque em Apagar'); x.text = t.trim(); x.fe = N.fe; }
     save(); toast('Salvo'); return redraw(); }
+}
+
+{ const ed = $('#editor'); let tm = 0, booting = !!TL_BOOT;
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { if (!booting && (ed.hidden || !ed.querySelector('#up-save'))) { try { sessionStorage.removeItem(TL_KEY); } catch {} } }, 600); }).observe(ed, { attributes: true, attributeFilter: ['hidden'], childList: true });
+  if (TL_BOOT) setTimeout(() => { try { const e = byId(TL_BOOT.id); if (e && e.status === 'LENDO' && $('#editor').hidden) { S.tlTabNext = TL_BOOT.tab; ssOpenUpdate(e); } } catch {} setTimeout(() => { booting = false; }, 800); }, 1800);
 }
 // --- 87_meta_inicio_livros.js ---
 // Meta do ano no Início (Bia, 17/11): embaixo da barra de progresso, as capas dos livros lidos no ano que contam para a meta,
