@@ -9806,6 +9806,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14247,6 +14248,30 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 40); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 
 { const st = document.createElement('style'); st.textContent = '.fe-grid{display:flex;flex-wrap:wrap;gap:.4rem;margin:.4rem 0 .3rem}.fe-grid button{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.45rem .8rem;font:inherit;font-size:.86rem;font-weight:800;cursor:pointer}.fe-grid button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}.fe-cnt{display:block;text-align:right;font-size:.72rem;color:var(--ink-2);margin-bottom:.5rem}'; document.head.append(st); }
+// --- 82_atalhos_lendo.js ---
+// Atalhos no cartão "Lendo agora" (Bia, 17/11): Atualizar, Foco e Concluir, sempre à mão.
+{ const st = document.createElement('style'); st.textContent = `
+.v3-quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;margin-top:.6rem;width:100%}
+.v3-quick button{display:flex;align-items:center;justify-content:center;gap:.35rem;height:38px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;min-width:0;white-space:nowrap}
+.v3-quick button.pri{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
+.v3-quick button.ok{border-color:#2f8a52;color:#2f8a52}
+.v3-quick svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}`; TR.append(st); }
+{ let tm = 0; const SV = (d) => '<svg viewBox="0 0 24 24" aria-hidden="true">' + d + '</svg>';
+  const put = () => {
+    const R = (() => { try { return reading(); } catch { return null; } })(); if (!R || !R.e || R.e.status !== 'LENDO') return;
+    TR.querySelectorAll('.v3-now:not(.empty)').forEach((card) => { if (card.querySelector('.v3-quick')) return;
+      const q = document.createElement('div'); q.className = 'v3-quick';
+      q.innerHTML = '<button type="button" class="pri" data-q="upd">' + SV('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>') + 'Atualizar</button>'
+        + '<button type="button" data-q="foco">' + SV('<circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 2M9 3h6"/>') + 'Foco</button>'
+        + '<button type="button" class="ok" data-q="fim">' + SV('<path d="M5 12l5 5L20 7"/>') + 'Concluir</button>';
+      card.append(q);
+      q.querySelectorAll('button').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); const k = b.dataset.q, R2 = reading(); if (!R2) return;
+        if (k === 'upd') { if (S.madrugada) return wakeBear('upd'); return editLeitura(); }
+        if (k === 'foco') return startFocus();
+        if (k === 'fim') return statusSheet(R2.e, 'LIDO'); }));
+    });
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 80); }).observe(TR, { childList: true, subtree: true }); setTimeout(put, 1500); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
