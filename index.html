@@ -6679,9 +6679,9 @@ async function syncSocial3(force) {
   try {
     const wk = isoMonday(), w = weekStats(wk, addDays(todayISO(), 1)), sig = wk + JSON.stringify(w);
     if (sig !== s3WeekSig) { const r = await sapi('PUT', '/v1/me/week', { weekStart: wk, pages: Math.min(20000, w.pag), books: Math.min(100, w.livros), days: Math.min(7, w.dias), focusMin: Math.min(10080, w.foco) }); if (r.status === 200) s3WeekSig = sig; }
-    const [b, d, m, bu, fl] = await Promise.all([sapi('GET', `/v1/board?week=${wk}`), sapi('GET', `/v1/duels?week=${wk}`), sapi('GET', '/v1/markers/feed'), sapi('GET', '/v1/buddies'), sapi('GET', '/v1/flairs')]);
+    const [b, m, bu, fl] = await Promise.all([sapi('GET', `/v1/board?week=${wk}`), sapi('GET', '/v1/markers/feed'), sapi('GET', '/v1/buddies'), sapi('GET', '/v1/flairs')]);
     if (b.status === 200 && b.data) SOC.board = b.data.items || [];
-    if (d.status === 200 && d.data) SOC.duels = d.data.items || [];
+    SOC.duels = []; // duelo saiu do app e da API
     SOC.markers = []; // 4.4: marcadores saíram do app
     if (fl.status === 200 && fl.data) SOC.flairs = Object.fromEntries((fl.data.items || []).map((x) => [x.handle, x]));
     if (bu.status === 200 && bu.data) { SOC.buddies = bu.data.items || []; mapBuddies(); await pushBuddyProgress(); }
@@ -9658,6 +9658,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -9838,10 +9839,13 @@ TR.addEventListener('click', (ev) => {
 .pw5 i.o svg{opacity:.22}
 .pw5 i.h svg + svg{clip-path:inset(0 50% 0 0)}
 .pw5 i.h svg:first-child{opacity:.22}
-.pw5{color:#c8742e}
+.pw5{display:inline-block!important;flex-direction:row!important;font-size:.66rem;font-weight:900;line-height:1;padding:.18rem .42rem;border-radius:99px;color:#2b1d05;white-space:nowrap;vertical-align:middle;text-transform:none;letter-spacing:0}
+.pw5.nt-g{background:linear-gradient(135deg,#f7d774,#c9962b 55%,#f3d27a)}.pw5.nt-s{background:linear-gradient(135deg,#eef1f4,#a9b0b8 55%,#e3e7eb)}
+.es4-bar{display:none!important}
+.pw5.nt-b{background:linear-gradient(135deg,#e9b08a,#a8673d 55%,#dca07a);color:#2a1305}.pw5.nt-r{background:linear-gradient(90deg,#ff8a8a,#ffd36e,#8fe3a0,#7cc4ff,#c9a2ff)}
 `; TR.append(st); }
 const pawSvg = () => `<svg viewBox="0 0 24 24" aria-hidden="true">${BI.paw}</svg>`;
-const paws5 = (n) => `<span class="pw5" role="img" aria-label="nota ${String(n).replace('.', ',')}">${[1, 2, 3, 4, 5].map((i) => n >= i ? `<i>${pawSvg()}</i>` : n >= i - 0.5 ? `<i class="h">${pawSvg()}${pawSvg()}</i>` : `<i class="o">${pawSvg()}</i>`).join('')}</span>`;
+const paws5 = (n) => { n = Number(n) || 0; if (!n) return 'lido'; const t = n >= 5 ? 'r' : n >= 4 ? 'g' : n >= 3 ? 's' : 'b'; return `<span class="pw5 nt-${t}" role="img" aria-label="nota ${String(n).replace('.', ',')}">nota ${String(n).replace('.', ',')}</span>`; };
 { // legendas "lido · 🐾 4,5" → patinhas; "lido" sem nota fica "lido"
   const fix = (root) => root.querySelectorAll('small.es4-st, .es4-bk small, .au-grid small').forEach((s) => {
     if (s.dataset.pw) return; const m = s.textContent.trim().match(/^lido\s*·\s*\D*?(\d+(?:,\d)?)\s*$/); if (!m) return;
@@ -10727,7 +10731,7 @@ function profShelvesSnap(snapshot) {
       const sem = list.filter((x) => x.ap || !String(x.d).slice(5, 7)); if (sem.length) groups.push(['Sem mês', sem]);
       const pages = list.reduce((s, x) => s + (x.pg || 0), 0), yi = years.indexOf(y);
       const card = (x, i) => { let h = cvh(x.t, x.c, 'yx-cv'); const t = tier(x.p); if (t && !/\bcv rt\b/.test(h)) h = h.replace('<span class="cv ', `<span class="cv rt rt-${t} `).replace(/<\/span>$/, (t === '5' ? '<span class="rt-sp a">✦</span><span class="rt-sp b">✦</span><span class="rt-sp c">✦</span>' : '') + '</span>');
-        return `<button type="button" class="yx-b" data-i="${i}" title="${esc(x.t)}">${h}<small>${esc(x.t)}</small>${x.p ? paws5(x.p) : ''}</button>`; };
+        return `<button type="button" class="yx-b" data-i="${i}" title="${esc(x.t)}">${h}<small>${esc(x.t)}</small></button>`; };
       let k = 0; const flat = [];
       v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Leituras por mês</b><span></span></div>
         <div class="yx-yr"><button type="button" data-yy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><b>${y}</b><button type="button" data-yy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></div>
@@ -10843,7 +10847,7 @@ drawProgresso = function (box) {
   box.innerHTML = `<header class="v3-top"><h1>Estatísticas</h1><div class="v3-acts"><button type="button" class="v3-bell" id="v3-bell" aria-label="Notificações">${MN('notificacoes', 'ico-g')}${unread() ? `<u>${unread() > 9 ? '9+' : unread()}</u>` : ''}</button></div></header>
     <div class="sx-yr"><button type="button" data-sy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><b>${y}</b><button type="button" data-sy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></div>
     ${fin.length ? `
-    <div class="sx-sum">${stat(fin.length, fin.length === 1 ? 'livro lido' : 'livros lidos', cmp(fin.length, prev.length))}${stat(pg.toLocaleString('pt-BR'), 'páginas lidas', cmp(pg, pgPrev))}${stat(avg ? avg.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : '—', 'nota média', avg ? paws5(Math.round(avg * 2) / 2) : '')}${stat(longest && longest.totalPages ? Number(longest.totalPages).toLocaleString('pt-BR') : '—', 'páginas no mais longo', longest && longest.totalPages ? `<em>${esc(longest.title)}</em>` : '')}</div>
+    <div class="sx-sum">${stat(fin.length, fin.length === 1 ? 'livro lido' : 'livros lidos', cmp(fin.length, prev.length))}${stat(pg.toLocaleString('pt-BR'), 'páginas lidas', cmp(pg, pgPrev))}${stat(avg ? avg.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : '—', 'nota média', '')}${stat(longest && longest.totalPages ? Number(longest.totalPages).toLocaleString('pt-BR') : '—', 'páginas no mais longo', longest && longest.totalPages ? `<em>${esc(longest.title)}</em>` : '')}</div>
     <div id="sx-ys"></div>
     <section class="v3c sx-c"><h3>Livros por mês</h3><div class="sx-bars sx-dual">${perM.map((n, i) => { const c = Math.max(perS[i], n), h = (k) => (k ? Math.max(8, Math.round((k / maxM) * 100)) : 2); return `<div title="${ML[i]}: leu ${c}, terminou ${n}"><span class="sx-nums">${c ? `<em>${c}</em>` : ''}</span><span class="sx-stack" style="height:${h(c)}%"><i class="s${c ? '' : ' z'}"></i>${n ? `<i class="f" style="height:${Math.round((n / c) * 100)}%"></i>` : ''}</span><span>${ML[i]}</span></div>`; }).join('')}</div><div class="sx-leg2"><span><i class="s"></i>lendo no mês</span><span><i></i>terminados</span></div></section>
     ${(rated.length || fmt.length) ? `<div class="sx-pies">${rated.length ? `<section class="v3c sx-c sx-pie"><h3>Notas</h3>${pieHTML(tierN.map(([l, n, c]) => [l, n, PIE_C[c] || '#999']))}${fin.length - rated.length ? `<p class="sx-note">${plural(fin.length - rated.length, 'livro', 'livros')} sem nota</p>` : ''}</section>` : ''}${fmt.length ? `<section class="v3c sx-c sx-pie"><h3>Formato</h3>${pieHTML(fmt.map(([k, n]) => [k, n, PIE_F[k] || '#999']))}</section>` : ''}</div>` : ''}
