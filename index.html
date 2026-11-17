@@ -9804,6 +9804,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13266,7 +13267,7 @@ S.upNote = { text: '', fe: [], vis: (() => { try { return localStorage.getItem('
     const e = R.e; e.diary = [...(e.diary || []), { d: todayISO(), page, pct, text, fe }].slice(-200); save();
     if (N.vis !== 'me' && connected() && socialProfile) {
       const names = fe.map((k) => (QT_FEELS.find((x) => x[0] === k) || [, k])[1]);
-      sapi('POST', '/v1/posts', { kind: 'comment', text: (text || names.join(' · ')).slice(0, 280), feelings: fe, visibility: N.vis === 'friends' ? 'friends' : 'public', readerPct: Math.min(100, pct),
+      sapi('POST', '/v1/posts', { kind: 'comment', text: (text || names.join(' · ')).slice(0, 280), feelings: fe.slice(0, 3), visibility: N.vis === 'friends' ? 'friends' : 'public', readerPct: Math.min(100, pct),
         book: { title: String(e.title).slice(0, 200), author: e.author ? String(e.author).slice(0, 120) : null, cover: /^https:\/\//.test(e.cover || '') ? e.cover : null },
         ...(N.sp ? (page > 0 && page < R.total ? { spoiler: { kind: 'page', at: page } } : page >= R.total ? { spoiler: { kind: 'end' } } : { spoiler: { kind: 'yes' } }) : {}) })
         .then((x) => { if (x.status === 201) toast('Comentário postado na Rede'); else if (x.status >= 400) toast('Salvo no seu diário (não deu para postar agora)'); }).catch(() => {});
@@ -14181,8 +14182,8 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
 // Tela de status/Atualizar como modal centralizado de altura fixa (Bia, 17/11): trocar de status não faz a janela
 // pular de tamanho; o conteúdo rola por dentro.
 { const st = document.createElement('style'); st.textContent = `
-#editor.ss-modal{align-items:center!important;justify-content:center!important;padding:16px!important;background:rgba(0,0,0,.5)!important}
-#editor.ss-modal .ed-body{position:relative!important;width:min(520px,100%)!important;height:min(86vh,720px)!important;max-height:none!important;margin:0!important;border-radius:20px!important;overflow-y:auto!important;overscroll-behavior:contain;align-content:start!important;justify-content:stretch;bottom:auto!important;top:auto!important;transform:none!important;animation:ssPop .18s ease-out}
+#editor.ss-modal{align-items:stretch!important;justify-content:center!important;padding:0!important;background:var(--bg)!important}
+#editor.ss-modal .ed-body{position:relative!important;width:min(640px,100%)!important;height:100%!important;max-height:none!important;margin:0 auto!important;border-radius:0!important;border:0!important;box-shadow:none!important;padding:max(14px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom))!important;overflow-y:auto!important;overscroll-behavior:contain;align-content:start!important;justify-content:stretch;bottom:auto!important;top:auto!important;transform:none!important;animation:ssPop .18s ease-out}
 #editor.ss-modal .ed-body::before{display:none!important}
 @keyframes ssPop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}`; TR.append(st); }
 { let tm = 0; const sync = () => { const ed = TR.querySelector('#editor'); if (!ed) return; ed.classList.toggle('ss-modal', !ed.hidden && !!ed.querySelector('.ss-chips')); };
@@ -14194,7 +14195,7 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
 #editor .up-dates.lz-hide{display:none!important}
 .lz-dt{display:flex;justify-content:space-between;align-items:center;font-size:.76rem;font-weight:700;color:var(--ink-2);margin:-.1rem 0 .3rem}
 #editor .lz-dt button{border:0!important;background:none!important;color:var(--acc)!important;font:inherit!important;font-weight:800!important;padding:0!important;height:auto!important;min-height:0!important;box-shadow:none!important}
-.lz-acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;margin:.5rem 0 .2rem}
+.lz-acts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem;margin:.5rem 0 .2rem}
 #editor .lz-acts button{min-width:0;white-space:normal;text-align:center;display:grid;justify-items:center;gap:.15rem;border:1.5px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;border-radius:14px!important;padding:.55rem .3rem!important;height:auto!important;min-height:0!important;font:inherit!important;font-size:.8rem!important;font-weight:800!important;box-shadow:none!important}
 #editor .lz-acts button span{font-size:1.05rem;line-height:1}#editor .lz-acts button small{display:block;font-size:.64rem;font-weight:700;color:var(--ink-2)}
 #editor .lz-acts button.on{border-color:var(--acc)!important;background:color-mix(in srgb,var(--acc) 14%,var(--panel))!important}
@@ -14203,7 +14204,9 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
 .lz-pane .lz-row{display:flex;gap:.5rem;align-items:center;justify-content:space-between;font-size:.76rem;color:var(--ink-2);font-weight:700}
 .lz-pane input[type=number]{width:80px;height:34px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit;padding:0 .5rem}
 #editor .lz-pane .lz-ok{height:36px!important;min-height:0!important;border-radius:10px!important;border:0!important;background:var(--acc)!important;color:var(--on-acc,#fff)!important;font:inherit!important;font-weight:800!important;padding:0 .9rem!important;box-shadow:none!important}
-#editor .up-note.lz-hide{display:none!important}
+#editor .up-note.lz-hide{display:none!important}#editor .up-note .up-fe{display:none!important}
+.lz-fe{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin:.1rem 0 .2rem}.lz-fe:empty{display:none}
+.lz-fe span{border:1px solid var(--acc);color:var(--acc);border-radius:99px;padding:.15rem .55rem;font-size:.74rem;font-weight:800}
 #editor.ss-modal .ed-body > *{min-width:0;max-width:100%}`; TR.append(st); }
 { let tm = 0; const put = () => {
     const ed = TR.querySelector('#editor'); if (!ed || ed.hidden) return; const body = ed.querySelector('.ed-body'); if (!body || !body.querySelector('#up-save') || body.querySelector('.lz-acts')) return;
@@ -14215,7 +14218,7 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
       dates.before(dl); dl.querySelector('button').addEventListener('click', () => { dates.classList.remove('lz-hide'); dl.remove(); }); }
     // três ações
     const acts = document.createElement('div'); acts.className = 'lz-acts';
-    acts.innerHTML = '<button type="button" data-p="nota"><span>✎</span>Anotação<small>só você vê</small></button><button type="button" data-p="trecho"><span>❝</span>Trecho<small>guardar uma frase</small></button><button type="button" data-p="coment"><span>💬</span>Comentar<small>emoções e Rede</small></button>';
+    acts.innerHTML = '<button type="button" data-p="nota"><span>✎</span>Anotação<small>só você vê</small></button><button type="button" data-p="trecho"><span>❝</span>Trecho<small>guardar uma frase</small></button><button type="button" data-p="emo"><span>✨</span>Emoções<small>até 5</small></button><button type="button" data-p="coment"><span>💬</span>Comentar<small>vai para a Rede</small></button>';
     const pNota = document.createElement('div'); pNota.className = 'lz-pane'; pNota.hidden = true;
     pNota.innerHTML = '<textarea maxlength="2000" placeholder="Uma anotação sobre o livro (só você vê)"></textarea><div class="lz-row"><span>fica salva no livro</span></div>';
     const tn = pNota.querySelector('textarea'); tn.value = e.note || ''; tn.addEventListener('input', () => { e.note = tn.value.trim() ? tn.value : undefined; if (!e.note) delete e.note; save(); });
@@ -14224,14 +14227,25 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
     const rng = body.querySelector('#up-r'); pTr.querySelector('.lz-pg').value = (rng && rng.value) || R.now || '';
     pTr.querySelector('.lz-ok').addEventListener('click', () => { const t = pTr.querySelector('textarea').value.trim(); if (!t) return toast('Escreva o trecho');
       e.quotes = [...(e.quotes || []), { t, p: Number(pTr.querySelector('.lz-pg').value) || null, at: new Date().toISOString() }].slice(-200); save(); pTr.querySelector('textarea').value = ''; toast('Trecho salvo'); });
-    note.classList.add('lz-hide'); note.before(acts); acts.after(pNota); pNota.after(pTr);
+    const feRow = document.createElement('div'); feRow.className = 'lz-fe';
+    const paintFe = () => { const N = S.upNote || { fe: [] }; feRow.innerHTML = (N.fe || []).map((k) => '<span>' + esc((QT_FEELS.find((x) => x[0] === k) || [, k])[1]) + '</span>').join(''); };
+    const openFe = () => { const N = S.upNote || (S.upNote = { text: '', fe: [], vis: 'public', sp: false }); let pick = [...(N.fe || [])];
+      const sh = document.createElement('div'); sh.className = 'sheet fe-sheet';
+      const dr = () => { sh.innerHTML = '<div class="box"><h3>Como você está se sentindo?</h3><p class="hint">Escolha até 5 emoções sobre esta parte da leitura.</p><div class="fe-grid">' + QT_FEELS.map(([k, n]) => '<button type="button" data-f="' + k + '" class="' + (pick.includes(k) ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '</div><small class="fe-cnt">' + pick.length + ' de 5</small><button type="button" class="primary fe-ok">Pronto</button></div>';
+        sh.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.f; if (pick.includes(k)) pick = pick.filter((x) => x !== k); else if (pick.length < 5) pick.push(k); else return toast('Até 5 emoções'); dr(); }));
+        sh.querySelector('.fe-ok').addEventListener('click', () => { N.fe = pick; paintFe(); acts.querySelector('[data-p=emo] small').textContent = pick.length ? pick.length + ' escolhida' + (pick.length > 1 ? 's' : '') : 'até 5'; sh.remove(); }); };
+      sh.addEventListener('click', (ev) => { if (ev.target === sh) sh.remove(); }); dr(); document.body.append(sh); };
+    note.classList.add('lz-hide'); note.before(acts); acts.after(feRow); feRow.after(pNota); pNota.after(pTr); paintFe();
     const panes = { nota: pNota, trecho: pTr };
     acts.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.p, was = b.classList.contains('on');
       acts.querySelectorAll('button').forEach((x) => x.classList.remove('on')); pNota.hidden = true; pTr.hidden = true; note.classList.add('lz-hide');
+      if (k === 'emo') return openFe();
       if (was) return; b.classList.add('on'); if (k === 'coment') { note.classList.remove('lz-hide'); note.querySelector('textarea')?.focus(); } else { panes[k].hidden = false; panes[k].querySelector('textarea').focus(); } }));
     if (e.note) { /* mostra que já tem anotação */ acts.querySelector('[data-p=nota] small').textContent = 'tem anotação'; }
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 40); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+
+{ const st = document.createElement('style'); st.textContent = '.fe-grid{display:flex;flex-wrap:wrap;gap:.4rem;margin:.4rem 0 .3rem}.fe-grid button{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.45rem .8rem;font:inherit;font-size:.86rem;font-weight:800;cursor:pointer}.fe-grid button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}.fe-cnt{display:block;text-align:right;font-size:.72rem;color:var(--ink-2);margin-bottom:.5rem}'; document.head.append(st); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
