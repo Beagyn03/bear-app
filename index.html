@@ -2610,7 +2610,7 @@ async function socialSettingsSheet() {
   const ck = (k, t) => { const i = el('input', { type: 'checkbox', ...(pv[k] ? { checked: '' } : {}), onchange: (ev) => { pv[k] = ev.target.checked; } }); return el('label', { class: 'ck-row' }, [i, el('span', { text: t })]); };
   const msg = el('p', { class: 'hint' });
   const form = el('form', { class: 'form pv2' }, [el('h3', { text: 'O que aparece no meu perfil' }),
-    el('div', { class: 'group', text: 'Quem vê' }), ck('public', 'Perfil público: qualquer pessoa vê o que está marcado abaixo'), el('p', { class: 'hint', style: 'margin:-.2rem 0 .3rem', text: 'Desligado, só seus amigos veem. Seu nome e @ aparecem na busca de qualquer jeito.' }), el('div', { class: 'group', text: 'O que aparece' }),
+    el('div', { class: 'group', text: 'Quem vê' }), ck('public', 'Perfil público: qualquer pessoa vê seu perfil e suas avaliações'), el('p', { class: 'hint', style: 'margin:-.2rem 0 .3rem', text: 'Desligado, só seus amigos veem. Seu nome e @ aparecem na busca de qualquer jeito.' }), el('div', { class: 'group', text: 'O que aparece na página do perfil' }), el('p', { class: 'hint', style: 'margin:-.2rem 0 .3rem', text: 'Só organiza a sua página de perfil. O que vai para a Rede você escolhe em cada avaliação (privada ou não) e em cada comentário (só eu, amigos ou todos).' }),
     ck('reading', 'Lendo agora'), ck('shelf', 'Estantes'), ck('achievements', 'Conquistas'), ck('reviews', 'Avaliações'),
     
     msg, el('div', { class: 'pv2-btns' }, [el('button', { type: 'button', class: 'cancel', text: 'Cancelar', onclick: close }), el('button', { type: 'submit', class: 'primary', text: 'Salvar' })])]);
@@ -9795,6 +9795,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14047,26 +14048,6 @@ function statusSheet(e, want, after) {
     } catch (err) { console.warn('não lembro as datas', err); }
     return r;
   }; }
-// --- 76_aviso_privacidade.js ---
-// Aviso de privacidade ao avaliar (Bia, 17/11): se nas configurações "Avaliações" está desligado, a avaliação não aparece
-// para ninguém na Rede; o app avisa na hora de escrever, com atalho para mudar.
-{ const css = '.pv-note{display:flex;align-items:flex-start;gap:.5rem;border:1px solid #d9822b;background:color-mix(in srgb,#d9822b 12%,var(--panel));border-radius:12px;padding:.5rem .65rem;font-size:.76rem;font-weight:700;color:var(--ink);line-height:1.35;margin:.3rem 0}'
-    + '.pv-note button{flex:none;border:0!important;background:none!important;color:var(--acc)!important;font:inherit!important;font-weight:900!important;padding:0!important;height:auto!important;min-height:0!important;box-shadow:none!important;text-decoration:underline;cursor:pointer}';
-  const a = document.createElement('style'); a.textContent = css; document.head.append(a); const b = document.createElement('style'); b.textContent = css; TR.append(b); }
-const revHidden = () => { try { return !!(socialProfile && socialProfile.privacy && socialProfile.privacy.reviews === false); } catch { return false; } };
-const pvNote = () => { const n = document.createElement('div'); n.className = 'pv-note';
-  n.innerHTML = '<span>Suas avaliações estão <b>ocultas</b> nas configurações de privacidade. Esta avaliação fica guardada, mas não aparece na Rede.</span><button type="button">Mudar</button>';
-  n.querySelector('button').addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); try { socialSettingsSheet(); } catch {} }); return n; };
-{ let tm = 0; const put = () => {
-    if (!revHidden()) { document.querySelectorAll('.pv-note').forEach((x) => x.remove()); TR.querySelectorAll('.pv-note').forEach((x) => x.remove()); return; }
-    // avaliação completa (folha no document.body): perto de "Avaliação privada"
-    document.querySelectorAll('body > .sheet form').forEach((f) => { if (f.querySelector('.pv-note')) return;
-      const lb = [...f.querySelectorAll('label')].find((l) => /Avaliação privada/.test(l.textContent)); if (lb) lb.after(pvNote()); });
-    // tela única de status (Lido), no #editor
-    TR.querySelectorAll('#editor .ss-prv').forEach((ck) => { const lb = ck.closest('label'); if (lb && !(lb.nextElementSibling && lb.nextElementSibling.classList.contains('pv-note'))) lb.after(pvNote()); });
-  };
-  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 80); }).observe(document.body, { childList: true, subtree: true });
-  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 80); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
