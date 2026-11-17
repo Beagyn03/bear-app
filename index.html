@@ -9767,6 +9767,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12983,7 +12984,9 @@ function myStatsSnap() {
 .dp-d{flex:1 0 44px;display:grid;justify-items:center;gap:.15rem;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;padding:.35rem .2rem;font:inherit}
 .dp-d small{font-size:.65rem;font-weight:800;color:var(--ink-2);text-transform:uppercase}.dp-d i{display:flex;align-items:flex-end;width:14px;height:46px;border-radius:7px;background:var(--line);overflow:hidden}.dp-d u{display:block;width:100%;background:var(--acc);border-radius:7px}
 .dp-d b{font-size:.8rem;font-weight:900}.dp-d em{font-style:normal;font-size:.62rem;color:var(--ink-2)}
-.dp-d.off{opacity:.55;border-style:dashed}.dp-d.off b{font-size:.68rem;color:var(--ink-2)}.dp-d.hoje{border-color:var(--acc)}`; document.head.append(st2); } // a folha do prazo fica fora do app (document.body)
+.dp-d.off{opacity:.55;border-style:dashed}.dp-d.off b{font-size:.68rem;color:var(--ink-2)}.dp-d.hoje{border-color:var(--acc)}
+.due-sh .box{overflow-x:hidden}.due-sh form{min-width:0;max-width:100%}.due-sh form > *{min-width:0;max-width:100%}.due-sh .dp{min-width:0;max-width:100%;overflow:hidden}.due-sh .dp-days{max-width:100%}.due-sh .hint{overflow-wrap:anywhere}
+.dp-d em{white-space:nowrap}`; document.head.append(st2); } // a folha do prazo fica fora do app (document.body)
 const DOW = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 function duePlan(e, due, offIn) {
   const off = offIn || e.dueOff || [], info = readingInfo(e), total = info.total || Number(e.totalPages) || 0, now = info.now || 0, rem = Math.max(0, total - now);
@@ -13011,7 +13014,7 @@ function dueSheet(e) {
   const nextDow = (w) => { const d0 = new Date(t + 'T12:00:00Z').getUTCDay(); let n = (w - d0 + 7) % 7; if (n === 0) n = 7; return add(n); };
   const endMonth = (() => { const d = new Date(t + 'T12:00:00Z'); return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).toISOString().slice(0, 10); })();
   const quick = [['Sábado', nextDow(6)], ['Domingo', nextDow(0)], ['Em 1 semana', add(7)], ['Fim do mês', endMonth]];
-  const wrap = document.createElement('div'); wrap.className = 'sheet';
+  const wrap = document.createElement('div'); wrap.className = 'sheet due-sh';
   wrap.innerHTML = `<div class="box"><form class="form"><h3>Quando quer terminar?</h3><p class="hint"></p>
     <div style="display:flex;gap:.4rem;flex-wrap:wrap">${quick.map(([n, d]) => `<button type="button" class="dq" data-d="${d}" style="border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.35rem .8rem;font:inherit;font-weight:800;font-size:.84rem">${n}</button>`).join('')}</div>
     <label>Data<input type="date" name="due" min="${t}"></label><div class="dp" style="font-size:.86rem;line-height:1.5"></div>
