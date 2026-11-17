@@ -8135,7 +8135,11 @@ function restoreNav() {
     const run = { shelf: () => openShelfV3(a[0]), ach: () => openAchList(), status: () => openStatusList(a[0], a[1]), friends: () => openFriendsV3(), people: () => openPeopleSearch(), catalog: () => openCatalog(),
       friend: () => friendPage(a[0]), book: () => { if (lib().some((e) => e.id === a[0])) openBook(a[0]); }, anybook: () => openAnyBook(a[0], a[1]) }[v.t];
     // a aba de baixo pode ser restaurada depois e fechar a página reaberta: confere de novo e reabre (16/11)
-    if (run) [150, 1300, 2600].forEach((ms, i) => setTimeout(() => { const sh = $('#shelflist'), cur = S.navView; if (i === 0 || !sh || sh.hidden || !cur || cur.t !== v.t || String((cur.a || [])[0]) !== String(a[0])) run(); }, ms));
+    // a aba de baixo e a sincronização podem redesenhar depois e trocar a tela reaberta: nos primeiros 10 s, até a pessoa tocar
+    // em algo, se a tela não for mais a salva, reabre (16/11)
+    if (run) { setTimeout(run, 150); let user = false; const stop = () => { user = true; }; TR.addEventListener('pointerdown', stop, { once: true, capture: true }); TR.addEventListener('keydown', stop, { once: true, capture: true });
+      const ttl = () => { const sh = $('#shelflist'); return sh && !sh.hidden ? ((sh.querySelector('.sl-top b') || {}).textContent || '') + '|' + !!sh.querySelector('.bp-hero') : ''; }; let sig = null; setTimeout(() => { sig = ttl(); }, 900);
+      const t0 = Date.now(), iv = setInterval(() => { if (user || Date.now() - t0 > 10000) return clearInterval(iv); if (sig === null) return; const now = ttl(); if (now !== sig) { run(); setTimeout(() => { sig = ttl(); }, 600); } }, 700); }
   } catch (err) { console.warn('restoreNav', err); }
 }
 setTimeout(() => restoreNav(), 600);
@@ -8836,6 +8840,19 @@ function bookMenuOpen(anchor, b) {
     : st === 'LIDO' ? [rateIt, ['redo', 'Ler de novo', () => startReread(e)]]
     : st === 'HIBERNANDO' ? [['play', 'Retomar leitura', () => startReading(e)], rateIt]
     : [['play', 'Tentar de novo', () => startReading(e)], rateIt];
+  // livro aberto pelo perfil de uma amizade: ler junto com ela (Bia, 16/11)
+  { const fd = S.fpData, sl = $('#shelflist'); if (fd && !fd.self && fd.isFriend && sl && !sl.hidden && sl.querySelector('.yo-top')) { const nm = String(fd.displayName || fd.handle).split(' ')[0];
+    top.push(['send', `Ler junto com ${nm}`, () => {
+      const x = e || addToLibrary({ title: t, author: (b && b.author) || null, cover: (b && b.cover) || null }, null, 'QUERO', { quiet: true }); if (!x) return;
+      const invite = () => { inviteBuddy(x); setTimeout(() => { const p = $(`#editor .bud-pick[data-h="${fd.handle}"]`); if (p && !p.classList.contains('on')) p.click(); }, 120); };
+      if (x.status === 'LENDO') return invite();
+      if (x.status === 'LIDO') return sheet(`Ler “${x.title}” com ${nm}`, [['Ler de novo agora (releitura)', () => { startReread(x); setTimeout(invite, 350); }], ['Só convidar (sem mudar minha leitura)', invite]]);
+      const cur = (() => { try { return reading(); } catch { return null; } })();
+      sheet(`Ler “${x.title}” com ${nm}`, [
+        [cur && cur.e && cur.e.id !== x.id ? `Começar agora (no lugar de “${cur.e.title}”)` : 'Começar agora', () => { startReading(x); setTimeout(invite, 350); }],
+        ['Ler a seguir (vira a próxima da fila)', () => { if (x.status !== 'QUERO') setLibStatus(x, 'QUERO'); T().nextId = x.id; save(); toast('Marcado como próxima leitura'); setTimeout(invite, 350); }],
+      ]);
+    }, 'convite para lerem o mesmo livro']); } }
   const conversar = () => { const fr = SOC.fr.friends || []; if (!fr.length) return toast('Adicione amigos para conversar'); sheet(`Conversar sobre “${t}” com…`, fr.map((f) => [f.displayName, () => openChat(f.handle, { book: t })])); };
   const mine = !!(e && lib().includes(e));
   const resetIt = mine && canReset ? [['redo', 'Apagar progresso e avaliação', () => paint('del'), '', 'danger', 1]] : [];
@@ -9543,6 +9560,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -12888,6 +12906,13 @@ function openCommonReads(d) {
     b.addEventListener('click', () => openCommonReads(d));
     const at = v.querySelector('.yo-nums') || v.querySelector('.yo-top'); if (at) at.after(b);
   } catch (err) { console.warn('leituras em comum', err); }
+  return r;
+}; }
+// Perfil aberto: a tela de baixo (Busca/Estante) não pode continuar como "a tela a redesenhar"; senão, quando a sincronização
+// ou o catálogo atualizam, o perfil é trocado pela Busca (bug do recarregar no perfil de um amigo, 16/11).
+{ const _fp = friendPage; friendPage = async function (h) {
+  const r = await _fp.apply(this, arguments);
+  try { const v = $('#shelflist'); if (v && !v.hidden && v.querySelector('.yo-top, .fr-lock')) S.listRedraw = null; } catch {}
   return r;
 }; }
 // --- 56_diario_leitura.js ---
