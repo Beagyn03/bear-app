@@ -9781,6 +9781,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11647,7 +11648,7 @@ function rdBind(root, list, after) { // liga os botões dos cartões
     c.querySelector('.rd-veil')?.addEventListener('click', () => { (S.rdOpen = S.rdOpen || new Set()).add(it.type + it.id); after(); });
     c.querySelector('.rd-who')?.addEventListener('click', () => { if (it.user && it.user.handle) friendPage(it.user.handle); });
     c.querySelector('.rd-book')?.addEventListener('click', () => openAnyBook(it.book.title, it.book.author, it.book.cover));
-    c.querySelector('.rd-more')?.addEventListener('click', () => rdMenu(it, after));
+    c.querySelector('.rd-more')?.addEventListener('click', (ev) => rdMenu(it, after, ev.currentTarget));
     c.querySelector('.rd-like')?.addEventListener('click', async (ev) => {
       const b = ev.currentTarget, on = !it.liked; it.liked = on; it.likes = Math.max(0, (it.likes || 0) + (on ? 1 : -1));
       b.classList.toggle('on', on); b.textContent = `${on ? '♥' : '♡'} ${it.likes || ''}`;
@@ -11688,8 +11689,10 @@ function paintRede() {
   $('#rd-moreb', host)?.addEventListener('click', () => rdLoad(true));
   rdBind(host, list, paintRede);
 }
-function rdMenu(it, after) {
+function rdMenu(it, after, anchor) {
   const u = it.user || {}, items = [];
+  // minha avaliação: editar direto daqui (Bia, 17/11)
+  if (it.mine && it.type === 'review') { const le = lib().find((x) => x.id === it.libId) || lib().find((x) => it.book && bookKeyRede(x.title) === bookKeyRede(it.book.title)); if (le) items.push(['Editar avaliação', () => rateForm(le, { logs: [] }, () => { try { after(); } catch {} })]); }
   if (it.mine || S.rd.admin) items.push([it.mine ? 'Apagar' : 'Apagar (moderação)', async () => {
     if (!confirm('Apagar este post?')) return;
     const r = it.type === 'review' ? (it.mine ? await sapi('DELETE', `/v1/reviews/${encodeURIComponent(it.libId)}`) : await sapi('POST', `/v1/admin/review/${it.id}/remove`)) : await sapi('DELETE', `/v1/posts/${it.id}`);
@@ -11708,6 +11711,7 @@ function rdMenu(it, after) {
     }, 'danger']);
   }
   if (it.book) items.push(['Ver o livro', () => openAnyBook(it.book.title, it.book.author, it.book.cover)]);
+  if (anchor && typeof popMenu === 'function') return popMenu(anchor, items.map(([label, fn, cls]) => ({ label, fn, danger: cls === 'danger' })));
   sheet(it.type === 'review' ? 'Avaliação' : 'Post', items);
 }
 // ---------- fio de respostas ----------
