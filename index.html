@@ -9657,6 +9657,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13094,7 +13095,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
       const tg = isOff ? 0 : d < t ? base : perA; return { d, w, isOff, r, tg, fut: d > t }; });
     const mx = Math.max(1, ...rows.map((x) => Math.max(x.tg, x.r)));
     const WD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'], hoje = rows.find((x) => x.d === t) || { r: 0, tg: 0 };
-    return `<section class="in-sec" data-in="semana"><div class="in-h"><b>Rumo a ${esc(dueLabel(e.dueAt))}</b><button type="button" data-go="stats">Estatísticas</button></div><div class="in-card">
+    return `<section class="in-sec" data-in="semana"><div class="in-h"><b>Rumo a ${esc(dueLabel(e.dueAt))}</b></div><div class="in-card">
       <div class="pz-wk">${rows.map((x) => `<span class="pz-d${x.d === t ? ' hj' : ''}${x.isOff ? ' off' : ''}${x.fut ? ' fut' : ''}${!x.fut && x.tg && x.r >= x.tg ? ' ok' : ''}" title="${x.isOff ? 'folga' : `leu ${x.r} de ${x.tg}`}">
         <span class="bx">${x.tg ? `<i class="tg" style="height:${Math.round(x.tg / mx * 100)}%"></i>` : ''}${x.r ? `<i class="rd" style="height:${Math.max(6, Math.round(x.r / mx * 100))}%"></i>` : ''}</span>
         <span class="dw">${x.d === t ? 'hoje' : WD[x.w]}</span><b>${x.isOff ? 'folga' : x.fut ? x.tg : x.r}</b><em>${x.d.slice(8, 10)}</em></span>`).join('')}</div>
