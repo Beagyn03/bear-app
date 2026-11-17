@@ -8881,12 +8881,12 @@ function bookMenuOpen(anchor, b) {
     : st === 'LIDO' ? `lido${e.finishedAt ? ' em ' + String(e.finishedAt).slice(0, 4) : ''}${rv && rv.paws ? ' · ' + pawTxt(rv.paws) : ''}`
     : { QUERO: 'na fila', HIBERNANDO: 'pausado', ABANDONEI: 'abandonado' }[st] + (pg && st !== 'QUERO' ? ` · pág. ${pg}` : '');
   const reload = () => { const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw(); refresh(); };
-  const set = (s) => () => { setLibStatus(e, s); reload(); };
+  const set = (s) => () => { if (typeof statusSheet === 'function') return statusSheet(e, s, reload); setLibStatus(e, s); reload(); }; // tela única de status (17/11)
   // aberto de dentro de uma estante criada pela pessoa: o fim do menu tira só dela
   const ctxKey = anchor && anchor.closest ? ((anchor.closest('[data-shelf]') || {}).dataset || {}).shelf : null;
   const inShelf = e && ctxKey && ctxKey.startsWith('sh:') ? (db.shelves || []).find((x) => x.id === ctxKey.slice(3) && (x.bookIds || []).includes(e.id)) : null;
   const R = reading(), isCur = !!(R && e && R.e.id === e.id), lendo = lib().filter((x) => x.status === 'LENDO').length;
-  const toQueue = () => (pg > 0 ? paint('fila') : goQueue(true));
+  const toQueue = () => (typeof statusSheet === 'function' && e ? statusSheet(e, 'QUERO', () => { const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw(); refresh(); }) : pg > 0 ? paint('fila') : goQueue(true));
   const goQueue = (keep) => {
     bqClose(); setLibStatus(e, 'QUERO'); if (e.status !== 'QUERO') return;
     if (!keep) { e.currentPage = 0; delete e.startedAt; save(); }
@@ -9644,6 +9644,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -13872,6 +13873,104 @@ async function openNivelList(k, title) {
     apply();
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(enhance, 30); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+// --- 75_status_tela_unica.js ---
+// Tela única de status (Bia, 17/11): no topo do "Atualizar" e das ações de status do menu do livro, a fileira
+// Lendo · Lido · Pausado · Quero ler · Abandonei; o conteúdo muda conforme o chip e só salva ao confirmar.
+// Lendo = atualizar leitura de sempre; Lido = avaliação (Terminei); Pausado/Quero ler/Abandonei = painéis curtos.
+{ const st = document.createElement('style'); st.textContent = `
+.ss-chips{display:flex;gap:.3rem;overflow-x:auto;scrollbar-width:none;margin:.1rem -.2rem .6rem;padding:0 .2rem}.ss-chips::-webkit-scrollbar{display:none}
+.ss-chips button{flex:none;border:1.5px solid var(--line)!important;background:var(--panel)!important;color:var(--ink-2)!important;border-radius:99px!important;height:32px!important;min-height:0!important;padding:0 .7rem!important;font:inherit!important;font-size:.78rem!important;font-weight:800!important;cursor:pointer;box-shadow:none!important}
+.ss-chips button.on{color:#fff!important}
+.ss-chips button.on[data-s=LENDO]{background:var(--acc)!important;border-color:var(--acc)!important;color:var(--on-acc,#fff)!important}
+.ss-chips button.on[data-s=LIDO]{background:#2f8a52!important;border-color:#2f8a52!important}
+.ss-chips button.on[data-s=HIBERNANDO]{background:#7a5cd6!important;border-color:#7a5cd6!important}
+.ss-chips button.on[data-s=QUERO]{background:#c9962b!important;border-color:#c9962b!important}
+.ss-chips button.on[data-s=ABANDONEI]{background:#8a7f78!important;border-color:#8a7f78!important}
+.ss-hd{display:flex;align-items:center;gap:.6rem;margin:0 2.2rem .55rem 0}.ss-hd b{font-size:.98rem;color:var(--ink);line-height:1.2}.ss-hd small{display:block;font-size:.74rem;color:var(--ink-2);font-weight:700}
+.ss-p{display:grid;gap:.5rem}.ss-p p{margin:0;font-size:.86rem;color:var(--ink-2);line-height:1.4}.ss-p p b{color:var(--ink)}
+.ss-p label{display:grid;gap:.2rem;font-size:.72rem;font-weight:800;color:var(--ink-2)}
+.ss-p input[type=date]{height:38px!important;min-height:0!important;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit;font-size:.86rem;padding:0 .55rem}
+.ss-p textarea{min-height:64px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit;font-size:.88rem;padding:.5rem .6rem;resize:vertical}
+.ss-p .ss-cnt{justify-self:end;font-size:.66rem;color:var(--ink-2);margin-top:-.3rem}
+.ss-p .ss-sp{display:flex!important;grid-template-columns:none;align-items:center;gap:.45rem;font-size:.82rem;color:var(--ink)}.ss-p .ss-sp input{width:18px;height:18px}
+.ss-go{height:44px!important;min-height:0!important;border:0!important;border-radius:14px!important;background:var(--acc)!important;color:var(--on-acc,#fff)!important;font:inherit!important;font-weight:800!important;font-size:.92rem!important;cursor:pointer}
+.ss-go.gray{background:#8a7f78!important;color:#fff!important}.ss-go.purple{background:#7a5cd6!important;color:#fff!important}.ss-go.gold{background:#c9962b!important;color:#fff!important}
+.ss-link{border:0!important;background:none!important;color:var(--acc)!important;font:inherit!important;font-weight:800!important;font-size:.82rem!important;padding:.2rem 0!important;height:auto!important;min-height:0!important;justify-self:center;cursor:pointer;box-shadow:none!important}`; TR.append(st); }
+const SS_LIST = [['LENDO', 'Lendo'], ['LIDO', 'Lido'], ['HIBERNANDO', 'Pausado'], ['QUERO', 'Quero ler'], ['ABANDONEI', 'Abandonei']];
+const ssChips = (cur) => '<div class="ss-chips" role="tablist" aria-label="Status do livro">' + SS_LIST.map(([k, n]) => '<button type="button" role="tab" data-s="' + k + '"' + (k === cur ? ' class="on" aria-selected="true"' : '') + '>' + n + '</button>').join('') + '</div>';
+// abre a atualização de leitura de um livro (o do Início ou outro em andamento)
+function ssOpenUpdate(e) {
+  const R = (() => { try { return reading(); } catch { return null; } })();
+  if (R && R.e.id === e.id) return S.madrugada ? wakeBear('upd') : editLeitura();
+  const tt = db.toca || (db.toca = {}), prev = tt.currentId; tt.currentId = e.id; try { editLeitura(); } finally { tt.currentId = prev; }
+}
+function statusSheet(e, want, after) {
+  if (!e) return; after = after || (() => { try { const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw(); refresh(); } catch {} });
+  if (want === 'LIDO') { closeEd(); return rateForm(e, { logs: [] }, () => { try { after(); } catch {} }); }
+  if (want === 'LENDO') { closeEd(); if (e.status === 'LENDO') return ssOpenUpdate(e); }
+  const ed = $('#editor'); ed.classList.add('compact');
+  const info = (() => { try { return readingInfo(e); } catch { return { now: 0, total: 0 }; } })(), pg = info.now || 0, tot = info.total || Number(e.totalPages) || 0, today = todayISO();
+  const stLbl = { LENDO: 'lendo', LIDO: 'lido', HIBERNANDO: 'pausado', QUERO: 'na fila', ABANDONEI: 'abandonado' }[e.status] || '';
+  let cur = want;
+  const done = (msg) => { closeEd(); save(); try { after(); } catch {} try { renderHome(todayISO()); } catch {} if (msg) toast(msg); };
+  const apply = (s) => { setLibStatus(e, s); if (e.status !== s) return false; return true; }; // livro de meta: setLibStatus avisa e não troca
+  const draw = () => {
+    let p = '';
+    if (cur === 'LENDO') p = '<p>' + (e.status === 'LENDO' ? 'Você já está lendo este livro.' : 'Volta para <b>Lendo</b>' + (pg ? ', de onde parou (pág. ' + pg + ')' : '') + '.') + '</p><button type="button" class="ss-go" data-a="lendo">' + (e.status === 'LENDO' ? 'Atualizar leitura' : 'Começar a ler') + '</button>';
+    else if (cur === 'HIBERNANDO') p = '<p>Pausar na <b>pág. ' + pg + '</b>' + (tot ? ' de ' + tot : '') + '. Você retoma de onde parou quando quiser.</p><button type="button" class="ss-go purple" data-a="pausar">Pausar leitura</button>';
+    else if (cur === 'QUERO') p = '<p>Volta para a fila do <b>Quero ler</b>.' + (pg ? ' O progresso (pág. ' + pg + ') fica guardado.' : '') + '</p><button type="button" class="ss-go gold" data-a="fila">Voltar para a fila</button>';
+    else if (cur === 'ABANDONEI') p = '<label>Parei em<input type="date" class="ss-dt" max="' + today + '" value="' + esc(e.abandonedAt || today) + '"></label>'
+      + '<label>Motivo (opcional)<textarea class="ss-mot" maxlength="280" placeholder="Ex.: ritmo lento, não era o momento…">' + esc(e.abandonReason || '') + '</textarea></label><small class="ss-cnt"></small>'
+      + '<label class="ss-sp" hidden><input type="checkbox" class="ss-spk"' + (e.abandonSpoiler ? ' checked' : '') + '> Contém spoiler</label>'
+      + '<button type="button" class="ss-go gray" data-a="abandonar">Marcar como abandonado</button><button type="button" class="ss-link" data-a="abav">Marcar e avaliar também</button>';
+    ed.querySelector('.ed-body').innerHTML = '<button type="button" class="up-x" id="ss-x" aria-label="Fechar">×</button>'
+      + '<div class="ss-hd">' + cvh(e.title, e.cover, 'ss-cv', 'width:40px;height:60px;flex:none;font-size:.4rem') + '<div><b>' + esc(e.title) + '</b><small>' + esc(stLbl) + (pg && e.status !== 'QUERO' ? ' · pág. ' + pg : '') + '</small></div></div>'
+      + ssChips(cur) + '<div class="ss-p">' + p + '</div>';
+    try { paintCv(ed); } catch {}
+    ed.querySelector('#ss-x').addEventListener('click', closeEd);
+    ed.querySelectorAll('.ss-chips button').forEach((b) => b.addEventListener('click', () => { const s = b.dataset.s; if (s === 'LIDO') return statusSheet(e, 'LIDO', after); if (s === 'LENDO' && e.status === 'LENDO') { closeEd(); return ssOpenUpdate(e); } cur = s; draw(); }));
+    const mot = ed.querySelector('.ss-mot');
+    if (mot) { const cnt = ed.querySelector('.ss-cnt'), sp = ed.querySelector('.ss-sp'); const upd = () => { cnt.textContent = mot.value.length ? mot.value.length + '/280' : ''; sp.hidden = !mot.value.trim(); }; mot.addEventListener('input', upd); upd(); }
+    const act = (a) => {
+      if (a === 'lendo') { if (e.status === 'LENDO') { closeEd(); return ssOpenUpdate(e); } closeEd(); try { startReading(e); } catch { if (apply('LENDO')) done('Voltou para Lendo'); } return; }
+      if (a === 'pausar') { if (apply('HIBERNANDO')) done('Leitura pausada na pág. ' + pg); return; }
+      if (a === 'fila') { if (apply('QUERO')) done('De volta ao Quero ler'); return; }
+      if (a === 'abandonar' || a === 'abav') {
+        const dt = ed.querySelector('.ss-dt').value || today, m = mot ? mot.value.trim().slice(0, 280) : '', spk = !!(ed.querySelector('.ss-spk') || {}).checked;
+        if (!apply('ABANDONEI')) return;
+        e.abandonedAt = dt > today ? today : dt; if (m) { e.abandonReason = m; e.abandonSpoiler = spk; } else { delete e.abandonReason; delete e.abandonSpoiler; } delete e.finishedAt;
+        if (a === 'abav') { save(); closeEd(); return rateForm(e, { logs: [] }, () => { try { after(); } catch {} }); }
+        done('Marcado como abandonado');
+      }
+    };
+    ed.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+  };
+  draw(); ed.hidden = false;
+}
+// "Atualizar leitura": a mesma fileira no topo (Lendo marcado); os outros chips levam à tela única
+{ let tm = 0; const put = () => {
+    const ed = TR.querySelector('#editor'); if (!ed || ed.hidden) return; const h = ed.querySelector('.ed-body > .up-h'); if (!h || ed.querySelector('.ss-chips')) return;
+    const R = (() => { try { return reading(); } catch { return null; } })(); if (!R) return; const e = R.e;
+    const w = document.createElement('div'); w.innerHTML = ssChips('LENDO'); const ch = w.firstChild; const sub = ed.querySelector('.ed-body > .up-s'); (sub || h).after(ch);
+    ch.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { if (b.dataset.s !== 'LENDO') statusSheet(e, b.dataset.s); }));
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 25); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+// Avaliação: "Não lembro as datas" (apaga as datas e marca noDate)
+{ const st = document.createElement('style'); st.textContent = '.rtf-nd{display:flex;align-items:center;gap:.4rem;font-size:.76rem;font-weight:700;color:var(--ink-2);margin:-.2rem 0 .45rem;cursor:pointer}.rtf-nd input{width:16px;height:16px;margin:0}.rate-dates.nd input{opacity:.4;pointer-events:none}'; document.head.append(st);
+  const _rf = rateForm; rateForm = function (b) {
+    const r = _rf.apply(this, arguments);
+    try {
+      const wrap = [...document.querySelectorAll('body > .sheet')].pop(), form = wrap && wrap.querySelector('form'); if (!form) return r;
+      const dates = form.querySelector('.rate-dates'); if (!dates || form.querySelector('.rtf-nd')) return r;
+      const e = lib().find((x) => x === b || x.id === b.id) || b;
+      const lb = document.createElement('label'); lb.className = 'rtf-nd'; lb.innerHTML = '<input type="checkbox"' + (e.noDate ? ' checked' : '') + '> Não lembro as datas'; dates.after(lb);
+      const ck = lb.querySelector('input'), ins = [...dates.querySelectorAll('input[type=date]')]; let keep = ins.map((i) => i.value);
+      const sync = () => { dates.classList.toggle('nd', ck.checked); if (ck.checked) { keep = ins.map((i) => i.value); ins.forEach((i) => { i.value = ''; }); } else ins.forEach((i, k) => { if (!i.value) i.value = keep[k] || ''; }); };
+      ck.addEventListener('change', sync); if (ck.checked) sync();
+      form.addEventListener('submit', () => { try { if (ck.checked) { delete e.startedAt; delete e.finishedAt; delete e.dateApprox; e.noDate = true; } else delete e.noDate; save(); } catch {} });
+    } catch (err) { console.warn('não lembro as datas', err); }
+    return r;
+  }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
