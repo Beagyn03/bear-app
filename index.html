@@ -9827,6 +9827,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14573,6 +14574,23 @@ const yvRemount = (sec) => { const c = YV_CTX.get(sec) || YV_LAST; if (!c) retur
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('.yv-ln button, .yv-seg button'); if (!b) return; const sec = b.closest('.ys'); if (!sec) return;
   if (b.dataset.l) yvPref('ysLines', Number(b.dataset.l)); else if (b.dataset.v) yvPref('ysView', b.dataset.v); yvRemount(sec); });
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => TR.querySelectorAll('.ys[data-yv]').forEach((sec) => { if (sec.dataset.yv !== yvSig() || !YV_CTX.has(sec)) yvRemount(sec); }), 60); }).observe(TR, { childList: true, subtree: true }); }
+// passar o dedo/mouse: no calendário a capa sai do leque (endireita e cresce); na estante a lombada sobe e abre mostrando a capa
+{ const st = document.createElement('style'); st.textContent = `
+.yv-cm{overflow:visible!important}
+.yv-fan .yv-fc{transition:transform .18s cubic-bezier(.2,1.3,.4,1),filter .18s;transform-origin:50% 100%}
+.yv-fan .yv-fc:hover,.yv-fan .yv-fc.yv-up{transform:translateY(-8px) scale(1.3)!important;z-index:9!important;filter:drop-shadow(0 8px 10px rgba(0,0,0,.35))}
+.yv-sp.es-bk{transition:width .2s ease,transform .18s cubic-bezier(.2,1.3,.4,1),filter .18s}
+.yv-sp.es-bk:not(.o-de):hover,.yv-sp.es-bk:not(.o-de).yv-up{width:46px;transform:translateY(-6px);z-index:3;filter:drop-shadow(0 6px 8px rgba(0,0,0,.4))}
+.yv-sp.es-bk:not(.o-de):hover em,.yv-sp.es-bk:not(.o-de).yv-up em,.yv-sp.es-bk:not(.o-de):hover::after,.yv-sp.es-bk:not(.o-de).yv-up::after{opacity:0}
+.yv-sp.o-in.es-bk:hover,.yv-sp.o-in.es-bk.yv-up{transform:rotate(0) translateY(-6px)}
+.yv-sp.o-de.es-bk:hover,.yv-sp.o-de.es-bk.yv-up{transform:translateY(-3px) scale(1.06);filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+.yv-sp em,.yv-sp::after{transition:opacity .15s}
+`; TR.append(st);
+  let last = null; const sel = '.yv-fc, .yv-sp.es-bk';
+  const up = (b) => { if (last === b) return; last && last.classList.remove('yv-up'); last = b; b && b.classList.add('yv-up'); };
+  TR.addEventListener('touchmove', (ev) => { const t = ev.touches[0]; if (!t) return; const n = TR.elementFromPoint(t.clientX, t.clientY); const b = n && n.closest && n.closest(sel); if (b || last) up(b || null); }, { passive: true });
+  TR.addEventListener('touchstart', (ev) => { const b = ev.target.closest && ev.target.closest(sel); up(b || null); }, { passive: true });
+  TR.addEventListener('touchend', () => setTimeout(() => up(null), 700), { passive: true }); }
 // --- 86_historico_diario.js ---
 // Histórico no Diário de leitura (Bia, 17/11): embaixo das ações, uma linha do tempo do livro, do mais novo para o mais antigo.
 // Cada dia tem o marca-página do prazo (enche com as páginas do dia; dourado com estrela quando bateu a meta; tracejado na folga)
