@@ -9829,6 +9829,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14481,7 +14482,7 @@ function yvViews(sec, root, items, own) {
   const row = sec.querySelector('.ys-row'), leg = sec.querySelector('.ys-leg'); if (!row) return;
   if (view === 'faixa') { if (lines === 2) yvTwoLines(sec, row); return; }
   row.style.display = 'none'; if (leg) leg.style.display = 'none';
-  if (view === 'cal') yvCalendar(sec, row, list, y);
+  if (view === 'cal') yvCalendar(sec, row, list, y, own);
   else yvShelf(sec, row, list, y, own);
 }
 function yvTwoLines(sec, row) {
@@ -14497,17 +14498,17 @@ function yvTwoLines(sec, row) {
     wrap.append(r); });
   row.replaceWith(wrap);
 }
-function yvCalendar(sec, row, list, y) {
+function yvCalendar(sec, row, list, y, own) {
   const t = todayISO(), cy = Number(t.slice(0, 4)), cm = Number(t.slice(5, 7));
   const box = document.createElement('div'); box.className = 'yv-cal';
   box.innerHTML = YS_MESES.map((nome, i) => {
     const m = i + 1, g = list.filter((x) => !x.ap && Number(String(x.d).slice(5, 7)) === m), show = g.slice(0, 4), gap = show.length > 1 ? Math.min(21, 58 / (show.length - 1)) : 0;
     const cls = y === cy && m === cm ? ' now' : (y > cy || (y === cy && m > cm)) ? ' fut' : '';
     const tier = (p) => (p >= 5 ? '5' : p >= 4 ? 'ouro' : p >= 3 ? 'prata' : 'bronze');
-    const fan = show.map((x, j) => '<span class="yv-fc" style="left:' + Math.round(4 + j * gap) + 'px;transform:rotate(' + ((j - (show.length - 1) / 2) * 7).toFixed(1) + 'deg);z-index:' + j + '">' + cvh(x.t, x.c, '') + (x.p ? '<span class="mk-bear t-' + tier(x.p) + '"><b>' + String(x.p).replace('.', ',') + '</b></span>' : '') + '</span>').join('');
+    const fan = show.map((x, j) => '<span class="yv-fc es-bk"' + (own && x.id ? ' data-id="' + esc(x.id) + '"' : ' data-book="' + esc(x.t) + '" data-author="' + esc(x.a || '') + '"') + ' style="left:' + Math.round(4 + j * gap) + 'px;transform:rotate(' + ((j - (show.length - 1) / 2) * 7).toFixed(1) + 'deg);z-index:' + j + '">' + cvh(x.t, x.c, '') + (x.p ? '<span class="mk-bear t-' + tier(x.p) + '"><b>' + String(x.p).replace('.', ',') + '</b></span>' : '') + '</span>').join('');
     return '<button type="button" class="yv-cm' + cls + '" data-m="' + m + '"><b>' + YV_AB[nome] + '</b><small>' + (g.length ? plural(g.length, 'livro', 'livros') : '—') + '</small><div class="yv-fan">' + fan + (g.length > 4 ? '<i>+' + (g.length - 4) + '</i>' : '') + '</div></button>';
   }).join('');
-  box.querySelectorAll('.yv-cm').forEach((b) => b.addEventListener('click', () => { const x = sec.querySelector('.ys-x'); if (x) x.click(); }));
+  box.querySelectorAll('.yv-cm').forEach((b) => b.addEventListener('click', (ev) => { if (ev.target.closest('.yv-fc')) return; const x = sec.querySelector('.ys-x'); if (x) x.click(); }));
   row.after(box); try { paintCv(box); } catch {}
 }
 function yvShelf(sec, row, list, y, own) {
