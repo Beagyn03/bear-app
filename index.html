@@ -9822,6 +9822,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13458,15 +13459,18 @@ function prazoRowHTML(e, R) {
       if (!off1 && d < t) { due++; if (br >= tg) hit++; }
       return dueCard(e, { iso: d, w, off: off1, tg, r: br, ate: d < t ? '' : (ateMap.get(d) || ''), hoje: d === t, fim: d === e.dueAt, fut, compact: true }, false).replace('<i>até </i>', ''); }).join('');
     let hint = false; try { hint = !localStorage.getItem('lv.capaDica'); if (hint) localStorage.setItem('lv.capaDica', '1'); } catch {}
-    const info = [due ? 'Meta batida em ' + hit + ' de ' + due + ' dias' : '', hint ? 'a capa ganha cor conforme você lê' : ''].filter(Boolean).join(' · ');
+    const info = [due ? 'Meta batida em ' + hit + ' de ' + due + ' dias' : '', ''].filter(Boolean).join(' · ');
     return (info ? '<div class="pz-mn" style="font-size:.7rem;font-weight:700;color:var(--ink-2);margin:.4rem 0 .25rem">' + info + '</div>' : '<div style="height:.4rem"></div>') + '<div class="dk-row">' + cardsH + '</div>';
 }
 // com prazo, o bloco separado some do Início (os dias ficam dentro do cartão da leitura)
 { const _isw2 = inSemana; inSemana = function () { try { const R = reading(), e = R && R.e; if (e && e.status === 'LENDO' && e.dueAt && e.dueAt >= todayISO()) return ''; } catch {} return _isw2.apply(this, arguments); }; }
+{ const st3 = document.createElement('style'); st3.textContent = '.due-hd{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin:.1rem 0 .4rem}.due-hd button{margin-left:auto}.due-hd button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.76rem;padding:0;cursor:pointer}.due-cards + .due-ln > button{display:none}.due-cards + .due-ln{justify-content:flex-start}'; TR.append(st3); }
 { let tm = 0; const paint = () => {
     const R = (() => { try { return reading(); } catch { return null; } })(); if (!R || !R.e || R.e.status !== 'LENDO' || !R.e.dueAt || R.e.dueAt < todayISO()) return;
     TR.querySelectorAll('.due-ln').forEach((ln) => { if (ln.previousElementSibling && ln.previousElementSibling.classList.contains('due-cards')) return;
       const box = document.createElement('div'); box.className = 'due-cards'; try { box.innerHTML = prazoRowHTML(R.e, R); } catch (err) { console.warn('dias do prazo', err); return; }
+      const hd = document.createElement('div'); hd.className = 'due-hd'; hd.innerHTML = '<button type="button">Editar prazo</button>'; const mn = box.querySelector('.pz-mn'); if (mn) { mn.style.margin = '0'; hd.prepend(mn); } else { const sp = box.firstElementChild; if (sp && !sp.className) sp.remove(); } box.prepend(hd);
+      hd.querySelector('button').addEventListener('click', (ev) => { ev.stopPropagation(); dueSheet(R.e); });
       ln.before(box); try { paintCv(box); } catch {} });
     TR.querySelectorAll('.v3-now:not(.empty)').forEach((card) => {
       card.querySelectorAll('.v3-au').forEach((x) => { if (/No seu ritmo/.test(x.textContent)) x.style.display = 'none'; });
