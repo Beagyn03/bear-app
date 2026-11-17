@@ -9837,6 +9837,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14138,6 +14139,7 @@ function statusSheet(e, want, after) {
 // e não a versão "perfil de outra pessoa" (Bia, 17/11). A aba Perfil também passa por friendPage, por isso a marca S.myOpen.
 { const _om = openMyProfile; openMyProfile = async function () { S.myOpen = true; try { return await _om.apply(this, arguments); } finally { S.myOpen = false; } }; }
 { const _fp = friendPage; friendPage = async function (handle) {
+    if (!S.myOpen && socialProfile === undefined && connected()) { for (let i = 0; i < 40 && socialProfile === undefined; i++) await new Promise((r) => setTimeout(r, 150)); if (socialProfile === undefined) { try { await loadProfile(); } catch {} } }
     try { const me = socialProfile && socialProfile.handle;
       if (!S.myOpen && me && String(handle || '').replace(/^@/, '').toLowerCase() === String(me).toLowerCase()) return openMyProfile(); } catch {}
     return _fp.apply(this, arguments);
@@ -14648,6 +14650,11 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 #editor .tl-t{font-size:.82rem;margin-top:.2rem}
 #editor .tl-more{width:100%;border:1.5px dashed var(--line);background:none;color:var(--ink-2);font:inherit;font-weight:800;font-size:.78rem;border-radius:12px;padding:.45rem}
 #editor .tl-empty{font-size:.78rem;color:var(--ink-2);margin:0}
+#editor .tl-day{display:flex;flex-wrap:wrap;align-items:baseline;gap:.2rem .55rem;margin:.9rem 0 .35rem;padding-bottom:.3rem;border-bottom:1px solid var(--line)}#editor .tl-day:first-of-type{margin-top:.1rem}
+#editor .tl-day b{font-size:.86rem;color:var(--ink)}#editor .tl-day span{font-size:.72rem;font-weight:700;color:var(--ink-2)}#editor .tl-day em{margin-left:auto;font-style:normal;font-size:.72rem;font-weight:800;color:var(--ink-2)}#editor .tl-day em.ok{color:#c08a12}
+#editor .tl-evl{font-size:.74rem;font-weight:700;color:var(--ink-2);margin:.15rem 0 .35rem 2.6rem}
+#editor .tl-eh{display:flex;flex-wrap:wrap;align-items:baseline;gap:.15rem .5rem;line-height:28px}#editor .tl-eh b{font-size:.84rem;color:var(--ink)}#editor .tl-eh span{font-size:.8rem;font-weight:800;color:var(--acc)}#editor .tl-eh i{font-style:normal;font-size:.72rem;font-weight:700;color:var(--ink-2)}#editor .tl-eh em{font-style:normal;font-size:.7rem;font-weight:900;color:#c08a12}
+#editor .tl-d{padding-bottom:.55rem}#editor .tl-d .tl-c:first-of-type{margin-top:.1rem}
 `; TR.append(st); }
 const TL_DOW = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 const tlDay = (iso) => { const t = todayISO(); if (iso === t) return 'Hoje'; if (iso === new Date(Date.parse(t) - 864e5).toISOString().slice(0, 10)) return 'Ontem'; const d = new Date(iso + 'T12:00:00Z'); return TL_DOW[d.getUTCDay()] + ', ' + iso.slice(8, 10) + '/' + iso.slice(5, 7); };
@@ -14677,23 +14684,65 @@ function tlEvents(e) {
   });
   return list;
 }
+// cada vez que a pessoa salva vira um registro: hora, página, o que leu desde o último e o que anotou junto (comentário, trecho, emoções).
+// Registros antigos (de antes de o app guardar a hora) ficam juntos num registro só daquele dia.
+const tlHM = (at) => { try { const d = new Date(at); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); } catch { return ''; } };
+function tlEntries(e) {
+  const days = new Map(tlEvents(e).map((x) => [x.d, x])), raw = [];
+  (e.readLog || []).forEach((l) => { if (l && l.date) raw.push({ at: l.at || null, d: String(l.date).slice(0, 10), k: 'rl', pages: Number(l.pages) || 0, page: Number(l.page) || 0 }); });
+  (e.diary || []).forEach((x) => { if (x && x.d) raw.push({ at: x.at || null, d: String(x.d).slice(0, 10), k: 'dy', x, page: Number(x.page) || 0 }); });
+  (e.quotes || []).forEach((x) => { if (x && x.at) raw.push({ at: x.at, d: String(x.at).slice(0, 10), k: 'qt', x, page: Number(x.p) || 0 }); });
+  const out = [], legacy = new Map();
+  raw.filter((r) => !r.at).forEach((r) => { if (!legacy.has(r.d)) legacy.set(r.d, { d: r.d, at: null, rs: [] }); legacy.get(r.d).rs.push(r); });
+  raw.filter((r) => r.at).sort((a, b) => String(a.at).localeCompare(String(b.at))).forEach((r) => {
+    const c = out[out.length - 1];
+    if (c && c.d === r.d && Math.abs(Date.parse(r.at) - Date.parse(c.last)) <= 120000) { c.rs.push(r); c.last = r.at; } else out.push({ d: r.d, at: r.at, last: r.at, rs: [r] });
+  });
+  const all = [...legacy.values(), ...out];
+  all.forEach((c) => { c.pages = c.rs.filter((r) => r.k === 'rl').reduce((a, r) => a + r.pages, 0); c.page = Math.max(0, ...c.rs.map((r) => r.page)); const dy = days.get(c.d); if (!c.at && !c.page && dy) c.page = dy.end; c.day = dy; });
+  // estrela de cada registro: dourada quando, somando o que já tinha lido no dia, chegou na meta do dia
+  const byDay = new Map(); all.forEach((c) => { if (!byDay.has(c.d)) byDay.set(c.d, []); byDay.get(c.d).push(c); });
+  byDay.forEach((cs) => { cs.sort((a, b) => String(a.at || '').localeCompare(String(b.at || ''))); let acc = 0; cs.forEach((c) => { acc += c.pages; const dy = c.day; c.ok = !!(dy && dy.per && acc >= dy.per); c.hit = c.ok && acc - c.pages < dy.per; c.fill = dy && dy.per ? Math.min(1, acc / dy.per) : (c.pages ? 0.7 : 0); }); });
+  return all.sort((a, b) => (b.d + (b.at || '')).localeCompare(a.d + (a.at || '')));
+}
 function tlHTML(e, all) {
-  const list = tlEvents(e); if (!list.length) return '<div class="tl"><div class="tl-h"><b>Histórico</b></div><p class="tl-empty">Suas atualizações deste livro aparecem aqui, dia a dia.</p></div>';
-  const show = all ? list : list.slice(0, 14);
+  const ents = tlEntries(e), dayList = tlEvents(e);
+  if (!ents.length && !dayList.length) return '<div class="tl"><p class="tl-empty">Cada vez que você atualizar a leitura, o registro aparece aqui, com a hora e a página.</p></div>';
   const names = (fe) => (fe || []).map((k) => (QT_FEELS.find((y) => y[0] === k) || [, k])[1]);
-  show.forEach((x, i) => { x.prevOk = !!(show[i + 1] && show[i + 1].ok); });
-  const rows = show.map((x) => {
-    const rib = x.ok ? '<span class="tl-st ok">★</span>' : x.off ? '<span class="tl-st off">☆</span>' : x.pages ? '<span class="tl-st mid" style="opacity:' + (0.45 + 0.55 * Math.min(1, x.fill)).toFixed(2) + '">★</span>' : '<span class="tl-st ev">✦</span>';
-    const card = (ic, tt, body) => '<div class="tl-c"><span class="tl-ic">' + ic + '</span><div><div class="tl-ct">' + tt + '</div>' + (body || '') + '</div></div>';
-    const pg = x.pages ? card('📖', 'Leu ' + x.pages + ' pág. <span>até a pág. ' + x.end + '</span>', x.inDue && x.per ? '<div class="tl-cs' + (x.ok ? ' ok' : '') + '">' + (x.ok ? '★ Meta do dia batida' : 'Meta do dia: ' + x.per + ' pág.') + '</div>' : '') : (x.off ? card('☾', 'Dia de folga') : '');
-    const its = x.items.map(({ k, x: y }) => k === 'qt' ? card('❝', 'Trecho' + (y.p ? ' <span>pág. ' + y.p + '</span>' : ''), '<p class="tl-q">' + esc(y.t) + '</p>')
-      : card(y.text ? '💬' : '✨', (y.text ? 'Comentário' : 'Emoções') + ' <span>pág. ' + (y.page || 0) + '</span>', (y.text ? '<p>' + esc(y.text) + '</p>' : '') + (y.fe && y.fe.length ? '<div class="tl-fe">' + names(y.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : ''))).join('');
-    const evs = x.ev.map((v) => card(/^Começou/.test(v) ? '🚀' : '⏳', esc(v))).join('');
-    return '<div class="tl-d' + (x.ok && x.prevOk ? ' ok-ok' : '') + '">' + rib + '<div><div class="tl-t">' + tlDay(x.d) + '</div>' + evs + pg + its + '</div></div>';
-  }).join('');
-  const hit = list.filter((x) => x.ok).length, dueDays = list.filter((x) => x.inDue && !x.off && x.d < todayISO()).length;
-  return '<div class="tl"><div class="tl-h"><b>Histórico</b>' + (e.dueAt ? '<small>meta batida em ' + hit + ' dia' + (hit === 1 ? '' : 's') + '</small>' : '') + '</div>' + rows
-    + (!all && list.length > show.length ? '<button type="button" class="tl-more">Ver tudo (' + list.length + ' dias)</button>' : '') + '</div>';
+  const card = (ic, tt, body) => '<div class="tl-c"><span class="tl-ic">' + ic + '</span><div><div class="tl-ct">' + tt + '</div>' + (body || '') + '</div></div>';
+  const dayInfo = new Map(dayList.map((x) => [x.d, x]));
+  const days = [...new Set([...ents.map((c) => c.d), ...dayList.map((x) => x.d)])].sort((a, b) => b.localeCompare(a));
+  const showDays = all ? days : days.slice(0, 10);
+  let html = '';
+  showDays.forEach((d) => {
+    const dy = dayInfo.get(d) || {}, cs = ents.filter((c) => c.d === d);
+    const meta = dy.inDue && dy.off ? 'dia de folga' : dy.inDue && dy.per ? (dy.ok ? '★ meta do dia batida' : 'meta do dia: ' + dy.per + ' pág.') : '';
+    html += '<div class="tl-day"><b>' + tlDay(d) + '</b>' + (dy.pages ? '<span>' + dy.pages + ' pág. no dia</span>' : '') + (meta ? '<em class="' + (dy.ok ? 'ok' : '') + '">' + meta + '</em>' : '') + '</div>';
+    (dy.ev || []).forEach((v) => { html += '<div class="tl-evl">' + (/^Começou/.test(v) ? '🚀 ' : '⏳ ') + esc(v) + '</div>'; });
+    cs.forEach((c) => {
+      const st = c.ok ? '<span class="tl-st ok">★</span>' : c.pages ? '<span class="tl-st mid" style="opacity:' + (0.45 + 0.55 * c.fill).toFixed(2) + '">★</span>' : '<span class="tl-st ev">✦</span>';
+      const head = '<div class="tl-eh"><b>' + (c.at ? tlHM(c.at) : 'Neste dia') + '</b>' + (c.page ? '<span>pág. ' + c.page + '</span>' : '') + (c.pages ? '<i>+' + c.pages + ' pág.</i>' : '') + (c.hit ? '<em>bateu a meta</em>' : '') + '</div>';
+      const its = c.rs.filter((r) => r.k !== 'rl').map((r) => r.k === 'qt' ? card('❝', 'Trecho' + (r.x.p ? ' <span>pág. ' + r.x.p + '</span>' : ''), '<p class="tl-q">' + esc(r.x.t) + '</p>')
+        : card(r.x.text ? '💬' : '✨', r.x.text ? 'Comentário' : 'Emoções', (r.x.text ? '<p>' + esc(r.x.text) + '</p>' : '') + (r.x.fe && r.x.fe.length ? '<div class="tl-fe">' + names(r.x.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : ''))).join('');
+      html += '<div class="tl-d' + (c.ok ? ' ok-ok' : '') + '">' + st + '<div>' + head + its + '</div></div>';
+    });
+  });
+  const hit = dayList.filter((x) => x.ok).length;
+  return '<div class="tl"><div class="tl-h">' + (e.dueAt ? '<small>meta batida em ' + hit + ' dia' + (hit === 1 ? '' : 's') + '</small>' : '') + '</div>' + html
+    + (!all && days.length > showDays.length ? '<button type="button" class="tl-more">Ver tudo (' + days.length + ' dias)</button>' : '') + '</div>';
+}
+// ao salvar a leitura: guarda a hora e a página nos registros novos de hoje (páginas lidas e comentário/emoções)
+{ const ed = $('#editor');
+  ed.addEventListener('click', (ev) => {
+    const t = ev.target.closest && ev.target.closest('#up-save, #up-fin'); if (!t || t.disabled) return;
+    const e = S.tlE; if (!e) return; const at = new Date().toISOString(), today = todayISO();
+    setTimeout(() => { try {
+      const now = (readingInfo(e) || {}).now || 0; let ch = false;
+      (e.readLog || []).forEach((l) => { if (l && !l.at && String(l.date).slice(0, 10) === today) { l.at = at; l.page = now; ch = true; } });
+      (e.diary || []).forEach((x) => { if (x && !x.at && String(x.d).slice(0, 10) === today) { x.at = at; ch = true; } });
+      if (ch) save();
+    } catch {} }, 150);
+  }, true);
 }
 { const _el = editLeitura; editLeitura = function () { try { const R = reading(); S.tlE = R && R.e; S.tlAll = false; S.tlTab = 'up'; } catch {} return _el.apply(this, arguments); }; }
 { const ed = $('#editor'); let tm = 0;
