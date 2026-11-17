@@ -9845,6 +9845,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14850,6 +14851,9 @@ inSemana = function () { return ''; };
 { const st = document.createElement('style'); st.textContent = '#lista [data-in=rede],#lista [data-in=semana]{display:none!important}'; TR.append(st); }
 // A anotação do livro (só você vê) fica no Diário de leitura e não aparece mais no cartão do Início (Bia, 17/11).
 { const st = document.createElement('style'); st.textContent = '#lista .v3-now .v3-note{display:none!important}'; TR.append(st); }
+// "Em alta" sai do Início (Bia, 17/11): volta quando houver um cálculo melhor, com mais leitores no app.
+{ const i = HOME_SECS.findIndex((x) => x[0] === 'alta'); if (i >= 0) HOME_SECS.splice(i, 1); }
+{ const st = document.createElement('style'); st.textContent = '#lista [data-in=alta]{display:none!important}'; TR.append(st); }
 // --- 89_perfil_espera.js ---
 // Recarregar o app na aba Perfil (Bia, 17/11): o @usuário ainda não chegou da API e a aba caía por um instante em
 // "Editar perfil · Sem @usuário ainda" antes de virar o perfil. Agora a aba espera o perfil chegar (até ~6 s) antes de abrir.
