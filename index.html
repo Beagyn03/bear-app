@@ -9772,6 +9772,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13307,6 +13308,53 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
   } catch (err) { console.warn('semana do prazo', err); return _isw.apply(this, arguments); }
 }; }
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { TR.querySelectorAll('.pz-plan:not([data-b])').forEach((b) => { b.dataset.b = 1; b.addEventListener('click', () => { const R = reading(); if (R) dueSheet(R.e); }); }); }, 100); }).observe(TR, { childList: true, subtree: true }); }
+// --- 59b_calendario_inicio.js ---
+// Placar do prazo no Início vira calendário do mês (Bia, 17/11): cada dia mostra quantas páginas foram lidas
+// (todos os livros); nos dias do prazo, fica verde quando bateu a meta do livro do prazo; dias que vêm mostram
+// até qual página ler; folga tracejada; hoje com contorno; prazo com estrela.
+{ const st = document.createElement('style'); st.textContent = `
+.ic-hs,.ic-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.ic-hs{margin-bottom:3px}
+.ic-hs span{text-align:center;font-size:.64rem;font-weight:800;color:var(--ink-2)}
+.ic-d{position:relative;display:grid;place-items:center;height:42px;border-radius:9px;background:color-mix(in srgb,var(--ink) 5%,transparent);overflow:hidden}
+.ic-d i{position:absolute;top:3px;left:5px;font-style:normal;font-size:.6rem;font-weight:800;color:var(--ink-2)}
+.ic-d b{font-size:.8rem;font-weight:900;color:var(--ink);margin-top:8px}.ic-d small{font-size:.58rem;font-weight:800;color:var(--acc);margin-top:8px;white-space:nowrap}
+.ic-d.blank{background:none}.ic-d.fut{background:none;border:1px solid var(--line)}.ic-d.pz{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--acc) 55%,transparent)}
+.ic-d.ok{background:color-mix(in srgb,#2f8a52 22%,transparent)}.ic-d.ok b{color:#2f8a52}.ic-d.miss b{color:var(--acc)}
+.ic-d.off{background:none;border:1px dashed var(--line)}.ic-d.hj{outline:2px solid var(--acc);outline-offset:-2px}.ic-d.fim i::after{content:' ★';color:var(--acc)}
+.ic-lg{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:.45rem;font-size:.66rem;font-weight:800;color:var(--ink-2)}.ic-lg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:.25rem;vertical-align:-1px}`; TR.append(st); }
+{ const _isw2 = inSemana; inSemana = function () {
+  try {
+    const R = reading(), e = R && R.e, t = todayISO();
+    if (!e || e.status !== 'LENDO' || !e.dueAt || e.dueAt < t) return _isw2.apply(this, arguments);
+    const all = pagesByDay(), book = new Map(bookSeries(e).map((x) => [x.d, x.p])), off = e.dueOff || [];
+    const since = e.dueSince && e.dueSince <= t ? e.dueSince : t, total = R.total || Number(e.totalPages) || 0;
+    // meta de cada dia do prazo: dias passados pela conta do dia em que foi marcado; de hoje em diante pela conta atual
+    const pd = []; for (let d = since; d <= e.dueAt; d = inAddDays(d, 1)) pd.push(d);
+    const isOff = (d) => off.includes(new Date(d + 'T12:00:00Z').getUTCDay());
+    const base = total ? Math.ceil(Math.max(0, total - (e.dueStartPage || 0)) / (pd.filter((d) => !isOff(d)).length || pd.length)) : 0;
+    const h = dueToday(e), plan = duePlan(e, e.dueAt); const ateMap = new Map(); { let acc = h ? h.start : (R.now || 0); for (const x of plan.list) { acc += x.n; ateMap.set(x.iso, Math.min(acc, total || acc)); } }
+    const y = Number(t.slice(0, 4)), m = Number(t.slice(5, 7)) - 1, days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7;
+    const MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    const cells = []; for (let i = 0; i < lead; i++) cells.push('<span class="ic-d blank"></span>');
+    let read = 0, hit = 0, due = 0;
+    for (let dn = 1; dn <= days; dn++) {
+      const d = t.slice(0, 8) + String(dn).padStart(2, '0'), inPz = d >= since && d <= e.dueAt, off1 = inPz && isOff(d), p = all[d] || 0, fut = d > t;
+      const tg = inPz && !off1 ? (d < t ? base : (plan.list.find((x) => x.iso === d) || {}).n || 0) : 0, br = book.get(d) || 0;
+      if (!fut) read += p; if (inPz && !off1 && !fut && d !== t) { due++; if (br >= tg) hit++; }
+      const ok = inPz && !off1 && !fut && tg && br >= tg, miss = inPz && !off1 && !fut && d !== t && tg && br < tg;
+      const cls = 'ic-d' + (fut ? ' fut' : '') + (inPz ? ' pz' : '') + (off1 ? ' off' : '') + (ok ? ' ok' : '') + (miss ? ' miss' : '') + (d === t ? ' hj' : '') + (d === e.dueAt ? ' fim' : '');
+      const body = off1 ? '<small style="color:var(--ink-2)">folga</small>' : fut ? (inPz ? '<small>até ' + (ateMap.get(d) || '') + '</small>' : '') : (p ? '<b>' + p + '</b>' : d === t && inPz && h && !h.todayOff ? '<small>até ' + h.target + '</small>' : (inPz && d !== t ? '<b style="opacity:.35">0</b>' : ''));
+      cells.push('<span class="' + cls + '" title="' + (fut ? (inPz ? 'ler até a pág. ' + (ateMap.get(d) || '') : '') : p + ' páginas lidas' + (tg ? ' · meta ' + tg : '')) + '"><i>' + dn + '</i>' + body + '</span>');
+    }
+    if (e.dueAt.slice(0, 7) !== t.slice(0, 7)) cells.push(''); // o prazo passa do mês: o rodapé avisa
+    const foot = h && h.todayOff ? 'Hoje é folga' : h && h.done ? `Meta de hoje cumprida (pág. ${h.target})` : `Hoje: leia até a <b>pág. ${h ? h.target : '—'}</b>`;
+    return `<section class="in-sec" data-in="semana"><div class="in-h"><b>Rumo a ${esc(dueLabel(e.dueAt))}</b></div><div class="in-card">
+      <div class="pz-mn" style="font-size:.8rem;font-weight:900;margin-bottom:.35rem;">${MES[m][0].toUpperCase() + MES[m].slice(1)} · ${read} páginas lidas${due ? ` · meta batida em ${hit} de ${due} dias` : ''}</div>
+      <div class="ic-hs">${['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map((n) => '<span>' + n + '</span>').join('')}</div><div class="ic-g">${cells.join('')}</div>
+      <div class="ic-lg"><span><i style="background:color-mix(in srgb,#2f8a52 40%,transparent)"></i>bateu a meta</span><span><i style="background:none;border:1px solid var(--line)"></i>até onde ler</span><span><i style="box-shadow:inset 0 -3px 0 var(--acc)"></i>dias do prazo</span></div>
+      <div class="pz-ft"><span>${foot}${e.dueAt.slice(0, 7) !== t.slice(0, 7) ? ' · o prazo continua no mês que vem' : ''}</span><button type="button" class="pz-plan">Ver plano</button></div></div></section>`;
+  } catch (err) { console.warn('calendário do prazo', err); return _isw2.apply(this, arguments); }
+}; }
 // --- 60_sem_urso.js ---
 // Sem urso (Bia, 17/11): o visual é só tipografia. Ilustrações do urso viraram um pixel transparente (ART/A) e somem do layout;
 // o cartão "Dica" (antigo "Bear diz") fica só com o texto.
