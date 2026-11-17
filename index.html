@@ -9802,6 +9802,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14175,6 +14176,16 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
     } catch (err) { console.warn('ordem do perfil', err); }
     return r;
   }; }
+// --- 80_status_modal.js ---
+// Tela de status/Atualizar como modal centralizado de altura fixa (Bia, 17/11): trocar de status não faz a janela
+// pular de tamanho; o conteúdo rola por dentro.
+{ const st = document.createElement('style'); st.textContent = `
+#editor.ss-modal{align-items:center!important;justify-content:center!important;padding:16px!important;background:rgba(0,0,0,.5)!important}
+#editor.ss-modal .ed-body{position:relative!important;width:min(520px,100%)!important;height:min(86vh,720px)!important;max-height:none!important;margin:0!important;border-radius:20px!important;overflow-y:auto!important;overscroll-behavior:contain;align-content:start!important;justify-content:stretch;bottom:auto!important;top:auto!important;transform:none!important;animation:ssPop .18s ease-out}
+#editor.ss-modal .ed-body::before{display:none!important}
+@keyframes ssPop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}`; TR.append(st); }
+{ let tm = 0; const sync = () => { const ed = TR.querySelector('#editor'); if (!ed) return; ed.classList.toggle('ss-modal', !ed.hidden && !!ed.querySelector('.ss-chips')); };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(sync, 0); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
