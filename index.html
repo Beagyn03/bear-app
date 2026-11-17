@@ -8902,7 +8902,7 @@ function bookMenuOpen(anchor, b) {
     const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw();
     refresh(); toast(`Progresso e avaliação de “${e.title}” apagados. Ele está em Quero ler.`);
   };
-  const rateIt = ['paw', rv && rv.paws ? 'Minha avaliação' : 'Avaliar', () => rateForm(e, { logs: [] }, () => renderHome(todayISO())), ''];
+  const rateIt = ['paw', rv && rv.paws ? 'Minha avaliação' : 'Avaliar', () => rateForm(e, { logs: [] }, () => renderHome(todayISO())), e.status === 'LIDO' || e.status === 'ABANDONEI' ? '' : 'ao terminar ou abandonar'];
   const canReset = !!(e && (pg > 0 || rv || (e.status !== 'QUERO') || (e.readLog || []).length));
   // o que se faz o tempo todo fica à vista; o resto em grupos que abrem no lugar (um por vez)
   // item: [ícone, texto, ação, detalhe, classe, fica aberto (abre outro passo do menu)]
@@ -9643,6 +9643,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -13385,7 +13386,7 @@ img[src^="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP"]{display:none!important}
 // Pergunta como terminou: Terminei (data de hoje, livro vai a 100% e vira Lido), Abandonei (data de hoje como "Parei em",
 // mantém a página e vira Abandonado) ou Ainda estou lendo (não mexe em nada).
 { const st = document.createElement('style'); st.textContent = `
-.rtf-end{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin:.2rem 0 .7rem}
+.rtf-end{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin:.2rem 0 .7rem}
 .rtf-end button{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;padding:.55rem .3rem;font:inherit;font-size:.8rem;font-weight:800;cursor:pointer;line-height:1.15}
 .rtf-end button small{display:block;font-size:.66rem;font-weight:600;color:var(--ink-2);margin-top:.1rem}
 .rtf-end button.on[data-v=fim]{border-color:#2f8a52;background:color-mix(in srgb,#2f8a52 16%,var(--panel))}
@@ -13400,7 +13401,7 @@ img[src^="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP"]{display:none!important}
       const lblTxt = (t) => { for (const n of dLbl.childNodes) if (n.nodeType === 3 && n.textContent.trim()) { n.textContent = t; return; } };
       const info = (() => { try { return readingInfo(e); } catch { return { now: 0, total: 0 }; } })();
       const pick = document.createElement('div'); pick.className = 'rtf-end'; pick.setAttribute('role', 'group'); pick.setAttribute('aria-label', 'Como terminou a leitura');
-      pick.innerHTML = '<button type="button" data-v="fim">Terminei<small>vai para 100%</small></button><button type="button" data-v="ab">Abandonei<small>parei na pág. ' + (info.now || 0) + '</small></button><button type="button" data-v="lendo">Ainda lendo<small>só avaliar</small></button>';
+      pick.innerHTML = '<button type="button" data-v="fim">Terminei<small>vai para 100%</small></button><button type="button" data-v="ab">Abandonei<small>parei na pág. ' + (info.now || 0) + '</small></button>';
       let choice = 'fim'; const today = todayISO();
       const paint = () => { pick.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x.dataset.v === choice));
         if (choice === 'lendo') { lblTxt('Terminei em'); if (dEnd.value === today && !e.finishedAt) dEnd.value = ''; dLbl.style.opacity = '.45'; }
