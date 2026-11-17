@@ -9799,6 +9799,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12446,6 +12447,18 @@ function editTop5() {
   v.querySelector('#t5-edit')?.addEventListener('click', editTop5);
   return r;
 }; }
+// a folha de editar o top 5 fica fora do app (document.body): o estilo precisa estar no document.head (Bia, 17/11)
+{ const st = document.createElement('style'); st.textContent = `
+.t5-ed{display:grid;gap:.45rem;margin:.4rem 0 .6rem}
+.t5-it{display:grid;grid-template-columns:22px 38px minmax(0,1fr) auto;gap:.5rem;align-items:center;border:1px solid var(--line);border-radius:12px;padding:.4rem .5rem;background:var(--panel)}
+.t5-it em{font-style:normal;font-weight:900;color:var(--acc);text-align:center}
+.t5-it .cv{width:38px!important;height:56px!important;border-radius:4px;display:block;background-color:#8a6a4a;background-size:cover!important;background-position:center!important;background-repeat:no-repeat;font-size:0!important;overflow:hidden;color:transparent}
+.t5-it .cv *{display:none!important}
+.t5-it > span:not(.bt){min-width:0}.t5-it b{font-size:.86rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.t5-it small{display:block;font-size:.72rem;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t5-it span.bt{display:flex;gap:.15rem}
+html .t5-it span.bt button{width:32px!important;height:32px!important;min-width:0!important;min-height:0!important;border-radius:9px!important;border:1px solid var(--line)!important;background:var(--bg)!important;color:var(--ink)!important;font:inherit;font-weight:900;padding:0!important;display:grid;place-items:center;box-shadow:none!important}
+.t5-it span.bt button svg{width:16px;height:16px}
+.t5-it span.bt button:disabled{opacity:.3}`; document.head.append(st); }
 // --- 45_avaliacao_pagina.js ---
 // Avaliação em página inteira (Bia, 16/11): capa no topo, título, autor, status, datas de início e de conclusão,
 // depois as patas, a resenha (campo grande) e as demais opções; Salvar fixo embaixo. "Até onde vai o spoiler" sai: o app usa o progresso.
