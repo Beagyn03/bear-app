@@ -9774,6 +9774,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11602,6 +11603,10 @@ function rdSpoil(it) { // null = pode mostrar; senão o aviso
   }
   return { label: `Spoiler${it.book ? ` de ${it.book.title}` : ''}${where ? ' · ' + where : ''}`, note };
 }
+// nota nos cards da Rede com o marca-página de estrela (Bia, 17/11)
+const rdMark = (p) => { const n = Number(p) || 0, t = n >= 5 ? '5' : n >= 4 ? 'ouro' : n >= 3 ? 'prata' : 'bronze', fr = { 0.5: 'Socorro, o que foi isso?', 1: 'Não foi pra mim', 1.5: 'Quase abandonei', 2: 'Fraquinho', 2.5: 'Teve seus momentos', 3: 'Bom, mas não marcou', 3.5: 'Gostei bastante', 4: 'Muito bom!', 4.5: 'Quase perfeito', 5: 'Favorito da vida!' }[n] || '';
+  return '<span class="rd-mk" style="--nimg:url(img/nota_' + t + '.webp)"><b>' + String(n).replace('.', ',') + '</b></span><span class="rd-mk-t"><b>nota ' + String(n).replace('.', ',') + '</b>' + (fr ? '<small>' + fr + '</small>' : '') + '</span>'; };
+{ const st = document.createElement('style'); st.textContent = '.rd-paws{display:flex!important;align-items:center;gap:.6rem;margin:.15rem 0 .3rem}.rd-mk{position:relative;flex:none;width:34px;height:56px;background:var(--nimg) center bottom/contain no-repeat;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.35))}.rd-mk b{position:absolute;left:0;right:0;top:66%;transform:translateY(-50%);text-align:center;font-size:.72rem;font-weight:900;color:#2a1709;text-shadow:0 0 2px rgba(255,255,255,.8)}.rd-mk-t{display:grid;line-height:1.15}.rd-mk-t b{font-size:.95rem;font-weight:900;color:var(--ink)}.rd-mk-t small{font-size:.76rem;font-weight:700;color:var(--ink-2)}'; TR.append(st); }
 const pawsTxt = (p) => p ? `nota ${String(p).replace('.', ',')}` : '';
 function readerPctOf(title) { const e = lib().find((x) => normT(x.title) === normT(title || '')); if (!e) return null; if (e.status === 'LIDO') return 100; try { const p = Math.round(readingInfo(e).pct || 0); return p > 0 ? Math.min(100, p) : (e.status === 'LENDO' ? 0 : null); } catch { return null; } }
 const readerPctTxt = (p) => (p == null ? '' : p >= 100 ? 'terminou o livro' : p <= 0 ? 'começando o livro' : `em ${p}% do livro`);
@@ -11609,7 +11614,7 @@ function rdCardHTML(it, i, opts = {}) {
   const kind = it.type === 'review' ? 'Avaliação' : (RD_KINDS.find((k) => k[0] === it.kind) || [, ''])[1];
   const sp = rdSpoil(it), u = it.user || {};
   const fe = (it.feelings || []).length ? `<div class="rd-fe">${it.feelings.map((k) => qtFeel(k)).join('')}</div>` : '';
-  const body = `${it.paws ? `<div class="rd-paws">${pawsTxt(it.paws)}</div>` : ''}${it.readerPct != null ? `<div class="rd-pct">${readerPctTxt(it.readerPct)}</div>` : ''}${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
+  const body = `${it.paws ? `<div class="rd-paws">${rdMark(it.paws)}</div>` : ''}${it.readerPct != null ? `<div class="rd-pct">${readerPctTxt(it.readerPct)}</div>` : ''}${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
     ${it.text ? `<p>${esc(it.text)}</p>` : ''}
     ${it.book2 ? `<div class="rd-rec"><span>${cvh(it.book.title, it.book.cover)}<b>${esc(it.book.title)}</b></span><em>➜</em><span>${cvh(it.book2.title, it.book2.cover)}<b>${esc(it.book2.title)}</b></span></div>` : ''}
     ${fe}${it.hasImage ? `<div class="rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
