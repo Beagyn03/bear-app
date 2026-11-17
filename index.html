@@ -9805,6 +9805,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14218,7 +14219,7 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
       dates.before(dl); dl.querySelector('button').addEventListener('click', () => { dates.classList.remove('lz-hide'); dl.remove(); }); }
     // três ações
     const acts = document.createElement('div'); acts.className = 'lz-acts';
-    acts.innerHTML = '<button type="button" data-p="nota"><span>✎</span>Anotação<small>só você vê</small></button><button type="button" data-p="trecho"><span>❝</span>Trecho<small>guardar uma frase</small></button><button type="button" data-p="emo"><span>✨</span>Emoções<small>até 5</small></button><button type="button" data-p="coment"><span>💬</span>Comentar<small>vai para a Rede</small></button>';
+    acts.innerHTML = '<button type="button" data-p="nota"><span>✎</span>Anotação<small>só você vê</small></button><button type="button" data-p="trecho"><span>❝</span>Trecho<small>guardar uma frase</small></button><button type="button" data-p="emo"><span>✨</span>Emoções<small>até 3</small></button><button type="button" data-p="coment"><span>💬</span>Comentar<small>vai para a Rede</small></button>';
     const pNota = document.createElement('div'); pNota.className = 'lz-pane'; pNota.hidden = true;
     pNota.innerHTML = '<textarea maxlength="2000" placeholder="Uma anotação sobre o livro (só você vê)"></textarea><div class="lz-row"><span>fica salva no livro</span></div>';
     const tn = pNota.querySelector('textarea'); tn.value = e.note || ''; tn.addEventListener('input', () => { e.note = tn.value.trim() ? tn.value : undefined; if (!e.note) delete e.note; save(); });
@@ -14231,9 +14232,9 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
     const paintFe = () => { const N = S.upNote || { fe: [] }; feRow.innerHTML = (N.fe || []).map((k) => '<span>' + esc((QT_FEELS.find((x) => x[0] === k) || [, k])[1]) + '</span>').join(''); };
     const openFe = () => { const N = S.upNote || (S.upNote = { text: '', fe: [], vis: 'public', sp: false }); let pick = [...(N.fe || [])];
       const sh = document.createElement('div'); sh.className = 'sheet fe-sheet';
-      const dr = () => { sh.innerHTML = '<div class="box"><h3>Como você está se sentindo?</h3><p class="hint">Escolha até 5 emoções sobre esta parte da leitura.</p><div class="fe-grid">' + QT_FEELS.map(([k, n]) => '<button type="button" data-f="' + k + '" class="' + (pick.includes(k) ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '</div><small class="fe-cnt">' + pick.length + ' de 5</small><button type="button" class="primary fe-ok">Pronto</button></div>';
-        sh.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.f; if (pick.includes(k)) pick = pick.filter((x) => x !== k); else if (pick.length < 5) pick.push(k); else return toast('Até 5 emoções'); dr(); }));
-        sh.querySelector('.fe-ok').addEventListener('click', () => { N.fe = pick; paintFe(); acts.querySelector('[data-p=emo] small').textContent = pick.length ? pick.length + ' escolhida' + (pick.length > 1 ? 's' : '') : 'até 5'; sh.remove(); }); };
+      const dr = () => { sh.innerHTML = '<div class="box"><h3>Como você está se sentindo?</h3><p class="hint">Escolha até 3 emoções sobre esta parte da leitura.</p><div class="fe-grid">' + QT_FEELS.map(([k, n]) => '<button type="button" data-f="' + k + '" class="' + (pick.includes(k) ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '</div><small class="fe-cnt">' + pick.length + ' de 3</small><button type="button" class="primary fe-ok">Pronto</button></div>';
+        sh.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.f; if (pick.includes(k)) pick = pick.filter((x) => x !== k); else if (pick.length < 3) pick.push(k); else return toast('Até 3 emoções'); dr(); }));
+        sh.querySelector('.fe-ok').addEventListener('click', () => { N.fe = pick; paintFe(); acts.querySelector('[data-p=emo] small').textContent = pick.length ? pick.length + ' escolhida' + (pick.length > 1 ? 's' : '') : 'até 3'; sh.remove(); }); };
       sh.addEventListener('click', (ev) => { if (ev.target === sh) sh.remove(); }); dr(); document.body.append(sh); };
     note.classList.add('lz-hide'); note.before(acts); acts.after(feRow); feRow.after(pNota); pNota.after(pTr); paintFe();
     const panes = { nota: pNota, trecho: pTr };
