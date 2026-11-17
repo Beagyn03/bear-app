@@ -8134,7 +8134,8 @@ function restoreNav() {
     const v = n.view; if (!v) return; const a = v.a || [];
     const run = { shelf: () => openShelfV3(a[0]), ach: () => openAchList(), status: () => openStatusList(a[0], a[1]), friends: () => openFriendsV3(), people: () => openPeopleSearch(), catalog: () => openCatalog(),
       friend: () => friendPage(a[0]), book: () => { if (lib().some((e) => e.id === a[0])) openBook(a[0]); }, anybook: () => openAnyBook(a[0], a[1]) }[v.t];
-    run && setTimeout(run, 120);
+    // a aba de baixo pode ser restaurada depois e fechar a página reaberta: confere de novo e reabre (16/11)
+    if (run) [150, 1300, 2600].forEach((ms, i) => setTimeout(() => { const sh = $('#shelflist'), cur = S.navView; if (i === 0 || !sh || sh.hidden || !cur || cur.t !== v.t || String((cur.a || [])[0]) !== String(a[0])) run(); }, ms));
   } catch (err) { console.warn('restoreNav', err); }
 }
 setTimeout(() => restoreNav(), 600);
@@ -9542,6 +9543,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -13000,6 +13002,18 @@ if (/[?&]foco=1/.test(location.search)) { setTimeout(openFoco, 2200); try { hist
 if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (ev) => { if (ev.data && ev.data.type === 'bear-upd') openUpd(); if (ev.data && ev.data.type === 'bear-foco') openFoco(); });
 // cartão do Início: mostra que o lembrete está ligado
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { TR.querySelectorAll('.due-ln span:first-child').forEach((s) => { const R = reading(); if (R && R.e.remind && !s.dataset.bell) { s.dataset.bell = 1; s.insertAdjacentHTML('beforeend', ' <small style="font-weight:700;opacity:.75">· lembrete às ' + String(R.e.remind.hour).padStart(2, '0') + ':' + String(R.e.remind.minute || 0).padStart(2, '0') + '</small>'); } }); }, 120); }).observe(TR, { childList: true, subtree: true }); }
+// --- 58_amigos_atualiza.js ---
+// Lista de amigos sempre atual (Bia, 16/11): ao abrir a tela de Amigos, busca a lista na hora e redesenha
+// (antes usava a última atualização periódica; quem aceitou o pedido há pouco não aparecia).
+{ const _of = openFriendsV3; openFriendsV3 = function () {
+  const r = _of.apply(this, arguments);
+  (async () => { try {
+    const a = await sapi('GET', '/v1/friends'); if (a.status !== 200 || !a.data || !Array.isArray(a.data.friends)) return;
+    SOC.fr = { friends: a.data.friends, incoming: a.data.incoming || [], outgoing: a.data.outgoing || [] };
+    const v = $('#shelflist'); if (v && !v.hidden && /Amigos/.test((v.querySelector('.sl-top b') || {}).textContent || '') && typeof S.listRedraw === 'function') S.listRedraw();
+  } catch {} })();
+  return r;
+}; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
