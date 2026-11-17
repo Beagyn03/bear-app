@@ -9762,6 +9762,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13436,6 +13437,11 @@ img[src^="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP"]{display:none!important}
 .rv-editor .rv-ok{height:48px;border:0;border-radius:14px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;font-size:1rem}
 .rtf-end{margin:.1rem 0 .5rem!important}.rtf-end button{padding:.4rem .3rem!important}
 .rtf-hd > :first-child{width:64px!important;height:96px!important;min-width:0!important;flex:none!important;font-size:.7rem!important}
+.rtf-hd.has-end{grid-template-columns:64px 1fr 116px!important;column-gap:.6rem!important}.rtf-hd.has-end .rtf-end{grid-template-columns:1fr!important;margin:0!important;gap:.35rem!important;width:116px;align-self:center}
+.rtf-hd.has-end .rtf-st{display:none!important}.rtf-hd.has-end .rtf-info b{font-size:1rem}
+.sheet .rate-nota.rtf-nr{flex-direction:row!important;justify-content:flex-start!important;align-items:center!important;gap:.6rem!important;margin:.2rem 0 .5rem!important}
+.sheet .rtf-nr .rate-paws{justify-content:flex-start!important;gap:.1rem!important}.sheet .rtf-nr .rate-paws button{width:34px!important;height:34px!important}.sheet .rtf-nr .rate-paws svg{width:26px!important;height:26px!important}.sheet .rtf-nr .rate-paws > button > *{transform:none!important}
+.sheet .rtf-nr .paw-lbl{white-space:normal!important;text-align:left;font-size:.74rem!important;line-height:1.2!important}
 .rtf-rs2 button small{display:none!important}.rtf-rs2 button{padding:.55rem .6rem!important}
 label.rtf-sp{padding:.45rem .7rem!important}label.rtf-sp .rtf-sp-h{font-size:.68rem!important}`; document.head.append(st); }
 { const _rf = rateForm; rateForm = function () {
@@ -13457,6 +13463,9 @@ label.rtf-sp{padding:.45rem .7rem!important}label.rtf-sp .rtf-sp-h{font-size:.68
         document.body.append(ed); setTimeout(() => { t2.focus(); t2.setSelectionRange(t2.value.length, t2.value.length); }, 50);
       });
       paint();
+      const hd = form.closest('.box')?.querySelector('.rtf-hd') || wrap.querySelector('.rtf-hd'), end = wrap.querySelector('.rtf-end');
+      if (hd && end) { hd.classList.add('has-end'); hd.append(end); }
+      const nr = wrap.querySelector('.rate-paws')?.parentElement; if (nr && nr.classList.contains('rate-nota')) nr.classList.add('rtf-nr');
       const sh = form.querySelector('label.rtf-sp .rtf-sp-h'); if (sh) sh.textContent = 'Quem não leu verá um aviso antes.';
     } catch (err) { console.warn('avaliação compacta', err); }
     return r;
