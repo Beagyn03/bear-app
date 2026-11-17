@@ -9841,6 +9841,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14791,7 +14792,7 @@ function tlEditClick(ev, e, redraw) {
   if (b.matches('.tl-fe.ed span')) { const N = c._N, kk = b.dataset.f; if (N.fe.includes(kk)) N.fe = N.fe.filter((y) => y !== kk); else if (N.fe.length < 3) N.fe.push(kk); else return toast('Até 3 emoções'); b.classList.toggle('on', N.fe.includes(kk)); return; }
   const a = b.dataset.a;
   if (a === 'cx') return redraw();
-  if (a === 'rm') { if (!confirm(k === 'qt' ? 'Apagar este trecho?' : 'Apagar este registro do diário?')) return; arr.splice(Number(ix), 1); save(); toast('Apagado'); return redraw(); }
+  if (a === 'rm') { if (!b.dataset.ok) { b.dataset.ok = '1'; b.textContent = 'Toque de novo para apagar'; setTimeout(() => { if (b.isConnected) { delete b.dataset.ok; b.textContent = 'Apagar'; } }, 4000); return; } arr.splice(Number(ix), 1); save(); toast('Apagado'); return redraw(); }
   if (a === 'sv') { const t = (c.querySelector('textarea') || {}).value || '';
     if (k === 'qt') { if (!t.trim()) return toast('Escreva o trecho ou toque em Apagar'); x.t = t.trim(); const p = Number((c.querySelector('.tl-ed input') || {}).value) || 0; if (p > 0) x.p = Math.round(p); else delete x.p; }
     else { const N = c._N || { fe: x.fe || [] }; if (!t.trim() && !N.fe.length) return toast('Escreva algo, escolha uma emoção ou toque em Apagar'); x.text = t.trim(); x.fe = N.fe; }
@@ -14861,6 +14862,21 @@ inSemana = function () { return ''; };
       return;
     }
     return _gt.apply(this, arguments);
+  }; }
+// --- 90_perfil_sem_flash.js ---
+// Perfil (Bia, 17/11): no celular aparecia por um instante a versão antiga da página (Lendo agora, Conquistas, Melhores
+// avaliados) antes de virar a nova, e sobrava um espaço vazio no topo do seu perfil (o botão de voltar escondido).
+// Ao abrir um perfil, a página fica invisível até terminar de montar; no seu perfil, a barra de voltar some de vez.
+{ const st = document.createElement('style'); st.textContent = `
+#shelflist.fp-wait .sl-body{visibility:hidden}
+#shelflist .sl-body{transition:opacity .15s}
+#shelflist.mine-page .sl-top{display:none!important}
+`; TR.append(st); }
+{ const _fp = friendPage; friendPage = async function (h) {
+    const v = $('#shelflist'), same = v && !v.hidden && S.fpData && String(S.fpData.handle || '').toLowerCase() === String(h || '').replace(/^@/, '').toLowerCase();
+    if (v && !same) v.classList.add('fp-wait');
+    try { return await _fp.apply(this, arguments); }
+    finally { if (v && !same) setTimeout(() => v.classList.remove('fp-wait'), 220); setTimeout(() => v && v.classList.remove('fp-wait'), 2500); }
   }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
