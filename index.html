@@ -9826,6 +9826,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14397,8 +14398,11 @@ async function scanIsbn(onFound) {
 .yv-cm{border:1px solid var(--line);border-radius:14px;padding:.45rem .5rem;min-height:104px;background:color-mix(in srgb,var(--ink) 3%,transparent);text-align:left;font:inherit;color:var(--ink);position:relative;overflow:hidden}
 .yv-cm.now{border-color:var(--acc)}.yv-cm.fut{opacity:.4}
 .yv-cm b{font-size:.74rem}.yv-cm small{float:right;font-size:.62rem;color:var(--ink-2);font-weight:800;margin-top:.1rem}
-.yv-fan{position:relative;height:66px;margin-top:.4rem}
-.yv-fan .cv{position:absolute!important;top:0;width:36px!important;height:54px!important;border-radius:3px!important;background-size:cover!important;background-position:center!important;box-shadow:0 2px 5px rgba(0,0,0,.35)!important;font-size:.36rem!important}
+.yv-fan{position:relative;height:72px;margin-top:.45rem}
+.yv-fan .yv-fc{position:absolute;top:8px;width:36px;height:54px}
+#shelflist .yv-fan .yv-fc .mk-bear,.yv-fan .yv-fc .mk-bear{position:absolute!important;top:-9px!important;left:3px!important;transform:scale(.66);transform-origin:0 0;z-index:3;pointer-events:none}
+.yv-fan .yv-fc .mk-bear b{font-size:13px!important}
+.yv-fan .cv{position:relative!important;display:block;width:36px!important;height:54px!important;border-radius:3px!important;background-size:cover!important;background-position:center!important;box-shadow:0 2px 5px rgba(0,0,0,.35)!important;font-size:.36rem!important}
 .yv-fan i{position:absolute;right:0;bottom:2px;font-style:normal;font-size:.62rem;font-weight:900;color:var(--ink-2)}
 .yv-est{position:relative}
 .yv-eh{display:flex;justify-content:flex-end;margin:-.2rem 0 .45rem}
@@ -14495,9 +14499,10 @@ function yvCalendar(sec, row, list, y) {
   const t = todayISO(), cy = Number(t.slice(0, 4)), cm = Number(t.slice(5, 7));
   const box = document.createElement('div'); box.className = 'yv-cal';
   box.innerHTML = YS_MESES.map((nome, i) => {
-    const m = i + 1, g = list.filter((x) => !x.ap && Number(String(x.d).slice(5, 7)) === m), show = g.slice(0, 4), gap = show.length > 1 ? Math.min(16, 56 / (show.length - 1)) : 0;
+    const m = i + 1, g = list.filter((x) => !x.ap && Number(String(x.d).slice(5, 7)) === m), show = g.slice(0, 4), gap = show.length > 1 ? Math.min(21, 58 / (show.length - 1)) : 0;
     const cls = y === cy && m === cm ? ' now' : (y > cy || (y === cy && m > cm)) ? ' fut' : '';
-    const fan = show.map((x, j) => cvh(x.t, x.c, '', 'left:' + Math.round(4 + j * gap) + 'px;transform:rotate(' + ((j - (show.length - 1) / 2) * 7).toFixed(1) + 'deg);z-index:' + j)).join('');
+    const tier = (p) => (p >= 5 ? '5' : p >= 4 ? 'ouro' : p >= 3 ? 'prata' : 'bronze');
+    const fan = show.map((x, j) => '<span class="yv-fc" style="left:' + Math.round(4 + j * gap) + 'px;transform:rotate(' + ((j - (show.length - 1) / 2) * 7).toFixed(1) + 'deg);z-index:' + j + '">' + cvh(x.t, x.c, '') + (x.p ? '<span class="mk-bear t-' + tier(x.p) + '"><b>' + String(x.p).replace('.', ',') + '</b></span>' : '') + '</span>').join('');
     return '<button type="button" class="yv-cm' + cls + '" data-m="' + m + '"><b>' + YV_AB[nome] + '</b><small>' + (g.length ? plural(g.length, 'livro', 'livros') : '—') + '</small><div class="yv-fan">' + fan + (g.length > 4 ? '<i>+' + (g.length - 4) + '</i>' : '') + '</div></button>';
   }).join('');
   box.querySelectorAll('.yv-cm').forEach((b) => b.addEventListener('click', () => { const x = sec.querySelector('.ys-x'); if (x) x.click(); }));
@@ -14573,8 +14578,13 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 // Cada dia tem o marca-página do prazo (enche com as páginas do dia; dourado com estrela quando bateu a meta; tracejado na folga)
 // e o que aconteceu: páginas lidas, emoções, comentários, trechos, início da leitura e prazo definido.
 { const st = document.createElement('style'); st.textContent = `
-#editor .tl{margin:1.1rem 0 .4rem;border-top:1px solid var(--line);padding-top:.8rem}
-#editor .tl-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 .6rem}#editor .tl-h b{font-size:.92rem}#editor .tl-h small{font-size:.7rem;color:var(--ink-2);font-weight:700}
+#editor .tl{margin:.2rem 0 .4rem}
+#editor .ed-body:not(.tl-on) > .tl{display:none!important}
+#editor .ed-body.tl-on > :not(.ss-title):not(.up-x):not(.ss-hd):not(.tl-tabs):not(.tl){display:none!important}
+#editor .tl-tabs{display:flex;border-bottom:1.5px solid var(--line);margin:.2rem 0 .75rem}
+#editor .tl-tabs button{flex:1;border:0!important;background:none!important;box-shadow:none!important;font:inherit;font-size:.86rem;font-weight:800;color:var(--ink-2)!important;padding:.5rem 0!important;margin-bottom:-1.5px;border-bottom:2.5px solid transparent!important;border-radius:0!important;min-height:0!important;height:auto!important}
+#editor .tl-tabs button.on{color:var(--acc)!important;border-bottom-color:var(--acc)!important}
+#editor .tl-h{display:flex;justify-content:flex-end;align-items:baseline;margin:0 0 .6rem}#editor .tl-h b{display:none}#editor .tl-h small{font-size:.7rem;color:var(--ink-2);font-weight:700}
 #editor .tl-d{display:grid;grid-template-columns:30px minmax(0,1fr);gap:.65rem;position:relative;padding-bottom:.85rem}
 #editor .tl-d::before{content:"";position:absolute;left:14px;top:52px;bottom:4px;width:2px;background:var(--line);border-radius:2px}
 #editor .tl-d:last-child::before{display:none}
@@ -14637,11 +14647,16 @@ function tlHTML(e, all) {
   return '<div class="tl"><div class="tl-h"><b>Histórico</b>' + (e.dueAt ? '<small>meta batida em ' + hit + ' dia' + (hit === 1 ? '' : 's') + '</small>' : '') + '</div>' + rows
     + (!all && list.length > show.length ? '<button type="button" class="tl-more">Ver tudo (' + list.length + ' dias)</button>' : '') + '</div>';
 }
-{ const _el = editLeitura; editLeitura = function () { try { const R = reading(); S.tlE = R && R.e; S.tlAll = false; } catch {} return _el.apply(this, arguments); }; }
+{ const _el = editLeitura; editLeitura = function () { try { const R = reading(); S.tlE = R && R.e; S.tlAll = false; S.tlTab = 'up'; } catch {} return _el.apply(this, arguments); }; }
 { const ed = $('#editor'); let tm = 0;
   const paint = () => {
     const body = ed.querySelector('.ed-body'); if (ed.hidden || !body || !body.querySelector('#up-save') || body.querySelector('.tl')) return;
-    const e = S.tlE; if (!e) return; const t = document.createElement('div'); t.innerHTML = tlHTML(e, S.tlAll); const tl = t.firstElementChild; body.append(tl);
+    const e = S.tlE; if (!e) return;
+    const tabs = document.createElement('div'); tabs.className = 'tl-tabs'; tabs.innerHTML = '<button type="button" data-t="up">Atualizar</button><button type="button" data-t="hist">Histórico</button>';
+    const set = (k) => { S.tlTab = k; body.classList.toggle('tl-on', k === 'hist'); tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.t === k)); };
+    tabs.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => set(b.dataset.t)));
+    const hd = body.querySelector('.ss-hd'); if (hd) hd.after(tabs); else body.prepend(tabs); set(S.tlTab || 'up');
+    const t = document.createElement('div'); t.innerHTML = tlHTML(e, S.tlAll); const tl = t.firstElementChild; body.append(tl);
     const more = tl.querySelector('.tl-more'); if (more) more.addEventListener('click', () => { S.tlAll = true; tl.remove(); paint(); });
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 40); }).observe(ed, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
