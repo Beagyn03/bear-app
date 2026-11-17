@@ -9814,6 +9814,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14224,6 +14225,8 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
     const ed = TR.querySelector('#editor'); if (!ed || ed.hidden) return; const body = ed.querySelector('.ed-body'); if (!body || !body.querySelector('#up-save') || body.querySelector('.lz-acts')) return;
     const note = body.querySelector('.up-note'), dates = body.querySelector('.up-dates'); if (!note) return;
     const R = (() => { try { return reading(); } catch { return null; } })(); if (!R) return; const e = R.e;
+    // 'Terminei o livro' abre o status Lido novo (datas, nota, resenha…)
+    const fin = body.querySelector('#up-fin'); if (fin) fin.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); ev.preventDefault(); statusSheet(e, 'LIDO'); }, true);
     // datas discretas
     if (dates && !body.querySelector('.lz-dt')) { dates.classList.add('lz-hide'); const ini = (dates.querySelector('.ud-ini') || {}).value;
       const dl = document.createElement('div'); dl.className = 'lz-dt'; dl.innerHTML = '<span>' + (ini ? 'Comecei em ' + ini.slice(8, 10) + '/' + ini.slice(5, 7) : 'Sem data de início') + ' · leitura de hoje</span><button type="button">Mudar datas</button>';
