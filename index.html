@@ -4900,12 +4900,12 @@ function openCatalog() {
   const draw = () => {
     v.querySelector('.sl-body').innerHTML = `
       <div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Buscar</b><span></span></div>
-      <div class="v3-seg ct-mode"><button type="button" data-m="livros" class="on">Livros</button><button type="button" data-m="leitores">Leitores</button></div>
       <form class="ct-form"><input type="search" id="ct-q" class="fs-input" placeholder="Título, autor ou ISBN" value="${esc(q)}" autocomplete="off" enterkeyhint="search" aria-label="Buscar no catálogo"><button type="submit" class="ct-go">${IC('procurar', 'ico-b')}Buscar</button></form>
+      <div class="v3-seg ct-mode"><button type="button" data-m="livros" class="on">Livros</button><button type="button" data-m="leitores">Leitores</button></div>
       <div class="ct-list"></div>`;
     drawList();
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
-    v.querySelector('.ct-mode [data-m="leitores"]').addEventListener('click', () => openPeopleSearch());
+    v.querySelector('.ct-mode [data-m="leitores"]').addEventListener('click', () => { S.psQ = ($('#ct-q', v) || {}).value || ''; openPeopleSearch(); });
     const run = async (now) => {
       const val = $('#ct-q', v).value.trim(); if (val === q && res && !now) return; q = S.catQ = val;
       if (q.length < 3) { if (now) toast('Digite pelo menos 3 letras'); token++; busy = false; res = S.catRes = null; return drawList(); }
@@ -7799,7 +7799,7 @@ async function editBio() {
 
 // ----- buscar leitores -----
 function openPeopleSearch() {
-  const v = $('#shelflist'); let q = '', res = null, busy = false, token = 0, tm = 0;
+  const v = $('#shelflist'); let q = S.psQ || '', res = null, busy = false, token = 0, tm = 0; S.psQ = '';
   const drawList = () => {
     const box = v.querySelector('.ps-list'); if (!box) return;
     box.innerHTML = busy ? '<p class="sl-empty">Procurando…</p>' : !res ? '<p class="sl-empty">Digite o nome ou o @ de quem você procura.</p>' : !res.length ? '<p class="sl-empty">Ninguém encontrado.</p>'
@@ -7815,14 +7815,14 @@ function openPeopleSearch() {
   };
   const draw = () => {
     v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Buscar</b><span></span></div>
-      <div class="v3-seg ct-mode"><button type="button" data-m="livros">Livros</button><button type="button" data-m="leitores" class="on">Leitores</button></div>
-      <input type="search" id="ps-q" class="fs-input" placeholder="@usuário ou nome" autocomplete="off" autocapitalize="none" value="${esc(q)}"><div class="ps-list" style="margin-top:.6rem"></div>`;
+      <input type="search" id="ps-q" class="fs-input" placeholder="@usuário ou nome" autocomplete="off" autocapitalize="none" value="${esc(q)}">
+      <div class="v3-seg ct-mode"><button type="button" data-m="livros">Livros</button><button type="button" data-m="leitores" class="on">Leitores</button></div><div class="ps-list" style="margin-top:.6rem"></div>`;
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
-    $('.ct-mode [data-m="livros"]', v).addEventListener('click', () => openCatalog());
+    $('.ct-mode [data-m="livros"]', v).addEventListener('click', () => { const t = ($('#ps-q', v) || {}).value || ''; if (t.trim()) { S.catQ = t; S.catRes = null; } openCatalog(); if (t.trim()) setTimeout(() => { const f = $('#shelflist .ct-form'); if (f) f.requestSubmit(); }, 50); });
     $('#ps-q', v).addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(run, 400); });
     drawList();
   };
-  S.listRedraw = draw; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0; setTimeout(() => $('#ps-q', v)?.focus(), 60);
+  S.listRedraw = draw; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0; setTimeout(() => $('#ps-q', v)?.focus(), 60); if (q.trim()) setTimeout(() => $('#ps-q', v)?.dispatchEvent(new Event('input')), 0);
 }
 
 // ----- ganchos -----
@@ -9648,6 +9648,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
