@@ -3308,8 +3308,8 @@ function rateForm(b, g, after) {
   const pawRow = el('div', { class: 'rate-paws' }), pawLbl = el('span', { class: 'paw-lbl' });
   const drawPaws = () => {
     pawRow.replaceChildren(...[1,2,3,4,5].map(i => el('button', { type: 'button', 'aria-label': `nota ${i}`,
-      onclick: () => { r.paws = r.paws === i ? i - 0.5 : i; drawPaws(); } }, [paw(pawFill(r.paws, i))])));
-    pawLbl.textContent = r.paws ? fmtR(r.paws) : 'toque 2× = meia';
+      onclick: () => { r.paws = r.paws === i ? i - 0.5 : (i === 1 && r.paws === 0.5) ? 0 : i; drawPaws(); } }, [paw(pawFill(r.paws, i))])));
+    pawLbl.textContent = r.paws ? fmtR(r.paws) + ' · ' + ({ 0.5: 'Socorro, o que foi isso?', 1: 'Não foi pra mim', 1.5: 'Quase abandonei', 2: 'Fraquinho', 2.5: 'Teve seus momentos', 3: 'Bom, mas não marcou', 3.5: 'Gostei bastante', 4: 'Muito bom!', 4.5: 'Quase perfeito', 5: 'Favorito da vida!' })[r.paws] : 'toque 2× = meia estrela';
   };
   const mel = el('div', { class: 'reacts' }, MEL_E.map(([em, t]) => {
     const on = () => r.mel.includes(t);
@@ -9756,6 +9756,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12496,6 +12497,11 @@ function editTop5() {
     if (spSel) { const box = spSel.parentElement, num = box.querySelector('input[type=number]'); box.style.setProperty('display', 'none', 'important');
       const pg = libE ? (() => { try { return libProgress(libE) || 0; } catch { return 0; } })() : 0;
       if (stK === 'LIDO' || stK === 'CONCLUIDO') spSel.value = 'end'; else if (pg > 0 && num) { spSel.value = 'page'; num.value = String(pg); } else spSel.value = 'yes'; }
+    // spoiler em destaque: cartão com aviso, fica vermelho quando marcado
+    { const spLb = [...form.querySelectorAll('label')].find((l) => /Tem spoiler/.test(l.textContent) && l.querySelector('input[type=checkbox]'));
+      if (spLb) { const ck = spLb.querySelector('input[type=checkbox]'); spLb.classList.add('rtf-sp'); const sync = () => spLb.classList.toggle('on', ck.checked); ck.addEventListener('change', sync); sync();
+        [...(spLb.parentElement || spLb).querySelectorAll('button')].filter((b) => b.textContent.trim() === '?').forEach((b) => b.style.setProperty('display', 'none', 'important'));
+        if (!spLb.querySelector('.rtf-sp-h')) spLb.insertAdjacentHTML('beforeend', '<small class="rtf-sp-h">Marque se a resenha conta algo da história. Quem não leu verá um aviso antes.</small>'); } }
     // compartilhar vira o contrário: avaliação é visível por padrão; quem quiser marca como privada
     const shareLb = [...form.querySelectorAll('label.ck-row')].find((l) => /Compartilhar com meus amigos/.test(l.textContent));
     if (shareLb) { const shareCk = shareLb.querySelector('input'); const pv = document.createElement('label'); pv.className = 'ck-row'; pv.innerHTML = '<input type="checkbox"><span>Avaliação privada <small style="opacity:.7;font-weight:600">(só você vê)</small></span>';
@@ -12503,11 +12509,13 @@ function editTop5() {
     // ressaca: lista suspensa (nem um nem outro / me deu / curou) no lugar dos dois botões; os botões originais ficam escondidos e guardam o valor
     const yn = form.querySelector('.yn');
     if (yn) {
-      const sel = document.createElement('select'); sel.className = 'rtf-rs'; sel.setAttribute('aria-label', 'Ressaca literária');
-      sel.innerHTML = '<option value="">Não sei</option><option value="deu">Me deu ressaca</option><option value="curou">Curou minha ressaca</option>';
       const btns = () => [...yn.querySelectorAll('button')], cur = () => { const i = btns().findIndex((x) => x.classList.contains('on')); return i === 0 ? 'deu' : i === 1 ? 'curou' : ''; };
-      sel.value = cur(); yn.style.setProperty('display', 'none', 'important'); yn.after(sel);
-      sel.addEventListener('change', () => { const want = sel.value, now = cur(); if (want === now) return; if (!want) btns()[now === 'deu' ? 0 : 1].click(); else btns()[want === 'deu' ? 0 : 1].click(); });
+      const pick = document.createElement('div'); pick.className = 'rtf-rs2'; pick.setAttribute('role', 'group'); pick.setAttribute('aria-label', 'Ressaca literária');
+      pick.innerHTML = '<button type="button" data-v="deu"><b>Me deu ressaca</b><small>fiquei sem conseguir ler outro</small></button><button type="button" data-v="curou"><b>Curou minha ressaca</b><small>me tirou do bloqueio</small></button>';
+      const paint = () => { const c = cur(); pick.querySelectorAll('button').forEach((b) => { const on = b.dataset.v === c; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); };
+      pick.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { const want = b.dataset.v === cur() ? '' : b.dataset.v, now = cur();
+        if (want === now) return; if (!want) btns()[now === 'deu' ? 0 : 1].click(); else btns()[want === 'deu' ? 0 : 1].click(); setTimeout(paint, 0); }));
+      yn.style.setProperty('display', 'none', 'important'); yn.after(pick); paint();
     }
     try { paintCv(wrap); } catch {}
     wrap.querySelector('.box').scrollTop = 0;
@@ -12533,6 +12541,17 @@ function editTop5() {
     try { rateForm(e, { logs: [] }, () => renderHome(todayISO())); if (c.ed) setTimeout(() => document.querySelector('.sheet.rt-full .rtf-ed')?.click(), 50); } catch (err) { console.warn('reabrir avaliação', err); }
   }, 1800);
 }
+
+{ const st = document.createElement('style'); st.textContent = `.rtf-rs2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;width:100%}
+.rtf-rs2 button{display:grid;gap:.15rem;text-align:left;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:14px;padding:.6rem .7rem;font:inherit;cursor:pointer}
+.rtf-rs2 button b{font-size:.86rem}.rtf-rs2 button small{font-size:.7rem;color:var(--ink-2);font-weight:600}
+.rtf-rs2 button[data-v=deu].on{border-color:#7a5cd6;background:color-mix(in srgb,#7a5cd6 16%,var(--panel))}
+.rtf-rs2 button[data-v=curou].on{border-color:#2f8a52;background:color-mix(in srgb,#2f8a52 16%,var(--panel))}
+.rt-ress,.rt-ress:has(.rtf-rs2){flex-wrap:wrap}
+label.rtf-sp{display:grid!important;grid-template-columns:auto 1fr;align-items:center;column-gap:.55rem;border:1.5px solid #d9822b;background:color-mix(in srgb,#d9822b 12%,var(--panel));border-radius:14px;padding:.6rem .75rem;font-weight:800;margin:.2rem 0}
+label.rtf-sp input{width:20px;height:20px;accent-color:#c0392b}
+label.rtf-sp .rtf-sp-h{grid-column:2;font-size:.72rem;font-weight:600;color:var(--ink-2)}
+label.rtf-sp.on{border-color:#c0392b;background:color-mix(in srgb,#c0392b 16%,var(--panel))}`; document.head.append(st); }
 // --- 46_ressaca.js ---
 // Ressaca literária (Bia, 16/11): na avaliação a pessoa diz se o livro DEU ou CUROU a ressaca.
 // Página do livro (Sobre) mostra o termômetro com os votos de todo mundo; na Buscar, atalhos para os livros que curam e que dão ressaca.
