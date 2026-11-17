@@ -9851,6 +9851,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11687,6 +11688,7 @@ TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closes
 .rd2 footer .rd-ql{border:1.5px solid var(--acc)!important;color:var(--acc)!important;border-radius:99px!important;min-height:32px!important;padding:0 .7rem!important;font-size:.76rem!important;margin-left:.2rem;white-space:nowrap}
 .rd2 footer .rd-ql.in{border-color:var(--line)!important;color:var(--ink-2)!important}
 .rd-day{font-size:.74rem;font-weight:900;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em;margin:.4rem .2rem -.2rem}
+.rd-fe-out .rd-fe{margin:.1rem 0 .3rem}
 .rd-fl{display:flex;gap:.35rem;overflow-x:auto;scrollbar-width:none}.rd-fl::-webkit-scrollbar{display:none}
 .rd-fl button{flex:none;border:1.5px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:99px;min-height:32px;padding:0 .8rem;font:inherit;font-weight:800;font-size:.78rem}
 .rd-fl button.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
@@ -11736,7 +11738,8 @@ function rdCardHTML(it, i, opts = {}) {
   const sp = rdSpoil(it), u = it.user || {};
   const pct = it.readerPct != null && !it.paws ? Math.max(0, Math.min(100, Math.round(it.readerPct))) : null;
   const fe = (it.feelings || []).length ? `<div class="rd-fe">${it.feelings.map((k) => qtFeel(k)).join('')}</div>` : '';
-  const txt = it.text || fe ? `<div class="rd-tx">${it.text ? `<p>${esc(it.text)}</p>` : ''}${fe}</div>` : '';
+  const sp0 = rdSpoil(it); // com spoiler, as emoções ficam fora do embaçado (Bia, 17/11)
+  const txt = it.text || (fe && !sp0) ? `<div class="rd-tx">${it.text ? `<p>${esc(it.text)}</p>` : ''}${sp0 ? '' : fe}</div>` : '';
   const body = `${txt}${it.quote ? `<div class="rd-q">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}
     ${it.book2 ? `<div class="rd-rec"><span>${cvh(it.book.title, it.book.cover)}<b>${esc(it.book.title)}</b></span><em>➜</em><span>${cvh(it.book2.title, it.book2.cover)}<b>${esc(it.book2.title)}</b></span></div>` : ''}
     ${it.hasImage ? `<div class="rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
@@ -11748,7 +11751,7 @@ function rdCardHTML(it, i, opts = {}) {
       <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
       <span class="rd-kc"><span class="rd-tag${isRev ? ' rv' : ''}">${esc(kind)}</span>${pct != null ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${pct}%</span>` : ''}${it.paws ? rdMk(it.paws) : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
     ${it.book && !it.book2 ? `<button type="button" class="rd-book">${cvh(it.book.title, it.book.cover)}<span><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small>${fr || fim ? `<em>${esc([fr, fim].filter(Boolean).join(' · '))}</em>` : ''}</span></button>` : ''}
-    <div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>
+    <div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}
     ${opts.noFoot ? '' : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" aria-pressed="${!!it.liked}">${it.liked ? '♥' : '♡'} ${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button>
       <span class="rd-sp"></span><button type="button" class="rd-save${saved ? ' on' : ''}" aria-pressed="${saved}" aria-label="${saved ? 'Tirar dos salvos' : 'Salvar post'}" title="${saved ? 'Salvo' : 'Salvar'}"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></button><button type="button" class="rd-share" aria-label="Compartilhar" title="Compartilhar"><svg viewBox="0 0 24 24"><path d="M14 5l7 7-7 7M21 12H9a6 6 0 0 0-6 6"/></svg></button>${rdShelfBtn(it)}</footer>`}
   </article>`;
@@ -15090,6 +15093,28 @@ inSemana = function () { return ''; };
   // ao trocar de aba enquanto espera, mostra na hora
   const _gt = goTab; goTab = function (tab) { if (tab !== 'inicio') finish(); return _gt.apply(this, arguments); };
 }
+// --- 95_novidades_menu.js ---
+// Novidades dos amigos (Bia, 17/11): cada cartão de outra pessoa ganha "•••" com Ocultar, Silenciar o livro e Denunciar
+// (denúncia só para avaliação, que tem texto). Ocultar e silenciar usam as mesmas listas da Comunidade (rdHide / rdMute).
+{ const st = document.createElement('style'); st.textContent = '.fd-post header{position:relative}.fd-dots{flex:none;border:0;background:none;color:var(--ink-2);font-weight:900;font-size:1rem;width:34px;height:34px;align-self:flex-start;cursor:pointer}'; TR.append(st);
+  let tm = 0; const paint = () => {
+    let P = { hide: [], mute: [] }; try { P = rdPrefs(); } catch {}
+    TR.querySelectorAll('.fd-post[data-id]').forEach((a) => {
+      const id = a.dataset.id, hd = a.querySelector('header'), tb = hd && hd.querySelector('p > b'), title = tb ? tb.textContent : '', key = normT(title);
+      if (P.hide.includes('fd' + id) || (key && P.mute.includes(key))) { a.style.display = 'none'; return; }
+      if (!hd || a.querySelector('.fd-dots')) return; const who = (hd.querySelector('.fd-who') || {}).textContent || ''; if (who === 'Você') return;
+      const isRev = !!a.querySelector('.fd-like');
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'fd-dots'; b.setAttribute('aria-label', 'Mais opções'); b.textContent = '•••'; hd.append(b);
+      b.addEventListener('click', (ev) => { ev.stopPropagation(); const items = [
+        { label: 'Ocultar esta novidade', fn: () => { rdSetPref('rdHide', [...rdPrefs().hide, 'fd' + id].slice(-300)); a.style.display = 'none'; toast('Ocultado'); } },
+        ...(title ? [{ label: 'Silenciar “' + title + '”', fn: () => { rdSetPref('rdMute', [...new Set([...rdPrefs().mute, key])].slice(-200)); paint(); toast('Você não verá mais novidades deste livro'); } }] : []),
+        ...(isRev ? [{ label: 'Denunciar', fn: () => sheet('Por que denunciar?', [['Spoiler sem aviso', 'spoiler'], ['Ofensa ou ataque', 'ofensa'], ['Spam ou propaganda', 'spam'], ['Outro motivo', 'outro']].map(([t, k]) => [t, async () => {
+          const r = await sapi('POST', '/v1/report/review/' + id, { reason: k }); toast(r.status < 300 ? 'Denúncia enviada. Obrigado!' : 'Não consegui enviar agora');
+          if (r.status < 300) { rdSetPref('rdHide', [...rdPrefs().hide, 'fd' + id].slice(-300)); a.style.display = 'none'; } }])) }] : []),
+        ...(title ? [{ label: 'Ver o livro', fn: () => openAnyBook(title) }] : []),
+      ]; popMenu(b, items); });
+    }); };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 70); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
