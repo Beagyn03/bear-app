@@ -9760,6 +9760,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13420,6 +13421,43 @@ img[src^="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP"]{display:none!important}
         } catch (err) { console.warn('como terminou', err); }
       });
     } catch (err) { console.warn('avaliar: como terminou', err); }
+    return r;
+  }; }
+// --- 68_avaliar_compacta.js ---
+// Avaliação mais compacta (Bia, 17/11): a resenha vira um campo curto que abre um editor grande ao tocar; os blocos
+// de Terminei/Abandonei e do spoiler ficam mais baixos, para caber tudo sem rolar tanto.
+{ const st = document.createElement('style'); st.textContent = `
+.rtf-rv-mini{width:100%;box-sizing:border-box;min-height:56px;max-height:84px;overflow:hidden;text-align:left;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;font-size:.9rem;padding:.6rem .75rem;cursor:text;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;white-space:pre-wrap}
+.rtf-rv-mini.ph{color:var(--ink-2);font-weight:600}
+.rv-editor{position:fixed;inset:0;z-index:100000;background:var(--bg);display:grid;grid-template-rows:auto 1fr auto;gap:.6rem;padding:max(14px,env(safe-area-inset-top)) 16px max(14px,env(safe-area-inset-bottom))}
+.rv-editor header{display:flex;justify-content:space-between;align-items:center}.rv-editor header b{font-size:1.05rem;color:var(--ink)}.rv-editor header small{color:var(--ink-2);font-size:.75rem}
+.rv-editor textarea{width:100%;height:100%;box-sizing:border-box;resize:none;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);font:inherit;font-size:1rem;line-height:1.5;padding:.8rem}
+.rv-editor .rv-ok{height:48px;border:0;border-radius:14px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;font-size:1rem}
+.rtf-end{margin:.1rem 0 .5rem!important}.rtf-end button{padding:.4rem .3rem!important}
+.rtf-hd > :first-child{width:64px!important;height:96px!important;min-width:0!important;flex:none!important;font-size:.7rem!important}
+.rtf-rs2 button small{display:none!important}.rtf-rs2 button{padding:.55rem .6rem!important}
+label.rtf-sp{padding:.45rem .7rem!important}label.rtf-sp .rtf-sp-h{font-size:.68rem!important}`; document.head.append(st); }
+{ const _rf = rateForm; rateForm = function () {
+    const r = _rf.apply(this, arguments);
+    try {
+      const wrap = [...document.querySelectorAll('body > .sheet')].pop(), form = wrap && wrap.querySelector('form'); if (!form) return r;
+      const ta = [...form.querySelectorAll('textarea')].find((t) => /O que você achou/.test(t.placeholder || '')); if (!ta || ta.dataset.mini) return r;
+      ta.dataset.mini = 1; ta.style.setProperty('display', 'none', 'important');
+      const mini = document.createElement('button'); mini.type = 'button'; mini.className = 'rtf-rv-mini'; ta.after(mini);
+      const paint = () => { const v = ta.value.trim(); mini.textContent = v || 'Toque para escrever o que achou (opcional)'; mini.classList.toggle('ph', !v); };
+      mini.addEventListener('click', () => {
+        const ed = document.createElement('div'); ed.className = 'rv-editor'; ed.setAttribute('role', 'dialog');
+        ed.innerHTML = '<header><b>Resenha</b><small class="rv-cnt"></small></header><textarea placeholder="O que você achou? Conte do seu jeito."></textarea><button type="button" class="rv-ok">Concluir</button>';
+        const t2 = ed.querySelector('textarea'), cnt = ed.querySelector('.rv-cnt'); t2.value = ta.value; if (ta.maxLength > 0) t2.maxLength = ta.maxLength;
+        const upd = () => { const n = t2.value.trim().split(/\s+/).filter(Boolean).length; cnt.textContent = n ? n + (n === 1 ? ' palavra' : ' palavras') : ''; };
+        t2.addEventListener('input', upd); upd();
+        const done = () => { ta.value = t2.value; ta.dispatchEvent(new Event('input', { bubbles: true })); paint(); ed.remove(); };
+        ed.querySelector('.rv-ok').addEventListener('click', done);
+        document.body.append(ed); setTimeout(() => { t2.focus(); t2.setSelectionRange(t2.value.length, t2.value.length); }, 50);
+      });
+      paint();
+      const sh = form.querySelector('label.rtf-sp .rtf-sp-h'); if (sh) sh.textContent = 'Quem não leu verá um aviso antes.';
+    } catch (err) { console.warn('avaliação compacta', err); }
     return r;
   }; }
 // ==== 4.4 rodada 2 (fim) ====
