@@ -9797,6 +9797,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14067,6 +14068,15 @@ function statusSheet(e, want, after) {
       else { hide(iO, iEnd < 0 ? kids.length - 1 : iEnd); if (h3) h3.textContent = 'Privacidade'; }
     } catch (err) { console.warn('organizar perfil', err); }
     return r;
+  }; }
+// --- 77_meu_perfil_direto.js ---
+// Tocar no próprio nome (num post, na Rede, numa lista) abre o seu perfil de verdade (o mesmo da aba Perfil, com o •••),
+// e não a versão "perfil de outra pessoa" (Bia, 17/11). A aba Perfil também passa por friendPage, por isso a marca S.myOpen.
+{ const _om = openMyProfile; openMyProfile = async function () { S.myOpen = true; try { return await _om.apply(this, arguments); } finally { S.myOpen = false; } }; }
+{ const _fp = friendPage; friendPage = async function (handle) {
+    try { const me = socialProfile && socialProfile.handle;
+      if (!S.myOpen && me && String(handle || '').replace(/^@/, '').toLowerCase() === String(me).toLowerCase()) return openMyProfile(); } catch {}
+    return _fp.apply(this, arguments);
   }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
