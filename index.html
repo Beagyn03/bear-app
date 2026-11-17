@@ -9764,6 +9764,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13437,9 +13438,9 @@ img[src^="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP"]{display:none!important}
 .rv-editor textarea{width:100%;height:100%;box-sizing:border-box;resize:none;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);font:inherit;font-size:1rem;line-height:1.5;padding:.8rem}
 .rv-editor .rv-ok{height:48px;border:0;border-radius:14px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;font-size:1rem}
 .rtf-end{margin:.1rem 0 .5rem!important}.rtf-end button{padding:.4rem .3rem!important}
-.rtf-hd > :first-child{width:64px!important;height:96px!important;min-width:0!important;flex:none!important;font-size:.7rem!important}
-.rtf-hd.has-end{grid-template-columns:64px 1fr 116px!important;column-gap:.6rem!important}.rtf-hd.has-end .rtf-end{grid-template-columns:1fr!important;margin:0!important;gap:.35rem!important;width:116px;align-self:center}
-.rtf-hd.has-end .rtf-st{display:none!important}.rtf-hd.has-end .rtf-info b{font-size:1rem}
+.rtf-hd > :first-child{width:64px!important;height:96px!important;min-width:0!important;flex:none!important;font-size:.7rem!important;overflow:hidden!important}.rtf-hd > :first-child *{font-size:.56rem!important;line-height:1.1!important;overflow-wrap:anywhere}
+.rtf-hd{grid-template-columns:64px 1fr!important;column-gap:.75rem!important}.rtf-hd.has-end .rtf-st{display:none!important}.rtf-hd .rtf-info{min-width:0!important}.rtf-hd .rtf-info b{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.rtf-end.seg{display:flex!important;gap:0!important;border:1.5px solid var(--line);border-radius:99px;padding:3px;margin:.1rem 0 .55rem!important;background:var(--panel)}.rtf-end.seg button{flex:1;border:0!important;border-radius:99px!important;background:none!important;padding:.45rem .3rem!important;font-size:.84rem!important}.rtf-end.seg button small{display:inline!important;margin:0 0 0 .3rem!important;font-size:.7rem!important}.rtf-end.seg button.on[data-v=fim]{background:#2f8a52!important;color:#fff!important}.rtf-end.seg button.on[data-v=ab]{background:#c0392b!important;color:#fff!important}.rtf-end.seg button.on small{color:rgba(255,255,255,.85)!important}
 
 .sheet .rtf-nr .rate-paws{justify-content:flex-start!important;gap:.1rem!important}.sheet .rtf-nr .rate-paws button{width:34px!important;height:34px!important}.sheet .rtf-nr .rate-paws svg{width:26px!important;height:26px!important}.sheet .rtf-nr .rate-paws > button > *{transform:none!important}
 .sheet .rtf-nr .paw-lbl{white-space:normal!important;text-align:left;font-size:.74rem!important;line-height:1.2!important}
@@ -13465,7 +13466,7 @@ label.rtf-sp{padding:.45rem .7rem!important}label.rtf-sp .rtf-sp-h{font-size:.68
       });
       paint();
       const hd = form.closest('.box')?.querySelector('.rtf-hd') || wrap.querySelector('.rtf-hd'), end = wrap.querySelector('.rtf-end');
-      if (hd && end) { hd.classList.add('has-end'); hd.append(end); }
+      if (hd && end) { hd.classList.add('has-end'); end.classList.add('seg'); end.querySelector('[data-v=fim] small') && (end.querySelector('[data-v=fim] small').textContent = '· 100%'); const ab = end.querySelector('[data-v=ab] small'); if (ab) ab.textContent = '· ' + ab.textContent.replace('parei na ', ''); }
       const nr = wrap.querySelector('.rate-paws')?.parentElement; if (nr && nr.classList.contains('rate-nota')) nr.classList.add('rtf-nr');
       const sh = form.querySelector('label.rtf-sp .rtf-sp-h'); if (sh) sh.textContent = 'Quem não leu verá um aviso antes.';
     } catch (err) { console.warn('avaliação compacta', err); }
