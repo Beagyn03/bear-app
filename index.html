@@ -9844,6 +9844,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14944,6 +14945,22 @@ inSemana = function () { return ''; };
     if (ach && !ach.querySelector('.mod-row')) { const hd = ach.querySelector('.v3-sh') || ach.firstElementChild; const row = '<div class="mod-row"><i></i><div><b>Moderação</b><small>Cuida da comunidade do Livroverso</small></div></div>'; if (hd) hd.insertAdjacentHTML('afterend', row); else ach.insertAdjacentHTML('afterbegin', row); }
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 80); }).observe(TR, { childList: true, subtree: true }); }
+// --- 93_lendo_sem_pulos.js ---
+// Cartão "Lendo agora" sem pulos (Bia, 17/11): ele era montado em etapas (linha do prazo, botões rápidos, dias do prazo)
+// e crescia aos saltos, bem visível no celular. Agora fica transparente até estar completo e o Início aparece de uma vez (o que fica embaixo do cartão também não pula).
+{ const st = document.createElement('style'); st.textContent = `
+#lista.v3-wait{opacity:0}
+#lista{transition:opacity .16s ease}
+`; TR.append(st); }
+{ const ready = (c) => { let e = null; try { const R = reading(); e = R && R.e; } catch {}
+    if (!c.querySelector('.v3-quick') || !c.querySelector('.due-ln')) return false;
+    if (e && e.dueAt && e.dueAt >= todayISO() && !c.querySelector('.due-cards')) return false;
+    return true; };
+  const check = () => TR.querySelectorAll('#lista .v3-now:not(.empty)').forEach((c) => {
+    if (!c.dataset.vw) { c.dataset.vw = '1'; if (ready(c)) return; const L = $('#lista'); L.classList.add('v3-wait'); c.classList.add('v3-wait'); setTimeout(() => { c.classList.remove('v3-wait'); L.classList.remove('v3-wait'); }, 1500); return; }
+    if (c.classList.contains('v3-wait') && ready(c)) { c.classList.remove('v3-wait'); $('#lista').classList.remove('v3-wait'); }
+  });
+  new MutationObserver(check).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
