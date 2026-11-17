@@ -9836,6 +9836,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14638,6 +14639,13 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 #editor .tl-it p{margin:.1rem 0 0;white-space:pre-line}#editor .tl-it q{font-style:italic}
 #editor .tl-fe{display:flex;gap:.25rem;flex-wrap:wrap;margin-top:.15rem}#editor .tl-fe span{font-size:.68rem;font-weight:800;padding:.1rem .45rem;border-radius:99px;background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc)}
 #editor .tl-ev{font-size:.76rem;font-weight:700;color:var(--ink-2);margin-top:.3rem}
+#editor .tl-c{display:grid;grid-template-columns:22px minmax(0,1fr);gap:.45rem;align-items:start;margin-top:.4rem;padding:.5rem .65rem;border-radius:12px;background:color-mix(in srgb,var(--ink) 4%,transparent);border:1px solid color-mix(in srgb,var(--ink) 7%,transparent)}
+#editor .tl-ic{font-size:.95rem;line-height:1.25rem;text-align:center}
+#editor .tl-ct{font-size:.8rem;font-weight:800;color:var(--ink);line-height:1.25rem}#editor .tl-ct span{font-weight:700;color:var(--ink-2);font-size:.72rem;margin-left:.25rem}
+#editor .tl-c p{margin:.15rem 0 0;font-size:.84rem;line-height:1.4;white-space:pre-line;color:var(--ink)}#editor .tl-c p.tl-q{font-style:italic}#editor .tl-c p.tl-q::before{content:'“'}#editor .tl-c p.tl-q::after{content:'”'}
+#editor .tl-cs{font-size:.72rem;font-weight:800;color:var(--ink-2);margin-top:.1rem}#editor .tl-cs.ok{color:#c08a12}
+#editor .tl-c .tl-fe{margin-top:.3rem}
+#editor .tl-t{font-size:.82rem;margin-top:.2rem}
 #editor .tl-more{width:100%;border:1.5px dashed var(--line);background:none;color:var(--ink-2);font:inherit;font-weight:800;font-size:.78rem;border-radius:12px;padding:.45rem}
 #editor .tl-empty{font-size:.78rem;color:var(--ink-2);margin:0}
 `; TR.append(st); }
@@ -14676,10 +14684,12 @@ function tlHTML(e, all) {
   show.forEach((x, i) => { x.prevOk = !!(show[i + 1] && show[i + 1].ok); });
   const rows = show.map((x) => {
     const rib = x.ok ? '<span class="tl-st ok">★</span>' : x.off ? '<span class="tl-st off">☆</span>' : x.pages ? '<span class="tl-st mid" style="opacity:' + (0.45 + 0.55 * Math.min(1, x.fill)).toFixed(2) + '">★</span>' : '<span class="tl-st ev">✦</span>';
-    const pg = x.pages ? '<div class="tl-pg' + (x.ok ? ' ok' : '') + '">+' + x.pages + ' pág. · até a pág. ' + x.end + (x.inDue && x.per ? (x.ok ? ' · meta do dia batida' : ' · meta era ' + x.per) : '') + '</div>' : (x.off ? '<div class="tl-ev">Dia de folga</div>' : '');
-    const its = x.items.map(({ k, x: y }) => k === 'qt' ? '<div class="tl-it"><small>Trecho' + (y.p ? ' · pág. ' + y.p : '') + '</small><p><q>' + esc(y.t) + '</q></p></div>'
-      : '<div class="tl-it"><small>' + (y.text ? 'Comentário' : 'Emoções') + ' · pág. ' + (y.page || 0) + '</small>' + (y.fe && y.fe.length ? '<div class="tl-fe">' + names(y.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : '') + (y.text ? '<p>' + esc(y.text) + '</p>' : '') + '</div>').join('');
-    return '<div class="tl-d' + (x.ok && x.prevOk ? ' ok-ok' : '') + '">' + rib + '<div><div class="tl-t">' + tlDay(x.d) + '</div>' + pg + its + x.ev.map((v) => '<div class="tl-ev">' + esc(v) + '</div>').join('') + '</div></div>';
+    const card = (ic, tt, body) => '<div class="tl-c"><span class="tl-ic">' + ic + '</span><div><div class="tl-ct">' + tt + '</div>' + (body || '') + '</div></div>';
+    const pg = x.pages ? card('📖', 'Leu ' + x.pages + ' pág. <span>até a pág. ' + x.end + '</span>', x.inDue && x.per ? '<div class="tl-cs' + (x.ok ? ' ok' : '') + '">' + (x.ok ? '★ Meta do dia batida' : 'Meta do dia: ' + x.per + ' pág.') + '</div>' : '') : (x.off ? card('☾', 'Dia de folga') : '');
+    const its = x.items.map(({ k, x: y }) => k === 'qt' ? card('❝', 'Trecho' + (y.p ? ' <span>pág. ' + y.p + '</span>' : ''), '<p class="tl-q">' + esc(y.t) + '</p>')
+      : card(y.text ? '💬' : '✨', (y.text ? 'Comentário' : 'Emoções') + ' <span>pág. ' + (y.page || 0) + '</span>', (y.text ? '<p>' + esc(y.text) + '</p>' : '') + (y.fe && y.fe.length ? '<div class="tl-fe">' + names(y.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : ''))).join('');
+    const evs = x.ev.map((v) => card(/^Começou/.test(v) ? '🚀' : '⏳', esc(v))).join('');
+    return '<div class="tl-d' + (x.ok && x.prevOk ? ' ok-ok' : '') + '">' + rib + '<div><div class="tl-t">' + tlDay(x.d) + '</div>' + evs + pg + its + '</div></div>';
   }).join('');
   const hit = list.filter((x) => x.ok).length, dueDays = list.filter((x) => x.inDue && !x.off && x.d < todayISO()).length;
   return '<div class="tl"><div class="tl-h"><b>Histórico</b>' + (e.dueAt ? '<small>meta batida em ' + hit + ' dia' + (hit === 1 ? '' : 's') + '</small>' : '') + '</div>' + rows
@@ -14741,6 +14751,22 @@ inSemana = function () { return ''; };
 // "Na Rede" sai do Início (Bia, 17/11): já está em Comunidade. Some também da lista de personalizar o Início, junto com "Sua semana".
 ['rede', 'semana'].forEach((k) => { const i = HOME_SECS.findIndex((x) => x[0] === k); if (i >= 0) HOME_SECS.splice(i, 1); });
 { const st = document.createElement('style'); st.textContent = '#lista [data-in=rede],#lista [data-in=semana]{display:none!important}'; TR.append(st); }
+// --- 89_perfil_espera.js ---
+// Recarregar o app na aba Perfil (Bia, 17/11): o @usuário ainda não chegou da API e a aba caía por um instante em
+// "Editar perfil · Sem @usuário ainda" antes de virar o perfil. Agora a aba espera o perfil chegar (até ~6 s) antes de abrir.
+{ let tk = 0; const _gt = goTab; goTab = function (tab, fromBar) {
+    const my = ++tk;
+    if (tab === 'eu' && connected() && socialProfile === undefined) {
+      try { $$('#tabbar button').forEach((b) => b.classList.toggle('on', b.dataset.tab === 'eu')); } catch {}
+      (async () => {
+        for (let i = 0; i < 40 && socialProfile === undefined; i++) await new Promise((r) => setTimeout(r, 150));
+        if (socialProfile === undefined) { try { await loadProfile(); } catch {} }
+        if (my === tk) _gt.call(this, tab, fromBar);
+      })();
+      return;
+    }
+    return _gt.apply(this, arguments);
+  }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
