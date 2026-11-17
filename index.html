@@ -9813,6 +9813,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14216,7 +14217,7 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
 .lz-pane input[type=number]{width:80px;height:34px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit;padding:0 .5rem}
 #editor .lz-pane .lz-ok{height:36px!important;min-height:0!important;border-radius:10px!important;border:0!important;background:var(--acc)!important;color:var(--on-acc,#fff)!important;font:inherit!important;font-weight:800!important;padding:0 .9rem!important;box-shadow:none!important}
 #editor .up-note.lz-hide{display:none!important}#editor .up-note .up-fe{display:none!important}
-.lz-fe{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin:.1rem 0 .2rem}.lz-fe:empty{display:none}
+.lz-fe{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin:.1rem 0 .2rem}.lz-fe:empty,.lz-fe[hidden]{display:none!important}
 .lz-fe span{border:1px solid var(--acc);color:var(--acc);border-radius:99px;padding:.15rem .55rem;font-size:.74rem;font-weight:800}
 #editor.ss-modal .ed-body > *{min-width:0;max-width:100%}`; TR.append(st); }
 { let tm = 0; const put = () => {
@@ -14240,23 +14241,26 @@ html .po-it button:disabled{opacity:.3}`; document.head.append(st); }
       e.quotes = [...(e.quotes || []), { t, p: Number(pTr.querySelector('.lz-pg').value) || null, at: new Date().toISOString() }].slice(-200); save(); pTr.querySelector('textarea').value = ''; toast('Trecho salvo'); });
     const feRow = document.createElement('div'); feRow.className = 'lz-fe';
     const paintFe = () => { const N = S.upNote || { fe: [] }; feRow.innerHTML = (N.fe || []).map((k) => '<span>' + esc((QT_FEELS.find((x) => x[0] === k) || [, k])[1]) + '</span>').join(''); };
-    const openFe = () => { const N = S.upNote || (S.upNote = { text: '', fe: [], vis: 'public', sp: false }); let pick = [...(N.fe || [])];
-      const sh = document.createElement('div'); sh.className = 'sheet fe-sheet';
-      const dr = () => { sh.innerHTML = '<div class="box"><h3>Como você está se sentindo?</h3><p class="hint">Escolha até 3 emoções sobre esta parte da leitura.</p><div class="fe-grid">' + QT_FEELS.map(([k, n]) => '<button type="button" data-f="' + k + '" class="' + (pick.includes(k) ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '</div><small class="fe-cnt">' + pick.length + ' de 3</small><button type="button" class="primary fe-ok">Pronto</button></div>';
-        sh.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.f; if (pick.includes(k)) pick = pick.filter((x) => x !== k); else if (pick.length < 3) pick.push(k); else return toast('Até 3 emoções'); dr(); }));
-        sh.querySelector('.fe-ok').addEventListener('click', () => { N.fe = pick; paintFe(); acts.querySelector('[data-p=emo] small').textContent = pick.length ? pick.length + ' escolhida' + (pick.length > 1 ? 's' : '') : 'até 3'; sh.remove(); }); };
-      sh.addEventListener('click', (ev) => { if (ev.target === sh) sh.remove(); }); dr(); document.body.append(sh); };
-    note.classList.add('lz-hide'); note.before(acts); acts.after(feRow); feRow.after(pNota); pNota.after(pTr); paintFe();
-    const panes = { nota: pNota, trecho: pTr };
+    const pFe = document.createElement('div'); pFe.className = 'lz-pane'; pFe.hidden = true;
+    const drawFe = () => { const N = S.upNote || (S.upNote = { text: '', fe: [], vis: 'public', sp: false }); const pick = N.fe || (N.fe = []);
+      pFe.innerHTML = '<div class="fe-grid">' + QT_FEELS.map(([k, n]) => '<button type="button" data-f="' + k + '" class="' + (pick.includes(k) ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '</div><small class="fe-cnt">' + pick.length + ' de 3 · como você está se sentindo nesta parte?</small>';
+      pFe.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.f; if (pick.includes(k)) N.fe = pick.filter((x) => x !== k); else if (pick.length < 3) pick.push(k); else return toast('Até 3 emoções');
+        drawFe(); paintFe(); acts.querySelector('[data-p=emo] small').textContent = N.fe.length ? N.fe.length + ' escolhida' + (N.fe.length > 1 ? 's' : '') : 'até 3'; })); };
+    note.classList.add('lz-hide'); note.before(acts); acts.after(feRow); feRow.after(pNota); pNota.after(pTr); pTr.after(pFe); paintFe();
+    const panes = { nota: pNota, trecho: pTr, emo: pFe };
     acts.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.p, was = b.classList.contains('on');
-      acts.querySelectorAll('button').forEach((x) => x.classList.remove('on')); pNota.hidden = true; pTr.hidden = true; note.classList.add('lz-hide');
-      if (k === 'emo') return openFe();
-      if (was) return; b.classList.add('on'); if (k === 'coment') { note.classList.remove('lz-hide'); note.querySelector('textarea')?.focus(); } else { panes[k].hidden = false; panes[k].querySelector('textarea').focus(); } }));
+      acts.querySelectorAll('button').forEach((x) => x.classList.remove('on')); pNota.hidden = true; pTr.hidden = true; pFe.hidden = true; feRow.hidden = false; note.classList.add('lz-hide');
+      if (was) return; b.classList.add('on'); if (k === 'coment') { note.classList.remove('lz-hide'); note.querySelector('textarea')?.focus(); } else if (k === 'emo') { drawFe(); pFe.hidden = false; feRow.hidden = true; } else { panes[k].hidden = false; panes[k].querySelector('textarea').focus(); } }));
     if (e.note) { /* mostra que já tem anotação */ acts.querySelector('[data-p=nota] small').textContent = 'tem anotação'; }
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 40); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 
 { const st = document.createElement('style'); st.textContent = '.fe-grid{display:flex;flex-wrap:wrap;gap:.4rem;margin:.4rem 0 .3rem}.fe-grid button{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.45rem .8rem;font:inherit;font-size:.86rem;font-weight:800;cursor:pointer}.fe-grid button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}.fe-cnt{display:block;text-align:right;font-size:.72rem;color:var(--ink-2);margin-bottom:.5rem}'; document.head.append(st); }
+// as emoções agora abrem dentro do #editor (raiz do app): o estilo precisa estar lá também
+{ const st = document.createElement('style'); st.textContent = `#editor .fe-grid{display:flex;flex-wrap:wrap;gap:.35rem;margin:.1rem 0 .2rem}
+#editor .fe-grid button{border:1.5px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;border-radius:99px!important;padding:.35rem .75rem!important;height:auto!important;min-height:0!important;font:inherit!important;font-size:.82rem!important;font-weight:800!important;box-shadow:none!important;cursor:pointer}
+#editor .fe-grid button.on{background:var(--acc)!important;border-color:var(--acc)!important;color:var(--on-acc,#fff)!important}
+#editor .fe-cnt{display:block;font-size:.72rem;font-weight:700;color:var(--ink-2)}`; TR.append(st); }
 // --- 82_atalhos_lendo.js ---
 // Atalhos no cartão "Lendo agora" (Bia, 17/11): Atualizar, Foco e Concluir, sempre à mão.
 { const st = document.createElement('style'); st.textContent = `
