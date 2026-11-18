@@ -7551,7 +7551,7 @@ function importCSV() {
     if (OW) { const tk = (x) => normT(String(x || '').split(/[:(]/)[0]); const have = new Set(lib().map((e) => tk(e.title))); const hit = rows.slice(1).filter((r) => have.has(tk(r[cT]))).length; if (hit && !confirm(`${hit} ${hit === 1 ? 'livro que já está' : 'livros que já estão'} no app ${hit === 1 ? 'vai ser atualizado' : 'vão ser atualizados'} pelo arquivo: status, nota, resenha e datas. O que você mudou no app nesses livros será substituído. Continuar?`)) return; }
     // resenha (Goodreads "My Review", StoryGraph "Review") e spoiler; o Goodreads às vezes exporta quebras de linha como \n literal
     const cV = col('my review', 'review', 'resenha', 'comentario'), cSp = col('spoiler'), cAd = col('date added', 'adicionado em', 'data de adicao'), cPub = col('publisher', 'editora'), cN = col('private notes', 'notas privadas', 'notas', 'anotacao');
-    const dOf = (x) => { const m = String(x || '').trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : null; };
+    const dOf = (x) => { const t = String(x || '').trim(), m = t.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/), b = !m && t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : b ? `${b[3]}-${b[2].padStart(2, '0')}-${b[1].padStart(2, '0')}` : null; };
     const revOf = (r) => (cV >= 0 ? String(r[cV] || '').replace(/\\n/g, '\n').replace(/​/g, '').replace(/<br\s*\/?>/gi, '\n').trim().slice(0, 4000) : '');
     const spOf = (r) => cSp >= 0 && /^(true|sim|yes|1)$/i.test(String(r[cSp] || '').trim());
     const whenOfRow = (r) => { const raw = cD >= 0 ? String(r[cD] || '').trim() : '', dm = raw.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/) || raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/), ym = raw.match(/\b(19\d\d|20\d\d)\b/);
@@ -7582,12 +7582,13 @@ function importCSV() {
         if (had.status === 'LIDO') { const w = whenOfRow(r), d = w === 'unknown' ? null : whenDate(w); if (d && (!had.finishedAt || had.noDate || (OW && had.finishedAt !== d))) { had.finishedAt = d; delete had.noDate; if (!w.d) had.dateApprox = 'year'; else delete had.dateApprox; ch = true; } }
         { const pb = cPub >= 0 ? String(r[cPub] || '').replace(/\s+/g, ' ').trim().slice(0, 120) : ''; if (pb && (!had.publisher || (OW && had.publisher !== pb))) { had.publisher = pb; ch = true; }
           const nt = cN >= 0 ? String(r[cN] || '').trim().slice(0, 2000) : ''; if (nt && (!had.note || (OW && had.note !== nt))) { had.note = nt; ch = true; }
-          const ad = cAd >= 0 ? dOf(r[cAd]) : null; if (ad && OW && ad <= todayISO() && had.addedAt !== ad) { had.addedAt = ad; ch = true; } }
+          const ad = cAd >= 0 ? dOf(r[cAd]) : null; if (ad && OW && ad <= todayISO() && had.addedAt !== ad) { had.addedAt = ad; ch = true; }
+          if (ad && ad <= todayISO() && had.status !== 'QUERO' && (!had.startedAt || OW || stCh || had.startedAt === had.finishedAt)) { const s0 = had.finishedAt && ad > had.finishedAt ? had.finishedAt : ad; if (had.startedAt !== s0) { had.startedAt = s0; ch = true; } } }
         if (cX >= 0) for (const name of String(r[cX] || '').split(/[,;]/).map((x) => x.trim()).filter((x) => x && !/^(read|to-read|currently-reading|lidos?|quero ler|lendo)$/i.test(x)).slice(0, 5)) {
           let sv = shelfOf.get(normT(name)); if (!sv) { db.shelves = db.shelves || []; sv = { id: uid(), name: name.slice(0, 40), bookIds: [] }; db.shelves.push(sv); shelfOf.set(normT(name), sv); } if (!(sv.bookIds || []).includes(had.id)) { sv.bookIds = [...(sv.bookIds || []), had.id]; ch = true; } }
         (ch || stCh) ? upd++ : skip++; continue;
       }
-      const sh = cS >= 0 ? normT(r[cS]) : '', tg = cX >= 0 ? normT(r[cX]) : '', ABD = /abandon|did not finish|\bdnf\b|desist|nao termin|nao conclu/, status = ABD.test(sh) || ABD.test(tg) ? 'ABANDONEI' : /currently|lendo|reading/.test(sh) ? 'LENDO' : /to read|quero|wish/.test(sh) ? 'QUERO' : 'LIDO';
+      const sh = cS >= 0 ? normT(r[cS]) : '', tg = cX >= 0 ? normT(r[cX]) : '', ABD = /abandon|did not finish|\bdnf\b|desist|nao termin|nao conclu/, status = ABD.test(sh) || ABD.test(tg) ? 'ABANDONEI' : /currently|lendo|reading/.test(sh) ? 'LENDO' : /to read|quero|wish/.test(sh) ? 'QUERO' : /paus|hiberna/.test(sh) ? 'HIBERNANDO' : 'LIDO';
       const raw = cD >= 0 ? String(r[cD] || '').trim() : '', dm = raw.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/) || raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/), ym = raw.match(/\b(19\d\d|20\d\d)\b/);
       let when = 'unknown';
       if (dm) { const [y, mo, da] = dm[1].length === 4 ? [dm[1], dm[2], dm[3]] : [dm[3], dm[2], dm[1]]; when = { d: `${y}-${String(mo).padStart(2, '0')}-${String(da).padStart(2, '0')}` }; } else if (ym && Number(ym[1]) <= Y) when = { y: Number(ym[1]) };
@@ -7596,14 +7597,14 @@ function importCSV() {
       const e = addToLibrary({ title, author: author || null, totalPages: pages, isbn: isbn || null }, null, status, { when: status === 'LIDO' ? when : null, quiet: true, paws: status === 'LIDO' && paws ? paws : 0,
         fmt: /kindle/.test(bind) ? { format: 'EBOOK', device: 'Kindle' } : /kobo/.test(bind) ? { format: 'EBOOK', device: 'Kobo' } : /ebook|e book|nook|digital/.test(bind) ? { format: 'EBOOK' } : /audio|audible/.test(bind) ? { format: 'AUDIO' } : null });
       if (status === 'LENDO') e.startedAt = todayISO();
-      { const ad = cAd >= 0 ? dOf(r[cAd]) : null; if (ad && ad <= todayISO()) e.addedAt = ad; const nt = cN >= 0 ? String(r[cN] || '').trim().slice(0, 2000) : ''; if (nt && !e.note) e.note = nt; const pb = cPub >= 0 ? String(r[cPub] || '').replace(/\s+/g, ' ').trim().slice(0, 120) : ''; if (pb && !e.publisher) e.publisher = pb; }
+      { const ad = cAd >= 0 ? dOf(r[cAd]) : null; if (ad && ad <= todayISO()) e.addedAt = ad; if (ad && ad <= todayISO() && status !== 'QUERO') e.startedAt = e.finishedAt && ad > e.finishedAt ? e.finishedAt : ad; const nt = cN >= 0 ? String(r[cN] || '').trim().slice(0, 2000) : ''; if (nt && !e.note) e.note = nt; const pb = cPub >= 0 ? String(r[cPub] || '').replace(/\s+/g, ' ').trim().slice(0, 120) : ''; if (pb && !e.publisher) e.publisher = pb; }
       const tx = revOf(r); if (tx && status === 'LIDO') e.review = { ...(e.review || {}), texto: tx, ...(spOf(r) ? { spoiler: true } : {}) };
       if (cX >= 0) for (const name of String(r[cX] || '').split(/[,;]/).map((x) => x.trim()).filter((x) => x && !/^(read|to-read|currently-reading|lidos?|quero ler|lendo)$/i.test(x)).slice(0, 5)) {
         let s = shelfOf.get(normT(name)); if (!s) { db.shelves = db.shelves || []; s = { id: uid(), name: name.slice(0, 40), bookIds: [] }; db.shelves.push(s); shelfOf.set(normT(name), s); } s.bookIds.push(e.id);
       }
       n++; if (isbn) fresh.push(e);
     }
-    save(); refresh(); toast(`${plural(n, 'livro importado', 'livros importados')}${upd ? ` · ${plural(upd, 'livro atualizado', 'livros atualizados')}` : ''}${skip ? ` · ${skip} já estavam na estante` : ''}`); S.listRedraw && S.listRedraw();
+    save(); refresh(); toast(`${plural(n, 'livro importado', 'livros importados')}${upd ? ` · ${plural(upd, 'livro atualizado', 'livros atualizados')}` : ''}${skip ? ` · ${skip} já estavam na estante` : ''}`); S.listRedraw && S.listRedraw(); try { window.lvAfterImport && window.lvAfterImport(n + upd); } catch {}
     // capas pelo ISBN (Open Library), aos poucos
     let i = 0; const next = () => { const e = fresh[i++]; if (!e) { save(); refresh(); if (!S.coverAfter) { S.coverAfter = 1; setTimeout(() => { S.coverAfter = 0; fillMissingCovers(); }, 2500); } return; } const u = `https://covers.openlibrary.org/b/isbn/${e.isbn}-M.jpg?default=false`, im = new Image(); im.onload = () => { if (im.naturalWidth > 20) e.cover = u; next(); }; im.onerror = next; im.src = u; };
     for (let k = 0; k < 3; k++) next();
@@ -9884,6 +9885,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10689,10 +10691,13 @@ const qtFeel = (k, cls = '', on = false) => { const x = QT_FEELS.find((y) => y[0
     const drawList = () => {
       ff();
       const n = normT(q), bio = (T().bio || '').trim(), list = all().filter((x) => !fe || x.f.includes(fe)).filter((x) => !n || normT(x.t).includes(n) || normT(x.e.title).includes(n) || normT(x.e.author || '').includes(n));
-      v.querySelector('.qt-list').innerHTML = list.length ? list.map((x, k) => `<button type="button" class="qt-it qt-cv" data-k="${k}">${cvh(x.e.title, x.e.cover, '')}<span><q>${esc(x.t)}</q><small>❝ ${esc(x.e.title)}${x.p ? ` · pág. ${x.p}` : ''}${x.at ? ` · ${String(x.at).slice(8, 10)}/${String(x.at).slice(5, 7)}${String(x.at).slice(0, 4) !== todayISO().slice(0, 4) ? '/' + String(x.at).slice(0, 4) : ''}` : ''}${bio && bio === bioOf(x) ? '<span class="qt-bio">frase do perfil</span>' : ''}</small>${x.f.length ? `<span class="qt-fl">${x.f.map((k) => qtFeel(k)).join('')}</span>` : ''}</span></button>`).join('')
+      const grp = []; list.forEach((x, k) => { let g = grp.find((y) => y.e === x.e); if (!g) { g = { e: x.e, its: [] }; grp.push(g); } g.its.push({ x, k }); });
+      v.querySelector('.qt-list').innerHTML = list.length ? grp.map((g) => `<div class="qt-g"><button type="button" class="qt-gh" data-book="${esc(g.e.id)}">${cvh(g.e.title, g.e.cover, '')}<span><b>${esc(g.e.title)}</b><small>${esc(g.e.author || '')}${g.e.author ? ' · ' : ''}${g.its.length} ${g.its.length > 1 ? 'trechos' : 'trecho'}</small></span></button>${g.its.map(({ x, k }) => `<button type="button" class="qt-it qt-in" data-k="${k}" data-bid="${esc(x.e.id)}" data-qi="${x.i}"><q>${esc(x.t)}</q><small>❝ ${x.p ? `pág. ${x.p}` : 'sem página'}${x.at ? ` · ${String(x.at).slice(8, 10)}/${String(x.at).slice(5, 7)}${String(x.at).slice(0, 4) !== todayISO().slice(0, 4) ? '/' + String(x.at).slice(0, 4) : ''}` : ''}${bio && bio === bioOf(x) ? '<span class="qt-bio">frase do perfil</span>' : ''}</small>${x.f.length ? `<span class="qt-fl">${x.f.map((kk) => qtFeel(kk)).join('')}</span>` : ''}</button>`).join('')}</div>`).join('')
         : `<p class="sl-empty">${all().length ? (fe ? 'Nenhum trecho com esse sentimento.' : 'Nenhum trecho com esse texto.') : 'Toque em “+ Novo” para guardar uma frase de um livro. Também dá para salvar pelo menu do livro (Trechos e anotação).'}</p>`;
       try { paintCv(v.querySelector('.qt-list')); } catch {}
+      $$('.qt-gh', v).forEach((b) => b.addEventListener('click', () => { const e = byId(b.dataset.book); if (e) openBookPage(e); }));
       $$('.qt-it', v).forEach((b) => b.addEventListener('click', () => {
+        if (S.qnSelOn) return;
         const x = list[Number(b.dataset.k)]; if (!x) return; const isBio = bio && bio === bioOf(x);
         popMenu(b, [
           { label: 'Editar', fn: () => form(x, drawList) },
@@ -15517,6 +15522,8 @@ function openSavedPosts() { S.comSeg = 'rede'; S.rdF = 'salvos'; goTab('comunida
     // pedidos de amizade pendentes em destaque
     const fr = old('friends'); if (fr && nP) { fr.querySelector('small')?.remove(); fr.insertAdjacentHTML('beforeend', '<small class="drw-bd">' + nP + (nP > 1 ? ' pedidos' : ' pedido') + '</small>'); }
     d.replaceChildren(...parts);
+    // sem números no menu (Bia, 18/11)
+    d.querySelectorAll('.drw-it small').forEach((s) => { if (/\d/.test(s.textContent)) s.remove(); });
     d.querySelectorAll('[data-go2]').forEach((b) => b.addEventListener('click', () => { closeDrawer(); const f = ACT[b.dataset.go2]; if (f) f(); else if (b.dataset.go2 === 'quotes') openAllQuotes(); }));
   };
   let tm = 0; new MutationObserver(() => { const d = TR.querySelector('.drw'); if (!d || d.dataset.v2) return; clearTimeout(tm); tm = setTimeout(() => { const d2 = TR.querySelector('.drw'); if (d2) rebuild(d2); }, 50); }).observe(TR, { childList: true, subtree: true }); }
@@ -15589,10 +15596,11 @@ function qnPaint() {
   if (S.qnTab !== 'notas') return;
   const all = lib().flatMap((e) => notesOf(e).map((x) => ({ e, x }))).sort((a, b) => String(b.x.at || '').localeCompare(String(a.x.at || '')));
   const box = document.createElement('div'); box.className = 'qn-notes';
-  box.innerHTML = all.length ? all.map(({ e, x }) => '<button type="button" class="qn-it" data-id="' + esc(e.id) + '">' + cvh(e.title, e.cover, '') + '<span><p>' + esc(x.t) + '</p><small>🔒 ' + esc(e.title) + (x.p ? ' · pág. ' + x.p : '') + (x.at ? ' · ' + String(x.at).slice(8, 10) + '/' + String(x.at).slice(5, 7) : '') + '</small></span></button>').join('')
+  const grp = []; all.forEach((r) => { let g = grp.find((y) => y.e === r.e); if (!g) { g = { e: r.e, its: [] }; grp.push(g); } g.its.push(r.x); });
+  box.innerHTML = all.length ? grp.map((g) => '<div class="qt-g"><button type="button" class="qt-gh qn-gh" data-book="' + esc(g.e.id) + '">' + cvh(g.e.title, g.e.cover, '') + '<span><b>' + esc(g.e.title) + '</b><small>' + esc(g.e.author || '') + (g.e.author ? ' · ' : '') + g.its.length + (g.its.length > 1 ? ' notas' : ' nota') + '</small></span></button>' + g.its.map((x) => '<button type="button" class="qn-it qn-in" data-id="' + esc(g.e.id) + '" data-nid="' + esc(x.id || '') + '"><p>' + esc(x.t) + '</p><small>🔒 ' + (x.p ? 'pág. ' + x.p : 'sem página') + (x.at ? ' · ' + String(x.at).slice(8, 10) + '/' + String(x.at).slice(5, 7) : '') + '</small></button>').join('') + '</div>').join('')
     : '<p class="sl-empty">Suas notas aparecem aqui. Escreva no Diário de leitura, no botão Nota: só você vê.</p>';
   seg.after(box); try { paintCv(box); } catch {}
-  box.querySelectorAll('.qn-it').forEach((b) => b.addEventListener('click', () => { const e = byId(b.dataset.id); if (e) openBookPage(e); }));
+  box.querySelectorAll('.qn-gh').forEach((b) => b.addEventListener('click', () => { const e = byId(b.dataset.book); if (e) openBookPage(e); }));
 }
 // menu lateral e atalho da Estante com o nome novo
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => {
@@ -15615,17 +15623,94 @@ function editNoteSheet(e, x, after) {
   document.body.append(w); setTimeout(() => ta.focus(), 50);
 }
 TR.addEventListener('click', (ev) => {
-  const b = ev.target.closest && ev.target.closest('.qn-it'); if (!b) return; ev.stopImmediatePropagation(); ev.preventDefault();
+  const b = ev.target.closest && ev.target.closest('.qn-it'); if (!b || S.qnSelOn) return; ev.stopImmediatePropagation(); ev.preventDefault();
   const e = byId(b.dataset.id); if (!e) return; const k = [...b.parentElement.querySelectorAll('.qn-it')].filter((y) => y.dataset.id === b.dataset.id).indexOf(b);
   const mine = lib().flatMap((ee) => notesOf(ee).map((x) => ({ e: ee, x }))).sort((a, c) => String(c.x.at || '').localeCompare(String(a.x.at || ''))).filter((y) => y.e.id === e.id)[k]; if (!mine) return;
   const x = mine.x, redo = () => qnPaint();
-  sheetList(e.title, [
+  popMenu(b, [
     { label: 'Editar', fn: () => editNoteSheet(e, x, redo) },
     { label: 'Copiar', fn: () => { try { navigator.clipboard.writeText(x.t); toast('Nota copiada'); } catch { toast('Não consegui copiar'); } } },
     { label: 'Ver o livro', fn: () => openBookPage(e) },
+    0,
     { label: 'Apagar nota', danger: true, fn: () => sheetList('Apagar esta nota?', [{ label: 'Apagar', danger: true, fn: () => { e.notes = notesOf(e).filter((y) => y !== x); const L = e.notes; if (L.length) e.note = L[L.length - 1].t; else delete e.note; save(); toast('Nota apagada'); redo(); } }]) },
   ]);
 }, true);
+
+{ const st = document.createElement('style'); st.textContent = '.qt-list,.qn-notes{display:grid;gap:.7rem}'
+  + '.qt-g{border:1px solid var(--line);background:var(--panel);border-radius:16px;overflow:hidden}'
+  + '.qt-gh{display:grid;grid-template-columns:42px minmax(0,1fr);gap:.65rem;align-items:center;width:100%;border:0;background:color-mix(in srgb,var(--acc) 6%,transparent);padding:.6rem .7rem;text-align:left;font:inherit;color:var(--ink);cursor:pointer}'
+  + '.qt-gh .cv{width:42px!important;height:63px!important;border-radius:4px!important;background-size:cover!important;background-position:center!important;font-size:.36rem!important}'
+  + '.qt-gh b{display:block;font-size:.92rem;line-height:1.25}.qt-gh small{display:block;margin-top:.15rem;font-size:.74rem;font-weight:700;color:var(--ink-2)}'
+  + '.qt-g .qt-in,.qt-g .qn-in{display:block!important;width:100%;border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;background:none!important;padding:.6rem 2.4rem .6rem .8rem!important;text-align:left;margin:0!important;box-shadow:none!important}'
+  + '.qt-g .qt-in q{display:block;font-style:italic;font-size:.9rem;line-height:1.4}.qt-g .qn-in p{margin:0;font-size:.9rem;line-height:1.4;white-space:pre-line}'
+  + '.qt-g .qt-in small,.qt-g .qn-in small{display:block;margin-top:.25rem;font-size:.72rem;font-weight:800;color:var(--ink-2)}'
+  + '.qt-g .qt-in::after,.qt-g .qn-in::after{top:.55rem!important}';
+  TR.append(st); }
+
+// seleção em massa (trechos e notas): "Selecionar" ao lado das abas; marca os itens e apaga de uma vez
+{ const st = document.createElement('style'); st.textContent = '#shelflist.qn-notas .sl-body > .qn-selb{display:flex!important}.qn-selb{display:flex;justify-content:flex-end;margin:-.3rem 0 .5rem}.qn-selb button{border:0;background:none;font:inherit;font-weight:800;font-size:.82rem;color:var(--acc);cursor:pointer;padding:.2rem 0}'
+  + '#shelflist.qn-sel .qt-in,#shelflist.qn-sel .qn-in{padding-left:2.5rem!important;position:relative}#shelflist.qn-sel .qt-in::after,#shelflist.qn-sel .qn-in::after{content:""!important}'
+  + '#shelflist.qn-sel .qt-in::before,#shelflist.qn-sel .qn-in::before{content:"";position:absolute;left:.8rem;top:50%;width:20px;height:20px;margin-top:-10px;border-radius:50%;border:2px solid var(--line);background:var(--panel);box-sizing:border-box}'
+  + '#shelflist.qn-sel .qt-in.sel::before,#shelflist.qn-sel .qn-in.sel::before{border-color:var(--acc);background:var(--acc);box-shadow:inset 0 0 0 3px var(--panel)}'
+  + '.qn-bar{position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:50;display:flex;align-items:center;gap:.6rem;max-width:620px;margin:0 auto;padding:.6rem .7rem .6rem 1rem;border-radius:16px;background:var(--ink);color:var(--bg);box-shadow:0 8px 24px rgba(0,0,0,.3);font-weight:800;font-size:.88rem}'
+  + '.qn-bar span{flex:1}.qn-bar button{border:0;border-radius:99px;font:inherit;font-weight:900;font-size:.84rem;padding:.5rem .9rem;cursor:pointer}.qn-bar .qn-x{background:none;color:var(--bg);opacity:.8}.qn-bar .qn-del{background:#c0392b;color:#fff}.qn-bar .qn-del:disabled{opacity:.45}';
+  TR.append(st); }
+S.qnSelOn = false; S.qnSel = new Set();
+function qnSelKey(b) { return b.classList.contains('qt-in') ? 'q:' + b.dataset.bid + ':' + b.dataset.qi : 'n:' + b.dataset.id + ':' + b.dataset.nid; }
+function qnSelPaint() {
+  const v = $('#shelflist'); if (!v) return; const body = v.querySelector('.sl-body'); if (!body || !body.querySelector('.qn-seg')) { S.qnSelOn = false; v.classList.remove('qn-sel'); TR.querySelector('.qn-bar')?.remove(); return; }
+  let sb = body.querySelector('.qn-selb'); if (!sb) { sb = document.createElement('div'); sb.className = 'qn-selb'; sb.innerHTML = '<button type="button">Selecionar</button>'; body.querySelector('.qn-seg').after(sb);
+    sb.querySelector('button').addEventListener('click', () => { S.qnSelOn = !S.qnSelOn; S.qnSel.clear(); qnSelPaint(); }); }
+  { const t = S.qnSelOn ? 'Cancelar seleção' : 'Selecionar', bt = sb.querySelector('button'); if (bt.textContent !== t) bt.textContent = t; }
+  v.classList.toggle('qn-sel', S.qnSelOn);
+  body.querySelectorAll('.qt-in, .qn-in').forEach((b) => b.classList.toggle('sel', S.qnSel.has(qnSelKey(b))));
+  let bar = TR.querySelector('.qn-bar');
+  if (!S.qnSelOn) { bar?.remove(); return; }
+  if (!bar) { bar = document.createElement('div'); bar.className = 'qn-bar'; bar.innerHTML = '<span></span><button type="button" class="qn-x">Cancelar</button><button type="button" class="qn-del">Apagar</button>'; TR.append(bar);
+    bar.querySelector('.qn-x').addEventListener('click', () => { S.qnSelOn = false; S.qnSel.clear(); qnSelPaint(); });
+    bar.querySelector('.qn-del').addEventListener('click', () => { const N = S.qnSel.size; if (!N) return;
+      sheetList('Apagar ' + N + (N > 1 ? ' itens?' : ' item?'), [{ label: 'Apagar', danger: true, fn: () => {
+        const qs = new Map(), ns = new Map();
+        S.qnSel.forEach((k) => { const [t, bid, x] = k.split(':'); const M = t === 'q' ? qs : ns; if (!M.has(bid)) M.set(bid, []); M.get(bid).push(x); });
+        qs.forEach((idx, bid) => { const e = byId(bid); if (!e || !e.quotes) return; idx.map(Number).sort((a, b) => b - a).forEach((i) => e.quotes.splice(i, 1)); });
+        ns.forEach((ids, bid) => { const e = byId(bid); if (!e) return; e.notes = notesOf(e).filter((y) => !ids.includes(String(y.id || ''))); const L = e.notes; if (L.length) e.note = L[L.length - 1].t; else delete e.note; });
+        save(); toast(N + (N > 1 ? ' itens apagados' : ' item apagado')); S.qnSelOn = false; S.qnSel.clear();
+        const tab = S.qnTab; try { openAllQuotes(tab === 'notas' ? 'notas' : undefined); } catch {} } }]); }); }
+  const N = S.qnSel.size; { const t = N ? N + (N > 1 ? ' selecionados' : ' selecionado') : 'Toque nos itens para escolher', sp = bar.querySelector('span'); if (sp.textContent !== t) sp.textContent = t; } bar.querySelector('.qn-del').disabled = !N;
+}
+TR.addEventListener('click', (ev) => { if (!S.qnSelOn) return; const b = ev.target.closest && ev.target.closest('.qt-in, .qn-in'); if (!b) return; ev.stopImmediatePropagation(); ev.preventDefault();
+  const k = qnSelKey(b); if (S.qnSel.has(k)) S.qnSel.delete(k); else S.qnSel.add(k); qnSelPaint(); }, true);
+{ let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; qnSelPaint(); }, 60); }).observe(TR, { childList: true, subtree: true }); }
+// --- a2_historico_abas.js ---
+// Histórico de leituras (Bia, 18/11): uma página só, com duas abas: "Adicionar livros" (Montar meu histórico, com importar CSV)
+// e "Completar dados" (Ajustar leituras). Depois de importar um arquivo, sugere a aba Completar dados se faltou alguma coisa.
+{ const st = document.createElement('style'); st.textContent = `
+.hl-seg{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:.2rem;margin:.1rem 0 .8rem}
+.hl-seg button{border:0;background:none;border-radius:999px;height:36px;font:inherit;font-weight:800;font-size:.86rem;color:var(--ink-2);cursor:pointer}
+.hl-seg button.on{background:var(--acc);color:var(--on-acc,#fff)}
+`; TR.append(st); }
+const HL_T = { add: 'Montar meu histórico', fix: 'Ajustar leituras' };
+openHistLeituras = function (tab) { if (tab === 'fix') openFixReads(); else openHistory(); };
+function hlPaint() {
+  const v = $('#shelflist'); if (!v || v.hidden) return; const top = v.querySelector('.sl-body > .sl-top'); if (!top) return;
+  const b = top.querySelector('b'); if (!b) return; const t = b.textContent.trim();
+  const tab = t === HL_T.add ? 'add' : t === HL_T.fix ? 'fix' : (t === 'Histórico de leituras' && top.dataset.hl) || null; if (!tab) return;
+  if (top.dataset.hl === tab && top.nextElementSibling && top.nextElementSibling.classList.contains('hl-seg')) return;
+  top.dataset.hl = tab; if (t !== 'Histórico de leituras') b.textContent = 'Histórico de leituras';
+  let miss = 0; try { const c = fxCount(); miss = c.ini + c.fim + c.pag; } catch {}
+  v.querySelector('.hl-seg')?.remove();
+  const seg = document.createElement('div'); seg.className = 'hl-seg';
+  seg.innerHTML = '<button type="button" data-t="add" class="' + (tab === 'add' ? 'on' : '') + '">Adicionar livros</button><button type="button" data-t="fix" class="' + (tab === 'fix' ? 'on' : '') + '">Completar dados' + (miss ? ' · ' + miss : '') + '</button>';
+  seg.addEventListener('click', (ev) => { const x = ev.target.closest('button'); if (!x || x.dataset.t === tab) return; openHistLeituras(x.dataset.t); });
+  top.after(seg);
+}
+{ let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; hlPaint(); }, 40); }).observe(TR, { childList: true, subtree: true }); }
+// depois de importar: se faltou data, página ou nota nos lidos, sugere a aba Completar dados
+window.lvAfterImport = (n) => {
+  if (!n) return; let c = null; try { c = fxCount(); } catch { return; } const miss = c.ini + c.fim + c.pag; if (!miss) return;
+  const parts = [c.ini ? c.ini + ' sem data de início' : '', c.fim ? c.fim + ' sem data de fim' : '', c.pag ? c.pag + ' sem páginas' : ''].filter(Boolean).join(', ');
+  setTimeout(() => sheetList('Faltou completar alguns lidos (' + parts + ')', [{ label: 'Completar agora', fn: () => openHistLeituras('fix') }], 'Depois'), 2600);
+};
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
