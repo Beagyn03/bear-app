@@ -9877,6 +9877,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14941,10 +14942,12 @@ function tlHTML(e, all) {
     } catch {} }, 150);
   }, true);
 }
+// abas também na tela de status (Lido, Pausado, Quero ler, Abandonei), ao trocar o status dentro do diário ou ao abrir direto (Bia, 18/11)
+{ const _ss = statusSheet; statusSheet = function (e, want) { if (e && !(want === 'LENDO' && e.status === 'LENDO')) { if (!S.tlE || S.tlE.id !== e.id) { S.tlAll = false; S.tlTab = 'up'; } S.tlE = e; } return _ss.apply(this, arguments); }; }
 { const _el = editLeitura; editLeitura = function () { try { const R = reading(); S.tlE = R && R.e; S.tlAll = false; S.tlTab = S.tlTabNext || 'up'; S.tlTabNext = null; } catch {} return _el.apply(this, arguments); }; }
 { const ed = $('#editor'); let tm = 0;
   const paint = () => {
-    const body = ed.querySelector('.ed-body'); if (ed.hidden || !body || !body.querySelector('#up-save') || body.querySelector('.tl')) return;
+    const body = ed.querySelector('.ed-body'); if (ed.hidden || !body || !(body.querySelector('#up-save') || body.querySelector('.ss-chips')) || body.querySelector('.tl')) return;
     const e = S.tlE; if (!e) return;
     body.querySelectorAll('.tl-tabs').forEach((x) => x.remove());
     const tabs = document.createElement('div'); tabs.className = 'tl-tabs'; tabs.innerHTML = '<button type="button" data-t="up">Atualizar</button><button type="button" data-t="hist">Histórico</button>';
@@ -15401,6 +15404,8 @@ function openOrbita(ym) {
   };
   setTimeout(show, 4000);
   window.addEventListener('appinstalled', () => { document.querySelector('.inst-pop')?.remove(); }); }
+// se o diário ou outra tela abrir por cima, o popup sai da frente (sem contar como "Agora não")
+{ const ed = TR.querySelector('#editor'); if (ed) new MutationObserver(() => { if (!ed.hidden) document.querySelector('.inst-pop')?.remove(); }).observe(ed, { attributes: true, attributeFilter: ['hidden'] }); }
 // --- 99_prazo_tela.js ---
 // "Quando quer terminar?" mais arrumado (Bia, 17/11): seções com título (Data · Plano · Lembrete), atalhos numa linha
 // com o escolhido destacado, data embaixo, lembrete com interruptor, e Salvar fixo no rodapé. Sem espaços vazios.
