@@ -9888,6 +9888,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14819,7 +14820,7 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 { const st = document.createElement('style'); st.textContent = `
 #editor .tl{margin:.2rem 0 .4rem}
 #editor .ed-body:not(.tl-on) > .tl{display:none!important}
-#editor .ed-body.tl-on > :not(.ss-title):not(.up-x):not(.ss-hd):not(.tl-tabs):not(.tl){display:none!important}
+#editor .ed-body.tl-on:has(> .tl) > :not(.ss-title):not(.up-x):not(.ss-hd):not(.tl-tabs):not(.tl){display:none!important}
 #editor .tl-tabs{display:flex;border-bottom:1.5px solid var(--line);margin:.2rem 0 .75rem}
 #editor .tl-tabs button{flex:1;border:0!important;background:none!important;box-shadow:none!important;font:inherit;font-size:.86rem;font-weight:800;color:var(--ink-2)!important;padding:.5rem 0!important;margin-bottom:-1.5px;border-bottom:2.5px solid transparent!important;border-radius:0!important;min-height:0!important;height:auto!important}
 #editor .tl-tabs button.on{color:var(--acc)!important;border-bottom-color:var(--acc)!important}
