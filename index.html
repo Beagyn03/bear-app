@@ -4872,8 +4872,8 @@ async function syncAvatars(force) {
 const catBase = () => String((apiCfg && apiCfg.api) || DEFAULT_API).replace(/\/$/, '');
 const fromCatalogDTO = (b) => ({
   title: [b.title, b.subtitle].filter(Boolean).join(': '), author: (b.authors || []).join(', ') || null, pages: b.page_count || null,
-  year: String(b.published_date || '').slice(0, 4), coverUrl: b.cover_url || null, isbn: b.isbn || null, src: 'Catálogo B.E.A.R', lang: '',
-  _meta: b.synopsis || b.publisher ? { desc: b.synopsis || null, pub: b.publisher || null, date: b.published_date || null, lang: null, cat: null, src: 'Catálogo B.E.A.R', at: todayISO() } : null,
+  year: String(b.published_date || '').slice(0, 4), coverUrl: b.cover_url || null, isbn: b.isbn || null, src: 'Catálogo B.E.A.R', lang: b.language || '',
+  _meta: b.synopsis || b.publisher ? { desc: b.synopsis || null, pub: b.publisher || null, date: b.published_date || null, lang: b.language || null, cat: null, src: 'Catálogo B.E.A.R', at: todayISO() } : null,
 });
 { const _direct = searchBooks;
   searchBooks = async function (t) {
