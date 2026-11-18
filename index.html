@@ -9890,6 +9890,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11744,6 +11745,16 @@ TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closes
 .rd-selo-s b{margin-top:5px;font-size:.92rem;font-weight:900;color:#2a1709;text-shadow:0 0 3px rgba(255,255,255,.9),0 0 1px rgba(255,255,255,.9)}
 .rd-selo.t-5{--rib:linear-gradient(90deg,#ffd27a,#ff8fc8,#b78cff,#6fd3ff)}.rd-selo.t-ouro{--rib:linear-gradient(90deg,#f7dc6f,#e2a92c)}.rd-selo.t-prata{--rib:linear-gradient(90deg,#f3f5f7,#b9c1c8)}.rd-selo.t-bronze{--rib:linear-gradient(90deg,#efb989,#c07a45)}.rd-selo.t-bronze .rd-selo-f{color:#3a1d06}
 .rd2 .rd-kc:has(.rd-selo){min-width:0;margin-top:-6px}
+.rd-selo-s{background:none!important;width:42px!important;height:42px!important}
+.rd-selo-s::before,.rd-selo-s::after{content:"";position:absolute;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.6l3.15 6.55 7.2.95-5.3 5 1.38 7.15L12 17.8l-6.43 3.45 1.38-7.15-5.3-5 7.2-.95z' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.6l3.15 6.55 7.2.95-5.3 5 1.38 7.15L12 17.8l-6.43 3.45 1.38-7.15-5.3-5 7.2-.95z' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
+.rd-selo-s::before{inset:0;background:var(--so,#8a4718)}
+.rd-selo-s::after{inset:3px;background:var(--sg)}
+.rd-selo-s b{position:relative;z-index:1;margin-top:4px!important;font-size:.86rem!important}
+.rd-selo.t-5{--sg:linear-gradient(135deg,#ffe29a,#ff9fd0 38%,#c2a0ff 66%,#8fe0ff);--so:#b04fc8}.rd-selo.t-5 .rd-selo-s{filter:drop-shadow(0 0 5px rgba(255,143,200,.7)) drop-shadow(0 2px 2px rgba(0,0,0,.25))}
+.rd-selo.t-ouro{--sg:linear-gradient(160deg,#fff3c2,#f4c94a 50%,#d8961c);--so:#a86a0c}
+.rd-selo.t-prata{--sg:linear-gradient(160deg,#ffffff,#dde1e6 50%,#a3abb5);--so:#6c7480}
+.rd-selo.t-bronze{--sg:linear-gradient(160deg,#ffdcbd,#e59d62 50%,#b5672f);--so:#86441a}
+
 .rd-rehide{display:inline-flex;align-items:center;gap:.35rem;border:0;background:none;padding:.3rem 0 0;font:inherit;font-size:.76rem;font-weight:800;color:var(--ink-2);cursor:pointer}.rd-rehide .rd-eye{width:18px;height:18px;margin:0}
 .rd-day{font-size:.74rem;font-weight:900;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em;margin:.4rem .2rem -.2rem}
 .rd-fe-out .rd-fe{margin:.1rem 0 .3rem}
