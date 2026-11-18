@@ -9875,6 +9875,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -15404,7 +15405,7 @@ function openOrbita(ym) {
 .due-sh form{gap:0!important;padding-bottom:84px!important;align-content:start!important;grid-auto-rows:auto!important}.due-sh .ds-q .dq{height:auto!important;align-self:center}
 .due-sh form > *{margin:0!important}
 .due-sh .dp-top{margin:0 0 .25rem!important}
-.due-sh .dp-top + .hint{margin:0 0 .9rem!important;font-size:.8rem!important;line-height:1.35}
+.due-sh .ds-bk{display:grid!important;grid-template-columns:52px minmax(0,1fr);gap:.75rem;align-items:center;padding:.65rem .75rem;margin:.2rem 0 .2rem!important;border-radius:16px;background:var(--panel);border:1px solid var(--line)}.due-sh .ds-bk .cv{width:52px!important;height:78px!important;border-radius:5px!important;background-size:cover!important;background-position:center!important;font-size:.42rem!important;box-shadow:0 2px 6px rgba(0,0,0,.18)}.due-sh .ds-bk .cv{display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;box-sizing:border-box;background-color:var(--c,#8a6e55);color:#fff;font-weight:900;line-height:1.05}.due-sh .ds-bk b{display:block;font-size:.98rem;line-height:1.2}.due-sh .ds-bk small{display:block;font-size:.78rem;color:var(--ink-2);font-weight:700;margin-top:.1rem}.due-sh .ds-bk em{display:block;font-style:normal;font-size:.78rem;font-weight:800;color:var(--acc);margin-top:.3rem}
 .due-sh .ds-t{display:block;margin:.95rem 0 .45rem!important;font-size:.68rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
 .due-sh .ds-q{display:flex!important;gap:.4rem!important;flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.due-sh .ds-q::-webkit-scrollbar{display:none}
 html .due-sh .ds-q .dq{flex:none;padding:.5rem .9rem!important;font-size:.84rem!important;border-radius:99px!important;border:1.5px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;font-weight:800!important}
@@ -15431,6 +15432,10 @@ html .due-sh .dx{margin-top:.8rem!important;justify-self:center}
     try {
       const wrap = [...document.querySelectorAll('body > .sheet.due-sh')].pop(); if (!wrap) return r;
       const f = wrap.querySelector('form'), inp = f.querySelector('input[name=due]'), dq = f.querySelector('.dq'), qrow = dq && dq.parentElement;
+      // livro no topo: capa, título e quantas páginas faltam (Bia, 18/11)
+      const hint = f.querySelector('.dp-top + .hint'); if (hint) { const inf = (() => { try { return readingInfo(e); } catch { return {}; } })(), tot = inf.total || Number(e.totalPages) || 0, now = inf.now || 0;
+        const bk = document.createElement('div'); bk.className = 'ds-bk'; bk.innerHTML = cvh(e.title, e.cover, '') + '<span><b>' + esc(e.title) + '</b><small>' + esc(e.author || '') + '</small><em>' + (tot ? 'pág. ' + now + ' de ' + tot + ' · faltam ' + Math.max(0, tot - now) : '') + '</em></span>';
+        hint.replaceWith(bk); try { paintCv(bk); } catch {} }
       const T = (txt) => { const x = document.createElement('b'); x.className = 'ds-t'; x.textContent = txt; return x; };
       if (qrow) { qrow.classList.add('ds-q'); qrow.removeAttribute('style'); qrow.before(T('Até quando')); }
       const lab = inp && inp.closest('label'); if (lab) { lab.classList.add('ds-date'); if (lab.firstChild && lab.firstChild.nodeType === 3) lab.firstChild.textContent = 'ou escolha a data'; }
