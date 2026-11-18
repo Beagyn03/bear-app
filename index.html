@@ -9908,6 +9908,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -15488,7 +15489,7 @@ function openOrbita(ym) {
 // --- 98_popup_instalar.js ---
 // Popup para instalar o app (Bia, 17/11): quem abre o link no navegador (sem o app instalado) vê, depois de alguns segundos,
 // um cartão no rodapé com "Instalar". Usa o installApp() que já existia (pedido nativo no Android; passo a passo no iPhone).
-// "Agora não" esconde por 7 dias. Não aparece com o app já instalado nem enquanto há uma tela por cima.
+// "Agora não" esconde para sempre (Bia, 18/11): instalar continua no menu lateral. Não aparece com o app já instalado nem enquanto há uma tela por cima.
 { const st = document.createElement('style'); st.textContent = `
 .inst-pop{position:fixed;left:12px;right:12px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:9000;display:grid;grid-template-columns:52px minmax(0,1fr);gap:.75rem;align-items:center;max-width:460px;margin:0 auto;padding:.85rem .9rem;border-radius:20px;background:#2e0b33;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.35);font-family:Nunito,system-ui,sans-serif;animation:instIn .35s cubic-bezier(.2,1.2,.4,1)}
 @keyframes instIn{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
@@ -15502,7 +15503,7 @@ function openOrbita(ym) {
   const show = () => {
     try { if (appInstalled()) return; } catch { return; }
     let last = 0; try { last = Number(localStorage.getItem(KEY)) || 0; } catch {}
-    if (Date.now() - last < DAYS * 864e5 || document.querySelector('.inst-pop')) return;
+    if (last || document.querySelector('.inst-pop')) return; // já respondeu uma vez: não volta
     // não atrapalha telas por cima (diário, folhas, tour)
     const busy = document.querySelector('.sheet') || (TR.querySelector('#editor') && !TR.querySelector('#editor').hidden) || document.querySelector('.tour, .tr-ov');
     if (busy) return setTimeout(show, 8000);
