@@ -8924,7 +8924,7 @@ function bookMenuOpen(anchor, b) {
   };
   const fromCard = !!(anchor && anchor.closest && anchor.closest('.v3-now:not(.v3-next)')); // o card já mostra "Atualizar leitura"
   const quick = []; // +10/+25/+50 saíram (decisão da Bia, 14/11)
-  const foco = ['clock', focusState() && isCur ? 'Voltar ao foco' : 'Foco', () => { if (!isCur) setCurrent(e.id); startFocus(); }];
+  const foco = ['clock', focusState() && isCur ? 'Voltar ao foco' : 'Ler agora', () => { if (!isCur) setCurrent(e.id); startFocus(); }];
   const queueIt = ['queue', 'Voltar para Quero ler', toQueue, '', '', 1];
   const top = !e ? [['plus', 'Adicionar à estante', () => addToLibrary(libItem(b)), 'escolha como está e em quais estantes']]
     : st === 'QUERO' ? [['play', 'Começar a ler', () => startReading(e)], ['flag', 'Prioridade', () => prioSheet(e), ({ 1: 'Alta', 3: 'Baixa' })[e.prio] || 'Normal'], ['check', 'Já li', set('LIDO')]]
@@ -17039,6 +17039,28 @@ function v2SesEnd(e, s, w) {
     }
   });
   TR.append(o); upd(); setTimeout(() => { try { inp.focus(); inp.select(); } catch {} }, 150);
+}
+// --- b6_v2_um_caminho.js ---
+// v2 (Bia, 18/11): um caminho só para cada coisa.
+//  - Foco virou a sessão Ler: o botão Foco sai do card do Hoje e todo "Foco" que sobrou (menu do livro, atalhos) abre a sessão
+//    do livro. Um foco antigo ainda em andamento continua abrindo o foco, para não perder o tempo contado.
+//  - Menu lateral sem o que já tem lugar fixo: Ajustes (aba Você) e Personalizar Início (••• do Hoje).
+{ const _sf = startFocus;
+  startFocus = function () {
+    try { if (focusRunning()) return _sf.apply(this, arguments); } catch {}
+    closeAll();
+    if (v2SesGet()) return v2Ler();
+    const r = reading(); if (r && r.e && r.e.status === 'LENDO') return v2SesStart(r.e);
+    return v2Ler();
+  };
+}
+{ let tm = 0;
+  const tidy = () => {
+    TR.querySelectorAll('.v3-quick [data-q=foco]').forEach((b) => b.remove());
+    const d = TR.querySelector('.drw'); if (d && d.dataset.v2 && !d.dataset.v2b) { d.dataset.v2b = '1';
+      d.querySelectorAll('[data-go="cfg"],[data-go2="home"]').forEach((b) => b.remove()); }
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(tidy, 60); }).observe(TR, { childList: true, subtree: true }); setTimeout(tidy, 1600);
 }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
