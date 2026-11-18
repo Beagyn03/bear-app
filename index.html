@@ -8929,7 +8929,7 @@ function bookMenuOpen(anchor, b) {
   const top = !e ? [['plus', 'Adicionar à estante', () => addToLibrary(libItem(b)), 'escolha como está e em quais estantes']]
     : st === 'QUERO' ? [['play', 'Começar a ler', () => startReading(e)], ['flag', 'Prioridade', () => prioSheet(e), ({ 1: 'Alta', 3: 'Baixa' })[e.prio] || 'Normal'], ['check', 'Já li', set('LIDO')]]
     : st === 'LENDO' ? [['pen', 'Atualizar leitura', upd, 'página, terminei, pausar ou abandonar'], foco]
-    : st === 'LIDO' ? [rateIt, ['redo', 'Ler de novo', () => startReread(e)]]
+    : st === 'LIDO' ? [['send', 'Retrospectiva', () => openRetro(e), 'rever e compartilhar'], ['pen', 'Diário da leitura', () => { statusSheet(e, 'LIDO'); setTimeout(() => { const h = $('#editor .tl-tabs [data-t=hist]'); if (h) h.click(); }, 300); }, 'histórico das atualizações'], rateIt, ['redo', 'Ler de novo', () => startReread(e)]]
     : st === 'HIBERNANDO' ? [['play', 'Retomar leitura', () => startReading(e)], rateIt]
     : [['play', 'Tentar de novo', () => startReading(e)], rateIt];
   // livro aberto pelo perfil de uma amizade: ler junto com ela (Bia, 16/11)
@@ -9655,6 +9655,7 @@ bookMarkersHTML = function () { return ''; };
 composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma frase, use Salvar trecho no menu do livro.'); };
 // se o app abriu já na aba Estante, a tela antiga foi montada antes da nova existir: descarta
 { const v = $('#shelflist'); if (S.tab === 'estante' && v && !v.hidden && v.classList.contains('tabroot')) { v.hidden = true; v.classList.remove('tabroot'); S.listRedraw = null; } }
+
 
 
 
@@ -11811,7 +11812,9 @@ function rdShelfBtn(it) {
 function rdCardHTML(it, i, opts = {}) {
   const isRev = it.type === 'review';
   const isAct = it.type === 'activity', isAch = it.type === 'achievement';
-  const kind = isAch ? 'Conquista' : isAct ? (it.act === 'FINISHED' ? 'Terminou' : 'Lendo') : isRev ? 'Avaliou' : it.kind === 'question' ? 'Pergunta' : it.kind === 'rec' ? 'Indicação' : 'Lendo';
+  const revSt = !isRev ? null : it.bookStatus || (it.mine && it.book ? ((myBookByKey(it.book.key || normT(it.book.title)) || {}).status || null) : null) || (it.readerPct != null && it.readerPct < 100 ? 'PAROU' : null);
+  const revLbl = ({ ABANDONEI: 'Abandonou', HIBERNANDO: 'Pausou', LENDO: 'Lendo', PAROU: 'Não terminou' })[revSt] || 'Avaliou';
+  const kind = isAch ? 'Conquista' : isAct ? (it.act === 'FINISHED' ? 'Terminou' : 'Lendo') : isRev ? revLbl : it.kind === 'question' ? 'Pergunta' : it.kind === 'rec' ? 'Indicação' : 'Lendo';
   const sp = rdSpoil(it), u = it.user || {};
   const pct = it.readerPct != null && !it.paws && !(isAct && it.act === 'FINISHED') ? Math.max(0, Math.min(100, Math.round(it.readerPct))) : null;
   const fe = (it.feelings || []).length ? `<div class="rd-fe">${it.feelings.map((k) => qtFeel(k)).join('')}</div>` : '';
@@ -11827,7 +11830,7 @@ function rdCardHTML(it, i, opts = {}) {
   return `<article class="rd-card rd2${it.paws ? ' has-nota' : ''}" data-i="${i}">
     <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
       <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
-      <span class="rd-kc">${isRev && it.paws ? `<span class="rd-selo t-${(Number(it.paws) >= 5 ? '5' : Number(it.paws) >= 4 ? 'ouro' : Number(it.paws) >= 3 ? 'prata' : 'bronze')}" title="Avaliou com nota ${String(it.paws).replace('.', ',')}"><span class="rd-selo-f">Avaliou</span><span class="rd-selo-s" style="--nimg:url(img/nota_${(Number(it.paws) >= 5 ? '5' : Number(it.paws) >= 4 ? 'ouro' : Number(it.paws) >= 3 ? 'prata' : 'bronze')}.webp)"><b>${String(it.paws).replace('.', ',')}</b></span></span>` : `<span class="rd-tag${isRev || isAch || (isAct && it.act === 'FINISHED') ? ' rv' : ''}">${esc(kind)}</span>`}${pct != null ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${pct}%</span>` : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
+      <span class="rd-kc">${isRev && it.paws ? `<span class="rd-selo t-${(Number(it.paws) >= 5 ? '5' : Number(it.paws) >= 4 ? 'ouro' : Number(it.paws) >= 3 ? 'prata' : 'bronze')}" title="${revLbl} · nota ${String(it.paws).replace('.', ',')}"><span class="rd-selo-f">${revLbl}</span><span class="rd-selo-s" style="--nimg:url(img/nota_${(Number(it.paws) >= 5 ? '5' : Number(it.paws) >= 4 ? 'ouro' : Number(it.paws) >= 3 ? 'prata' : 'bronze')}.webp)"><b>${String(it.paws).replace('.', ',')}</b></span></span>` : `<span class="rd-tag${isRev || isAch || (isAct && it.act === 'FINISHED') ? ' rv' : ''}">${esc(kind)}</span>`}${pct != null ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${pct}%</span>` : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
     ${isAch ? `<div class="rd-ach">${it.reward && typeof DECO_IMG !== 'undefined' && DECO_IMG[it.reward] ? `<img src="${DECO_IMG[it.reward]}" alt="">` : '<span></span>'}<span><b>${esc(it.name || '')}</b><small>ganhou esta conquista</small></span></div>` : ''}
     ${it.book && !it.book2 ? `<div class="rd-main"><div class="rd-lc"><button type="button" class="rd-book rd-bcv" aria-label="Ver o livro">${cvh(it.book.title, it.book.cover)}</button></div><div class="rd-col"><button type="button" class="rd-book rd-bt"><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small>${it.paws && fr ? `<span class="rd-ntx">${esc(fr)}</span>` : ''}${isAct ? `<em>${it.act === 'STARTED' ? 'começou a ler' : it.act === 'FINISHED' ? 'terminou o livro 🎉' : it.pages ? 'chegou na pág. ' + it.pages : 'avançou na leitura'}</em>` : ''}${fim ? `<em>${esc(fim)}</em>` : ''}</button>${(it.text || it.quote || it.hasImage || (it.feelings || []).length) ? `<div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}${reHide}` : ''}</div></div>` : `<div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}${reHide}`}
     ${opts.noFoot || isAch ? '' : isAct ? `<footer><span class="rd-sp"></span><button type="button" class="rd-save${saved ? ' on' : ''}" aria-pressed="${saved}" aria-label="Salvar"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></button>${rdShelfBtn(it)}</footer>` : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" data-ic2="1" aria-label="Curtir" aria-pressed="${!!it.liked}"><img class="rd-hi" src="img/bt_curtir.webp" alt="">${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button>
@@ -16189,6 +16192,31 @@ function openRetro(e, auto) {
 }
 // no Histórico do diário: "Leitura concluída" no topo, com o botão da retrospectiva
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('.cs-retro'); if (!b) return; ev.stopPropagation(); const e = byId(b.dataset.id) || S.tlE; if (e) openRetro(e); }, true);
+// --- a8_avaliacao_retro.js ---
+// "Sua avaliação" de livro lido (Bia, 18/11): atalhos para a retrospectiva (rever e compartilhar) e para o histórico da leitura,
+// e os personagens marcados em "Mais sobre a leitura".
+{ const st = document.createElement('style'); st.textContent = `
+.rtf-view .rtf-rt{display:grid;grid-template-columns:1.2fr 1fr;gap:.5rem;margin-top:.2rem}
+.rtf-view .rtf-rt button{border-radius:14px;padding:.75rem .6rem;font:inherit;font-weight:900;font-size:.88rem;cursor:pointer;border:1.5px solid var(--line);background:var(--panel);color:var(--ink)}
+.rtf-view .rtf-rt button.go{border:0;color:#fff;background:radial-gradient(120% 160% at 0 0,#4a3585,#171030 70%);box-shadow:0 6px 16px rgba(23,16,48,.25)}
+.rtf-view .rtf-rt button.go span{color:#f2c94c}
+.rtf-view .rtf-pp{display:flex;flex-wrap:wrap;gap:.35rem .9rem;font-size:.84rem;color:var(--ink-2)}.rtf-view .rtf-pp b{color:var(--ink)}
+`; document.head.append(st); }
+{ const _rf = rateForm; rateForm = function (b) {
+  const r = _rf.apply(this, arguments);
+  try {
+    const wrap = [...document.querySelectorAll('body > .sheet.rt-full')].pop(), view = wrap && wrap.querySelector('.rtf-view'); if (!view || view.querySelector('.rtf-rt')) return r;
+    const e = lib().find((x) => x === b) || lib().find((x) => normT(x.title) === normT(b.title)); if (!e || e.status !== 'LIDO') return r;
+    const F = e.fin || {};
+    if (F.fav || F.hate) { const p = document.createElement('div'); p.className = 'rtf-pp'; p.innerHTML = (F.fav ? '<span>Personagem favorito: <b>' + esc(F.fav) + '</b></span>' : '') + (F.hate ? '<span>Amei odiar: <b>' + esc(F.hate) + '</b></span>' : ''); view.querySelector('.rv-tags') ? view.querySelector('.rv-tags').after(p) : view.append(p); }
+    const row = document.createElement('div'); row.className = 'rtf-rt';
+    row.innerHTML = '<button type="button" class="go"><span>✦</span> Ver retrospectiva</button><button type="button" class="hs">Histórico da leitura</button>';
+    (view.querySelector('.rtf-pp') || view.querySelector('.rv-tags') || view.lastElementChild).after(row);
+    row.querySelector('.go').addEventListener('click', () => { wrap.remove(); openRetro(e); });
+    row.querySelector('.hs').addEventListener('click', () => { wrap.remove(); statusSheet(e, 'LIDO'); setTimeout(() => { const h = $('#editor .tl-tabs [data-t=hist]'); if (h) h.click(); }, 300); });
+  } catch (err) { console.warn('avaliação retro', err); }
+  return r;
+}; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
