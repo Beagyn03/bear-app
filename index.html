@@ -9881,6 +9881,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14898,6 +14899,7 @@ function tlEntries(e) {
   (e.readLog || []).forEach((l) => { if (l && l.date) raw.push({ at: l.at || null, d: String(l.date).slice(0, 10), k: 'rl', pages: Number(l.pages) || 0, page: Number(l.page) || 0 }); });
   (e.diary || []).forEach((x) => { if (x && x.d) raw.push({ at: x.at || null, d: String(x.d).slice(0, 10), k: 'dy', x, page: Number(x.page) || 0 }); });
   (e.quotes || []).forEach((x) => { if (x && x.at) raw.push({ at: x.at, d: String(x.at).slice(0, 10), k: 'qt', x, page: Number(x.p) || 0 }); });
+  (e.notes || []).forEach((x) => { if (x && x.at) raw.push({ at: String(x.at).length > 10 ? x.at : null, d: String(x.at).slice(0, 10), k: 'nt', x, page: Number(x.p) || 0 }); });
   const out = [], legacy = new Map();
   raw.filter((r) => !r.at).forEach((r) => { if (!legacy.has(r.d)) legacy.set(r.d, { d: r.d, at: null, rs: [] }); legacy.get(r.d).rs.push(r); });
   raw.filter((r) => r.at).sort((a, b) => String(a.at).localeCompare(String(b.at))).forEach((r) => {
@@ -14933,7 +14935,7 @@ function tlHTML(e, all) {
       if (c.ev) { html += '<div class="tl-d tl-evd"><span class="tl-st ev">✦</span><div><div class="tl-eh">' + (c.at ? '<b>' + tlHM(c.at) + '</b>' : '') + '<span class="tl-evt">' + (c.ev === 'start' ? '🚀 Começou a ler' : '⏳ Prazo definido: ' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje'))) + '</span></div></div></div>'; return; }
       const st = c.ok ? '<span class="tl-st ok">★</span>' : c.pages ? '<span class="tl-st mid" style="opacity:' + (0.45 + 0.55 * c.fill).toFixed(2) + '">★</span>' : '<span class="tl-st ev">✦</span>';
       const head = '<div class="tl-eh"><b>' + (c.at ? tlHM(c.at) : 'Neste dia') + '</b>' + (c.page ? '<span>pág. ' + c.page + '</span>' : '') + (c.pages ? '<i>+' + c.pages + ' pág.</i>' : '') + (c.hit ? '<em>bateu a meta</em>' : '') + '</div>';
-      const its = c.rs.filter((r) => r.k !== 'rl').map((r) => r.k === 'qt' ? card('❝', 'Trecho' + (r.x.p ? ' <span>pág. ' + r.x.p + '</span>' : ''), '<p class="tl-q">' + esc(r.x.t) + '</p>', 'qt:' + (e.quotes || []).indexOf(r.x))
+      const its = c.rs.filter((r) => r.k !== 'rl').map((r) => r.k === 'nt' ? card('🔒', 'Nota' + (r.x.p ? ' <span>pág. ' + r.x.p + '</span>' : ''), '<p>' + esc(r.x.t) + '</p>', 'nt:' + (e.notes || []).indexOf(r.x)) : r.k === 'qt' ? card('❝', 'Trecho' + (r.x.p ? ' <span>pág. ' + r.x.p + '</span>' : ''), '<p class="tl-q">' + esc(r.x.t) + '</p>', 'qt:' + (e.quotes || []).indexOf(r.x))
         : card(r.x.text ? '💬' : '✨', r.x.text ? 'Comentário' : 'Emoções', (r.x.text ? '<p>' + esc(r.x.text) + '</p>' : '') + (r.x.fe && r.x.fe.length ? '<div class="tl-fe">' + names(r.x.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : ''), 'dy:' + (e.diary || []).indexOf(r.x))).join('');
       html += '<div class="tl-d' + (c.ok ? ' ok-ok' : '') + '">' + st + '<div>' + head + its + '</div></div>';
     });
@@ -14979,23 +14981,23 @@ let TL_PAINT = () => {};
 // Só muda o diário do livro; um comentário que já foi para a Rede continua lá como foi postado.
 function tlEditClick(ev, e, redraw) {
   const b = ev.target.closest && ev.target.closest('.tl-edit, .tl-eb button, .tl-fe.ed span'); if (!b) return;
-  const c = b.closest('.tl-c'); if (!c || !c.dataset.ref) return; const [k, ix] = c.dataset.ref.split(':'), arr = k === 'qt' ? (e.quotes || []) : (e.diary || []), x = arr[Number(ix)]; if (!x) return;
+  const c = b.closest('.tl-c'); if (!c || !c.dataset.ref) return; const [k, ix] = c.dataset.ref.split(':'), arr = k === 'qt' ? (e.quotes || []) : k === 'nt' ? (e.notes || []) : (e.diary || []), x = arr[Number(ix)]; if (!x) return;
   if (b.classList.contains('tl-edit')) {
     const box = c.querySelector(':scope > div'); const N = { fe: [...(x.fe || [])] };
     const feH = () => '<div class="tl-fe ed">' + QT_PICK.map(([kk, n]) => '<span data-f="' + kk + '" class="' + (N.fe.includes(kk) ? 'on' : '') + '">' + esc(n) + '</span>').join('') + '</div>';
-    box.innerHTML = '<div class="tl-ct">' + (k === 'qt' ? 'Editar trecho' : 'Editar comentário') + '</div><div class="tl-ed"><textarea maxlength="' + (k === 'qt' ? 600 : 280) + '">' + esc(k === 'qt' ? x.t || '' : x.text || '') + '</textarea>'
-      + (k === 'qt' ? '<label>Página <input type="number" min="1" inputmode="numeric" value="' + (x.p || '') + '"></label>' : feH())
+    box.innerHTML = '<div class="tl-ct">' + (k === 'qt' ? 'Editar trecho' : k === 'nt' ? 'Editar nota' : 'Editar comentário') + '</div><div class="tl-ed"><textarea maxlength="' + (k === 'qt' ? 600 : k === 'nt' ? 2000 : 280) + '">' + esc(k === 'qt' || k === 'nt' ? x.t || '' : x.text || '') + '</textarea>'
+      + (k === 'qt' || k === 'nt' ? '<label>Página <input type="number" min="1" inputmode="numeric" value="' + (x.p || '') + '"></label>' : feH())
       + '<div class="tl-eb"><button type="button" class="rm" data-a="rm">Apagar</button><button type="button" data-a="cx">Cancelar</button><button type="button" class="sv" data-a="sv">Salvar</button></div></div>';
     c._N = N; return;
   }
   if (b.matches('.tl-fe.ed span')) { const N = c._N, kk = b.dataset.f; if (N.fe.includes(kk)) N.fe = N.fe.filter((y) => y !== kk); else if (N.fe.length < 3) N.fe.push(kk); else return toast('Até 3 emoções'); b.classList.toggle('on', N.fe.includes(kk)); return; }
   const a = b.dataset.a;
   if (a === 'cx') return redraw();
-  if (a === 'rm') { if (!b.dataset.ok) { b.dataset.ok = '1'; b.textContent = 'Toque de novo para apagar'; setTimeout(() => { if (b.isConnected) { delete b.dataset.ok; b.textContent = 'Apagar'; } }, 4000); return; } arr.splice(Number(ix), 1); save(); toast('Apagado'); return redraw(); }
+  if (a === 'rm') { if (!b.dataset.ok) { b.dataset.ok = '1'; b.textContent = 'Toque de novo para apagar'; setTimeout(() => { if (b.isConnected) { delete b.dataset.ok; b.textContent = 'Apagar'; } }, 4000); return; } arr.splice(Number(ix), 1); if (k === 'nt') { const L = e.notes || []; if (L.length) e.note = L[L.length - 1].t; else delete e.note; } save(); toast('Apagado'); return redraw(); }
   if (a === 'sv') { const t = (c.querySelector('textarea') || {}).value || '';
-    if (k === 'qt') { if (!t.trim()) return toast('Escreva o trecho ou toque em Apagar'); x.t = t.trim(); const p = Number((c.querySelector('.tl-ed input') || {}).value) || 0; if (p > 0) x.p = Math.round(p); else delete x.p; }
+    if (k === 'qt' || k === 'nt') { if (!t.trim()) return toast(k === 'nt' ? 'Escreva a nota ou toque em Apagar' : 'Escreva o trecho ou toque em Apagar'); x.t = t.trim(); const p = Number((c.querySelector('.tl-ed input') || {}).value) || 0; if (p > 0) x.p = Math.round(p); else delete x.p; }
     else { const N = c._N || { fe: x.fe || [] }; if (!t.trim() && !N.fe.length) return toast('Escreva algo, escolha uma emoção ou toque em Apagar'); x.text = t.trim(); x.fe = N.fe; }
-    save(); toast('Salvo'); return redraw(); }
+    if (k === 'nt') { const L = e.notes || []; if (L.length) e.note = L[L.length - 1].t; } save(); toast('Salvo'); return redraw(); }
 }
 
 { const ed = $('#editor'); let tm = 0, booting = !!TL_BOOT;
@@ -15528,6 +15530,73 @@ function openSavedPosts() { S.comSeg = 'rede'; S.rdF = 'salvos'; goTab('comunida
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 80); }).observe(TR, { childList: true, subtree: true }); }
 // Perfil: tocar nos números abre as Estatísticas
 TR.addEventListener('click', (ev) => { const n = ev.target.closest && ev.target.closest('#shelflist.mine-page .yo-nums'); if (!n) return; try { $('#shelflist').hidden = true; goTab('progresso'); } catch {} });
+// --- a1_notas.js ---
+// Notas: o caderno particular de cada livro (Bia, 18/11). A antiga "anotação" (uma só, até 200 letras) vira várias notas,
+// cada uma com página e data, em e.notes = [{ id, t, p, at }]. e.note continua com a nota mais recente (para as telas antigas).
+// Escreve-se no diário (botão Nota); cada nota entra no Histórico com 🔒; "Meus trechos" vira "Trechos e anotações", com a aba Notas.
+function notesOf(e) { return (e && e.notes) || []; }
+// migração: a anotação que já existia vira a primeira nota do livro
+{ let ch = false; try { lib().forEach((e) => { if (e.note && !Array.isArray(e.notes)) { e.notes = [{ id: uid(), t: String(e.note), p: null, at: String(e.statusAt || e.startedAt || e.addedAt || todayISO()).slice(0, 10) }]; ch = true; } }); } catch {} if (ch) save(); }
+function addNote(e, t, p) {
+  t = String(t || '').trim(); if (!t) return false;
+  e.notes = [...notesOf(e), { id: uid(), t: t.slice(0, 2000), p: Number(p) > 0 ? Math.round(Number(p)) : null, at: new Date().toISOString() }].slice(-300);
+  e.note = e.notes[e.notes.length - 1].t; save(); return true;
+}
+// diário: o botão Anotação vira Nota, com página e "Salvar nota" (e também salva junto ao tocar em Salvar)
+{ const ed = $('#editor'); let tm = 0;
+  const fix = () => {
+    const acts = ed.querySelector('.lz-acts'); if (ed.hidden || !acts) return;
+    const b = acts.querySelector('[data-p=nota]'); if (!b || b.dataset.nt) return; b.dataset.nt = '1';
+    const e = S.tlE || ((() => { try { return reading().e; } catch { return null; } })()); if (!e) return;
+    const n = notesOf(e).length; b.innerHTML = '<span>🔒</span>Nota<small>' + (n ? n + (n > 1 ? ' notas' : ' nota') : 'só você vê') + '</small>';
+    const pane = [...ed.querySelectorAll('.lz-pane')].find((p) => p.querySelector('textarea[placeholder*="anotação"], textarea[placeholder*="nota"]')); if (!pane) return;
+    const rng = ed.querySelector('#up-r'), pg = (rng && rng.value) || '';
+    pane.innerHTML = '<textarea maxlength="2000" placeholder="Uma nota só sua sobre esta parte do livro"></textarea><div class="lz-row"><label>pág. <input type="number" min="1" class="lz-pg" value="' + esc(String(pg)) + '"></label><button type="button" class="lz-ok">Salvar nota</button></div>';
+    const ta = pane.querySelector('textarea'), pgi = pane.querySelector('.lz-pg');
+    const doSave = () => { if (!addNote(e, ta.value, pgi.value)) return false; ta.value = ''; const k = notesOf(e).length; b.querySelector('small').textContent = k + (k > 1 ? ' notas' : ' nota'); toast('Nota salva'); try { ed.querySelector('.tl')?.remove(); TL_PAINT(); } catch {} return true; };
+    pane.querySelector('.lz-ok').addEventListener('click', () => { if (!doSave()) toast('Escreva a nota'); });
+    // tocar em Salvar/Terminei com a nota escrita também guarda a nota
+    ed.querySelectorAll('#up-save, #up-fin').forEach((x) => x.addEventListener('click', () => { if (ta.value.trim()) doSave(); }, true));
+  };
+  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(fix, 30); }).observe(ed, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+// "Trechos e anotações": abas Trechos | Notas na tela que era "Meus trechos"
+{ const st = document.createElement('style'); st.textContent = `
+.qn-seg{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:.2rem;margin:.1rem 0 .7rem}
+.qn-seg button{border:0;background:none;border-radius:999px;height:36px;font:inherit;font-weight:800;font-size:.88rem;color:var(--ink-2)}
+.qn-seg button.on{background:var(--acc);color:var(--on-acc,#fff)}
+#shelflist.qn-notas .sl-body > :not(.sl-top):not(.qn-seg):not(.qn-notes){display:none!important}
+.qn-notes{display:grid;gap:.6rem}
+.qn-it{display:grid;grid-template-columns:42px minmax(0,1fr);gap:.65rem;align-items:start;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.6rem .7rem;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.qn-it .cv{width:42px!important;height:63px!important;border-radius:4px!important;background-size:cover!important;font-size:.36rem!important}
+.qn-it p{margin:0;font-size:.9rem;line-height:1.4;white-space:pre-line}.qn-it small{display:block;margin-top:.3rem;font-size:.72rem;font-weight:800;color:var(--ink-2)}
+`; TR.append(st); }
+{ const _oq = openAllQuotes; openAllQuotes = function (tab) {
+    const r = _oq.apply(this, arguments); S.qnTab = tab === 'notas' ? 'notas' : (S.qnTab || 'trechos'); qnPaint(); return r; }; }
+function qnPaint() {
+  const v = $('#shelflist'); if (!v || v.hidden) return; const body = v.querySelector('.sl-body'), top = body && body.querySelector('.sl-top'); if (!top) return;
+  const tb = top.querySelector('b'); if (!tb || !/trechos/i.test(tb.textContent)) return;
+  tb.textContent = 'Trechos e anotações'; try { syncTopTitle(); } catch {}
+  let seg = body.querySelector('.qn-seg'); if (!seg) { seg = document.createElement('div'); seg.className = 'qn-seg'; top.after(seg); }
+  const nT = lib().reduce((a, e) => a + (e.quotes || []).length, 0), nN = lib().reduce((a, e) => a + notesOf(e).length, 0);
+  seg.innerHTML = '<button type="button" data-t="trechos" class="' + (S.qnTab !== 'notas' ? 'on' : '') + '">Trechos' + (nT ? ' · ' + nT : '') + '</button><button type="button" data-t="notas" class="' + (S.qnTab === 'notas' ? 'on' : '') + '">Notas' + (nN ? ' · ' + nN : '') + '</button>';
+  seg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { S.qnTab = b.dataset.t; qnPaint(); }));
+  v.classList.toggle('qn-notas', S.qnTab === 'notas');
+  body.querySelector('.qn-notes')?.remove();
+  if (S.qnTab !== 'notas') return;
+  const all = lib().flatMap((e) => notesOf(e).map((x) => ({ e, x }))).sort((a, b) => String(b.x.at || '').localeCompare(String(a.x.at || '')));
+  const box = document.createElement('div'); box.className = 'qn-notes';
+  box.innerHTML = all.length ? all.map(({ e, x }) => '<button type="button" class="qn-it" data-id="' + esc(e.id) + '">' + cvh(e.title, e.cover, '') + '<span><p>' + esc(x.t) + '</p><small>🔒 ' + esc(e.title) + (x.p ? ' · pág. ' + x.p : '') + (x.at ? ' · ' + String(x.at).slice(8, 10) + '/' + String(x.at).slice(5, 7) : '') + '</small></span></button>').join('')
+    : '<p class="sl-empty">Suas notas aparecem aqui. Escreva no Diário de leitura, no botão Nota: só você vê.</p>';
+  seg.after(box); try { paintCv(box); } catch {}
+  box.querySelectorAll('.qn-it').forEach((b) => b.addEventListener('click', () => { const e = byId(b.dataset.id); if (e) openBookPage(e); }));
+}
+// menu lateral e atalho da Estante com o nome novo
+{ let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => {
+    TR.querySelectorAll('.drw [data-go="quotes"], .drw [data-go2="quotes"]').forEach((b) => { if (b.dataset.qn) return; b.dataset.qn = '1'; [...b.childNodes].forEach((c) => { if (c.nodeType === 3 && /trechos/i.test(c.textContent)) c.textContent = 'Trechos e anotações'; }); });
+    TR.querySelectorAll('.es-sc [data-a=q] b').forEach((b) => { if (b.textContent !== 'Trechos e anotações') { b.textContent = 'Trechos e anotações'; const n = lib().reduce((a, e) => a + (e.quotes || []).length + notesOf(e).length, 0), s = b.nextElementSibling; if (s) s.textContent = n ? n + ' guardados' : 'frases e notas dos livros'; } });
+    const v = $('#shelflist'); if (v && !v.hidden && v.querySelector('.qt-list') && !v.querySelector('.qn-seg')) qnPaint();
+    if (v && (v.hidden || !v.querySelector('.qt-list, .qn-notes'))) v.classList.remove('qn-notas');
+  }, 60); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
