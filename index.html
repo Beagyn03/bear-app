@@ -9882,6 +9882,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10687,8 +10688,9 @@ const qtFeel = (k, cls = '', on = false) => { const x = QT_FEELS.find((y) => y[0
     const drawList = () => {
       ff();
       const n = normT(q), bio = (T().bio || '').trim(), list = all().filter((x) => !fe || x.f.includes(fe)).filter((x) => !n || normT(x.t).includes(n) || normT(x.e.title).includes(n) || normT(x.e.author || '').includes(n));
-      v.querySelector('.qt-list').innerHTML = list.length ? list.map((x, k) => `<button type="button" class="qt-it" data-k="${k}"><q>${esc(x.t)}</q><small>${esc(x.e.title)}${x.p ? ` · pág. ${x.p}` : ''}${bio && bio === bioOf(x) ? '<span class="qt-bio">frase do perfil</span>' : ''}</small>${x.f.length ? `<span class="qt-fl">${x.f.map((k) => qtFeel(k)).join('')}</span>` : ''}</button>`).join('')
+      v.querySelector('.qt-list').innerHTML = list.length ? list.map((x, k) => `<button type="button" class="qt-it qt-cv" data-k="${k}">${cvh(x.e.title, x.e.cover, '')}<span><q>${esc(x.t)}</q><small>❝ ${esc(x.e.title)}${x.p ? ` · pág. ${x.p}` : ''}${bio && bio === bioOf(x) ? '<span class="qt-bio">frase do perfil</span>' : ''}</small>${x.f.length ? `<span class="qt-fl">${x.f.map((k) => qtFeel(k)).join('')}</span>` : ''}</span></button>`).join('')
         : `<p class="sl-empty">${all().length ? (fe ? 'Nenhum trecho com esse sentimento.' : 'Nenhum trecho com esse texto.') : 'Toque em “+ Novo” para guardar uma frase de um livro. Também dá para salvar pelo menu do livro (Trechos e anotação).'}</p>`;
+      try { paintCv(v.querySelector('.qt-list')); } catch {}
       $$('.qt-it', v).forEach((b) => b.addEventListener('click', () => {
         const x = list[Number(b.dataset.k)]; if (!x) return; const isBio = bio && bio === bioOf(x);
         popMenu(b, [
@@ -15568,6 +15570,7 @@ function addNote(e, t, p) {
 .qn-notes{display:grid;gap:.6rem}
 .qn-it{display:grid;grid-template-columns:42px minmax(0,1fr);gap:.65rem;align-items:start;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.6rem .7rem;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
 .qn-it .cv{width:42px!important;height:63px!important;border-radius:4px!important;background-size:cover!important;font-size:.36rem!important}
+.qt-it.qt-cv{display:grid!important;grid-template-columns:42px minmax(0,1fr);gap:.65rem;align-items:start;text-align:left}.qt-it.qt-cv > .cv{width:42px!important;height:63px!important;border-radius:4px!important;background-size:cover!important;background-position:center!important;font-size:.36rem!important}.qt-it.qt-cv > span{min-width:0;display:block}.qt-it.qt-cv q{display:block;font-style:italic;font-size:.9rem;line-height:1.4}.qt-it.qt-cv small{display:block;margin-top:.3rem;font-size:.72rem;font-weight:800;color:var(--ink-2)}
 .qn-it p{margin:0;font-size:.9rem;line-height:1.4;white-space:pre-line}.qn-it small{display:block;margin-top:.3rem;font-size:.72rem;font-weight:800;color:var(--ink-2)}
 `; TR.append(st); }
 { const _oq = openAllQuotes; openAllQuotes = function (tab) {
@@ -15597,6 +15600,31 @@ function qnPaint() {
     const v = $('#shelflist'); if (v && !v.hidden && v.querySelector('.qt-list') && !v.querySelector('.qn-seg')) qnPaint();
     if (v && (v.hidden || !v.querySelector('.qt-list, .qn-notes'))) v.classList.remove('qn-notas');
   }, 60); }).observe(TR, { childList: true, subtree: true }); }
+// ••• visível em cada trecho e em cada nota (Bia, 18/11): o trecho já abria Editar/Apagar ao tocar; a nota ganha o mesmo
+{ const st = document.createElement('style'); st.textContent = '.qt-it,.qn-it{position:relative;padding-right:2.4rem!important}.qt-it::after,.qn-it::after{content:"•••";position:absolute;top:.5rem;right:.7rem;font-weight:900;letter-spacing:1px;color:var(--ink-2);font-size:.85rem;font-style:normal}'
+    + '.nt-sh textarea{width:100%;box-sizing:border-box;min-height:7rem;border-radius:12px;border:1px solid var(--line,#e8d9c6);padding:.6rem .7rem;font:inherit;font-size:.95rem;resize:vertical}.nt-sh label{display:flex;align-items:center;gap:.5rem;margin:.5rem 0;font-size:.85rem;font-weight:700}.nt-sh label input{width:6rem;border-radius:10px;border:1px solid var(--line,#e8d9c6);padding:.35rem .5rem;font:inherit}';
+  document.head.append(st); TR.append(st.cloneNode(true)); }
+function editNoteSheet(e, x, after) {
+  const w = document.createElement('div'); w.className = 'sheet nt-sh';
+  w.innerHTML = '<div class="box"><form class="form"><h3>Editar nota</h3><textarea maxlength="2000"></textarea><label>Página <input type="number" min="1" inputmode="numeric"></label><button type="submit" class="primary">Salvar</button><button type="button" class="cancel">Cancelar</button></form></div>';
+  const f = w.querySelector('form'), ta = f.querySelector('textarea'), pg = f.querySelector('input'); ta.value = x.t || ''; pg.value = x.p || '';
+  const close = () => w.remove(); w.addEventListener('click', (ev) => { if (ev.target === w) close(); }); f.querySelector('.cancel').addEventListener('click', close);
+  f.addEventListener('submit', (ev) => { ev.preventDefault(); const t = ta.value.trim(); if (!t) return toast('Escreva a nota'); x.t = t; const p = Number(pg.value) || 0; if (p > 0) x.p = Math.round(p); else delete x.p;
+    const L = notesOf(e); if (L.length) e.note = L[L.length - 1].t; save(); close(); toast('Nota salva'); after && after(); });
+  document.body.append(w); setTimeout(() => ta.focus(), 50);
+}
+TR.addEventListener('click', (ev) => {
+  const b = ev.target.closest && ev.target.closest('.qn-it'); if (!b) return; ev.stopImmediatePropagation(); ev.preventDefault();
+  const e = byId(b.dataset.id); if (!e) return; const k = [...b.parentElement.querySelectorAll('.qn-it')].filter((y) => y.dataset.id === b.dataset.id).indexOf(b);
+  const mine = lib().flatMap((ee) => notesOf(ee).map((x) => ({ e: ee, x }))).sort((a, c) => String(c.x.at || '').localeCompare(String(a.x.at || ''))).filter((y) => y.e.id === e.id)[k]; if (!mine) return;
+  const x = mine.x, redo = () => qnPaint();
+  sheetList(e.title, [
+    { label: 'Editar', fn: () => editNoteSheet(e, x, redo) },
+    { label: 'Copiar', fn: () => { try { navigator.clipboard.writeText(x.t); toast('Nota copiada'); } catch { toast('Não consegui copiar'); } } },
+    { label: 'Ver o livro', fn: () => openBookPage(e) },
+    { label: 'Apagar nota', danger: true, fn: () => sheetList('Apagar esta nota?', [{ label: 'Apagar', danger: true, fn: () => { e.notes = notesOf(e).filter((y) => y !== x); const L = e.notes; if (L.length) e.note = L[L.length - 1].t; else delete e.note; save(); toast('Nota apagada'); redo(); } }]) },
+  ]);
+}, true);
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
