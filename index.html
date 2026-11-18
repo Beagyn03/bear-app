@@ -8929,7 +8929,7 @@ function bookMenuOpen(anchor, b) {
   const top = !e ? [['plus', 'Adicionar à estante', () => addToLibrary(libItem(b)), 'escolha como está e em quais estantes']]
     : st === 'QUERO' ? [['play', 'Começar a ler', () => startReading(e)], ['flag', 'Prioridade', () => prioSheet(e), ({ 1: 'Alta', 3: 'Baixa' })[e.prio] || 'Normal'], ['check', 'Já li', set('LIDO')]]
     : st === 'LENDO' ? [['pen', 'Atualizar leitura', upd, 'página, terminei, pausar ou abandonar'], foco]
-    : st === 'LIDO' ? [['send', 'Retrospectiva', () => openRetro(e), 'rever e compartilhar'], ['pen', 'Diário da leitura', () => { statusSheet(e, 'LIDO'); setTimeout(() => { const h = $('#editor .tl-tabs [data-t=hist]'); if (h) h.click(); }, 300); }, 'histórico das atualizações'], rateIt, ['redo', 'Ler de novo', () => startReread(e)]]
+    : st === 'LIDO' ? [['check', 'Retrospectiva', () => openRetro(e), 'sua leitura do começo ao fim'], rateIt, ['redo', 'Ler de novo', () => startReread(e)]]
     : st === 'HIBERNANDO' ? [['play', 'Retomar leitura', () => startReading(e)], rateIt]
     : [['play', 'Tentar de novo', () => startReading(e)], rateIt];
   // livro aberto pelo perfil de uma amizade: ler junto com ela (Bia, 16/11)
@@ -8965,7 +8965,7 @@ function bookMenuOpen(anchor, b) {
       ...(typeof COVM !== 'undefined' && COVM.admin ? [['pen', 'Trocar capa para todos', () => modCoverSheet(e || b), 'moderação']] : [])] },
     { row: ['shelves', 'Estantes', () => moveToShelf(e || addAs(b, 'QUERO'))] },
     mine && inShelf && { row: ['x', `Tirar de “${inShelf.name}”`, () => { inShelf.bookIds = (inShelf.bookIds || []).filter((i) => i !== e.id); save(); reload(); toast(`“${e.title}” saiu de ${inShelf.name}`); }] },
-    { id: 'cp', ic: 'send', label: 'Compartilhar', items: [['send', 'Indicar a alguém', () => recommendToFriend(e || b)], ['chat', 'Conversar sobre', conversar]] },
+    { id: 'cp', ic: 'send', label: 'Compartilhar', items: [...(e && st === 'LIDO' ? [['send', 'Compartilhar a conclusão', () => openRetro(e, false, { edit: true }), 'monte a imagem para postar']] : []), ['send', 'Indicar a alguém', () => recommendToFriend(e || b)], ['chat', 'Conversar sobre', conversar]] },
   ].filter(Boolean);
   let openG = null;
   const opt = (k, ic, label, small, cls = '') => `<button type="button" data-k="${k}" class="${cls}">${bsv(ic)}<span class="t">${label}${small ? `<small>${esc(small)}</small>` : ''}</span></button>`;
@@ -16167,7 +16167,7 @@ function rtDraw(D, O, cover) {
   else { fx.textAlign = 'center'; fx.fillStyle = T.sub; fx.font = 'italic 700 40px Georgia, serif'; fx.fillText('Livroverso', W / 2, H - 66); }
   return F;
 }
-function openRetro(e, auto) {
+function openRetro(e, auto, opt) {
   if (!e) return; TR.querySelector('.rt')?.remove();
   const D = retroData(e), slides = retroSlides(D), N = slides.length + 1; let i = 0;
   const hl0 = D.q ? [D.q.t, true] : D.texto ? [D.texto, false] : (() => { const c = (e.diary || []).filter((d) => d && d.text).pop(); return c ? [c.text, true] : ['', true]; })();
@@ -16243,7 +16243,7 @@ function openRetro(e, auto) {
     if (i === N - 1) return editor(); stage.innerHTML = slides[i]; count(); };
   rt.querySelector('.rt-x').addEventListener('click', close);
   ph.addEventListener('click', (ev) => { if (i === N - 1 || ev.target.closest('.rt-x, .rt-ed, .rt-ac')) return; const r = ph.getBoundingClientRect(); go(ev.clientX - r.left < r.width * 0.3 ? i - 1 : i + 1); });
-  go(0);
+  go(opt && opt.edit ? N - 1 : 0);
 }
 // no Histórico do diário: "Leitura concluída" no topo, com o botão da retrospectiva
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('.cs-retro'); if (!b) return; ev.stopPropagation(); const e = byId(b.dataset.id) || S.tlE; if (e) openRetro(e); }, true);
