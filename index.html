@@ -9899,6 +9899,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -15941,7 +15942,7 @@ function csLines(tl) {
 .rt-star.t-prata{--sg:linear-gradient(160deg,#ffffff,#dde1e6 50%,#a3abb5);--so:#6c7480}.rt-star.t-bronze{--sg:linear-gradient(160deg,#ffdcbd,#e59d62 50%,#b5672f);--so:#86441a}
 .rt{--star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.6l3.15 6.55 7.2.95-5.3 5 1.38 7.15L12 17.8l-6.43 3.45 1.38-7.15-5.3-5 7.2-.95z' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
 .rt-rv{flex:0 1 auto;min-height:0;margin-top:.7rem;padding:.9rem 1rem;border-radius:18px;background:#ffffff10;overflow-y:auto;opacity:0;animation:rtUp .6s .7s ease forwards}.rt-rv small{display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:900;color:#cfc4ff;margin-bottom:.35rem}.rt-rv p{margin:0;font-size:.98rem;line-height:1.5;white-space:pre-line;color:#f3efff}
-.rt-mid .rt-rt{max-height:100%;margin:.4rem 0}
+.rt-mid .rt-rt{max-height:100%;margin:.4rem 0}.rt-calnote{margin:.2rem 0 0;font-size:.82rem;color:#bfb4f2;text-align:center;line-height:1.35}
 .rt-mid .rt-pc b{font-size:2.3rem}.rt-mid .rt-q{font-size:1.45rem}
 .rt-cv{height:min(46vh,420px);width:auto;max-width:74%;aspect-ratio:2/3;margin:1rem auto;border-radius:5px 10px 10px 5px;background:#2a2340 center/cover;box-shadow:0 0 0 3px var(--g,#f2c94c),0 0 44px var(--gg,rgba(242,201,76,.55)),0 18px 30px rgba(0,0,0,.5);animation:rtIn 1s cubic-bezier(.2,.9,.3,1.2) both;display:grid;place-items:center;text-align:center;font:900 1rem/1.1 Nunito;padding:.5rem;color:#fff}
 @keyframes rtIn{from{transform:rotate(-200deg) scale(.2);opacity:0}to{transform:rotate(-4deg) scale(1);opacity:1}}
@@ -15984,7 +15985,8 @@ function retroData(e) {
   const byDay = new Map(); logs.forEach((l) => byDay.set(d10(l.date), (byDay.get(d10(l.date)) || 0) + Number(l.pages)));
   const ds = [...byDay.keys()].sort();
   const ini = d10(e.startedAt) || ds[0] || d10(e.finishedAt), fim = d10(e.finishedAt) || ds[ds.length - 1] || ini;
-  const days = ini && fim ? Math.max(1, Math.round((Date.parse(fim) - Date.parse(ini)) / DAY) + 1) : Math.max(1, ds.length);
+  const noPeriod = !e.startedAt && !ds.length;
+  const days = noPeriod ? 0 : ini && fim ? Math.max(1, Math.round((Date.parse(fim) - Date.parse(ini)) / DAY) + 1) : Math.max(1, ds.length);
   const pages = Number(e.totalPages) || (() => { try { return readingInfo(e).total || 0; } catch { return 0; } })();
   let best = null; byDay.forEach((p, d) => { if (!best || p > best.p) best = { d, p }; });
   let gap = 0; for (let i = 1; i < ds.length; i++) gap = Math.max(gap, Math.round((Date.parse(ds[i]) - Date.parse(ds[i - 1])) / DAY));
@@ -16004,7 +16006,7 @@ function retroData(e) {
 }
 function rtRouteSVG(D, w, h, anim) {
   // começa no zero (dia em que começou) e sobe a cada dia de leitura; cada ponto mostra o dia e as páginas
-  const P0 = D.pts; if (!P0.length) return '';
+  const P0 = D.pts; if (!P0.length) return rtCalSVG(D, w, anim);
   const P = (D.ini && D.ini < P0[0].d) || P0.length === 1 ? [{ d: D.ini && D.ini < P0[0].d ? D.ini : P0[0].d, p: 0, acc: 0, st: 1 }, ...P0] : P0;
   const max = Math.max(1, P[P.length - 1].acc), maxP = Math.max(1, ...P.map((x) => x.p)), T = 34, B = 46, Lp = 22, Rp = 26;
   const xy = P.map((x, i) => [Lp + (w - Lp - Rp) * (i / (P.length - 1)), T + (h - T - B) * (1 - x.acc / max)]);
@@ -16029,14 +16031,14 @@ function retroSlides(D) {
   const e = D.e, ttl = esc(e.title), S0 = [], [g, gg] = RT_MEDAL(D.paws), ab = ['Fim. Mas toda história continua em quem leu.', 'Pouso confirmado no último capítulo.'];
   S0.push('<div class="rt-sl" style="--g:' + g + ';--gg:' + gg + '"><span class="rt-k">Sua retrospectiva</span><div class="rt-t">Você terminou<br><i>' + ttl + '</i></div><div class="rt-s">' + esc(RT_PICK(ab, e.id + D.fim)) + '</div>'
     + '<div class="rt-mid"><div class="rt-cv" style="' + (e.cover ? 'background-image:url(&quot;' + esc(String(e.cover)) + '&quot;);color:transparent' : '') + '">' + ttl + '</div></div>'
-    + '<div class="rt-nums"><div><b data-n="' + D.days + '">0</b><small>' + (D.days === 1 ? 'dia' : 'dias') + '</small></div><div><b data-n="' + D.pages + '">0</b><small>páginas</small></div><div><b data-n="' + D.perDay + '">0</b><small>pág. por dia</small></div></div><div class="rt-tap">toque para continuar ›</div></div>');
+    + (D.days ? '<div class="rt-nums"><div><b data-n="' + D.days + '">0</b><small>' + (D.days === 1 ? 'dia' : 'dias') + '</small></div><div><b data-n="' + D.pages + '">0</b><small>páginas</small></div><div><b data-n="' + D.perDay + '">0</b><small>pág. por dia</small></div></div>' : '<div class="rt-nums" style="grid-template-columns:1fr 1fr"><div><b data-n="' + D.pages + '">0</b><small>páginas</small></div><div><b>' + (D.fim ? D.fim.slice(8, 10) + '/' + D.fim.slice(5, 7) : '—') + '</b><small>terminou em</small></div></div>') + '<div class="rt-tap">toque para continuar ›</div></div>');
   const fast = D.days <= 3, slow = D.days > 21, pausa = D.gap > 7;
   const rtT = fast ? RT_PICK(['Devorado em ' + RT_DIA(D.days), 'Leu como quem foge do Michael Myers'], e.id) : pausa ? 'No meio do caminho tinha uma pausa' : slow ? 'Sem pressa: ' + D.days + ' dias de companhia' : RT_PICK([D.days + ' dias, do primeiro capítulo ao fim', 'Uma jornada de ' + D.days + ' dias'], e.id);
   const dd = (d) => d.slice(8, 10) + '/' + d.slice(5, 7);
   const facts = [D.ini && D.fim ? ['📅', 'De <b>' + dd(D.ini) + '</b> a <b>' + dd(D.fim) + '</b>'] : null, D.perDay ? ['📖', 'Média de <b>' + D.perDay + ' páginas</b> por dia'] : null,
     D.best && D.pts.length > 1 ? ['🔥', 'Maior dia: <b>' + dd(D.best.d) + ', ' + D.best.p + ' páginas</b>'] : null, D.per ? [D.per === 'à noite' || D.per === 'de madrugada' ? '🌙' : '☀️', 'Você leu mais <b>' + D.per + '</b>'] : null,
     D.meta ? ['★', 'Meta do dia batida em <b>' + D.meta.hit + ' de ' + D.meta.n + '</b> dias'] : null, pausa ? ['⏸', 'Uma pausa de <b>' + D.gap + ' dias</b> e você voltou'] : null].filter(Boolean).slice(0, 4);
-  S0.push('<div class="rt-sl"><span class="rt-k">Seu ritmo</span><div class="rt-t">' + esc(rtT) + '</div>' + (pausa || fast ? '<div class="rt-s">' + RT_DIA(D.days) + ', do primeiro capítulo ao fim</div>' : '')
+  if (D.days) S0.push('<div class="rt-sl"><span class="rt-k">Seu ritmo</span><div class="rt-t">' + esc(rtT) + '</div>' + (pausa || fast ? '<div class="rt-s">' + RT_DIA(D.days) + ', do primeiro capítulo ao fim</div>' : '')
     + '<div class="rt-mid">' + rtRouteSVG(D, 320, 300, true) + '</div><div>' + facts.map((f, i) => '<div class="rt-f" style="animation-delay:' + (1.6 + i * 0.2) + 's"><span>' + f[0] + '</span><div>' + f[1] + '</div></div>').join('') + '</div></div>');
   if (D.emo.length || D.paws || D.ressaca || D.texto) {
     const top = (D.emo[0] || {}).name || '', t = /tens|choq|surpre|plot/i.test(top) ? 'Até o Sherlock ficaria surpreso' : /amei|amor|apaix/i.test(top) ? 'Amor à primeira página' : 'Esse livro te deixou…';
@@ -16143,7 +16145,7 @@ function rtDraw(D, O, cover) {
     y += post ? 56 : 74; }
   const line = String(O.line || '').trim(); if (line) { x.fillStyle = T.ink; x.font = DISP(true, post ? 46 : 54); rtWrap(x, line, W - 180, 2).forEach((l) => { x.fillText(l, W / 2, y); y += Math.round((post ? 50 : 58) * K); }); y += 16; }
   const box = (bx, by, bw, bh) => { x.fillStyle = T.box; x.beginPath(); x.roundRect(bx, by, bw, bh, 26); x.fill(); };
-  const it3 = [[D.days, D.days === 1 ? 'dia' : 'dias'], [D.pages, 'páginas'], D.meta ? [D.meta.hit + '/' + D.meta.n, 'metas do dia'] : [D.perDay, 'pág. por dia']];
+  const it3 = D.days ? [[D.days, D.days === 1 ? 'dia' : 'dias'], [D.pages, 'páginas'], D.meta ? [D.meta.hit + '/' + D.meta.n, 'metas do dia'] : [D.perDay, 'pág. por dia']] : [[D.pages, 'páginas'], [D.fim ? D.fim.slice(8, 10) + '/' + D.fim.slice(5, 7) + '/' + D.fim.slice(0, 4) : '—', 'terminou em']];
   if (O.show.nums && LY === 'classico') { const bw = 270, gap = 24, x0 = (W - (bw * 3 + gap * 2)) / 2;
     it3.forEach(([n, l], i) => { box(x0 + i * (bw + gap), y, bw, 130); x.fillStyle = T.acc; x.font = SANS(900, 52); x.fillText(String(n), x0 + i * (bw + gap) + bw / 2, y + 66); x.fillStyle = T.sub; x.font = SANS(700, 26); x.fillText(l, x0 + i * (bw + gap) + bw / 2, y + 106); }); y += post ? 160 : 180; }
   else if (O.show.nums) { x.fillStyle = T.sub; x.font = LY === 'diario' ? '700 40px Caveat, cursive' : SANS(800, 30); if (LY === 'minimal') x.letterSpacing = '3px'; x.fillText(it3.map(([n, l]) => n + ' ' + l).join('   ·   '), W / 2, y + 10); x.letterSpacing = '0px'; y += post ? 70 : 84; }
@@ -16245,6 +16247,18 @@ function openRetro(e, auto) {
 }
 // no Histórico do diário: "Leitura concluída" no topo, com o botão da retrospectiva
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('.cs-retro'); if (!b) return; ev.stopPropagation(); const e = byId(b.dataset.id) || S.tlE; if (e) openRetro(e); }, true);
+// sem páginas registradas dia a dia (livro marcado como lido direto): calendário do período, do primeiro ao último dia
+function rtCalSVG(D, w, anim) {
+  if (!D.ini || !D.fim) return '';
+  const DAY = 864e5, t0 = Date.parse(D.ini + 'T12:00:00Z'), n = Math.min(63, Math.max(1, D.days)), first = new Date(t0).getUTCDay();
+  const cols = 7, cell = Math.floor((w - 16) / cols), rows = Math.ceil((first + n) / cols), h = 40 + rows * cell + 10;
+  const WD = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+  let s = '<svg class="rt-rt rt-cal" viewBox="0 0 ' + w + ' ' + h + '">' + WD.map((d, i) => '<text x="' + (8 + i * cell + cell / 2) + '" y="22" text-anchor="middle" fill="#cfc4ff" font-size="12" font-weight="900">' + d + '</text>').join('');
+  for (let k = 0; k < n; k++) { const pos = first + k, cx = 8 + (pos % cols) * cell + cell / 2, cy = 40 + Math.floor(pos / cols) * cell + cell / 2, d = new Date(t0 + k * DAY), end = k === 0 || k === n - 1;
+    s += '<g class="' + (anim ? 'pt' : '') + '" style="animation-delay:' + (0.15 + 1.4 * k / n).toFixed(2) + 's;transform-origin:' + cx + 'px ' + cy + 'px"><circle cx="' + cx + '" cy="' + cy + '" r="' + (cell / 2 - 5) + '" fill="' + (end ? '#f2c94c' : '#b69cff') + '" fill-opacity="' + (end ? 1 : 0.35) + '"' + (end ? ' filter="drop-shadow(0 0 6px #f2c94c)"' : '') + '/>'
+      + '<text x="' + cx + '" y="' + (cy + 5) + '" text-anchor="middle" fill="' + (end ? '#2a1a00' : '#fff') + '" font-size="14" font-weight="900">' + d.getUTCDate() + '</text></g>'; }
+  return s + '</svg><p class="rt-calnote">Registre as páginas durante a leitura e aqui aparece o seu ritmo dia a dia.</p>';
+}
 // --- a8_avaliacao_retro.js ---
 // "Sua avaliação" de livro lido (Bia, 18/11): atalhos para a retrospectiva (rever e compartilhar) e para o histórico da leitura,
 // e os personagens marcados em "Mais sobre a leitura".
