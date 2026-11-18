@@ -9892,6 +9892,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -15950,11 +15951,14 @@ function csLines(tl) {
 .rt-q{font-family:Georgia,serif;font-style:italic;font-size:1.3rem;line-height:1.4;margin-top:1.4rem;padding:1rem 1.1rem;border-left:3px solid #f2c94c;background:#ffffff0d;border-radius:0 14px 14px 0;opacity:0;animation:rtUp .6s .2s ease forwards}.rt-q small{display:block;font-family:Nunito;font-style:normal;font-size:.76rem;color:#cfc4ff;margin-top:.6rem;font-weight:800}
 .rt-ed{position:absolute;inset:0;z-index:7;background:#efe7da;color:#2a2118;overflow-y:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom))}
 .rt-ed h3{margin:0 0 .6rem;font-size:1.05rem}.rt-ed .rt-x{background:#0000000d;color:#2a2118;top:calc(12px + env(safe-area-inset-top))}
-.rt-pv{display:block;margin:0 auto .8rem;max-width:80%;max-height:58vh;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+.rt-pv{display:block;margin:0 auto .8rem;max-width:70%;max-height:44vh;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.25)}
 .rt-ed h4{margin:.8rem 0 .4rem;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:#7b6b5a}
 .rt-ch{display:flex;gap:.35rem;flex-wrap:wrap}.rt-ch button{border:1.5px solid #e8dccb;background:#fffaf3;color:#2a2118;border-radius:99px;padding:.35rem .75rem;font:inherit;font-size:.8rem;font-weight:800;cursor:pointer}.rt-ch button.on{border-color:#c46f2e;background:#c46f2e;color:#fff}
 .rt-sw{display:flex;gap:.5rem}.rt-sw button{width:34px;height:34px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1.5px #e8dccb;cursor:pointer;padding:0}.rt-sw button.on{box-shadow:0 0 0 3px #c46f2e}
-.rt-ac{position:absolute;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1.3fr;gap:.6rem;z-index:8}
+.rt-tabs{display:flex;border-bottom:1.5px solid #e2d6c3;margin:.2rem 0 .5rem}.rt-tabs button{flex:1;border:0;background:none;font:inherit;font-weight:900;font-size:.9rem;color:#7b6b5a;padding:.55rem 0;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;cursor:pointer}.rt-tabs button.on{color:#c46f2e;border-bottom-color:#c46f2e}
+.rt-ths{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:.6rem .4rem;padding-top:.4rem}.rt-ths button{display:grid;justify-items:center;gap:.3rem;border:0;background:none;font:inherit;cursor:pointer;padding:0}.rt-ths i{width:46px;height:46px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1.5px #e2d6c3}.rt-ths span{font-size:.72rem;font-weight:800;color:#2a2118;text-align:center;line-height:1.15}.rt-ths button.on i{box-shadow:0 0 0 3px #c46f2e}.rt-ths button.on span{color:#c46f2e}
+.rt-in{width:100%;box-sizing:border-box;border:1.5px solid #e2d6c3;border-radius:12px;background:#fffaf3;color:#2a2118;font:inherit;font-size:.92rem;padding:.55rem .7rem;resize:vertical}.rt-ed h4 span{font-weight:700;text-transform:none;letter-spacing:0}.rt-note{font-size:.74rem;color:#7b6b5a;margin:.7rem 0 0}
+.rt-ac{position:absolute;left:0;right:0;bottom:0;padding:22px 16px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(rgba(239,231,218,0),#efe7da 32%);display:grid;grid-template-columns:1fr 1.3fr;gap:.6rem;z-index:8}
 .rt-ac button{border-radius:99px;padding:.8rem;font:inherit;font-weight:900;font-size:.92rem;border:1.5px solid #e8dccb;background:#fffaf3;color:#2a2118;cursor:pointer}.rt-ac button.p{background:#c46f2e;border-color:#c46f2e;color:#fff}
 .cs-fin{background:radial-gradient(120% 140% at 0 0,#3b2a6b,#14102a 70%)!important;color:#fff!important;border:0!important}.cs-fin .tl-ct,.cs-fin b{color:#fff!important}.cs-fin .cs-w{color:#cfc4ff!important}
 .cs-fin .cs-mini{display:flex;gap:.35rem;flex-wrap:wrap;margin:.45rem 0 .55rem}.cs-fin .cs-mini span{background:#ffffff1a;border-radius:9px;padding:.2rem .5rem;font-size:.72rem;font-weight:800}
@@ -16039,72 +16043,132 @@ function retroSlides(D) {
   return S0;
 }
 // ---------- imagem para postar (canvas) ----------
-const RT_THEMES = { blur: { bg: ['#2a1f3a', '#0e0a16'], ink: '#ffffff', sub: '#efe8fa', acc: '#f2c94c', box: 'rgba(255,255,255,.13)', blur: 1 }, noite: { bg: ['#3b2a6b', '#0c0a1c'], ink: '#ffffff', sub: '#cfc4ff', acc: '#f2c94c', box: 'rgba(255,255,255,.09)', stars: 1 }, papel: { bg: ['#fbf5ea', '#e6d6bd'], ink: '#2a2118', sub: '#7b6b5a', acc: '#c46f2e', box: 'rgba(42,33,24,.06)' },
-  sol: { bg: ['#ff9a5a', '#7b2d6b'], ink: '#ffffff', sub: '#ffe3d0', acc: '#ffe08a', box: 'rgba(255,255,255,.14)', stars: 1 }, capa: { bg: ['#5a1212', '#121212'], ink: '#ffffff', sub: '#e9dccf', acc: '#f2c94c', box: 'rgba(255,255,255,.10)', stars: 1 }, menta: { bg: ['#d7f0e4', '#5f9c84'], ink: '#0f2a21', sub: '#2d5546', acc: '#ffffff', box: 'rgba(255,255,255,.35)' } };
+// temas da imagem: fundo, cores, decoração e a fonte que combina (a pessoa pode trocar a fonte na aba Texto)
+const RT_THEMES = {
+  blur: { name: 'Capa desfocada', bg: ['#2a1f3a', '#0e0a16'], ink: '#ffffff', sub: '#efe8fa', acc: '#f2c94c', box: 'rgba(255,255,255,.13)', blur: 1, dark: 1, font: 'classica' },
+  app: { name: 'Livroverso', bg: ['#f6efe4', '#f6efe4'], ink: '#2a2118', sub: '#7b6b5a', acc: '#c46f2e', box: 'rgba(42,33,24,.07)', font: 'classica', sw: '#f6efe4' },
+  app2: { name: 'Caramelo', bg: ['#c46f2e', '#c46f2e'], ink: '#ffffff', sub: '#fde8d6', acc: '#ffe08a', box: 'rgba(255,255,255,.16)', dark: 1, font: 'classica', sw: '#c46f2e' },
+  noite: { name: 'Noite estrelada', bg: ['#3b2a6b', '#0c0a1c'], ink: '#ffffff', sub: '#cfc4ff', acc: '#f2c94c', box: 'rgba(255,255,255,.09)', deco: 'stars', dark: 1, font: 'classica' },
+  romance: { name: 'Romântico', bg: ['#ffb3c7', '#8c2f5a'], ink: '#ffffff', sub: '#ffe6ee', acc: '#fff3b0', box: 'rgba(255,255,255,.18)', deco: 'hearts', dark: 1, font: 'romantica' },
+  terror: { name: 'Terror', bg: ['#2b0a0d', '#050304'], ink: '#f3e9e6', sub: '#cfb1ac', acc: '#ff3b47', box: 'rgba(255,255,255,.08)', deco: 'drips', dark: 1, font: 'terror' },
+  fantasia: { name: 'Fantasia', bg: ['#1d3d5a', '#0a1020'], ink: '#fff6e0', sub: '#e6d8b2', acc: '#e9c46a', box: 'rgba(255,255,255,.10)', deco: 'magic', dark: 1, font: 'fantasia' },
+  sol: { name: 'Pôr do sol', bg: ['#ff9a5a', '#7b2d6b'], ink: '#ffffff', sub: '#ffe3d0', acc: '#ffe08a', box: 'rgba(255,255,255,.14)', deco: 'stars', dark: 1, font: 'classica' },
+  capa: { name: 'Cores da capa', bg: ['#5a1212', '#121212'], ink: '#ffffff', sub: '#e9dccf', acc: '#f2c94c', box: 'rgba(255,255,255,.10)', deco: 'stars', dark: 1, font: 'moderna' },
+  menta: { name: 'Menta', bg: ['#d7f0e4', '#5f9c84'], ink: '#0f2a21', sub: '#2d5546', acc: '#ffffff', box: 'rgba(255,255,255,.35)', font: 'moderna' },
+};
+const RT_FONTS = {
+  classica: { name: 'Clássica', fam: '"Playfair Display", Georgia, serif', w: '700', it: 'italic 700' },
+  moderna: { name: 'Moderna', fam: 'Nunito, "Segoe UI", sans-serif', w: '900', it: '900' },
+  romantica: { name: 'Romântica', fam: '"Dancing Script", cursive', w: '700', it: '700' },
+  terror: { name: 'Terror', fam: 'Creepster, cursive', w: '400', it: '400' },
+  fantasia: { name: 'Fantasia', fam: 'Cinzel, serif', w: '700', it: '700' },
+  manuscrita: { name: 'Manuscrita', fam: 'Caveat, cursive', w: '700', it: '700' },
+};
+const RT_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Dancing+Script:wght@700&family=Creepster&family=Cinzel:wght@700&family=Caveat:wght@700&display=swap';
+function rtFontsReady(k) { if (!document.querySelector('link[data-rtf]')) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = RT_FONTS_URL; l.dataset.rtf = '1'; document.head.append(l); }
+  const F = RT_FONTS[k] || RT_FONTS.classica; return Promise.race([Promise.all([document.fonts.load(F.w + ' 60px ' + F.fam), document.fonts.load(F.it + ' 60px ' + F.fam)]).catch(() => {}), new Promise((r) => setTimeout(r, 2500))]); }
+const RT_LOGO = {}; ['claro', 'escuro'].forEach((k) => { const im = new Image(); im.src = 'img/logo_' + k + '.webp'; RT_LOGO[k] = im; });
 function rtLoadCover(src) { return new Promise((res) => { if (!src) return res(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 4; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 4, 4); const d = x.getImageData(0, 0, 4, 4).data; let r = 0, g = 0, b = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; } im._avg = [r / 16, g / 16, b / 16]; res(im); } catch { res(null); } }; im.onerror = () => res(null); im.src = src; setTimeout(() => res(null), 6000); }); }
 function rtWrap(x, t, maxW, maxL) { const words = String(t).split(/\s+/), L = []; let cur = ''; for (const w of words) { const n = cur ? cur + ' ' + w : w; if (x.measureText(n).width > maxW && cur) { L.push(cur); cur = w; if (L.length === maxL) break; } else cur = n; } if (L.length < maxL && cur) L.push(cur); else if (L.length === maxL && cur && !L.includes(cur)) L[maxL - 1] = L[maxL - 1].replace(/\s*\S*$/, '') + '…'; return L; }
 function rtDraw(D, O, cover) {
   const W = 1080, H = O.fmt === 'post' ? 1350 : 1920, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
   const T = { ...RT_THEMES[O.theme] }; if (O.theme === 'capa' && cover && cover._avg) { const [r, g, b] = cover._avg; T.bg = ['rgb(' + [r, g, b].map((v) => Math.round(v * 0.75)).join(',') + ')', 'rgb(' + [r, g, b].map((v) => Math.round(v * 0.18)).join(',') + ')']; }
-  // o fundo vai numa tela final; o conteúdo é desenhado aqui sem fundo e depois centralizado na altura
-  const bgPaint = (x) => { const gr = x.createLinearGradient(0, 0, W * 0.3, H); gr.addColorStop(0, T.bg[0]); gr.addColorStop(1, T.bg[1]); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+  const FN = RT_FONTS[O.font || T.font] || RT_FONTS.classica, K = O.size || 1;
+  let s0 = 7; const rnd = () => ((s0 = (s0 * 9301 + 49297) % 233280) / 233280);
+  // fundo + decoração do tema (numa tela à parte; o conteúdo é desenhado sem fundo e depois centralizado)
+  const bgPaint = (x) => { const gr = x.createLinearGradient(0, 0, W * 0.3, H); gr.addColorStop(0, T.bg[0]); gr.addColorStop(1, T.bg[1]); x.fillStyle = gr; x.fillRect(0, 0, W, H); s0 = 7;
     if (T.blur && cover) { const k = Math.max(W / cover.width, H / cover.height) * 1.25, iw = cover.width * k, ih = cover.height * k; x.save(); x.filter = 'blur(48px) saturate(1.2)'; x.drawImage(cover, (W - iw) / 2, (H - ih) / 2, iw, ih); x.restore();
-      const ov = x.createLinearGradient(0, 0, 0, H); ov.addColorStop(0, 'rgba(16,10,26,.45)'); ov.addColorStop(1, 'rgba(16,10,26,.78)'); x.fillStyle = ov; x.fillRect(0, 0, W, H); return; }
-  if (T.stars) { let s = 7; const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280); for (let i = 0; i < 90; i++) { x.globalAlpha = 0.25 + rnd() * 0.7; x.fillStyle = '#fff'; x.beginPath(); x.arc(rnd() * W, rnd() * H, 0.8 + rnd() * 2.2, 0, 7); x.fill(); } x.globalAlpha = 1; } };
-  const SANS = (w, s) => w + ' ' + s + 'px Nunito, "Segoe UI", sans-serif', SERIF = (st, s) => st + ' ' + s + 'px Georgia, "Times New Roman", serif';
+      const ov = x.createLinearGradient(0, 0, 0, H); ov.addColorStop(0, 'rgba(16,10,26,.45)'); ov.addColorStop(1, 'rgba(16,10,26,.78)'); x.fillStyle = ov; x.fillRect(0, 0, W, H); }
+    if (T.deco === 'stars') for (let i = 0; i < 90; i++) { x.globalAlpha = 0.25 + rnd() * 0.7; x.fillStyle = '#fff'; x.beginPath(); x.arc(rnd() * W, rnd() * H, 0.8 + rnd() * 2.2, 0, 7); x.fill(); }
+    if (T.deco === 'hearts') { const heart = (cx, cy, s) => { x.beginPath(); x.moveTo(cx, cy + s * 0.35); x.bezierCurveTo(cx - s, cy - s * 0.35, cx - s * 0.45, cy - s, cx, cy - s * 0.45); x.bezierCurveTo(cx + s * 0.45, cy - s, cx + s, cy - s * 0.35, cx, cy + s * 0.35); x.fill(); };
+      for (let i = 0; i < 34; i++) { x.globalAlpha = 0.1 + rnd() * 0.25; x.fillStyle = rnd() < 0.5 ? '#ffffff' : '#ff6f9c'; heart(rnd() * W, rnd() * H, 14 + rnd() * 46); }
+      const gl = x.createRadialGradient(W / 2, H * 0.32, 40, W / 2, H * 0.32, W * 0.7); gl.addColorStop(0, 'rgba(255,255,255,.22)'); gl.addColorStop(1, 'rgba(255,255,255,0)'); x.globalAlpha = 1; x.fillStyle = gl; x.fillRect(0, 0, W, H); }
+    if (T.deco === 'drips') { for (let i = 0; i < 4; i++) { const f = x.createRadialGradient(rnd() * W, H * (0.75 + rnd() * 0.25), 20, W / 2, H, W * 0.9); f.addColorStop(0, 'rgba(200,200,210,.10)'); f.addColorStop(1, 'rgba(200,200,210,0)'); x.fillStyle = f; x.fillRect(0, 0, W, H); }
+      x.globalAlpha = 1; x.fillStyle = '#7a0b12'; x.fillRect(0, 0, W, 26); let px = 0; while (px < W) { const w = 26 + rnd() * 50, len = 30 + Math.pow(rnd(), 2) * 260; x.beginPath(); x.moveTo(px, 20); x.lineTo(px + w, 20); x.lineTo(px + w * 0.62, 20 + len); x.arc(px + w / 2, 20 + len, w * 0.14, 0, Math.PI); x.lineTo(px + w * 0.38, 20 + len); x.closePath(); x.fill(); x.beginPath(); x.arc(px + w / 2, 20 + len + w * 0.12, w * 0.17, 0, 7); x.fill(); px += w + rnd() * 30; }
+      const vg = x.createRadialGradient(W / 2, H / 2, W * 0.35, W / 2, H / 2, W * 1.1); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.6)'); x.fillStyle = vg; x.fillRect(0, 0, W, H); }
+    if (T.deco === 'magic') { const mx = W * 0.88, my = 74; const g = x.createRadialGradient(mx, my, 30, mx, my, 260); g.addColorStop(0, 'rgba(255,236,170,.45)'); g.addColorStop(1, 'rgba(255,236,170,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+      x.fillStyle = '#fbeec4'; x.beginPath(); x.arc(mx, my, 46, 0, 7); x.fill(); x.fillStyle = T.bg[0]; x.beginPath(); x.arc(mx + 20, my - 12, 41, 0, 7); x.fill();
+      const spark = (cx, cy, r) => { x.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, rr = k % 2 ? r * 0.22 : r; x.lineTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a)); } x.closePath(); x.fill(); };
+      for (let i = 0; i < 40; i++) { x.globalAlpha = 0.3 + rnd() * 0.6; x.fillStyle = rnd() < 0.6 ? '#f3d27a' : '#ffffff'; spark(rnd() * W, rnd() * H, 6 + rnd() * 18); } x.globalAlpha = 1;
+      const mist = x.createLinearGradient(0, H * 0.7, 0, H); mist.addColorStop(0, 'rgba(120,200,190,0)'); mist.addColorStop(1, 'rgba(120,200,190,.18)'); x.fillStyle = mist; x.fillRect(0, 0, W, H); }
+    x.globalAlpha = 1; };
+  const SANS = (w, s) => w + ' ' + s + 'px Nunito, "Segoe UI", sans-serif', DISP = (it, s) => (it ? FN.it : FN.w) + ' ' + Math.round(s * K) + 'px ' + FN.fam;
   const post = O.fmt === 'post', e = D.e, [mg] = RT_MEDAL(D.paws); let y = post ? 90 : 130;
   let hd = ''; try { hd = socialProfile && socialProfile.handle ? '@' + socialProfile.handle : ''; } catch {}
-  x.textAlign = 'center'; if (hd) { x.fillStyle = T.sub; x.font = SANS(800, 30); x.fillText(hd, W / 2, y); y += post ? 70 : 84; }
-  x.fillStyle = T.ink; x.font = SERIF('700', post ? 70 : 84); x.fillText('Leitura concluída', W / 2, y); y += post ? 50 : 70;
+  x.textAlign = 'center'; if (hd && O.show.user !== false) { x.fillStyle = T.sub; x.font = SANS(800, 30); x.fillText(hd, W / 2, y); y += post ? 70 : 84; }
+  const head = (O.head ?? 'Leitura concluída').trim();
+  if (head) { x.fillStyle = T.ink; x.font = DISP(false, post ? 70 : 84); rtWrap(x, head, W - 120, 2).forEach((l) => { x.fillText(l, W / 2, y); y += Math.round((post ? 76 : 92) * K); }); y += post ? -26 : -22; }
+  y += post ? 40 : 56;
   // capa
   const cw = post ? 300 : 420, ch = cw * 1.5, cx = (W - cw) / 2;
   x.save(); x.shadowColor = O.show.nota && D.paws ? mg : 'rgba(0,0,0,.5)'; x.shadowBlur = 60; x.fillStyle = mg; x.fillRect(cx - 8, y - 8, cw + 16, ch + 16); x.restore();
   if (cover) x.drawImage(cover, cx, y, cw, ch); else { x.fillStyle = '#2a2340'; x.fillRect(cx, y, cw, ch); x.fillStyle = '#fff'; x.font = SANS(900, 40); rtWrap(x, e.title, cw - 40, 5).forEach((l, i) => x.fillText(l, W / 2, y + 90 + i * 50)); }
   y += ch + (post ? 70 : 100);
-  x.fillStyle = T.ink; x.font = SERIF('italic 700', post ? 54 : 66); rtWrap(x, e.title, W - 160, 2).forEach((l) => { x.fillText(l, W / 2, y); y += post ? 62 : 76; });
+  x.fillStyle = T.ink; x.font = DISP(true, post ? 54 : 66); rtWrap(x, e.title, W - 160, 2).forEach((l) => { x.fillText(l, W / 2, y); y += Math.round((post ? 62 : 76) * K); });
   x.fillStyle = T.sub; x.font = SANS(800, 32); if (e.author) { x.fillText(e.author, W / 2, y); y += post ? 56 : 66; }
   if (O.show.nota && D.paws) { const sz = post ? 50 : 60, gap = 14, x0 = (W - (sz * 5 + gap * 4)) / 2, cy = y - 8;
     const star = (cx, cy, r) => { x.beginPath(); for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * 0.45 : r; x.lineTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a)); } x.closePath(); };
     for (let k = 0; k < 5; k++) { const cx = x0 + k * (sz + gap) + sz / 2, fill = Math.max(0, Math.min(1, D.paws - k));
-      star(cx, cy, sz / 2); x.fillStyle = 'rgba(255,255,255,.22)'; x.fill();
+      star(cx, cy, sz / 2); x.fillStyle = T.dark ? 'rgba(255,255,255,.22)' : 'rgba(42,33,24,.15)'; x.fill();
       if (fill > 0) { x.save(); star(cx, cy, sz / 2); x.clip(); x.fillStyle = '#f5b82e'; x.fillRect(cx - sz / 2, cy - sz / 2, sz * fill, sz); x.restore(); } }
     y += post ? 56 : 74; }
+  const line = String(O.line || '').trim(); if (line) { x.fillStyle = T.ink; x.font = DISP(true, post ? 46 : 54); rtWrap(x, line, W - 180, 2).forEach((l) => { x.fillText(l, W / 2, y); y += Math.round((post ? 50 : 58) * K); }); y += 16; }
   const box = (bx, by, bw, bh) => { x.fillStyle = T.box; x.beginPath(); x.roundRect(bx, by, bw, bh, 26); x.fill(); };
   if (O.show.nums) { const it = [[D.days, D.days === 1 ? 'dia' : 'dias'], [D.pages, 'páginas'], D.meta ? [D.meta.hit + '/' + D.meta.n, 'metas do dia'] : [D.perDay, 'pág. por dia']], bw = 270, gap = 24, x0 = (W - (bw * 3 + gap * 2)) / 2;
     it.forEach(([n, l], i) => { box(x0 + i * (bw + gap), y, bw, 130); x.fillStyle = T.acc; x.font = SANS(900, 52); x.fillText(String(n), x0 + i * (bw + gap) + bw / 2, y + 66); x.fillStyle = T.sub; x.font = SANS(700, 26); x.fillText(l, x0 + i * (bw + gap) + bw / 2, y + 106); }); y += post ? 160 : 180; }
   if (O.show.rota && D.pts.length > 1 && !post) { const P = D.pts, max = Math.max(1, P[P.length - 1].acc), maxP = Math.max(1, ...P.map((p) => p.p)), w = 760, h = 200, ox = (W - w) / 2;
-    const xy = P.map((p, i) => [ox + w * (i / (P.length - 1)), y + h - h * (p.acc / max)]); x.strokeStyle = T.ink === '#ffffff' ? 'rgba(182,156,255,.8)' : 'rgba(196,111,46,.6)'; x.lineWidth = 4; x.lineJoin = 'round'; x.beginPath(); xy.forEach((p, i) => (i ? x.lineTo(...p) : x.moveTo(...p))); x.stroke();
-    xy.forEach((p, i) => { x.fillStyle = P[i].ok ? '#f2c94c' : (T.ink === '#ffffff' ? '#b69cff' : '#c46f2e'); x.shadowColor = P[i].ok ? '#f2c94c' : 'transparent'; x.shadowBlur = P[i].ok ? 20 : 0; x.beginPath(); x.arc(p[0], p[1], 7 + 11 * (P[i].p / maxP), 0, 7); x.fill(); }); x.shadowBlur = 0; y += h + 70; }
+    const xy = P.map((p, i) => [ox + w * (i / (P.length - 1)), y + h - h * (p.acc / max)]); x.strokeStyle = T.dark ? 'rgba(255,255,255,.55)' : 'rgba(196,111,46,.6)'; x.lineWidth = 4; x.lineJoin = 'round'; x.beginPath(); xy.forEach((p, i) => (i ? x.lineTo(...p) : x.moveTo(...p))); x.stroke();
+    xy.forEach((p, i) => { x.fillStyle = P[i].ok ? '#f2c94c' : T.acc; x.shadowColor = P[i].ok ? '#f2c94c' : 'transparent'; x.shadowBlur = P[i].ok ? 20 : 0; x.beginPath(); x.arc(p[0], p[1], 7 + 11 * (P[i].p / maxP), 0, 7); x.fill(); }); x.shadowBlur = 0; y += h + 70; }
   if (O.show.emo && D.emo.length) { x.font = SANS(800, 30); const ws = D.emo.map((m) => x.measureText(m.name).width + 50), tot = ws.reduce((a, b) => a + b, 0) + 16 * (ws.length - 1); let ex = (W - tot) / 2;
     D.emo.forEach((m, i) => { x.fillStyle = T.box; x.beginPath(); x.roundRect(ex, y - 40, ws[i], 58, 29); x.fill(); x.fillStyle = T.ink; x.textAlign = 'left'; x.fillText(m.name, ex + 25, y); ex += ws[i] + 16; }); x.textAlign = 'center'; y += 70; }
   if (O.show.pers && (D.fav || D.hate)) { x.font = SANS(800, 30); x.fillStyle = T.sub; if (D.fav) { x.fillText('Personagem favorito: ' + D.fav, W / 2, y); y += 46; } if (D.hate) { x.fillText('Amei odiar: ' + D.hate, W / 2, y); y += 46; } y += 20; }
-  if (O.show.trecho && D.q) { x.fillStyle = T.ink; x.font = SERIF('italic 400', post ? 36 : 42); const L = rtWrap(x, '“' + D.q.t + '”', W - 200, post ? 3 : 5); const room = H - 120 - y; L.slice(0, Math.max(1, Math.floor(room / 56))).forEach((l) => { x.fillText(l, W / 2, y); y += post ? 48 : 56; }); }
+  const qt = String(O.qt ?? (D.q ? D.q.t : '')).trim();
+  if (O.show.trecho && qt) { x.fillStyle = T.ink; x.font = DISP(true, post ? 36 : 42); const L = rtWrap(x, '“' + qt + '”', W - 200, post ? 3 : 5); L.forEach((l) => { x.fillText(l, W / 2, y); y += Math.round((post ? 48 : 56) * K); }); }
+  // composição: fundo, conteúdo (encolhe se não couber) e a marca no rodapé, que não muda
   const F = document.createElement('canvas'); F.width = W; F.height = H; const fx = F.getContext('2d'); bgPaint(fx);
-  { const room = H - 170; if (y > room) { const k = room / y; fx.drawImage(c, (W - W * k) / 2, 10, W * k, H * k); } else fx.drawImage(c, 0, Math.round((room - y) / 2)); }
-  fx.textAlign = 'center'; fx.fillStyle = T.sub; fx.globalAlpha = .55; fx.fillRect(W / 2 - 300, H - 128, 600, 2); fx.globalAlpha = 1; fx.font = SERIF('italic 700', 40); fx.fillText('Livroverso', W / 2, H - 66);
+  { const room = H - 190; if (y > room) { const k = room / y; fx.drawImage(c, (W - W * k) / 2, 10, W * k, H * k); } else fx.drawImage(c, 0, Math.round((room - y) / 2)); }
+  const lg = RT_LOGO[T.dark ? 'escuro' : 'claro']; if (lg && lg.complete && lg.naturalWidth) { const lh = 92, lw = lh * lg.naturalWidth / lg.naturalHeight; fx.drawImage(lg, (W - lw) / 2, H - lh - 46, lw, lh); }
+  else { fx.textAlign = 'center'; fx.fillStyle = T.sub; fx.font = 'italic 700 40px Georgia, serif'; fx.fillText('Livroverso', W / 2, H - 66); }
   return F;
 }
 function openRetro(e, auto) {
   if (!e) return; TR.querySelector('.rt')?.remove();
   const D = retroData(e), slides = retroSlides(D), N = slides.length + 1; let i = 0;
-  const O = { theme: e.cover ? 'blur' : 'noite', fmt: 'story', show: { nota: true, nums: true, rota: true, trecho: !!D.q, emo: false, pers: !!(D.fav || D.hate) } };
+  const O = { theme: e.cover ? 'blur' : 'noite', fmt: 'story', head: 'Leitura concluída', line: '', size: 1, font: null, show: { user: true, nota: true, nums: true, rota: true, trecho: !!D.q, emo: false, pers: !!(D.fav || D.hate) } };
   const rt = document.createElement('div'); rt.className = 'rt'; rt.innerHTML = '<div class="rt-ph"><div class="rt-sky">' + Array.from({ length: 46 }, () => '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;top:' + (Math.random() * 100).toFixed(1) + '%;animation-delay:' + (Math.random() * 3).toFixed(2) + 's;' + (Math.random() < 0.2 ? 'width:3px;height:3px' : '') + '"></i>').join('') + '</div><div class="rt-bars">' + Array.from({ length: N }, () => '<i><b></b></i>').join('') + '</div><button type="button" class="rt-x" aria-label="Fechar">×</button><div class="rt-st"></div></div>';
   TR.append(rt); const ph = rt.querySelector('.rt-ph'), stage = rt.querySelector('.rt-st');
   const close = () => { rt.remove(); };
   let cover = null, coverP = rtLoadCover(e.cover).then((im) => (cover = im));
   const count = () => stage.querySelectorAll('[data-n]').forEach((b) => { const n = Number(b.dataset.n) || 0, t0 = performance.now(); const f = (t) => { const k = Math.min(1, (t - t0) / 1100); b.textContent = Math.round(n * (1 - Math.pow(1 - k, 3))).toLocaleString('pt-BR'); if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); });
   const editor = () => {
-    stage.innerHTML = '<div class="rt-ed"><button type="button" class="rt-x" aria-label="Fechar">×</button><h3>Montar para postar</h3><img class="rt-pv" alt="Prévia da imagem"><h4>Tema</h4><div class="rt-sw">'
-      + [...(e.cover ? [['blur', 'url(&quot;' + esc(String(e.cover)) + '&quot;) center/cover', 'Capa desfocada']] : []), ['noite', 'linear-gradient(#3b2a6b,#0c0a1c)', 'Noite estrelada'], ['papel', 'linear-gradient(#fbf5ea,#e6d6bd)', 'Papel'], ['sol', 'linear-gradient(#ff9a5a,#7b2d6b)', 'Pôr do sol'], ['capa', 'linear-gradient(#8a2a2a,#121212)', 'Cores da capa'], ['menta', 'linear-gradient(#d7f0e4,#5f9c84)', 'Menta']].map(([k, bg, n]) => '<button type="button" data-th="' + k + '" title="' + n + '" aria-label="' + n + '" style="background:' + bg + '"></button>').join('')
-      + '</div><h4>Formato</h4><div class="rt-ch" data-g="fmt"><button type="button" data-v="story">Story</button><button type="button" data-v="post">Post</button></div><h4>Mostrar</h4><div class="rt-ch" data-g="show">'
-      + [['nota', 'Nota', D.paws], ['nums', 'Números', 1], ['rota', 'Ritmo', D.pts.length > 1], ['trecho', 'Trecho', D.q], ['emo', 'Emoções', D.emo.length], ['pers', 'Personagens', D.fav || D.hate]].filter((z) => z[2]).map(([k, n]) => '<button type="button" data-v="' + k + '">' + n + '</button>').join('')
-      + '</div></div><div class="rt-ac"><button type="button" data-a="save">Salvar imagem</button><button type="button" class="p" data-a="share">Compartilhar</button></div>';
-    const ed = stage.querySelector('.rt-ed'), pv = ed.querySelector('.rt-pv'); let cur = null;
-    const paint = async () => { await coverP; cur = rtDraw(D, O, cover); pv.src = cur.toDataURL('image/jpeg', 0.8);
-      ed.querySelectorAll('[data-th]').forEach((b) => b.classList.toggle('on', b.dataset.th === O.theme)); ed.querySelectorAll('[data-g=fmt] button').forEach((b) => b.classList.toggle('on', b.dataset.v === O.fmt)); ed.querySelectorAll('[data-g=show] button').forEach((b) => b.classList.toggle('on', !!O.show[b.dataset.v])); };
-    ed.querySelectorAll('[data-th]').forEach((b) => b.addEventListener('click', () => { O.theme = b.dataset.th; paint(); }));
+    const TH = Object.entries(RT_THEMES).filter(([k]) => k !== 'blur' || e.cover);
+    const sw = (k, t) => (k === 'blur' ? 'url(&quot;' + esc(String(e.cover)) + '&quot;) center/cover' : k === 'capa' ? 'linear-gradient(#8a2a2a,#121212)' : t.sw || 'linear-gradient(' + t.bg[0] + ',' + t.bg[1] + ')');
+    stage.innerHTML = '<div class="rt-ed"><button type="button" class="rt-x" aria-label="Fechar">×</button><h3>Montar para postar</h3><img class="rt-pv" alt="Prévia da imagem">'
+      + '<div class="rt-tabs"><button type="button" data-tab="tema" class="on">Tema</button><button type="button" data-tab="texto">Texto</button><button type="button" data-tab="cont">Conteúdo</button></div>'
+      + '<div class="rt-pane" data-p="tema"><div class="rt-ths">' + TH.map(([k, t]) => '<button type="button" data-th="' + k + '"><i style="background:' + sw(k, t) + '"></i><span>' + esc(t.name) + '</span></button>').join('') + '</div></div>'
+      + '<div class="rt-pane" data-p="texto" hidden><h4>Fonte</h4><div class="rt-ch" data-g="font">' + Object.entries(RT_FONTS).map(([k, f]) => '<button type="button" data-v="' + k + '" style="font-family:' + esc(f.fam) + ';font-weight:' + f.w + '">' + esc(f.name) + '</button>').join('') + '</div>'
+      + '<h4>Tamanho do texto</h4><div class="rt-ch" data-g="size"><button type="button" data-v="0.85">Pequeno</button><button type="button" data-v="1">Médio</button><button type="button" data-v="1.15">Grande</button></div>'
+      + '<h4>Título</h4><input class="rt-in" data-k="head" maxlength="40" value="Leitura concluída">'
+      + '<h4>Sua frase <span>(opcional)</span></h4><input class="rt-in" data-k="line" maxlength="80" placeholder="Ex.: ' + esc(RT_FR[D.paws] || 'Que livro!') + '">'
+      + (D.q ? '<h4>Trecho</h4><textarea class="rt-in" data-k="qt" maxlength="300" rows="3">' + esc(D.q.t) + '</textarea>' : '') + '<p class="rt-note">A marca Livroverso fica sempre no rodapé.</p></div>'
+      + '<div class="rt-pane" data-p="cont" hidden><h4>Formato</h4><div class="rt-ch" data-g="fmt"><button type="button" data-v="story">Story</button><button type="button" data-v="post">Post</button></div><h4>Mostrar</h4><div class="rt-ch" data-g="show">'
+      + [['user', 'Seu @', 1], ['nota', 'Nota', D.paws], ['nums', 'Números', 1], ['rota', 'Ritmo', D.pts.length > 1], ['trecho', 'Trecho', D.q], ['emo', 'Emoções', D.emo.length], ['pers', 'Personagens', D.fav || D.hate]].filter((z) => z[2]).map(([k, n]) => '<button type="button" data-v="' + k + '">' + n + '</button>').join('')
+      + '</div></div></div><div class="rt-ac"><button type="button" data-a="save">Salvar imagem</button><button type="button" class="p" data-a="share">Compartilhar</button></div>';
+    const ed = stage.querySelector('.rt-ed'), pv = ed.querySelector('.rt-pv'); let cur = null, seq = 0;
+    const sync = () => {
+      ed.querySelectorAll('[data-th]').forEach((b) => b.classList.toggle('on', b.dataset.th === O.theme));
+      ed.querySelectorAll('[data-g=font] button').forEach((b) => b.classList.toggle('on', b.dataset.v === (O.font || RT_THEMES[O.theme].font)));
+      ed.querySelectorAll('[data-g=size] button').forEach((b) => b.classList.toggle('on', Number(b.dataset.v) === (O.size || 1)));
+      ed.querySelectorAll('[data-g=fmt] button').forEach((b) => b.classList.toggle('on', b.dataset.v === O.fmt));
+      ed.querySelectorAll('[data-g=show] button').forEach((b) => b.classList.toggle('on', O.show[b.dataset.v] !== false && !!O.show[b.dataset.v])); };
+    const paint = async () => { const my = ++seq; sync(); await coverP; await rtFontsReady(O.font || RT_THEMES[O.theme].font); if (my !== seq) return; cur = rtDraw(D, O, cover); pv.src = cur.toDataURL('image/jpeg', 0.8); };
+    ed.querySelectorAll('.rt-tabs button').forEach((b) => b.addEventListener('click', () => { ed.querySelectorAll('.rt-tabs button').forEach((x) => x.classList.toggle('on', x === b)); ed.querySelectorAll('.rt-pane').forEach((p) => { p.hidden = p.dataset.p !== b.dataset.tab; }); }));
+    ed.querySelectorAll('[data-th]').forEach((b) => b.addEventListener('click', () => { O.theme = b.dataset.th; O.font = null; paint(); }));
+    ed.querySelectorAll('[data-g=font] button').forEach((b) => b.addEventListener('click', () => { O.font = b.dataset.v; paint(); }));
+    ed.querySelectorAll('[data-g=size] button').forEach((b) => b.addEventListener('click', () => { O.size = Number(b.dataset.v); paint(); }));
     ed.querySelectorAll('[data-g=fmt] button').forEach((b) => b.addEventListener('click', () => { O.fmt = b.dataset.v; paint(); }));
-    ed.querySelectorAll('[data-g=show] button').forEach((b) => b.addEventListener('click', () => { O.show[b.dataset.v] = !O.show[b.dataset.v]; paint(); }));
+    ed.querySelectorAll('[data-g=show] button').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.v; O.show[k] = !(O.show[k] !== false && !!O.show[k]); paint(); }));
+    { let tm = 0; ed.querySelectorAll('.rt-in').forEach((i) => i.addEventListener('input', () => { O[i.dataset.k] = i.value; clearTimeout(tm); tm = setTimeout(paint, 250); })); }
     ed.querySelector('.rt-x').addEventListener('click', close);
     const blob = () => new Promise((res) => cur.toBlob((b) => res(b), 'image/png'));
     const name = 'livroverso-' + normT(e.title).replace(/\s+/g, '-').slice(0, 40) + '.png';
