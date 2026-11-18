@@ -9878,6 +9878,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13373,7 +13374,7 @@ function dueSheet(e) {
   f.querySelectorAll('.dq').forEach((b) => b.addEventListener('click', () => { inp.value = b.dataset.d; show(); }));
   const close = () => wrap.remove(); wrap.addEventListener('click', (ev) => { if (ev.target === wrap) close(); }); f.querySelector('.cancel').addEventListener('click', close);
   f.querySelector('.dx')?.addEventListener('click', () => { delete e.dueAt; delete e.dueSince; delete e.dueStartPage; delete e.dueOff; save(); close(); try { renderHome(todayISO()); } catch {} toast('Prazo removido'); });
-  f.addEventListener('submit', (ev) => { ev.preventDefault(); if (!inp.value || inp.value < t) return toast('Escolha hoje ou um dia depois'); if (e.dueAt !== inp.value || !e.dueSince) { e.dueSince = todayISO(); e.dueStartPage = readingInfo(e).now || 0; } e.dueAt = inp.value; if (off.length) e.dueOff = off; else delete e.dueOff; save(); close(); try { renderHome(todayISO()); } catch {} toast(`Prazo: ${dueLabel(e.dueAt)}`); });
+  f.addEventListener('submit', (ev) => { ev.preventDefault(); if (!inp.value || inp.value < t) return toast('Escolha hoje ou um dia depois'); if (e.dueAt !== inp.value || !e.dueSince) { e.dueSince = todayISO(); e.dueSetAt = new Date().toISOString(); e.dueStartPage = readingInfo(e).now || 0; } e.dueAt = inp.value; if (off.length) e.dueOff = off; else delete e.dueOff; save(); close(); try { renderHome(todayISO()); } catch {} toast(`Prazo: ${dueLabel(e.dueAt)}`); });
   document.body.append(wrap);
 }
 // cartão "Lendo agora" do Início: linha do prazo (ou convite para definir)
@@ -14806,6 +14807,7 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 #editor .tl-tabs button{flex:1;border:0!important;background:none!important;box-shadow:none!important;font:inherit;font-size:.86rem;font-weight:800;color:var(--ink-2)!important;padding:.5rem 0!important;margin-bottom:-1.5px;border-bottom:2.5px solid transparent!important;border-radius:0!important;min-height:0!important;height:auto!important}
 #editor .tl-tabs button.on{color:var(--acc)!important;border-bottom-color:var(--acc)!important}
 #editor .tl-flow{position:relative}#editor .tl-flow::before{content:"";position:absolute;left:14px;top:.6rem;bottom:1.2rem;border-left:2px dashed color-mix(in srgb,var(--acc) 40%,var(--line));z-index:0}#editor .tl-flow .tl-d::before{display:none!important}#editor .tl-flow .tl-st{position:relative;z-index:1;width:30px;height:30px;border-radius:50%;background:var(--panel,#fffaf3)}#editor .tl-flow .tl-day{margin-left:2.6rem;position:relative}#editor .tl-flow .tl-day::before{content:"";position:absolute;left:calc(-2.6rem + 9px);top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--panel,#fffaf3);border:2px solid color-mix(in srgb,var(--acc) 55%,var(--line));box-sizing:border-box}
+#editor .tl-eh .tl-evt{color:var(--ink-2)!important;font-weight:800;font-size:.8rem}
 #editor .tl-sum{display:flex;flex-wrap:wrap;gap:.3rem .9rem;align-items:center;padding:.55rem .75rem;margin:0 0 .4rem;border-radius:12px;background:color-mix(in srgb,var(--acc) 9%,transparent);font-size:.78rem;font-weight:700;color:var(--ink-2)}#editor .tl-sum b{color:var(--ink);font-weight:900}#editor .tl-h small{font-size:.7rem;color:var(--ink-2);font-weight:700}
 #editor .tl-d{display:grid;grid-template-columns:30px minmax(0,1fr);gap:.65rem;position:relative;padding-bottom:.85rem}
 #editor .tl-d::before{content:"";position:absolute;left:14px;top:30px;bottom:-2px;width:0;border-left:2px dashed color-mix(in srgb,var(--acc) 35%,var(--line))}
@@ -14901,7 +14903,12 @@ function tlEntries(e) {
   // estrela de cada registro: dourada quando, somando o que já tinha lido no dia, chegou na meta do dia
   const byDay = new Map(); all.forEach((c) => { if (!byDay.has(c.d)) byDay.set(c.d, []); byDay.get(c.d).push(c); });
   byDay.forEach((cs) => { cs.sort((a, b) => String(a.at || '').localeCompare(String(b.at || ''))); let acc = 0; cs.forEach((c) => { acc += c.pages; const dy = c.day; c.ok = !!(dy && dy.per && acc >= dy.per); c.hit = c.ok && acc - c.pages < dy.per; c.fill = dy && dy.per ? Math.min(1, acc / dy.per) : (c.pages ? 0.7 : 0); }); });
-  return all.sort((a, b) => (b.d + (b.at || '')).localeCompare(a.d + (a.at || '')));
+  // início da leitura e prazo viram registros próprios (Bia, 18/11): com a hora quando o app guardou; sem hora, ficam no começo do dia
+  const day10 = (x) => String(x || '').slice(0, 10);
+  if (e.startedAt) all.push({ d: day10(e.startedAt), at: e.startedTs && day10(e.startedTs) === day10(e.startedAt) ? e.startedTs : null, ev: 'start', rs: [], pages: 0 });
+  if (e.dueSince && e.dueAt) all.push({ d: day10(e.dueSince), at: e.dueSetAt && day10(e.dueSetAt) === day10(e.dueSince) ? e.dueSetAt : null, ev: 'due', rs: [], pages: 0 });
+  const sk = (c) => c.d + (c.at || (c.ev === 'start' ? '' : c.ev === 'due' ? ' ' : '  '));
+  return all.sort((a, b) => sk(b).localeCompare(sk(a)));
 }
 function tlHTML(e, all) {
   const ents = tlEntries(e), dayList = tlEvents(e);
@@ -14916,8 +14923,8 @@ function tlHTML(e, all) {
     const dy = dayInfo.get(d) || {}, cs = ents.filter((c) => c.d === d);
     const meta = dy.inDue && dy.off ? 'dia de folga' : dy.inDue && dy.per ? (dy.ok ? '★ meta do dia batida' : 'meta do dia: ' + dy.per + ' pág.') : '';
     html += '<div class="tl-day"><b>' + tlDay(d) + '</b>' + (dy.pages ? '<span>' + dy.pages + ' pág. no dia</span>' : '') + (meta ? '<em class="' + (dy.ok ? 'ok' : '') + '">' + meta + '</em>' : '') + '</div>';
-    (dy.ev || []).forEach((v) => { html += '<div class="tl-evl">' + (/^Começou/.test(v) ? '🚀 ' : '⏳ ') + esc(v) + '</div>'; });
     cs.forEach((c) => {
+      if (c.ev) { html += '<div class="tl-d tl-evd"><span class="tl-st ev">✦</span><div><div class="tl-eh">' + (c.at ? '<b>' + tlHM(c.at) + '</b>' : '') + '<span class="tl-evt">' + (c.ev === 'start' ? '🚀 Começou a ler' : '⏳ Prazo definido: ' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje'))) + '</span></div></div></div>'; return; }
       const st = c.ok ? '<span class="tl-st ok">★</span>' : c.pages ? '<span class="tl-st mid" style="opacity:' + (0.45 + 0.55 * c.fill).toFixed(2) + '">★</span>' : '<span class="tl-st ev">✦</span>';
       const head = '<div class="tl-eh"><b>' + (c.at ? tlHM(c.at) : 'Neste dia') + '</b>' + (c.page ? '<span>pág. ' + c.page + '</span>' : '') + (c.pages ? '<i>+' + c.pages + ' pág.</i>' : '') + (c.hit ? '<em>bateu a meta</em>' : '') + '</div>';
       const its = c.rs.filter((r) => r.k !== 'rl').map((r) => r.k === 'qt' ? card('❝', 'Trecho' + (r.x.p ? ' <span>pág. ' + r.x.p + '</span>' : ''), '<p class="tl-q">' + esc(r.x.t) + '</p>', 'qt:' + (e.quotes || []).indexOf(r.x))
@@ -14988,6 +14995,10 @@ function tlEditClick(ev, e, redraw) {
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { if (!booting && (ed.hidden || !ed.querySelector('#up-save'))) { try { sessionStorage.removeItem(TL_KEY); } catch {} } }, 600); }).observe(ed, { attributes: true, attributeFilter: ['hidden'], childList: true });
   if (TL_BOOT) setTimeout(() => { try { const e = byId(TL_BOOT.id); if (e && e.status === 'LENDO' && $('#editor').hidden) { S.tlTabNext = TL_BOOT.tab; ssOpenUpdate(e); } } catch {} setTimeout(() => { booting = false; }, 800); }, 1800);
 }
+// guarda a hora em que o livro entrou em Lendo (para o "Começou a ler" do histórico)
+{ const _sl = setLibStatus; setLibStatus = function (e, st) { const was = e && e.status; const r = _sl.apply(this, arguments); try { if (e && st === 'LENDO' && was !== 'LENDO' && e.status === 'LENDO') { e.startedTs = new Date().toISOString(); save(); } } catch {} return r; }; }
+{ const _al = addToLibrary; addToLibrary = function () { const before = new Set(lib().map((x) => x.id)); const r = _al.apply(this, arguments);
+    setTimeout(() => { try { let ch = false; lib().forEach((x) => { if (!before.has(x.id) && x.status === 'LENDO' && !x.startedTs) { x.startedTs = new Date().toISOString(); ch = true; } }); if (ch) save(); } catch {} }, 400); return r; }; }
 // --- 87_meta_inicio_livros.js ---
 // Meta do ano no Início (Bia, 17/11; Editar meta no ••• do cartão): embaixo da barra de progresso, as capas dos livros lidos no ano que contam para a meta,
 // do mais recente para o mais antigo, e depois as vagas tracejadas que faltam.
