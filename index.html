@@ -9886,6 +9886,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14978,7 +14979,7 @@ let TL_PAINT = () => {};
     const set = (k) => { S.tlTab = k; tlRemember(e, k); body.classList.toggle('tl-on', k === 'hist'); tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.t === k)); };
     tabs.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => set(b.dataset.t)));
     const hd = body.querySelector('.ss-hd'); if (hd) hd.after(tabs); else body.prepend(tabs); set(S.tlTab || 'up');
-    const t = document.createElement('div'); t.innerHTML = tlHTML(e, S.tlAll); const tl = t.firstElementChild; body.append(tl);
+    const t = document.createElement('div'); t.innerHTML = tlHTML2(e, S.tlAll); const tl = t.firstElementChild; body.append(tl);
     const more = tl.querySelector('.tl-more'); if (more) more.addEventListener('click', () => { S.tlAll = true; tl.remove(); paint(); });
     tl.addEventListener('click', (ev) => tlEditClick(ev, e, () => { tl.remove(); paint(); }));
   };
@@ -15648,7 +15649,7 @@ TR.addEventListener('click', (ev) => {
   TR.append(st); }
 
 // seleção em massa (trechos e notas): "Selecionar" ao lado das abas; marca os itens e apaga de uma vez
-{ const st = document.createElement('style'); st.textContent = '#shelflist.qn-notas .sl-body > .qn-selb{display:flex!important}.qn-selb{display:flex;justify-content:flex-end;margin:-.3rem 0 .5rem}.qn-selb button{border:0;background:none;font:inherit;font-weight:800;font-size:.82rem;color:var(--acc);cursor:pointer;padding:.2rem 0}'
+{ const st = document.createElement('style'); st.textContent = '#shelflist.qn-notas.qn-notas .sl-body.sl-body > .qn-selb.qn-selb{display:flex!important}.qn-selb{display:flex;justify-content:flex-end;margin:.1rem 0 .5rem}.qn-selb button{border:0;outline:0;background:none;font:inherit;font-weight:800;font-size:.82rem;color:var(--acc);cursor:pointer;padding:.2rem 0}'
   + '#shelflist.qn-sel .qt-in,#shelflist.qn-sel .qn-in{padding-left:2.5rem!important;position:relative}#shelflist.qn-sel .qt-in::after,#shelflist.qn-sel .qn-in::after{content:""!important}'
   + '#shelflist.qn-sel .qt-in::before,#shelflist.qn-sel .qn-in::before{content:"";position:absolute;left:.8rem;top:50%;width:20px;height:20px;margin-top:-10px;border-radius:50%;border:2px solid var(--line);background:var(--panel);box-sizing:border-box}'
   + '#shelflist.qn-sel .qt-in.sel::before,#shelflist.qn-sel .qn-in.sel::before{border-color:var(--acc);background:var(--acc);box-shadow:inset 0 0 0 3px var(--panel)}'
@@ -15659,8 +15660,11 @@ S.qnSelOn = false; S.qnSel = new Set();
 function qnSelKey(b) { return b.classList.contains('qt-in') ? 'q:' + b.dataset.bid + ':' + b.dataset.qi : 'n:' + b.dataset.id + ':' + b.dataset.nid; }
 function qnSelPaint() {
   const v = $('#shelflist'); if (!v) return; const body = v.querySelector('.sl-body'); if (!body || !body.querySelector('.qn-seg')) { S.qnSelOn = false; v.classList.remove('qn-sel'); TR.querySelector('.qn-bar')?.remove(); return; }
-  let sb = body.querySelector('.qn-selb'); if (!sb) { sb = document.createElement('div'); sb.className = 'qn-selb'; sb.innerHTML = '<button type="button">Selecionar</button>'; body.querySelector('.qn-seg').after(sb);
+  let sb = body.querySelector('.qn-selb'); if (!sb) { sb = document.createElement('div'); sb.className = 'qn-selb'; sb.innerHTML = '<button type="button">Selecionar</button>'; 
     sb.querySelector('button').addEventListener('click', () => { S.qnSelOn = !S.qnSelOn; S.qnSel.clear(); qnSelPaint(); }); }
+  // depois da busca (Trechos) ou logo acima da lista (Notas)
+  { const notas = v.classList.contains('qn-notas'), nl = body.querySelector(':scope > .qn-notes'), qb = body.querySelector('.qt-bar');
+    if (notas && nl) { if (sb.nextElementSibling !== nl) nl.before(sb); } else if (qb) { if (qb.nextElementSibling !== sb) qb.after(sb); } else if (sb.parentElement !== body) body.querySelector('.qn-seg').after(sb); }
   { const t = S.qnSelOn ? 'Cancelar seleção' : 'Selecionar', bt = sb.querySelector('button'); if (bt.textContent !== t) bt.textContent = t; }
   v.classList.toggle('qn-sel', S.qnSelOn);
   body.querySelectorAll('.qt-in, .qn-in').forEach((b) => b.classList.toggle('sel', S.qnSel.has(qnSelKey(b))));
@@ -15681,6 +15685,11 @@ function qnSelPaint() {
 TR.addEventListener('click', (ev) => { if (!S.qnSelOn) return; const b = ev.target.closest && ev.target.closest('.qt-in, .qn-in'); if (!b) return; ev.stopImmediatePropagation(); ev.preventDefault();
   const k = qnSelKey(b); if (S.qnSel.has(k)) S.qnSel.delete(k); else S.qnSel.add(k); qnSelPaint(); }, true);
 { let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; qnSelPaint(); }, 60); }).observe(TR, { childList: true, subtree: true }); }
+// Voltar na mesma linha das abas (Bia, 18/11): Trechos e anotações e Histórico de leituras
+{ const st = document.createElement('style'); st.textContent = '#shelflist .sl-body:has(> .qn-seg) > .sl-top,#shelflist .sl-body:has(> .hl-seg) > .sl-top{display:block!important;width:44px!important;height:44px!important;margin:0 0 -44px 0!important;padding:0!important;min-height:0!important;position:relative;z-index:2}'
+  + '#shelflist .sl-body:has(> .qn-seg) > .sl-top > :not(.sl-back),#shelflist .sl-body:has(> .hl-seg) > .sl-top > :not(.sl-back){display:none!important}'
+  + '#shelflist .sl-body > .qn-seg,#shelflist .sl-body > .hl-seg{margin-left:54px!important;margin-top:0!important;min-height:44px;box-sizing:border-box;align-items:center}';
+  TR.append(st); }
 // --- a2_historico_abas.js ---
 // Histórico de leituras (Bia, 18/11): uma página só, com duas abas: "Adicionar livros" (Montar meu histórico, com importar CSV)
 // e "Completar dados" (Ajustar leituras). Depois de importar um arquivo, sugere a aba Completar dados se faltou alguma coisa.
@@ -15711,6 +15720,80 @@ window.lvAfterImport = (n) => {
   const parts = [c.ini ? c.ini + ' sem data de início' : '', c.fim ? c.fim + ' sem data de fim' : '', c.pag ? c.pag + ' sem páginas' : ''].filter(Boolean).join(', ');
   setTimeout(() => sheetList('Faltou completar alguns lidos (' + parts + ')', [{ label: 'Completar agora', fn: () => openHistLeituras('fix') }], 'Depois'), 2600);
 };
+// --- a3_constelacao.js ---
+// Histórico como constelação (Bia, 18/11): cada acontecimento é uma estrela própria, ligada à anterior por uma linha.
+// O cartão tem o nome do que aconteceu (Leitura atualizada, Nova anotação, Novo trecho, Novo comentário, Começou a ler,
+// Prazo definido) com data e hora; dentro, a página e o texto. Estrela grande = leitura (dourada quando bateu a meta do dia).
+{ const st = document.createElement('style'); st.textContent = `
+#editor .cs-flow{position:relative;padding:.2rem 0 .4rem}
+#editor .cs-lines{position:absolute;left:0;top:0;pointer-events:none;overflow:visible;z-index:0}
+#editor .cs-n{position:relative;display:grid;grid-template-columns:52px minmax(0,1fr);gap:.35rem;align-items:start;margin-bottom:.6rem}
+#editor .cs-s{position:relative;z-index:1;display:block;width:22px;height:22px;margin:.55rem 0 0 var(--x,10px);line-height:22px;text-align:center;font-size:13px;color:#c9b8ff;text-shadow:0 0 6px rgba(182,156,255,.7)}
+#editor .cs-s.big{font-size:22px;color:#b69cff}
+#editor .cs-s.ok{color:#f2c94c;text-shadow:0 0 10px rgba(242,201,76,.9),0 0 3px rgba(242,201,76,1)}
+#editor .cs-s.ev{color:color-mix(in srgb,var(--acc) 75%,#fff);text-shadow:0 0 6px color-mix(in srgb,var(--acc) 60%,transparent)}
+#editor .cs-n .tl-c{margin-top:0}
+#editor .cs-n .tl-ct{flex-wrap:wrap}
+#editor .tl-ct .cs-w{font-size:.72rem;font-weight:700;color:var(--ink-2);margin-left:.3rem}
+#editor .cs-pg{font-size:.76rem;font-weight:800;color:var(--acc);margin-top:.25rem}#editor .cs-pg i{font-style:normal;font-weight:700;color:var(--ink-2);margin-left:.35rem}#editor .cs-pg em{font-style:normal;color:#c08a12;margin-left:.35rem}
+#editor .cs-n .tl-c p{margin-top:.25rem}
+#editor .cs-sky{position:absolute;left:0;top:0;bottom:0;width:52px;z-index:0;background-image:radial-gradient(1px 1px at 8px 30px,color-mix(in srgb,var(--ink) 25%,transparent) 50%,transparent 51%),radial-gradient(1px 1px at 40px 90px,color-mix(in srgb,var(--ink) 20%,transparent) 50%,transparent 51%),radial-gradient(1.5px 1.5px at 22px 150px,color-mix(in srgb,var(--ink) 18%,transparent) 50%,transparent 51%);background-size:52px 180px;opacity:.8}
+`; TR.append(st); }
+const CS_X = [8, 24, 14, 28, 6, 20];
+const csWhen = (d, at) => { const t = todayISO(), y = new Date(Date.parse(t) - 864e5).toISOString().slice(0, 10); const dd = d === t ? 'Hoje' : d === y ? 'Ontem' : d.slice(8, 10) + '/' + d.slice(5, 7) + (d.slice(0, 4) !== t.slice(0, 4) ? '/' + d.slice(0, 4) : ''); return dd + (at ? ' às ' + tlHM(at) : ''); };
+function csEvents(e) {
+  const days = new Map(tlEvents(e).map((x) => [x.d, x])), ev = [], d10 = (x) => String(x || '').slice(0, 10);
+  (e.readLog || []).forEach((l) => { if (l && l.date) ev.push({ k: 'rl', d: d10(l.date), at: l.at || null, pages: Number(l.pages) || 0, page: Number(l.page) || 0 }); });
+  (e.diary || []).forEach((x) => { if (x && x.d) ev.push({ k: 'dy', d: d10(x.d), at: x.at || null, x, page: Number(x.page) || 0 }); });
+  (e.quotes || []).forEach((x) => { if (x && x.at) ev.push({ k: 'qt', d: d10(x.at), at: String(x.at).length > 10 ? x.at : null, x }); });
+  (e.notes || []).forEach((x) => { if (x && x.at) ev.push({ k: 'nt', d: d10(x.at), at: String(x.at).length > 10 ? x.at : null, x }); });
+  if (e.startedAt) ev.push({ k: 'start', d: d10(e.startedAt), at: e.startedTs && d10(e.startedTs) === d10(e.startedAt) ? e.startedTs : null });
+  if (e.dueSince && e.dueAt) ev.push({ k: 'due', d: d10(e.dueSince), at: e.dueSetAt && d10(e.dueSetAt) === d10(e.dueSince) ? e.dueSetAt : null });
+  // ordem dentro do dia: sem hora, o início fica no começo e o resto no fim
+  const key = (c) => c.d + 'T' + (c.at ? new Date(c.at).toISOString().slice(11, 19) : c.k === 'start' ? '00:00:00' : c.k === 'due' ? '00:00:01' : '23:59:59');
+  ev.sort((a, b) => key(a).localeCompare(key(b)));
+  // leitura: página em que parou e se bateu a meta do dia (somando o que já tinha lido no dia)
+  const acc = new Map(); ev.forEach((c) => { if (c.k !== 'rl') return; const dy = days.get(c.d) || {}; const a = (acc.get(c.d) || 0) + c.pages; acc.set(c.d, a); c.ok = !!(dy.per && a >= dy.per); c.hit = c.ok && a - c.pages < dy.per; if (!c.page && !c.at && dy.end) c.page = dy.end; });
+  return ev.reverse();
+}
+function tlHTML2(e, all) {
+  const ev = csEvents(e);
+  if (!ev.length) return '<div class="tl"><p class="tl-empty">Cada vez que você atualizar a leitura, uma estrela nova aparece aqui, com a data, a hora e a página.</p></div>';
+  const names = (fe) => (fe || []).map((k) => (QT_FEELS.find((y) => y[0] === k) || [, k])[1]);
+  const card = (ic, tt, when, body, ref) => '<div class="tl-c"' + (ref ? ' data-ref="' + ref + '"' : '') + '><span class="tl-ic">' + ic + '</span><div><div class="tl-ct">' + tt + '<span class="cs-w">· ' + when + '</span>' + (ref ? '<button type="button" class="tl-edit">Editar</button>' : '') + '</div>' + (body || '') + '</div></div>';
+  const pg = (p) => (p ? '<div class="cs-pg">pág. ' + p + '</div>' : '');
+  const show = all ? ev : ev.slice(0, 25);
+  const html = show.map((c, i) => {
+    const w = csWhen(c.d, c.at), x = CS_X[i % CS_X.length];
+    let star = '<span class="cs-s">✦</span>', body = '';
+    if (c.k === 'rl') { star = '<span class="cs-s big' + (c.ok ? ' ok' : '') + '">★</span>'; body = card('📖', 'Leitura atualizada', w, '<div class="cs-pg">' + (c.page ? 'pág. ' + c.page : 'leitura registrada') + (c.pages ? '<i>+' + c.pages + ' pág.</i>' : '') + (c.hit ? '<em>bateu a meta do dia</em>' : '') + '</div>'); }
+    else if (c.k === 'nt') body = card('🔒', 'Nova anotação', w, pg(c.x.p) + '<p>' + esc(c.x.t) + '</p>', 'nt:' + (e.notes || []).indexOf(c.x));
+    else if (c.k === 'qt') body = card('❝', 'Novo trecho', w, pg(c.x.p) + '<p class="tl-q">' + esc(c.x.t) + '</p>', 'qt:' + (e.quotes || []).indexOf(c.x));
+    else if (c.k === 'dy') body = card(c.x.text ? '💬' : '✨', c.x.text ? 'Novo comentário' : 'Emoções', w, pg(c.page) + (c.x.text ? '<p>' + esc(c.x.text) + '</p>' : '') + (c.x.fe && c.x.fe.length ? '<div class="tl-fe">' + names(c.x.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : ''), 'dy:' + (e.diary || []).indexOf(c.x));
+    else if (c.k === 'start') { star = '<span class="cs-s big ev">✦</span>'; const d = c.d; body = card('🚀', 'Começou a ler', 'em ' + d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) + (c.at ? ' às ' + tlHM(c.at) : ''), ''); }
+    else if (c.k === 'due') { star = '<span class="cs-s ev">✦</span>'; body = card('⏳', 'Prazo definido', w, '<div class="cs-pg">ler até ' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje')) + '</div>'); }
+    return '<div class="cs-n" style="--x:' + x + 'px">' + star + body + '</div>';
+  }).join('');
+  const dayList = tlEvents(e), hit = dayList.filter((x) => x.ok).length, dueN = dayList.filter((x) => x.inDue && !x.off && x.per && x.d <= todayISO()).length;
+  return '<div class="tl">' + (e.dueAt ? '<div class="tl-sum"><span>⏳ Prazo: <b>' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje')) + '</b></span><span>★ meta batida em <b>' + hit + ' de ' + Math.max(dueN, hit) + '</b> ' + (Math.max(dueN, hit) === 1 ? 'dia' : 'dias') + '</span></div>' : '')
+    + '<div class="cs-flow"><span class="cs-sky"></span><svg class="cs-lines"></svg>' + html + '</div>'
+    + (!all && ev.length > show.length ? '<button type="button" class="tl-more">Ver tudo (' + ev.length + ')</button>' : '') + '</div>';
+}
+// linhas da constelação: ligam o centro de cada estrela ao da seguinte; refeitas quando o tamanho muda (editar um cartão, girar a tela)
+function csLines(tl) {
+  const f = tl && tl.querySelector('.cs-flow'), svg = f && f.querySelector('.cs-lines'); if (!svg) return;
+  const fr = f.getBoundingClientRect(), pts = [...f.querySelectorAll('.cs-s')].map((s) => { const r = s.getBoundingClientRect(); return [r.left - fr.left + r.width / 2, r.top - fr.top + r.height / 2]; });
+  svg.setAttribute('width', fr.width); svg.setAttribute('height', fr.height);
+  svg.innerHTML = pts.length > 1 ? '<polyline points="' + pts.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ') + '" fill="none" stroke="#b69cff" stroke-opacity=".55" stroke-width="1.4" stroke-linejoin="round"/>' : '';
+}
+{ const ed = $('#editor'); let ro = null;
+  new MutationObserver(() => { const tl = ed.querySelector('.ed-body > .tl'); if (!tl || tl._cs) return; tl._cs = 1; requestAnimationFrame(() => csLines(tl));
+    try { ro && ro.disconnect(); ro = new ResizeObserver(() => csLines(tl)); ro.observe(tl); } catch {} }).observe(ed, { childList: true, subtree: true }); }
+// --- a4_estatisticas_limpa.js ---
+// Estatísticas sem "Ajustar leituras" e sem "Leituras por mês" (Bia, 18/11): o ajuste mora no Histórico de leituras
+// e as Leituras por mês ficam no perfil.
+{ const st = document.createElement('style'); st.textContent = '#lista.st-limpa > .fx-card,#lista.st-limpa .fx-card,#lista.st-limpa .ys{display:none!important}'; TR.append(st);
+  let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; const l = TR.querySelector('#lista'); if (l) l.classList.toggle('st-limpa', S.tab === 'progresso'); }, 30); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
