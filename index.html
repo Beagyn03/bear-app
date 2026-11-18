@@ -9887,6 +9887,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -15743,7 +15744,7 @@ const CS_X = [8, 24, 14, 28, 6, 20];
 const csWhen = (d, at) => { const t = todayISO(), y = new Date(Date.parse(t) - 864e5).toISOString().slice(0, 10); const dd = d === t ? 'Hoje' : d === y ? 'Ontem' : d.slice(8, 10) + '/' + d.slice(5, 7) + (d.slice(0, 4) !== t.slice(0, 4) ? '/' + d.slice(0, 4) : ''); return dd + (at ? ' às ' + tlHM(at) : ''); };
 function csEvents(e) {
   const days = new Map(tlEvents(e).map((x) => [x.d, x])), ev = [], d10 = (x) => String(x || '').slice(0, 10);
-  (e.readLog || []).forEach((l) => { if (l && l.date) ev.push({ k: 'rl', d: d10(l.date), at: l.at || null, pages: Number(l.pages) || 0, page: Number(l.page) || 0 }); });
+  (e.readLog || []).forEach((l, i) => { if (l && l.date) ev.push({ k: 'rl', d: d10(l.date), at: l.at && d10(l.at) === d10(l.date) ? l.at : null, pages: Number(l.pages) || 0, ix: i }); });
   (e.diary || []).forEach((x) => { if (x && x.d) ev.push({ k: 'dy', d: d10(x.d), at: x.at || null, x, page: Number(x.page) || 0 }); });
   (e.quotes || []).forEach((x) => { if (x && x.at) ev.push({ k: 'qt', d: d10(x.at), at: String(x.at).length > 10 ? x.at : null, x }); });
   (e.notes || []).forEach((x) => { if (x && x.at) ev.push({ k: 'nt', d: d10(x.at), at: String(x.at).length > 10 ? x.at : null, x }); });
@@ -15753,7 +15754,10 @@ function csEvents(e) {
   const key = (c) => c.d + 'T' + (c.at ? new Date(c.at).toISOString().slice(11, 19) : c.k === 'start' ? '00:00:00' : c.k === 'due' ? '00:00:01' : '23:59:59');
   ev.sort((a, b) => key(a).localeCompare(key(b)));
   // leitura: página em que parou e se bateu a meta do dia (somando o que já tinha lido no dia)
-  const acc = new Map(); ev.forEach((c) => { if (c.k !== 'rl') return; const dy = days.get(c.d) || {}; const a = (acc.get(c.d) || 0) + c.pages; acc.set(c.d, a); c.ok = !!(dy.per && a >= dy.per); c.hit = c.ok && a - c.pages < dy.per; if (!c.page && !c.at && dy.end) c.page = dy.end; });
+  // página de cada registro: soma, na ordem, o que foi lido; a última bate com a página atual do livro
+  const now = (() => { try { return readingInfo(e).now || 0; } catch { return 0; } })(), sum = ev.reduce((a, c) => a + (c.k === 'rl' ? c.pages : 0), 0);
+  let cum = Math.max(0, now - sum);
+  const acc = new Map(); ev.forEach((c) => { if (c.k !== 'rl') return; cum += c.pages; c.page = Math.max(0, cum); const dy = days.get(c.d) || {}; const a = (acc.get(c.d) || 0) + c.pages; acc.set(c.d, a); c.ok = !!(dy.per && a >= dy.per); c.hit = c.ok && a - c.pages < dy.per; });
   return ev.reverse();
 }
 function tlHTML2(e, all) {
@@ -15766,7 +15770,7 @@ function tlHTML2(e, all) {
   const html = show.map((c, i) => {
     const w = csWhen(c.d, c.at), x = CS_X[i % CS_X.length];
     let star = '<span class="cs-s">✦</span>', body = '';
-    if (c.k === 'rl') { star = '<span class="cs-s big' + (c.ok ? ' ok' : '') + '">★</span>'; body = card('📖', 'Leitura atualizada', w, '<div class="cs-pg">' + (c.page ? 'pág. ' + c.page : 'leitura registrada') + (c.pages ? '<i>+' + c.pages + ' pág.</i>' : '') + (c.hit ? '<em>bateu a meta do dia</em>' : '') + '</div>'); }
+    if (c.k === 'rl') { star = '<span class="cs-s big' + (c.ok ? ' ok' : '') + '">★</span>'; body = card('📖', 'Leitura atualizada', w, '<div class="cs-pg">' + (c.page ? 'pág. ' + c.page : 'leitura registrada') + (c.pages ? '<i>' + (c.pages > 0 ? '+' : '') + c.pages + ' pág.</i>' : '') + (c.hit ? '<em>bateu a meta do dia</em>' : '') + '</div>', 'rl:' + c.ix); }
     else if (c.k === 'nt') body = card('🔒', 'Nova anotação', w, pg(c.x.p) + '<p>' + esc(c.x.t) + '</p>', 'nt:' + (e.notes || []).indexOf(c.x));
     else if (c.k === 'qt') body = card('❝', 'Novo trecho', w, pg(c.x.p) + '<p class="tl-q">' + esc(c.x.t) + '</p>', 'qt:' + (e.quotes || []).indexOf(c.x));
     else if (c.k === 'dy') body = card(c.x.text ? '💬' : '✨', c.x.text ? 'Novo comentário' : 'Emoções', w, pg(c.page) + (c.x.text ? '<p>' + esc(c.x.text) + '</p>' : '') + (c.x.fe && c.x.fe.length ? '<div class="tl-fe">' + names(c.x.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : ''), 'dy:' + (e.diary || []).indexOf(c.x));
@@ -15789,6 +15793,33 @@ function csLines(tl) {
 { const ed = $('#editor'); let ro = null;
   new MutationObserver(() => { const tl = ed.querySelector('.ed-body > .tl'); if (!tl || tl._cs) return; tl._cs = 1; requestAnimationFrame(() => csLines(tl));
     try { ro && ro.disconnect(); ro = new ResizeObserver(() => csLines(tl)); ro.observe(tl); } catch {} }).observe(ed, { childList: true, subtree: true }); }
+// editar "Leitura atualizada" (Bia, 18/11): data e páginas lidas, ou apagar. A página atual do livro acompanha a correção
+// (soma ou tira a diferença), então os registros seguintes continuam batendo.
+{ const _te = tlEditClick; tlEditClick = function (ev, e, redraw) {
+  const b = ev.target.closest && ev.target.closest('.tl-edit, .tl-eb button'), c = b && b.closest('.tl-c');
+  if (!c || !String(c.dataset.ref || '').startsWith('rl:')) return _te.apply(this, arguments);
+  const ix = Number(c.dataset.ref.split(':')[1]), L = e.readLog || [], x = L[ix]; if (!x) return;
+  const fix = (diff) => { if (e.link) return; const tot = Number(e.totalPages) || Infinity; e.currentPage = Math.max(0, Math.min(tot, (Number(e.currentPage) || 0) + diff));
+    // o "pág. X de Y" do topo do diário acompanha
+    const ed = $('#editor'); if (ed) { const w = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) if (/pág\. \d+ de \d+/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/pág\. \d+ de/, 'pág. ' + e.currentPage + ' de'); } };
+  if (b.classList.contains('tl-edit')) {
+    c.querySelector(':scope > div').innerHTML = '<div class="tl-ct">Editar leitura</div><div class="tl-ed">'
+      + '<label>Dia <input type="date" data-k="d" style="width:9.5rem" max="' + todayISO() + '" value="' + esc(String(x.date).slice(0, 10)) + '"></label>'
+      + '<label>Páginas lidas <input type="number" data-k="p" inputmode="numeric" value="' + (Number(x.pages) || 0) + '"></label>'
+      + '<div class="tl-eb"><button type="button" class="rm" data-a="rm">Apagar</button><button type="button" data-a="cx">Cancelar</button><button type="button" class="sv" data-a="sv">Salvar</button></div></div>';
+    return;
+  }
+  const a = b.dataset.a;
+  if (a === 'cx') return redraw();
+  if (a === 'rm') { if (!b.dataset.ok) { b.dataset.ok = '1'; b.textContent = 'Toque de novo para apagar'; setTimeout(() => { if (b.isConnected) { delete b.dataset.ok; b.textContent = 'Apagar'; } }, 4000); return; }
+    L.splice(ix, 1); fix(-(Number(x.pages) || 0)); save(); toast('Leitura apagada'); return redraw(); }
+  if (a === 'sv') {
+    const d = (c.querySelector('[data-k=d]') || {}).value, p = Math.round(Number((c.querySelector('[data-k=p]') || {}).value));
+    if (!d || d > todayISO()) return toast('Escolha um dia até hoje'); if (!Number.isFinite(p) || p === 0) return toast('Digite as páginas lidas ou toque em Apagar');
+    const diff = p - (Number(x.pages) || 0); x.pages = p; delete x.page; if (String(x.date).slice(0, 10) !== d) { x.date = d; delete x.at; }
+    fix(diff); save(); toast('Leitura corrigida'); return redraw();
+  }
+}; }
 // --- a4_estatisticas_limpa.js ---
 // Estatísticas sem "Ajustar leituras" e sem "Leituras por mês" (Bia, 18/11): o ajuste mora no Histórico de leituras
 // e as Leituras por mês ficam no perfil.
