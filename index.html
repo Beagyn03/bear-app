@@ -9859,6 +9859,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11701,6 +11702,7 @@ TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closes
 .rd2 .rd-bt em{display:block;font-style:normal;font-size:.76rem;font-weight:800;color:var(--ink-2);margin-top:.35rem}
 .rd2 .rd-col .rd-body{padding:.15rem 0 0}.rd2 .rd-col .rd-tx{margin:.45rem 0 0}.rd2 .rd-col .rd-q{margin:.45rem 0 0}.rd2 .rd-col .rd-fe-out .rd-fe{margin:.35rem 0 0}
 .rd2 .rd-kc .rd-nota{display:flex;align-items:center;gap:.45rem;flex-direction:row-reverse;margin-top:.15rem}.rd2 .rd-kc .rd-nota .rd-mk{width:34px;height:54px}.rd2 .rd-kc .rd-nota .rd-mk b{font-size:.72rem}.rd2 .rd-kc .rd-nota .rd-mk-t{text-align:right}.rd2 .rd-kc .rd-nota .rd-mk-t b{font-size:.95rem}.rd2 .rd-kc .rd-nota .rd-mk-t small{font-size:.76rem;color:var(--acc);font-weight:800;white-space:nowrap}.rd2 .rd-kc:has(.rd-nota){align-items:flex-end}
+.rd2.has-nota .rd-kc{position:relative}.rd2.has-nota .rd-kc .rd-nota{position:absolute;top:100%;right:0;z-index:2}.rd2.has-nota .rd-bt{padding-right:128px;min-height:66px}.rd2.has-nota .rd-kc .rd-nota .rd-mk-t{max-width:92px}.rd2.has-nota .rd-kc .rd-nota .rd-mk-t b{white-space:nowrap}.rd2.has-nota .rd-kc .rd-nota .rd-mk-t small{white-space:normal;line-height:1.15}
 .rd-rehide{display:inline-flex;align-items:center;gap:.35rem;border:0;background:none;padding:.3rem 0 0;font:inherit;font-size:.76rem;font-weight:800;color:var(--ink-2);cursor:pointer}.rd-rehide .rd-eye{width:18px;height:18px;margin:0}
 .rd-day{font-size:.74rem;font-weight:900;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em;margin:.4rem .2rem -.2rem}
 .rd-fe-out .rd-fe{margin:.1rem 0 .3rem}
@@ -11765,7 +11767,7 @@ function rdCardHTML(it, i, opts = {}) {
   const fim = isRev && (it.readAt || it.postedAt) ? 'terminou em ' + String(it.readAt || it.postedAt).slice(8, 10) + '/' + String(it.readAt || it.postedAt).slice(5, 7) : '';
   const saved = rdIsSaved(it);
   const reHide = it.spoiler && !it.mine && S.rdOpen && S.rdOpen.has(it.type + it.id) ? '<button type="button" class="rd-rehide"><i class="rd-eye" aria-hidden="true"></i>Esconder o spoiler de novo</button>' : '';
-  return `<article class="rd-card rd2" data-i="${i}">
+  return `<article class="rd-card rd2${it.paws ? ' has-nota' : ''}" data-i="${i}">
     <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
       <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
       <span class="rd-kc"><span class="rd-tag${isRev || isAch || (isAct && it.act === 'FINISHED') ? ' rv' : ''}">${esc(kind)}</span>${pct != null ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${pct}%</span>` : ''}${it.paws ? `<span class="rd-kmk rd-nota">${rdMark(it.paws)}</span>` : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
