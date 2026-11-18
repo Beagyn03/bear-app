@@ -9895,6 +9895,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -16100,10 +16101,7 @@ function rtDraw(D, O, cover) {
   x.textAlign = 'center'; if (hd && O.show.user !== false) { x.fillStyle = T.sub; x.font = SANS(800, 30); x.fillText(hd, W / 2, y); y += post ? 70 : 84; }
   const head = (O.head ?? 'Leitura concluída').trim();
   if (head) { x.fillStyle = T.ink; x.font = DISP(false, post ? 70 : 84); rtWrap(x, head, W - 120, 2).forEach((l) => { x.fillText(l, W / 2, y); y += Math.round((post ? 76 : 92) * K); }); y += post ? -26 : -22; }
-  // a marca fica entre o título e a capa (no meio da imagem, longe do que o Instagram cobre); não dá para trocar nem tirar
-  { y += post ? 6 : 10; const lg = RT_LOGO[T.dark ? 'escuro' : 'claro'], lh = post ? 76 : 100;
-    if (lg && lg.complete && lg.naturalWidth) { const lw = lh * lg.naturalWidth / lg.naturalHeight; x.drawImage(lg, (W - lw) / 2, y, lw, lh); } else { x.fillStyle = T.sub; x.font = 'italic 700 ' + Math.round(lh * 0.6) + 'px Georgia, serif'; x.fillText('Livroverso', W / 2, y + lh * 0.7); }
-    y += lh + (post ? 34 : 46); }
+  y += post ? 40 : 56;
   // capa
   const cw = post ? 300 : 420, ch = cw * 1.5, cx = (W - cw) / 2;
   x.save(); x.shadowColor = O.show.nota && D.paws ? mg : 'rgba(0,0,0,.5)'; x.shadowBlur = 60; x.fillStyle = mg; x.fillRect(cx - 8, y - 8, cw + 16, ch + 16); x.restore();
@@ -16131,7 +16129,10 @@ function rtDraw(D, O, cover) {
   if (O.show.trecho && qt) { x.fillStyle = T.ink; x.font = DISP(true, post ? 36 : 42); const L = rtWrap(x, '“' + qt + '”', W - 200, post ? 3 : 5); L.forEach((l) => { x.fillText(l, W / 2, y); y += Math.round((post ? 48 : 56) * K); }); }
   // composição: fundo e conteúdo (encolhe se não couber)
   const F = document.createElement('canvas'); F.width = W; F.height = H; const fx = F.getContext('2d'); bgPaint(fx);
-  { const room = H - 90, ch2 = Math.min(c.height, Math.ceil(y + 30)); if (y > room) { const k = room / y; fx.drawImage(c, 0, 0, W, ch2, (W - W * k) / 2, 10, W * k, ch2 * k); } else fx.drawImage(c, 0, 0, W, ch2, 0, Math.round((room - y) / 2), W, ch2); }
+  { const room = H - 190, ch2 = Math.min(c.height, Math.ceil(y + 30)); if (y > room) { const k = room / y; fx.drawImage(c, 0, 0, W, ch2, (W - W * k) / 2, 10, W * k, ch2 * k); } else fx.drawImage(c, 0, 0, W, ch2, 0, Math.round((room - y) / 2), W, ch2); }
+  // a marca fica no rodapé, centralizada; não dá para trocar nem tirar
+  const lg = RT_LOGO[T.dark ? 'escuro' : 'claro']; if (lg && lg.complete && lg.naturalWidth) { const lh = 92, lw = lh * lg.naturalWidth / lg.naturalHeight; fx.drawImage(lg, (W - lw) / 2, H - lh - 46, lw, lh); }
+  else { fx.textAlign = 'center'; fx.fillStyle = T.sub; fx.font = 'italic 700 40px Georgia, serif'; fx.fillText('Livroverso', W / 2, H - 66); }
   return F;
 }
 function openRetro(e, auto) {
