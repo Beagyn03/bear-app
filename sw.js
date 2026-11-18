@@ -2,9 +2,12 @@
 // Guarda o app (index.html), os ícones e as imagens de img/ no celular: abre na hora e funciona sem internet.
 // A cada abertura confere em segundo plano se há versão nova do app; se houver, guarda a nova e avisa a página,
 // que mostra "Nova versão disponível · Atualizar" (um toque recarrega já com a versão nova).
-// API, capas de outros sites e o resto seguem direto para a rede, sem cache.
+// API e o resto seguem direto para a rede, sem cache. Capas de livros (Open Library, Google Livros…) ficam guardadas
+// numa gaveta própria (17/11): a primeira vez vem da internet, depois abre do celular, até sem internet (até 1.500 capas).
 const CACHE = 'livroverso-7'; // nome novo: renova ícones em cache (17/11)
 const SHELL = ['./', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+const CAPAS = 'livroverso-capas-1', CAPAS_MAX = 1500;
+const COVER_HOST = /(^|\.)covers\.openlibrary\.org$|(^|\.)archive\.org$|(^|\.)books\.google\.[a-z.]+$|googleusercontent\.com$|(^|\.)media-amazon\.com$|ssl-images-amazon\.com$/;
 const APP_KEY = () => new URL('./', self.registration.scope).href; // toda navegação usa a mesma chave (sem ?query nem #)
 
 self.addEventListener('install', (event) => {
@@ -16,7 +19,7 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
-    try { const keys = await caches.keys(); await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))); } catch (e) {}
+    try { const keys = await caches.keys(); await Promise.all(keys.filter((k) => k !== CACHE && k !== CAPAS).map((k) => caches.delete(k))); } catch (e) {}
     await self.clients.claim();
   })());
 });
@@ -83,7 +86,10 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return; // API, Google, Open Library, capas: rede direta
+  if (url.origin !== self.location.origin) { // API e sites externos: rede direta; capas de livro: gaveta de capas
+    if (COVER_HOST.test(url.hostname) && (req.destination === 'image' || req.destination === '')) event.respondWith(coverFetch(req));
+    return;
+  }
 
   const root = new URL('./', self.registration.scope).pathname;
   if (req.mode === 'navigate' && (url.pathname === root || url.pathname === root + 'index.html')) {
@@ -115,3 +121,20 @@ self.addEventListener('fetch', (event) => {
     return res;
   })());
 });
+
+// capa: do celular se já tiver; senão busca (com CORS, para poder guardar sem ocupar espaço demais) e guarda.
+// Se o site não deixar (sem CORS), entrega a imagem normal sem guardar.
+let capasN = 0;
+async function coverFetch(req) {
+  const c = await caches.open(CAPAS), key = req.url;
+  const hit = await c.match(key); if (hit) return hit;
+  try {
+    const res = await fetch(key, { mode: 'cors', credentials: 'omit' });
+    if (res.ok && /^image\//.test(res.headers.get('content-type') || '')) {
+      await c.put(key, res.clone());
+      if (++capasN % 25 === 0) { const ks = await c.keys(); if (ks.length > CAPAS_MAX) for (const k of ks.slice(0, ks.length - CAPAS_MAX)) await c.delete(k); }
+      return res;
+    }
+  } catch (e) {}
+  return fetch(req);
+}
