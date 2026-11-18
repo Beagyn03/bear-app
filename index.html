@@ -9871,6 +9871,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14977,7 +14978,7 @@ function tlEditClick(ev, e, redraw) {
   if (TL_BOOT) setTimeout(() => { try { const e = byId(TL_BOOT.id); if (e && e.status === 'LENDO' && $('#editor').hidden) { S.tlTabNext = TL_BOOT.tab; ssOpenUpdate(e); } } catch {} setTimeout(() => { booting = false; }, 800); }, 1800);
 }
 // --- 87_meta_inicio_livros.js ---
-// Meta do ano no Início (Bia, 17/11): embaixo da barra de progresso, as capas dos livros lidos no ano que contam para a meta,
+// Meta do ano no Início (Bia, 17/11; Editar meta no ••• do cartão): embaixo da barra de progresso, as capas dos livros lidos no ano que contam para a meta,
 // do mais recente para o mais antigo, e depois as vagas tracejadas que faltam.
 { const st = document.createElement('style'); st.textContent = `
 .ini-meta.im2{padding:.7rem .85rem .75rem}
@@ -14986,7 +14987,7 @@ function tlEditClick(ev, e, redraw) {
 .im2-row .cv{flex:none;width:42px!important;height:63px!important;border-radius:4px!important;background-size:cover!important;background-position:center!important;font-size:.38rem!important;box-shadow:0 2px 5px rgba(0,0,0,.18)}
 .im2-row .im2-v{flex:none;width:42px;height:63px;border-radius:4px;border:1.5px dashed var(--line);box-sizing:border-box;display:grid;place-items:center;font-size:.62rem;font-weight:900;color:var(--ink-2)}
 .ini-meta.im2 small b{color:var(--acc);font-size:inherit}
-.im2-ed{display:inline-block;margin-left:.5rem;font-size:.72rem;font-weight:800;color:var(--acc);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.ini-meta.im2{position:relative;padding-right:2.6rem!important}.im2-ed{position:absolute;top:.45rem;right:.5rem;width:32px;height:32px;display:grid;place-items:center;font-size:.95rem;font-weight:900;letter-spacing:1px;color:var(--ink-2);cursor:pointer;border-radius:50%}
 `; TR.append(st); }
 { let tm = 0; const paint = () => {
     const m = TR.querySelector('#ini-meta'); if (!m || m.classList.contains('im2')) return;
@@ -14996,8 +14997,8 @@ function tlEditClick(ev, e, redraw) {
     const left = Math.max(0, goal - read.length);
     m.classList.add('im2');
     const sm = m.querySelector('small'); if (sm) sm.innerHTML = read.length + ' de ' + goal + ' livros' + (left ? ' · faltam <b>' + left + '</b>' : ' · <b>meta batida</b>');
-    const tt = m.querySelector('b'); if (tt && !m.querySelector('.im2-ed')) { tt.insertAdjacentHTML('afterend', '<span class="im2-ed" role="button" tabindex="0">Editar meta</span>');
-      m.querySelector('.im2-ed').addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); setYearGoal(Number(y)); }); }
+    const tt = m.querySelector('b'); if (tt && !m.querySelector('.im2-ed')) { m.insertAdjacentHTML('beforeend', '<span class="im2-ed" role="button" tabindex="0" aria-label="Opções da meta">•••</span>');
+      m.querySelector('.im2-ed').addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); popMenu(ev.currentTarget, [{ label: 'Editar meta', fn: () => setYearGoal(Number(y)) }, { label: 'Ver a meta do ano', fn: () => openGoalPage() }]); }); }
     const row = document.createElement('div'); row.className = 'im2-row';
     row.innerHTML = read.map((e) => cvh(e.title, e.cover, '')).join('') + Array.from({ length: Math.min(left, 12) }, (_, i) => '<span class="im2-v">' + (read.length + i + 1) + '</span>').join('');
     m.append(row); try { paintCv(row); } catch {}
