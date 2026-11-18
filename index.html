@@ -9889,6 +9889,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14946,7 +14947,7 @@ function tlHTML(e, all) {
       if (c.ev) { html += '<div class="tl-d tl-evd"><span class="tl-st ev">✦</span><div><div class="tl-eh">' + (c.at ? '<b>' + tlHM(c.at) + '</b>' : '') + '<span class="tl-evt">' + (c.ev === 'start' ? '🚀 Começou a ler' : '⏳ Prazo definido: ' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje'))) + '</span></div></div></div>'; return; }
       const st = c.ok ? '<span class="tl-st ok">★</span>' : c.pages ? '<span class="tl-st mid" style="opacity:' + (0.45 + 0.55 * c.fill).toFixed(2) + '">★</span>' : '<span class="tl-st ev">✦</span>';
       const head = '<div class="tl-eh"><b>' + (c.at ? tlHM(c.at) : 'Neste dia') + '</b>' + (c.page ? '<span>pág. ' + c.page + '</span>' : '') + (c.pages ? '<i>+' + c.pages + ' pág.</i>' : '') + (c.hit ? '<em>bateu a meta</em>' : '') + '</div>';
-      const its = c.rs.filter((r) => r.k !== 'rl').map((r) => r.k === 'nt' ? card('🔒', 'Nota' + (r.x.p ? ' <span>pág. ' + r.x.p + '</span>' : ''), '<p>' + esc(r.x.t) + '</p>', 'nt:' + (e.notes || []).indexOf(r.x)) : r.k === 'qt' ? card('❝', 'Trecho' + (r.x.p ? ' <span>pág. ' + r.x.p + '</span>' : ''), '<p class="tl-q">' + esc(r.x.t) + '</p>', 'qt:' + (e.quotes || []).indexOf(r.x))
+      const its = c.rs.filter((r) => r.k !== 'rl').map((r) => r.k === 'nt' ? card('🔒', 'Anotação' + (r.x.p ? ' <span>pág. ' + r.x.p + '</span>' : ''), '<p>' + esc(r.x.t) + '</p>', 'nt:' + (e.notes || []).indexOf(r.x)) : r.k === 'qt' ? card('❝', 'Trecho' + (r.x.p ? ' <span>pág. ' + r.x.p + '</span>' : ''), '<p class="tl-q">' + esc(r.x.t) + '</p>', 'qt:' + (e.quotes || []).indexOf(r.x))
         : card(r.x.text ? '💬' : '✨', r.x.text ? 'Comentário' : 'Emoções', (r.x.text ? '<p>' + esc(r.x.text) + '</p>' : '') + (r.x.fe && r.x.fe.length ? '<div class="tl-fe">' + names(r.x.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : ''), 'dy:' + (e.diary || []).indexOf(r.x))).join('');
       html += '<div class="tl-d' + (c.ok ? ' ok-ok' : '') + '">' + st + '<div>' + head + its + '</div></div>';
     });
@@ -14996,7 +14997,7 @@ function tlEditClick(ev, e, redraw) {
   if (b.classList.contains('tl-edit')) {
     const box = c.querySelector(':scope > div'); const N = { fe: [...(x.fe || [])] };
     const feH = () => '<div class="tl-fe ed">' + QT_PICK.map(([kk, n]) => '<span data-f="' + kk + '" class="' + (N.fe.includes(kk) ? 'on' : '') + '">' + esc(n) + '</span>').join('') + '</div>';
-    box.innerHTML = '<div class="tl-ct">' + (k === 'qt' ? 'Editar trecho' : k === 'nt' ? 'Editar nota' : 'Editar comentário') + '</div><div class="tl-ed"><textarea maxlength="' + (k === 'qt' ? 600 : k === 'nt' ? 2000 : 280) + '">' + esc(k === 'qt' || k === 'nt' ? x.t || '' : x.text || '') + '</textarea>'
+    box.innerHTML = '<div class="tl-ct">' + (k === 'qt' ? 'Editar trecho' : k === 'nt' ? 'Editar anotação' : 'Editar comentário') + '</div><div class="tl-ed"><textarea maxlength="' + (k === 'qt' ? 600 : k === 'nt' ? 2000 : 280) + '">' + esc(k === 'qt' || k === 'nt' ? x.t || '' : x.text || '') + '</textarea>'
       + (k === 'qt' || k === 'nt' ? '<label>Página <input type="number" min="1" inputmode="numeric" value="' + (x.p || '') + '"></label>' : feH())
       + '<div class="tl-eb"><button type="button" class="rm" data-a="rm">Apagar</button><button type="button" data-a="cx">Cancelar</button><button type="button" class="sv" data-a="sv">Salvar</button></div></div>';
     c._N = N; return;
@@ -15006,7 +15007,7 @@ function tlEditClick(ev, e, redraw) {
   if (a === 'cx') return redraw();
   if (a === 'rm') { if (!b.dataset.ok) { b.dataset.ok = '1'; b.textContent = 'Toque de novo para apagar'; setTimeout(() => { if (b.isConnected) { delete b.dataset.ok; b.textContent = 'Apagar'; } }, 4000); return; } arr.splice(Number(ix), 1); if (k === 'nt') { const L = e.notes || []; if (L.length) e.note = L[L.length - 1].t; else delete e.note; } save(); toast('Apagado'); return redraw(); }
   if (a === 'sv') { const t = (c.querySelector('textarea') || {}).value || '';
-    if (k === 'qt' || k === 'nt') { if (!t.trim()) return toast(k === 'nt' ? 'Escreva a nota ou toque em Apagar' : 'Escreva o trecho ou toque em Apagar'); x.t = t.trim(); const p = Number((c.querySelector('.tl-ed input') || {}).value) || 0; if (p > 0) x.p = Math.round(p); else delete x.p; }
+    if (k === 'qt' || k === 'nt') { if (!t.trim()) return toast(k === 'nt' ? 'Escreva a anotação ou toque em Apagar' : 'Escreva o trecho ou toque em Apagar'); x.t = t.trim(); const p = Number((c.querySelector('.tl-ed input') || {}).value) || 0; if (p > 0) x.p = Math.round(p); else delete x.p; }
     else { const N = c._N || { fe: x.fe || [] }; if (!t.trim() && !N.fe.length) return toast('Escreva algo, escolha uma emoção ou toque em Apagar'); x.text = t.trim(); x.fe = N.fe; }
     if (k === 'nt') { const L = e.notes || []; if (L.length) e.note = L[L.length - 1].t; } save(); toast('Salvo'); return redraw(); }
 }
@@ -15561,13 +15562,13 @@ function addNote(e, t, p) {
     const acts = ed.querySelector('.lz-acts'); if (ed.hidden || !acts) return;
     const b = acts.querySelector('[data-p=nota]'); if (!b || b.dataset.nt) return; b.dataset.nt = '1';
     const e = S.tlE || ((() => { try { return reading().e; } catch { return null; } })()); if (!e) return;
-    const n = notesOf(e).length; b.innerHTML = '<span>🔒</span>Nota<small>' + (n ? n + (n > 1 ? ' notas' : ' nota') : 'só você vê') + '</small>';
+    const n = notesOf(e).length; b.innerHTML = '<span>🔒</span>Anotação<small>' + (n ? n + (n > 1 ? ' anotações' : ' anotação') : 'só você vê') + '</small>';
     const pane = [...ed.querySelectorAll('.lz-pane')].find((p) => p.querySelector('textarea[placeholder*="anotação"], textarea[placeholder*="nota"]')); if (!pane) return;
     const rng = ed.querySelector('#up-r'), pg = (rng && rng.value) || '';
-    pane.innerHTML = '<textarea maxlength="2000" placeholder="Uma nota só sua sobre esta parte do livro"></textarea><div class="lz-row"><label>pág. <input type="number" min="1" class="lz-pg" value="' + esc(String(pg)) + '"></label><button type="button" class="lz-ok">Salvar nota</button></div>';
+    pane.innerHTML = '<textarea maxlength="2000" placeholder="Uma anotação só sua sobre esta parte do livro"></textarea><div class="lz-row"><label>pág. <input type="number" min="1" class="lz-pg" value="' + esc(String(pg)) + '"></label><button type="button" class="lz-ok">Salvar anotação</button></div>';
     const ta = pane.querySelector('textarea'), pgi = pane.querySelector('.lz-pg');
-    const doSave = () => { if (!addNote(e, ta.value, pgi.value)) return false; ta.value = ''; const k = notesOf(e).length; b.querySelector('small').textContent = k + (k > 1 ? ' notas' : ' nota'); toast('Nota salva'); try { ed.querySelector('.tl')?.remove(); TL_PAINT(); } catch {} return true; };
-    pane.querySelector('.lz-ok').addEventListener('click', () => { if (!doSave()) toast('Escreva a nota'); });
+    const doSave = () => { if (!addNote(e, ta.value, pgi.value)) return false; ta.value = ''; const k = notesOf(e).length; b.querySelector('small').textContent = k + (k > 1 ? ' anotações' : ' anotação'); toast('Anotação salva'); try { ed.querySelector('.tl')?.remove(); TL_PAINT(); } catch {} return true; };
+    pane.querySelector('.lz-ok').addEventListener('click', () => { if (!doSave()) toast('Escreva a anotação'); });
     // tocar em Salvar/Terminei com a nota escrita também guarda a nota
     ed.querySelectorAll('#up-save, #up-fin').forEach((x) => x.addEventListener('click', () => { if (ta.value.trim()) doSave(); }, true));
   };
@@ -15592,7 +15593,7 @@ function qnPaint() {
   tb.textContent = 'Trechos e anotações'; try { syncTopTitle(); } catch {}
   let seg = body.querySelector('.qn-seg'); if (!seg) { seg = document.createElement('div'); seg.className = 'qn-seg'; top.after(seg); }
   const nT = lib().reduce((a, e) => a + (e.quotes || []).length, 0), nN = lib().reduce((a, e) => a + notesOf(e).length, 0);
-  seg.innerHTML = '<button type="button" data-t="trechos" class="' + (S.qnTab !== 'notas' ? 'on' : '') + '">Trechos' + (nT ? ' · ' + nT : '') + '</button><button type="button" data-t="notas" class="' + (S.qnTab === 'notas' ? 'on' : '') + '">Notas' + (nN ? ' · ' + nN : '') + '</button>';
+  seg.innerHTML = '<button type="button" data-t="trechos" class="' + (S.qnTab !== 'notas' ? 'on' : '') + '">Trechos' + (nT ? ' · ' + nT : '') + '</button><button type="button" data-t="notas" class="' + (S.qnTab === 'notas' ? 'on' : '') + '">Anotações' + (nN ? ' · ' + nN : '') + '</button>';
   seg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { S.qnTab = b.dataset.t; qnPaint(); }));
   v.classList.toggle('qn-notas', S.qnTab === 'notas');
   body.querySelector('.qn-notes')?.remove();
@@ -15600,8 +15601,8 @@ function qnPaint() {
   const all = lib().flatMap((e) => notesOf(e).map((x) => ({ e, x }))).sort((a, b) => String(b.x.at || '').localeCompare(String(a.x.at || '')));
   const box = document.createElement('div'); box.className = 'qn-notes';
   const grp = []; all.forEach((r) => { let g = grp.find((y) => y.e === r.e); if (!g) { g = { e: r.e, its: [] }; grp.push(g); } g.its.push(r.x); });
-  box.innerHTML = all.length ? grp.map((g) => '<div class="qt-g"><button type="button" class="qt-gh qn-gh" data-book="' + esc(g.e.id) + '">' + cvh(g.e.title, g.e.cover, '') + '<span><b>' + esc(g.e.title) + '</b><small>' + esc(g.e.author || '') + (g.e.author ? ' · ' : '') + g.its.length + (g.its.length > 1 ? ' notas' : ' nota') + '</small></span></button>' + g.its.map((x) => '<button type="button" class="qn-it qn-in" data-id="' + esc(g.e.id) + '" data-nid="' + esc(x.id || '') + '"><p>' + esc(x.t) + '</p><small>🔒 ' + (x.p ? 'pág. ' + x.p : 'sem página') + (x.at ? ' · ' + String(x.at).slice(8, 10) + '/' + String(x.at).slice(5, 7) : '') + '</small></button>').join('') + '</div>').join('')
-    : '<p class="sl-empty">Suas notas aparecem aqui. Escreva no Diário de leitura, no botão Nota: só você vê.</p>';
+  box.innerHTML = all.length ? grp.map((g) => '<div class="qt-g"><button type="button" class="qt-gh qn-gh" data-book="' + esc(g.e.id) + '">' + cvh(g.e.title, g.e.cover, '') + '<span><b>' + esc(g.e.title) + '</b><small>' + esc(g.e.author || '') + (g.e.author ? ' · ' : '') + g.its.length + (g.its.length > 1 ? ' anotações' : ' anotação') + '</small></span></button>' + g.its.map((x) => '<button type="button" class="qn-it qn-in" data-id="' + esc(g.e.id) + '" data-nid="' + esc(x.id || '') + '"><p>' + esc(x.t) + '</p><small>🔒 ' + (x.p ? 'pág. ' + x.p : 'sem página') + (x.at ? ' · ' + String(x.at).slice(8, 10) + '/' + String(x.at).slice(5, 7) : '') + '</small></button>').join('') + '</div>').join('')
+    : '<p class="sl-empty">Suas anotações aparecem aqui. Escreva no Diário de leitura, no botão Anotação: só você vê.</p>';
   seg.after(box); try { paintCv(box); } catch {}
   box.querySelectorAll('.qn-gh').forEach((b) => b.addEventListener('click', () => { const e = byId(b.dataset.book); if (e) openBookPage(e); }));
 }
@@ -15618,11 +15619,11 @@ function qnPaint() {
   document.head.append(st); TR.append(st.cloneNode(true)); }
 function editNoteSheet(e, x, after) {
   const w = document.createElement('div'); w.className = 'sheet nt-sh';
-  w.innerHTML = '<div class="box"><form class="form"><h3>Editar nota</h3><textarea maxlength="2000"></textarea><label>Página <input type="number" min="1" inputmode="numeric"></label><button type="submit" class="primary">Salvar</button><button type="button" class="cancel">Cancelar</button></form></div>';
+  w.innerHTML = '<div class="box"><form class="form"><h3>Editar anotação</h3><textarea maxlength="2000"></textarea><label>Página <input type="number" min="1" inputmode="numeric"></label><button type="submit" class="primary">Salvar</button><button type="button" class="cancel">Cancelar</button></form></div>';
   const f = w.querySelector('form'), ta = f.querySelector('textarea'), pg = f.querySelector('input'); ta.value = x.t || ''; pg.value = x.p || '';
   const close = () => w.remove(); w.addEventListener('click', (ev) => { if (ev.target === w) close(); }); f.querySelector('.cancel').addEventListener('click', close);
-  f.addEventListener('submit', (ev) => { ev.preventDefault(); const t = ta.value.trim(); if (!t) return toast('Escreva a nota'); x.t = t; const p = Number(pg.value) || 0; if (p > 0) x.p = Math.round(p); else delete x.p;
-    const L = notesOf(e); if (L.length) e.note = L[L.length - 1].t; save(); close(); toast('Nota salva'); after && after(); });
+  f.addEventListener('submit', (ev) => { ev.preventDefault(); const t = ta.value.trim(); if (!t) return toast('Escreva a anotação'); x.t = t; const p = Number(pg.value) || 0; if (p > 0) x.p = Math.round(p); else delete x.p;
+    const L = notesOf(e); if (L.length) e.note = L[L.length - 1].t; save(); close(); toast('Anotação salva'); after && after(); });
   document.body.append(w); setTimeout(() => ta.focus(), 50);
 }
 TR.addEventListener('click', (ev) => {
@@ -15632,10 +15633,10 @@ TR.addEventListener('click', (ev) => {
   const x = mine.x, redo = () => qnPaint();
   popMenu(b, [
     { label: 'Editar', fn: () => editNoteSheet(e, x, redo) },
-    { label: 'Copiar', fn: () => { try { navigator.clipboard.writeText(x.t); toast('Nota copiada'); } catch { toast('Não consegui copiar'); } } },
+    { label: 'Copiar', fn: () => { try { navigator.clipboard.writeText(x.t); toast('Anotação copiada'); } catch { toast('Não consegui copiar'); } } },
     { label: 'Ver o livro', fn: () => openBookPage(e) },
     0,
-    { label: 'Apagar nota', danger: true, fn: () => sheetList('Apagar esta nota?', [{ label: 'Apagar', danger: true, fn: () => { e.notes = notesOf(e).filter((y) => y !== x); const L = e.notes; if (L.length) e.note = L[L.length - 1].t; else delete e.note; save(); toast('Nota apagada'); redo(); } }]) },
+    { label: 'Apagar anotação', danger: true, fn: () => sheetList('Apagar esta anotação?', [{ label: 'Apagar', danger: true, fn: () => { e.notes = notesOf(e).filter((y) => y !== x); const L = e.notes; if (L.length) e.note = L[L.length - 1].t; else delete e.note; save(); toast('Anotação apagada'); redo(); } }]) },
   ]);
 }, true);
 
@@ -15751,8 +15752,9 @@ function csEvents(e) {
   (e.notes || []).forEach((x) => { if (x && x.at) ev.push({ k: 'nt', d: d10(x.at), at: String(x.at).length > 10 ? x.at : null, x }); });
   if (e.startedAt) ev.push({ k: 'start', d: d10(e.startedAt), at: e.startedTs && d10(e.startedTs) === d10(e.startedAt) ? e.startedTs : null });
   if (e.dueSince && e.dueAt) ev.push({ k: 'due', d: d10(e.dueSince), at: e.dueSetAt && d10(e.dueSetAt) === d10(e.dueSince) ? e.dueSetAt : null });
-  // ordem dentro do dia: sem hora, o início fica no começo e o resto no fim
-  const key = (c) => c.d + 'T' + (c.at ? new Date(c.at).toISOString().slice(11, 19) : c.k === 'start' ? '00:00:00' : c.k === 'due' ? '00:00:01' : '23:59:59');
+  if (e.status === 'LIDO' && e.finishedAt) ev.push({ k: 'fin', d: d10(e.finishedAt), at: null });
+  // ordem dentro do dia: sem hora, o início fica no começo e o resto no fim; a conclusão é sempre a última
+  const key = (c) => c.d + 'T' + (c.k === 'fin' ? '99' : c.at ? new Date(c.at).toISOString().slice(11, 19) : c.k === 'start' ? '00:00:00' : c.k === 'due' ? '00:00:01' : '23:59:59');
   ev.sort((a, b) => key(a).localeCompare(key(b)));
   // leitura: página em que parou e se bateu a meta do dia (somando o que já tinha lido no dia)
   // página de cada registro: soma, na ordem, o que foi lido; a última bate com a página atual do livro
@@ -15776,6 +15778,10 @@ function tlHTML2(e, all) {
     else if (c.k === 'qt') body = card('❝', 'Novo trecho', w, pg(c.x.p) + '<p class="tl-q">' + esc(c.x.t) + '</p>', 'qt:' + (e.quotes || []).indexOf(c.x));
     else if (c.k === 'dy') body = card(c.x.text ? '💬' : '✨', c.x.text ? 'Novo comentário' : 'Emoções', w, pg(c.page) + (c.x.text ? '<p>' + esc(c.x.text) + '</p>' : '') + (c.x.fe && c.x.fe.length ? '<div class="tl-fe">' + names(c.x.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : ''), 'dy:' + (e.diary || []).indexOf(c.x));
     else if (c.k === 'start') { star = '<span class="cs-s big ev">✦</span>'; const d = c.d; body = card('🚀', 'Começou a ler', 'em ' + d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) + (c.at ? ' às ' + tlHM(c.at) : ''), ''); }
+    else if (c.k === 'fin') { star = '<span class="cs-s big ok">★</span>'; let D = null; try { D = retroData(e); } catch {}
+      body = '<div class="tl-c cs-fin"><span class="tl-ic">🏁</span><div><div class="tl-ct">Leitura concluída<span class="cs-w">· ' + w + '</span></div>'
+        + (D ? '<div class="cs-mini"><span>' + RT_DIA(D.days) + '</span>' + (D.pages ? '<span>' + D.pages + ' pág.</span>' : '') + (D.paws ? '<span>nota ' + String(D.paws).replace('.', ',') + '</span>' : '') + '</div>' : '')
+        + '<button type="button" class="cs-retro" data-id="' + esc(e.id) + '">✦ Ver sua retrospectiva</button></div></div>'; }
     else if (c.k === 'due') { star = '<span class="cs-s ev">✦</span>'; body = card('⏳', 'Prazo definido', w, '<div class="cs-pg">ler até ' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje')) + '</div>'); }
     return '<div class="cs-n" style="--x:' + x + 'px">' + star + body + '</div>';
   }).join('');
@@ -15826,6 +15832,244 @@ function csLines(tl) {
 // e as Leituras por mês ficam no perfil.
 { const st = document.createElement('style'); st.textContent = '#lista.st-limpa > .fx-card,#lista.st-limpa .fx-card,#lista.st-limpa .ys{display:none!important}'; TR.append(st);
   let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; const l = TR.querySelector('#lista'); if (l) l.classList.toggle('st-limpa', S.tab === 'progresso'); }, 30); }).observe(TR, { childList: true, subtree: true }); }
+// --- a5_lido_mais.js ---
+// Tela de Lido (Bia, 18/11): "Mais sobre a leitura", fechado por padrão, com personagem favorito, personagem que amou odiar,
+// como o livro te deixou (até 3 emoções), trecho favorito (escolhe dos salvos ou escreve outro) e a ressaca literária.
+// Tudo opcional; vai em e.fin e alimenta a retrospectiva. Ao marcar como lido, a retrospectiva abre sozinha.
+{ const st = document.createElement('style'); st.textContent = `
+#editor .ss-more{margin:.2rem 0 .9rem;border:1.5px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+#editor .ss-more > summary{list-style:none;display:flex;align-items:center;gap:.5rem;padding:.7rem .85rem;cursor:pointer;font-weight:900;font-size:.9rem;color:var(--ink)}
+#editor .ss-more > summary::-webkit-details-marker{display:none}
+#editor .ss-more > summary small{display:block;font-weight:700;font-size:.72rem;color:var(--ink-2)}
+#editor .ss-more > summary i{margin-left:auto;font-style:normal;color:var(--acc);transition:transform .2s}#editor .ss-more[open] > summary i{transform:rotate(90deg)}
+#editor .ss-mb{padding:0 .85rem .85rem;display:grid;gap:.75rem}
+#editor .ss-mb .ss-lb{margin:0}
+#editor .ss-pp{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+#editor .ss-pp label{display:grid;gap:.2rem;font-size:.74rem;font-weight:800;color:var(--ink-2)}
+#editor .ss-pp input,#editor .ss-qn textarea,#editor .ss-qn input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;font-size:.86rem;padding:.5rem .6rem}
+#editor .ss-fe{display:flex;flex-wrap:wrap;gap:.35rem}
+#editor .ss-fe button{border:1.5px solid var(--line)!important;background:var(--bg)!important;color:var(--ink)!important;border-radius:99px!important;padding:.3rem .65rem!important;font:inherit!important;font-size:.76rem!important;font-weight:800!important;min-height:0!important;height:auto!important;box-shadow:none!important}
+#editor .ss-fe button.on{background:var(--acc)!important;border-color:var(--acc)!important;color:var(--on-acc,#fff)!important}
+#editor .ss-qs{display:grid;gap:.35rem}
+#editor .ss-qs button{display:block;text-align:left;border:1.5px solid var(--line)!important;background:var(--bg)!important;color:var(--ink)!important;border-radius:12px!important;padding:.5rem .65rem!important;font:inherit!important;font-style:italic!important;font-size:.82rem!important;line-height:1.35!important;min-height:0!important;height:auto!important;box-shadow:none!important}
+#editor .ss-qs button small{display:block;font-style:normal;font-size:.68rem;font-weight:800;color:var(--ink-2);margin-top:.15rem}
+#editor .ss-qs button.on{border-color:var(--acc)!important;background:color-mix(in srgb,var(--acc) 10%,var(--bg))!important}
+#editor .ss-qn{display:grid;grid-template-columns:1fr 5.5rem;gap:.4rem}#editor .ss-qn textarea{min-height:3.2rem;resize:vertical}
+#editor .ss-h{font-size:.74rem;font-weight:800;color:var(--ink-2);margin-bottom:.3rem}
+`; TR.append(st); }
+{ const ed = $('#editor'); let tm = 0;
+  const mount = () => {
+    const go = ed.querySelector('.ss-go[data-a="lido"]'); if (ed.hidden || !go || ed.querySelector('.ss-more')) return;
+    const e = S.tlE; if (!e) return; const F = e.fin || {}, N = { fe: [...(F.fe || [])], q: F.q ? { ...F.q } : null };
+    const qs = (e.quotes || []).filter((x) => x && x.t);
+    const fill = !!(F.fav || F.hate || (F.fe || []).length || F.q || (reviewOfLib(e) || {}).ressaca);
+    const d = document.createElement('details'); d.className = 'ss-more'; if (fill) d.open = true;
+    d.innerHTML = '<summary><span>Mais sobre a leitura<small>personagens, emoções, trecho favorito e ressaca</small></span><i>›</i></summary><div class="ss-mb">'
+      + '<div class="ss-pp"><label>Personagem favorito<input type="text" class="ss-fav" maxlength="60" placeholder="Quem ganhou seu coração" value="' + esc(F.fav || '') + '"></label>'
+      + '<label>Personagem que amei odiar<input type="text" class="ss-hate" maxlength="60" placeholder="Quem você não perdoa" value="' + esc(F.hate || '') + '"></label></div>'
+      + '<div><div class="ss-h">Como o livro te deixou <span style="font-weight:700">(até 3)</span></div><div class="ss-fe">' + QT_PICK.map(([k, n]) => '<button type="button" data-f="' + k + '" class="' + (N.fe.includes(k) ? 'on' : '') + '">' + esc(n) + '</button>').join('') + '</div></div>'
+      + '<div><div class="ss-h">Trecho favorito</div><div class="ss-qs">' + qs.slice(-6).reverse().map((x) => '<button type="button" data-t="' + esc(x.t) + '" data-p="' + (x.p || '') + '" class="' + (N.q && N.q.t === x.t ? 'on' : '') + '">“' + esc(x.t.length > 140 ? x.t.slice(0, 140) + '…' : x.t) + '”' + (x.p ? '<small>pág. ' + x.p + '</small>' : '') + '</button>').join('') + '</div>'
+      + '<div class="ss-qn" style="margin-top:.4rem"><textarea class="ss-qt" maxlength="600" placeholder="' + (qs.length ? 'Ou escreva outro trecho' : 'Uma frase que você levou com você') + '">' + esc(N.q && !qs.some((x) => x.t === N.q.t) ? N.q.t : '') + '</textarea><input type="number" class="ss-qp" min="1" inputmode="numeric" placeholder="pág."></div></div>'
+      + '</div>';
+    go.before(d);
+    // a ressaca entra no bloco
+    const mb = d.querySelector('.ss-mb'), rl = [...ed.querySelectorAll('.ss-p > .ss-lb')].find((x) => /Ressaca/.test(x.textContent)), rs = ed.querySelector('.ss-p > .ss-rs');
+    if (rl && rs) { const w = document.createElement('div'); w.append(rl, rs); mb.append(w); }
+    d.querySelectorAll('.ss-fe button').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.f; if (N.fe.includes(k)) N.fe = N.fe.filter((y) => y !== k); else if (N.fe.length < 3) N.fe.push(k); else return toast('Até 3 emoções'); b.classList.toggle('on', N.fe.includes(k)); }));
+    d.querySelectorAll('.ss-qs button').forEach((b) => b.addEventListener('click', () => { const on = !b.classList.contains('on'); d.querySelectorAll('.ss-qs button').forEach((x) => x.classList.remove('on')); b.classList.toggle('on', on); N.q = on ? { t: b.dataset.t, p: Number(b.dataset.p) || undefined } : null; if (on) d.querySelector('.ss-qt').value = ''; }));
+    d.querySelector('.ss-qt').addEventListener('input', () => d.querySelectorAll('.ss-qs button').forEach((x) => x.classList.remove('on')));
+    // ao marcar como lido: guarda tudo antes da tela fechar e abre a retrospectiva
+    go.addEventListener('click', () => {
+      S.rtNoRate = Date.now();
+      const fav = d.querySelector('.ss-fav').value.trim(), hate = d.querySelector('.ss-hate').value.trim(), qt = d.querySelector('.ss-qt').value.trim(), qp = Number(d.querySelector('.ss-qp').value) || undefined;
+      let q = N.q; if (qt) { q = { t: qt.slice(0, 600), p: qp }; if (!(e.quotes || []).some((x) => x.t === q.t)) e.quotes = [...(e.quotes || []), { t: q.t, p: qp, at: new Date().toISOString() }]; }
+      const fin = { ...(e.fin || {}) }; fav ? fin.fav = fav : delete fin.fav; hate ? fin.hate = hate : delete fin.hate; N.fe.length ? fin.fe = N.fe : delete fin.fe; q ? fin.q = q : delete fin.q;
+      if (Object.keys(fin).length) e.fin = fin; else delete e.fin; save();
+      // espera o que abrir por cima (conquista nova, avaliação) ser fechado; desiste depois de 3 minutos
+      const t0 = Date.now(), tick = () => { try { if (e.status !== 'LIDO') return; const busy = !$('#editor').hidden || document.querySelector('.sheet') || TR.querySelector('.sheet');
+        if (!busy) return openRetro(e, true); if (Date.now() - t0 < 180000) setTimeout(tick, 400); } catch (err) { console.warn('retro', err); } };
+      setTimeout(tick, 450);
+    }, true);
+  };
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; mount(); }, 40); }).observe(ed, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+}
+// quem marca como lido pela tela de Lido já deu nota e resenha ali: não abre a avaliação de novo (abre a retrospectiva)
+{ const _rf = rateForm; rateForm = function () { if (S.rtNoRate && Date.now() - S.rtNoRate < 2000) { S.rtNoRate = 0; return; } return _rf.apply(this, arguments); }; }
+// --- a6_retrospectiva.js ---
+// Retrospectiva da leitura (Bia, 18/11): ao concluir o livro, abre em tela cheia como stories (toque para avançar):
+// abertura, ritmo, o que ficou (emoções, nota, ressaca), personagens, trecho e, no fim, a imagem para postar,
+// com tema, formato (story ou post) e o que mostrar. Fica guardada no topo do Histórico do diário.
+{ const st = document.createElement('style'); st.textContent = `
+.rt{position:fixed;inset:0;z-index:9000;display:flex;justify-content:center;background:#05040c;font-family:Nunito,system-ui,sans-serif;-webkit-user-select:none;user-select:none}
+.rt-ph{position:relative;width:100%;max-width:480px;height:100%;overflow:hidden;color:#fff;background:radial-gradient(130% 90% at 50% 0,#3b2a6b 0,#1a1436 45%,#0c0a1c 100%)}
+.rt-sky{position:absolute;inset:0;pointer-events:none}.rt-sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;animation:rtTw 3s ease-in-out infinite}
+@keyframes rtTw{0%,100%{opacity:.2}50%{opacity:1}}
+.rt-bars{position:absolute;top:calc(10px + env(safe-area-inset-top));left:12px;right:12px;display:flex;gap:4px;z-index:5}.rt-bars i{flex:1;height:3px;border-radius:3px;background:#ffffff40;overflow:hidden}.rt-bars i b{display:block;height:100%;width:0;background:#fff}.rt-bars i.f b{width:100%}.rt-bars i.c b{width:100%;transition:width .35s}
+.rt-x{position:absolute;top:calc(22px + env(safe-area-inset-top));right:12px;z-index:6;width:38px;height:38px;border:0;border-radius:50%;background:#ffffff1a;color:#fff;font-size:1.3rem;cursor:pointer}
+.rt-sl{position:absolute;inset:0;padding:calc(64px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;z-index:2}
+.rt-k{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:#cfc4ff;font-weight:900}
+.rt-t{font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:1.95rem;line-height:1.12;margin:.4rem 0 .2rem}.rt-t i{font-weight:400}
+.rt-s{font-size:.95rem;color:#ddd5ff;font-weight:700;margin-top:.3rem}
+.rt-cv{width:46%;max-width:190px;aspect-ratio:2/3;margin:1.6rem auto 1rem;border-radius:5px 10px 10px 5px;background:#2a2340 center/cover;box-shadow:0 0 0 3px var(--g,#f2c94c),0 0 44px var(--gg,rgba(242,201,76,.55)),0 18px 30px rgba(0,0,0,.5);animation:rtIn 1s cubic-bezier(.2,.9,.3,1.2) both;display:grid;place-items:center;text-align:center;font:900 1rem/1.1 Nunito;padding:.5rem;color:#fff}
+@keyframes rtIn{from{transform:rotate(-200deg) scale(.2);opacity:0}to{transform:rotate(-4deg) scale(1);opacity:1}}
+.rt-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;margin-top:auto}.rt-nums div{background:#ffffff14;border:1px solid #ffffff22;border-radius:16px;padding:.7rem .2rem;text-align:center}.rt-nums b{display:block;font-size:1.6rem;color:#f2c94c;font-weight:900}.rt-nums small{font-size:.72rem;color:#ddd5ff;font-weight:700}
+.rt-tap{font-size:.74rem;color:#bfb4f2;text-align:center;margin-top:.8rem}
+.rt-rt{width:100%;height:auto;margin:1rem 0 .4rem;overflow:visible}
+.rt-rt .ln{stroke-dasharray:var(--L);stroke-dashoffset:var(--L);animation:rtDraw 1.8s .3s ease forwards}@keyframes rtDraw{to{stroke-dashoffset:0}}
+.rt-rt .pt{opacity:0;animation:rtPop .4s ease forwards}@keyframes rtPop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+.rt-f{display:flex;gap:.6rem;align-items:center;background:#ffffff12;border-radius:14px;padding:.6rem .8rem;margin-top:.5rem;font-size:.9rem;opacity:0;animation:rtUp .5s ease forwards}.rt-f span{font-size:1.2rem}.rt-f b{color:#f2c94c}
+@keyframes rtUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.rt-emo{position:relative;height:210px;margin:1rem 0}.rt-emo span{position:absolute;border-radius:99px;display:grid;place-items:center;font-weight:900;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.3);padding:.3rem;line-height:1.1;opacity:0;animation:rtPop .5s cubic-bezier(.2,.9,.3,1.4) forwards}
+.rt-md{display:flex;align-items:center;gap:.8rem;background:#ffffff12;border-radius:18px;padding:.75rem .9rem;margin-top:.6rem;opacity:0;animation:rtUp .5s .5s ease forwards}.rt-md .m{width:62px;height:62px;flex:none;border-radius:50%;display:grid;place-items:center;font:900 1.3rem Nunito;color:#3a2600;background:radial-gradient(circle at 35% 30%,#fff6c7,var(--g,#f2c94c) 45%,#00000055)}
+.rt-md b{font-size:1rem}.rt-md small{display:block;color:#ddd5ff;font-size:.8rem;margin-top:.15rem}
+.rt-pc{margin-top:1.4rem;padding:1rem 1.1rem;border-radius:18px;background:#ffffff12;opacity:0;animation:rtUp .6s ease forwards}.rt-pc small{display:block;color:#cfc4ff;font-weight:800;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase}.rt-pc b{display:block;font-family:Georgia,serif;font-size:1.7rem;margin-top:.2rem}
+.rt-q{font-family:Georgia,serif;font-style:italic;font-size:1.3rem;line-height:1.4;margin-top:1.4rem;padding:1rem 1.1rem;border-left:3px solid #f2c94c;background:#ffffff0d;border-radius:0 14px 14px 0;opacity:0;animation:rtUp .6s .2s ease forwards}.rt-q small{display:block;font-family:Nunito;font-style:normal;font-size:.76rem;color:#cfc4ff;margin-top:.6rem;font-weight:800}
+.rt-ed{position:absolute;inset:0;z-index:7;background:#efe7da;color:#2a2118;overflow-y:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom))}
+.rt-ed h3{margin:0 0 .6rem;font-size:1.05rem}.rt-ed .rt-x{background:#0000000d;color:#2a2118;top:calc(12px + env(safe-area-inset-top))}
+.rt-pv{display:block;margin:0 auto .8rem;max-width:62%;max-height:46vh;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+.rt-ed h4{margin:.8rem 0 .4rem;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:#7b6b5a}
+.rt-ch{display:flex;gap:.35rem;flex-wrap:wrap}.rt-ch button{border:1.5px solid #e8dccb;background:#fffaf3;color:#2a2118;border-radius:99px;padding:.35rem .75rem;font:inherit;font-size:.8rem;font-weight:800;cursor:pointer}.rt-ch button.on{border-color:#c46f2e;background:#c46f2e;color:#fff}
+.rt-sw{display:flex;gap:.5rem}.rt-sw button{width:34px;height:34px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1.5px #e8dccb;cursor:pointer;padding:0}.rt-sw button.on{box-shadow:0 0 0 3px #c46f2e}
+.rt-ac{position:absolute;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1.3fr;gap:.6rem;z-index:8}
+.rt-ac button{border-radius:99px;padding:.8rem;font:inherit;font-weight:900;font-size:.92rem;border:1.5px solid #e8dccb;background:#fffaf3;color:#2a2118;cursor:pointer}.rt-ac button.p{background:#c46f2e;border-color:#c46f2e;color:#fff}
+.cs-fin{background:radial-gradient(120% 140% at 0 0,#3b2a6b,#14102a 70%)!important;color:#fff!important;border:0!important}.cs-fin .tl-ct,.cs-fin b{color:#fff!important}.cs-fin .cs-w{color:#cfc4ff!important}
+.cs-fin .cs-mini{display:flex;gap:.35rem;flex-wrap:wrap;margin:.45rem 0 .55rem}.cs-fin .cs-mini span{background:#ffffff1a;border-radius:9px;padding:.2rem .5rem;font-size:.72rem;font-weight:800}
+.cs-retro{display:block;width:100%;border:0!important;border-radius:99px!important;padding:.55rem!important;font:inherit!important;font-weight:900!important;font-size:.84rem!important;background:linear-gradient(90deg,#f2c94c,#e2a92c)!important;color:#2a1a00!important;cursor:pointer;min-height:0!important;height:auto!important}
+`; TR.append(st); }
+
+const RT_DIA = (n) => n + (n === 1 ? ' dia' : ' dias');
+const RT_PICK = (arr, seed) => arr[Math.abs([...String(seed)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7)) % arr.length];
+const RT_MEDAL = (p) => (p >= 5 ? ['#f2c94c', 'rgba(242,201,76,.6)'] : p >= 4.5 ? ['#e8b84a', 'rgba(232,184,74,.5)'] : p >= 4 ? ['#cfd6e0', 'rgba(207,214,224,.45)'] : p >= 3 ? ['#d49a6a', 'rgba(212,154,106,.45)'] : p ? ['#9aa0a8', 'rgba(154,160,168,.35)'] : ['#b69cff', 'rgba(182,156,255,.45)']);
+const RT_FR = { 0.5: 'Socorro, o que foi isso?', 1: 'Não foi pra mim', 1.5: 'Quase abandonei', 2: 'Fraquinho', 2.5: 'Teve seus momentos', 3: 'Bom, mas não marcou', 3.5: 'Gostei bastante', 4: 'Muito bom!', 4.5: 'Quase perfeito', 5: 'Favorito da vida!' };
+function retroData(e) {
+  const d10 = (x) => String(x || '').slice(0, 10), DAY = 864e5;
+  const logs = (e.readLog || []).filter((l) => l && l.date && Number(l.pages) > 0);
+  const byDay = new Map(); logs.forEach((l) => byDay.set(d10(l.date), (byDay.get(d10(l.date)) || 0) + Number(l.pages)));
+  const ds = [...byDay.keys()].sort();
+  const ini = d10(e.startedAt) || ds[0] || d10(e.finishedAt), fim = d10(e.finishedAt) || ds[ds.length - 1] || ini;
+  const days = ini && fim ? Math.max(1, Math.round((Date.parse(fim) - Date.parse(ini)) / DAY) + 1) : Math.max(1, ds.length);
+  const pages = Number(e.totalPages) || (() => { try { return readingInfo(e).total || 0; } catch { return 0; } })();
+  let best = null; byDay.forEach((p, d) => { if (!best || p > best.p) best = { d, p }; });
+  let gap = 0; for (let i = 1; i < ds.length; i++) gap = Math.max(gap, Math.round((Date.parse(ds[i]) - Date.parse(ds[i - 1])) / DAY));
+  const hrs = logs.filter((l) => l.at).map((l) => new Date(l.at).getHours());
+  const PER = [['de madrugada', (h) => h < 5], ['de manhã', (h) => h >= 5 && h < 12], ['à tarde', (h) => h >= 12 && h < 18], ['à noite', (h) => h >= 18]];
+  let per = null; if (hrs.length >= 2) { const c = PER.map(([n, f]) => [n, hrs.filter(f).length]).sort((a, b) => b[1] - a[1]); if (c[0][1] >= Math.ceil(hrs.length / 2)) per = c[0][0]; }
+  let meta = null; try { const dl = tlEvents(e), hit = dl.filter((x) => x.ok).length, n = dl.filter((x) => x.inDue && !x.off && x.per).length; if (n && hit) meta = { hit, n: Math.max(n, hit) }; } catch {} // só aparece se bateu a meta em algum dia
+  const cnt = new Map(), add = (k, w) => k && cnt.set(k, (cnt.get(k) || 0) + w);
+  (e.diary || []).forEach((x) => (x.fe || []).forEach((k) => add(k, 1))); (e.quotes || []).forEach((x) => (x.f || []).forEach((k) => add(k, 1))); ((e.fin || {}).fe || []).forEach((k) => add(k, 2));
+  const emo = [...cnt.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => ({ k, n, name: (QT_FEELS.find((y) => y[0] === k) || [, k])[1] }));
+  const rv = (() => { try { return reviewOfLib(e) || {}; } catch { return e.review || {}; } })();
+  const fin = e.fin || {}, qs = (e.quotes || []).filter((x) => x && x.t), q = fin.q || (qs.length ? { t: qs[qs.length - 1].t, p: qs[qs.length - 1].p } : null);
+  // rota: progresso acumulado por dia de leitura
+  let acc = 0; const pts = ds.map((d) => { acc += byDay.get(d); return { d, p: byDay.get(d), acc }; });
+  const per0 = (() => { try { return new Map(tlEvents(e).map((x) => [x.d, x.ok])); } catch { return new Map(); } })(); pts.forEach((x) => { x.ok = !!per0.get(x.d); });
+  return { e, ini, fim, days, pages, perDay: pages && days ? Math.round(pages / days) : 0, best, gap, per, meta, emo, paws: Number(rv.paws) || 0, texto: rv.texto || '', ressaca: rv.ressaca, fav: fin.fav, hate: fin.hate, q, pts };
+}
+function rtRouteSVG(D, w, h, anim) {
+  const P = D.pts; if (P.length < 2) return '';
+  const max = Math.max(1, P[P.length - 1].acc), maxP = Math.max(1, ...P.map((x) => x.p));
+  const xy = P.map((x, i) => [16 + (w - 32) * (i / (P.length - 1)), h - 18 - (h - 40) * (x.acc / max)]);
+  let L = 0; for (let i = 1; i < xy.length; i++) L += Math.hypot(xy[i][0] - xy[i - 1][0], xy[i][1] - xy[i - 1][1]);
+  return '<svg class="rt-rt" viewBox="0 0 ' + w + ' ' + h + '" style="--L:' + Math.ceil(L) + '"><polyline class="' + (anim ? 'ln' : '') + '" points="' + xy.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ') + '" fill="none" stroke="#b69cff" stroke-opacity=".75" stroke-width="2" stroke-linejoin="round"/>'
+    + xy.map((p, i) => { const r = 3 + 6 * (P[i].p / maxP), ok = P[i].ok; return '<circle class="' + (anim ? 'pt' : '') + '" style="animation-delay:' + (0.3 + 1.8 * i / xy.length).toFixed(2) + 's;transform-origin:' + p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + (ok ? '#f2c94c' : '#b69cff') + '"' + (ok ? ' filter="drop-shadow(0 0 6px #f2c94c)"' : '') + '/>'; }).join('')
+    + '<text x="16" y="' + h + '" fill="#cfc4ff" font-size="11" font-weight="800">' + P[0].d.slice(8, 10) + '/' + P[0].d.slice(5, 7) + '</text><text x="' + (w - 16) + '" y="' + h + '" text-anchor="end" fill="#f2c94c" font-size="11" font-weight="900">fim</text></svg>';
+}
+function retroSlides(D) {
+  const e = D.e, ttl = esc(e.title), S0 = [], [g, gg] = RT_MEDAL(D.paws), ab = ['Fim. Mas toda história continua em quem leu.', 'Pouso confirmado no último capítulo.'];
+  S0.push('<div class="rt-sl" style="--g:' + g + ';--gg:' + gg + '"><span class="rt-k">Sua retrospectiva</span><div class="rt-t">Você terminou<br><i>' + ttl + '</i></div><div class="rt-s">' + esc(RT_PICK(ab, e.id + D.fim)) + '</div>'
+    + '<div class="rt-cv" style="' + (e.cover ? 'background-image:url(&quot;' + esc(String(e.cover)) + '&quot;);color:transparent' : '') + '">' + ttl + '</div>'
+    + '<div class="rt-nums"><div><b data-n="' + D.days + '">0</b><small>' + (D.days === 1 ? 'dia' : 'dias') + '</small></div><div><b data-n="' + D.pages + '">0</b><small>páginas</small></div><div><b data-n="' + D.perDay + '">0</b><small>pág. por dia</small></div></div><div class="rt-tap">toque para continuar ›</div></div>');
+  const fast = D.days <= 3, slow = D.days > 21, pausa = D.gap > 7;
+  const rtT = fast ? RT_PICK(['Devorado em ' + RT_DIA(D.days), 'Leu como quem foge do Michael Myers'], e.id) : pausa ? 'No meio do caminho tinha uma pausa' : slow ? 'Sem pressa: ' + D.days + ' dias de companhia' : RT_PICK([D.days + ' dias, do primeiro capítulo ao fim', 'Uma jornada de ' + D.days + ' dias'], e.id);
+  const facts = [D.best ? ['🔥', 'Maior dia: <b>' + D.best.d.slice(8, 10) + '/' + D.best.d.slice(5, 7) + ', ' + D.best.p + ' páginas</b>'] : null, D.per ? [D.per === 'à noite' || D.per === 'de madrugada' ? '🌙' : '☀️', 'Você leu mais <b>' + D.per + '</b>'] : null,
+    D.meta ? ['★', 'Meta do dia batida em <b>' + D.meta.hit + ' de ' + D.meta.n + '</b> dias'] : null, pausa ? ['⏸', 'Uma pausa de <b>' + D.gap + ' dias</b> e você voltou'] : null].filter(Boolean).slice(0, 3);
+  S0.push('<div class="rt-sl"><span class="rt-k">Seu ritmo</span><div class="rt-t">' + esc(rtT) + '</div>' + (pausa || fast ? '<div class="rt-s">' + RT_DIA(D.days) + ', do primeiro capítulo ao fim</div>' : '')
+    + (rtRouteSVG(D, 320, 210, true) || '<div style="flex:1"></div>') + '<div style="margin-top:auto">' + facts.map((f, i) => '<div class="rt-f" style="animation-delay:' + (1.6 + i * 0.25) + 's"><span>' + f[0] + '</span><div>' + f[1] + '</div></div>').join('') + '</div></div>');
+  if (D.emo.length || D.paws || D.ressaca) {
+    const top = (D.emo[0] || {}).name || '', t = /tens|choq|surpre|plot/i.test(top) ? 'Até o Sherlock ficaria surpreso' : /amei|amor|apaix/i.test(top) ? 'Amor à primeira página' : 'Esse livro te deixou…';
+    const COL = ['#ff8fab', '#9b8cff', '#f2c94c', '#66d1b5'], POS = [[4, 8, 132], [150, 0, 104], [158, 112, 88], [70, 140, 70]], mx = Math.max(1, ...D.emo.map((x) => x.n));
+    S0.push('<div class="rt-sl" style="--g:' + g + '"><span class="rt-k">O que ficou</span><div class="rt-t">' + esc(D.emo.length ? t : 'Sua avaliação') + '</div>'
+      + (D.emo.length ? '<div class="rt-emo">' + D.emo.map((x, i) => { const s = Math.round(POS[i][2] * (0.75 + 0.25 * x.n / mx)); return '<span style="left:' + POS[i][0] + 'px;top:' + POS[i][1] + 'px;width:' + s + 'px;height:' + s + 'px;background:' + COL[i] + ';color:' + (i >= 2 ? '#2a1a00' : '#fff') + ';font-size:' + (s > 100 ? 1 : 0.78) + 'rem;animation-delay:' + (0.2 + i * 0.18) + 's">' + esc(x.name) + '</span>'; }).join('') + '</div>' : '<div style="flex:1"></div>')
+      + (D.paws ? '<div class="rt-md"><div class="m">' + String(D.paws).replace('.', ',') + '</div><div><b>' + esc(RT_FR[D.paws] || 'Sua nota') + '</b>' + (D.texto ? '<small>“' + esc(D.texto.length > 90 ? D.texto.slice(0, 90) + '…' : D.texto) + '”</small>' : '') + '</div></div>' : '')
+      + (D.ressaca ? '<div class="rt-f" style="animation-delay:.9s"><span>' + (D.ressaca === 'curou' ? '💊' : '🌊') + '</span><div>' + (D.ressaca === 'curou' ? 'Curou sua <b>ressaca literária</b>' : 'Te deixou de <b>ressaca literária</b>') + '</div></div>' : '') + '</div>');
+  }
+  if (D.fav || D.hate) S0.push('<div class="rt-sl"><span class="rt-k">Personagens</span>' + (D.fav ? '<div class="rt-pc"><small>Seu coração ficou com</small><b>' + esc(D.fav) + '</b></div>' : '') + (D.hate ? '<div class="rt-pc" style="animation-delay:.5s"><small>E quem você amou odiar</small><b>' + esc(D.hate) + '</b></div>' : '') + '</div>');
+  if (D.q) S0.push('<div class="rt-sl"><span class="rt-k">A frase que ficou</span><div class="rt-t">A frase que você levou com você</div><div class="rt-q">“' + esc(D.q.t) + '”<small>' + (D.q.p ? 'pág. ' + D.q.p : 'seu trecho') + '</small></div></div>');
+  return S0;
+}
+// ---------- imagem para postar (canvas) ----------
+const RT_THEMES = { noite: { bg: ['#3b2a6b', '#0c0a1c'], ink: '#ffffff', sub: '#cfc4ff', acc: '#f2c94c', box: 'rgba(255,255,255,.09)', stars: 1 }, papel: { bg: ['#fbf5ea', '#e6d6bd'], ink: '#2a2118', sub: '#7b6b5a', acc: '#c46f2e', box: 'rgba(42,33,24,.06)' },
+  sol: { bg: ['#ff9a5a', '#7b2d6b'], ink: '#ffffff', sub: '#ffe3d0', acc: '#ffe08a', box: 'rgba(255,255,255,.14)', stars: 1 }, capa: { bg: ['#5a1212', '#121212'], ink: '#ffffff', sub: '#e9dccf', acc: '#f2c94c', box: 'rgba(255,255,255,.10)', stars: 1 }, menta: { bg: ['#d7f0e4', '#5f9c84'], ink: '#0f2a21', sub: '#2d5546', acc: '#ffffff', box: 'rgba(255,255,255,.35)' } };
+function rtLoadCover(src) { return new Promise((res) => { if (!src) return res(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 4; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 4, 4); const d = x.getImageData(0, 0, 4, 4).data; let r = 0, g = 0, b = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; } im._avg = [r / 16, g / 16, b / 16]; res(im); } catch { res(null); } }; im.onerror = () => res(null); im.src = src; setTimeout(() => res(null), 6000); }); }
+function rtWrap(x, t, maxW, maxL) { const words = String(t).split(/\s+/), L = []; let cur = ''; for (const w of words) { const n = cur ? cur + ' ' + w : w; if (x.measureText(n).width > maxW && cur) { L.push(cur); cur = w; if (L.length === maxL) break; } else cur = n; } if (L.length < maxL && cur) L.push(cur); else if (L.length === maxL && cur && !L.includes(cur)) L[maxL - 1] = L[maxL - 1].replace(/\s*\S*$/, '') + '…'; return L; }
+function rtDraw(D, O, cover) {
+  const W = 1080, H = O.fmt === 'post' ? 1350 : 1920, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const T = { ...RT_THEMES[O.theme] }; if (O.theme === 'capa' && cover && cover._avg) { const [r, g, b] = cover._avg; T.bg = ['rgb(' + [r, g, b].map((v) => Math.round(v * 0.75)).join(',') + ')', 'rgb(' + [r, g, b].map((v) => Math.round(v * 0.18)).join(',') + ')']; }
+  // o fundo vai numa tela final; o conteúdo é desenhado aqui sem fundo e depois centralizado na altura
+  const bgPaint = (x) => { const gr = x.createLinearGradient(0, 0, W * 0.3, H); gr.addColorStop(0, T.bg[0]); gr.addColorStop(1, T.bg[1]); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+  if (T.stars) { let s = 7; const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280); for (let i = 0; i < 90; i++) { x.globalAlpha = 0.25 + rnd() * 0.7; x.fillStyle = '#fff'; x.beginPath(); x.arc(rnd() * W, rnd() * H, 0.8 + rnd() * 2.2, 0, 7); x.fill(); } x.globalAlpha = 1; } };
+  const SANS = (w, s) => w + ' ' + s + 'px Nunito, "Segoe UI", sans-serif', SERIF = (st, s) => st + ' ' + s + 'px Georgia, "Times New Roman", serif';
+  const post = O.fmt === 'post', e = D.e, [mg] = RT_MEDAL(D.paws); let y = post ? 90 : 130;
+  x.textAlign = 'center'; x.fillStyle = T.sub; x.font = SANS(900, 30); x.fillText('LIVROVERSO · MINHA LEITURA', W / 2, y); y += post ? 50 : 70;
+  // capa
+  const cw = post ? 300 : 420, ch = cw * 1.5, cx = (W - cw) / 2;
+  x.save(); x.shadowColor = O.show.nota && D.paws ? mg : 'rgba(0,0,0,.5)'; x.shadowBlur = 60; x.fillStyle = mg; x.fillRect(cx - 8, y - 8, cw + 16, ch + 16); x.restore();
+  if (cover) x.drawImage(cover, cx, y, cw, ch); else { x.fillStyle = '#2a2340'; x.fillRect(cx, y, cw, ch); x.fillStyle = '#fff'; x.font = SANS(900, 40); rtWrap(x, e.title, cw - 40, 5).forEach((l, i) => x.fillText(l, W / 2, y + 90 + i * 50)); }
+  y += ch + (post ? 70 : 100);
+  x.fillStyle = T.ink; x.font = SERIF('italic 700', post ? 54 : 66); rtWrap(x, e.title, W - 160, 2).forEach((l) => { x.fillText(l, W / 2, y); y += post ? 62 : 76; });
+  x.fillStyle = T.sub; x.font = SANS(800, 32); x.fillText([e.author, O.show.nota && D.paws ? 'nota ' + String(D.paws).replace('.', ',') + ' ★' : ''].filter(Boolean).join('  ·  '), W / 2, y); y += post ? 50 : 70;
+  const box = (bx, by, bw, bh) => { x.fillStyle = T.box; x.beginPath(); x.roundRect(bx, by, bw, bh, 26); x.fill(); };
+  if (O.show.nums) { const it = [[D.days, D.days === 1 ? 'dia' : 'dias'], [D.pages, 'páginas'], D.meta ? [D.meta.hit + '/' + D.meta.n, 'metas do dia'] : [D.perDay, 'pág. por dia']], bw = 270, gap = 24, x0 = (W - (bw * 3 + gap * 2)) / 2;
+    it.forEach(([n, l], i) => { box(x0 + i * (bw + gap), y, bw, 130); x.fillStyle = T.acc; x.font = SANS(900, 52); x.fillText(String(n), x0 + i * (bw + gap) + bw / 2, y + 66); x.fillStyle = T.sub; x.font = SANS(700, 26); x.fillText(l, x0 + i * (bw + gap) + bw / 2, y + 106); }); y += post ? 160 : 180; }
+  if (O.show.rota && D.pts.length > 1 && !post) { const P = D.pts, max = Math.max(1, P[P.length - 1].acc), maxP = Math.max(1, ...P.map((p) => p.p)), w = 760, h = 200, ox = (W - w) / 2;
+    const xy = P.map((p, i) => [ox + w * (i / (P.length - 1)), y + h - h * (p.acc / max)]); x.strokeStyle = T.ink === '#ffffff' ? 'rgba(182,156,255,.8)' : 'rgba(196,111,46,.6)'; x.lineWidth = 4; x.lineJoin = 'round'; x.beginPath(); xy.forEach((p, i) => (i ? x.lineTo(...p) : x.moveTo(...p))); x.stroke();
+    xy.forEach((p, i) => { x.fillStyle = P[i].ok ? '#f2c94c' : (T.ink === '#ffffff' ? '#b69cff' : '#c46f2e'); x.shadowColor = P[i].ok ? '#f2c94c' : 'transparent'; x.shadowBlur = P[i].ok ? 20 : 0; x.beginPath(); x.arc(p[0], p[1], 7 + 11 * (P[i].p / maxP), 0, 7); x.fill(); }); x.shadowBlur = 0; y += h + 70; }
+  if (O.show.emo && D.emo.length) { x.font = SANS(800, 30); const ws = D.emo.map((m) => x.measureText(m.name).width + 50), tot = ws.reduce((a, b) => a + b, 0) + 16 * (ws.length - 1); let ex = (W - tot) / 2;
+    D.emo.forEach((m, i) => { x.fillStyle = T.box; x.beginPath(); x.roundRect(ex, y - 40, ws[i], 58, 29); x.fill(); x.fillStyle = T.ink; x.textAlign = 'left'; x.fillText(m.name, ex + 25, y); ex += ws[i] + 16; }); x.textAlign = 'center'; y += 70; }
+  if (O.show.pers && (D.fav || D.hate)) { x.font = SANS(800, 30); x.fillStyle = T.sub; if (D.fav) { x.fillText('Personagem favorito: ' + D.fav, W / 2, y); y += 46; } if (D.hate) { x.fillText('Amei odiar: ' + D.hate, W / 2, y); y += 46; } y += 20; }
+  if (O.show.trecho && D.q) { x.fillStyle = T.ink; x.font = SERIF('italic 400', post ? 36 : 42); const L = rtWrap(x, '“' + D.q.t + '”', W - 200, post ? 3 : 5); const room = H - 120 - y; L.slice(0, Math.max(1, Math.floor(room / 56))).forEach((l) => { x.fillText(l, W / 2, y); y += post ? 48 : 56; }); }
+  const F = document.createElement('canvas'); F.width = W; F.height = H; const fx = F.getContext('2d'); bgPaint(fx);
+  fx.drawImage(c, 0, Math.max(0, Math.round((H - 150 - y) / 2)));
+  fx.textAlign = 'center'; fx.fillStyle = T.sub; fx.font = SANS(900, 30); let hd = ''; try { hd = socialProfile && socialProfile.handle ? '@' + socialProfile.handle : ''; } catch {} fx.fillText(hd || 'livroverso', W / 2, H - 70);
+  return F;
+}
+function openRetro(e, auto) {
+  if (!e) return; TR.querySelector('.rt')?.remove();
+  const D = retroData(e), slides = retroSlides(D), N = slides.length + 1; let i = 0;
+  const O = { theme: 'noite', fmt: 'story', show: { nota: true, nums: true, rota: true, trecho: !!D.q, emo: false, pers: !!(D.fav || D.hate) } };
+  const rt = document.createElement('div'); rt.className = 'rt'; rt.innerHTML = '<div class="rt-ph"><div class="rt-sky">' + Array.from({ length: 46 }, () => '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;top:' + (Math.random() * 100).toFixed(1) + '%;animation-delay:' + (Math.random() * 3).toFixed(2) + 's;' + (Math.random() < 0.2 ? 'width:3px;height:3px' : '') + '"></i>').join('') + '</div><div class="rt-bars">' + Array.from({ length: N }, () => '<i><b></b></i>').join('') + '</div><button type="button" class="rt-x" aria-label="Fechar">×</button><div class="rt-st"></div></div>';
+  TR.append(rt); const ph = rt.querySelector('.rt-ph'), stage = rt.querySelector('.rt-st');
+  const close = () => { rt.remove(); };
+  let cover = null, coverP = rtLoadCover(e.cover).then((im) => (cover = im));
+  const count = () => stage.querySelectorAll('[data-n]').forEach((b) => { const n = Number(b.dataset.n) || 0, t0 = performance.now(); const f = (t) => { const k = Math.min(1, (t - t0) / 1100); b.textContent = Math.round(n * (1 - Math.pow(1 - k, 3))).toLocaleString('pt-BR'); if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); });
+  const editor = () => {
+    stage.innerHTML = '<div class="rt-ed"><button type="button" class="rt-x" aria-label="Fechar">×</button><h3>Montar para postar</h3><img class="rt-pv" alt="Prévia da imagem"><h4>Tema</h4><div class="rt-sw">'
+      + [['noite', 'linear-gradient(#3b2a6b,#0c0a1c)', 'Noite estrelada'], ['papel', 'linear-gradient(#fbf5ea,#e6d6bd)', 'Papel'], ['sol', 'linear-gradient(#ff9a5a,#7b2d6b)', 'Pôr do sol'], ['capa', 'linear-gradient(#8a2a2a,#121212)', 'Cores da capa'], ['menta', 'linear-gradient(#d7f0e4,#5f9c84)', 'Menta']].map(([k, bg, n]) => '<button type="button" data-th="' + k + '" title="' + n + '" aria-label="' + n + '" style="background:' + bg + '"></button>').join('')
+      + '</div><h4>Formato</h4><div class="rt-ch" data-g="fmt"><button type="button" data-v="story">Story</button><button type="button" data-v="post">Post</button></div><h4>Mostrar</h4><div class="rt-ch" data-g="show">'
+      + [['nota', 'Nota', D.paws], ['nums', 'Números', 1], ['rota', 'Ritmo', D.pts.length > 1], ['trecho', 'Trecho', D.q], ['emo', 'Emoções', D.emo.length], ['pers', 'Personagens', D.fav || D.hate]].filter((z) => z[2]).map(([k, n]) => '<button type="button" data-v="' + k + '">' + n + '</button>').join('')
+      + '</div></div><div class="rt-ac"><button type="button" data-a="save">Salvar imagem</button><button type="button" class="p" data-a="share">Compartilhar</button></div>';
+    const ed = stage.querySelector('.rt-ed'), pv = ed.querySelector('.rt-pv'); let cur = null;
+    const paint = async () => { await coverP; cur = rtDraw(D, O, cover); pv.src = cur.toDataURL('image/jpeg', 0.8);
+      ed.querySelectorAll('[data-th]').forEach((b) => b.classList.toggle('on', b.dataset.th === O.theme)); ed.querySelectorAll('[data-g=fmt] button').forEach((b) => b.classList.toggle('on', b.dataset.v === O.fmt)); ed.querySelectorAll('[data-g=show] button').forEach((b) => b.classList.toggle('on', !!O.show[b.dataset.v])); };
+    ed.querySelectorAll('[data-th]').forEach((b) => b.addEventListener('click', () => { O.theme = b.dataset.th; paint(); }));
+    ed.querySelectorAll('[data-g=fmt] button').forEach((b) => b.addEventListener('click', () => { O.fmt = b.dataset.v; paint(); }));
+    ed.querySelectorAll('[data-g=show] button').forEach((b) => b.addEventListener('click', () => { O.show[b.dataset.v] = !O.show[b.dataset.v]; paint(); }));
+    ed.querySelector('.rt-x').addEventListener('click', close);
+    const blob = () => new Promise((res) => cur.toBlob((b) => res(b), 'image/png'));
+    const name = 'livroverso-' + normT(e.title).replace(/\s+/g, '-').slice(0, 40) + '.png';
+    const dl = async () => { const b = await blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); toast('Imagem salva'); };
+    stage.parentElement.querySelector('.rt-ac [data-a=save]').addEventListener('click', dl);
+    stage.parentElement.querySelector('.rt-ac [data-a=share]').addEventListener('click', async () => { try { const b = await blob(), f = new File([b], name, { type: 'image/png' }); if (navigator.canShare && navigator.canShare({ files: [f] })) await navigator.share({ files: [f], title: e.title }); else await dl(); } catch (err) { if (err && err.name !== 'AbortError') dl(); } });
+    paint();
+  };
+  const go = (k) => { i = Math.max(0, Math.min(N - 1, k)); rt.querySelectorAll('.rt-bars i').forEach((b, j) => { b.className = j < i ? 'f' : j === i ? 'c' : ''; });
+    if (i === N - 1) return editor(); stage.innerHTML = slides[i]; count(); };
+  rt.querySelector('.rt-x').addEventListener('click', close);
+  ph.addEventListener('click', (ev) => { if (i === N - 1 || ev.target.closest('.rt-x, .rt-ed, .rt-ac')) return; const r = ph.getBoundingClientRect(); go(ev.clientX - r.left < r.width * 0.3 ? i - 1 : i + 1); });
+  go(0);
+}
+// no Histórico do diário: "Leitura concluída" no topo, com o botão da retrospectiva
+TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('.cs-retro'); if (!b) return; ev.stopPropagation(); const e = byId(b.dataset.id) || S.tlE; if (e) openRetro(e); }, true);
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
