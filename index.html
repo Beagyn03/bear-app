@@ -9869,6 +9869,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -15357,6 +15358,8 @@ function openOrbita(ym) {
   };
   v.hidden = false; v.classList.remove('mine-page'); draw(); try { v.scrollTop = 0; } catch {}
 }
+// Topo sem o círculo de fundo nos ícones (Bia, 17/11): planeta, mensagens e notificações só com o desenho.
+{ const st = document.createElement('style'); st.textContent = '.gtop .g-b,.gtop .g-orb{background:none!important;border:0!important;box-shadow:none!important}.gtop .g-b svg{width:28px!important;height:28px!important}.gtop .g-orb{padding:0 .3rem!important;gap:.15rem}.gtop .g-orb img{width:30px;height:30px}'; TR.append(st); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
