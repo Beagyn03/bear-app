@@ -9870,6 +9870,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -14794,7 +14795,8 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 #editor .tl-tabs{display:flex;border-bottom:1.5px solid var(--line);margin:.2rem 0 .75rem}
 #editor .tl-tabs button{flex:1;border:0!important;background:none!important;box-shadow:none!important;font:inherit;font-size:.86rem;font-weight:800;color:var(--ink-2)!important;padding:.5rem 0!important;margin-bottom:-1.5px;border-bottom:2.5px solid transparent!important;border-radius:0!important;min-height:0!important;height:auto!important}
 #editor .tl-tabs button.on{color:var(--acc)!important;border-bottom-color:var(--acc)!important}
-#editor .tl-h{display:flex;justify-content:flex-end;align-items:baseline;margin:0 0 .6rem}#editor .tl-h b{display:none}#editor .tl-h small{font-size:.7rem;color:var(--ink-2);font-weight:700}
+#editor .tl-flow{position:relative}#editor .tl-flow::before{content:"";position:absolute;left:14px;top:.6rem;bottom:1.2rem;border-left:2px dashed color-mix(in srgb,var(--acc) 40%,var(--line));z-index:0}#editor .tl-flow .tl-d::before{display:none!important}#editor .tl-flow .tl-st{position:relative;z-index:1;width:30px;height:30px;border-radius:50%;background:var(--panel,#fffaf3)}#editor .tl-flow .tl-day{margin-left:2.6rem;position:relative}#editor .tl-flow .tl-day::before{content:"";position:absolute;left:calc(-2.6rem + 9px);top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--panel,#fffaf3);border:2px solid color-mix(in srgb,var(--acc) 55%,var(--line));box-sizing:border-box}
+#editor .tl-sum{display:flex;flex-wrap:wrap;gap:.3rem .9rem;align-items:center;padding:.55rem .75rem;margin:0 0 .4rem;border-radius:12px;background:color-mix(in srgb,var(--acc) 9%,transparent);font-size:.78rem;font-weight:700;color:var(--ink-2)}#editor .tl-sum b{color:var(--ink);font-weight:900}#editor .tl-h small{font-size:.7rem;color:var(--ink-2);font-weight:700}
 #editor .tl-d{display:grid;grid-template-columns:30px minmax(0,1fr);gap:.65rem;position:relative;padding-bottom:.85rem}
 #editor .tl-d::before{content:"";position:absolute;left:14px;top:30px;bottom:-2px;width:0;border-left:2px dashed color-mix(in srgb,var(--acc) 35%,var(--line))}
 #editor .tl-d.ok-ok::before{border-left:2px solid #f2c94c}
@@ -14913,8 +14915,8 @@ function tlHTML(e, all) {
       html += '<div class="tl-d' + (c.ok ? ' ok-ok' : '') + '">' + st + '<div>' + head + its + '</div></div>';
     });
   });
-  const hit = dayList.filter((x) => x.ok).length;
-  return '<div class="tl"><div class="tl-h">' + (e.dueAt ? '<small>meta batida em ' + hit + ' dia' + (hit === 1 ? '' : 's') + '</small>' : '') + '</div>' + html
+  const hit = dayList.filter((x) => x.ok).length, dueN = dayList.filter((x) => x.inDue && !x.off && x.per && x.d <= todayISO()).length;
+  return '<div class="tl">' + (e.dueAt ? '<div class="tl-sum"><span>⏳ Prazo: <b>' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje')) + '</b></span><span>★ meta batida em <b>' + hit + ' de ' + Math.max(dueN, hit) + '</b> ' + (Math.max(dueN, hit) === 1 ? 'dia' : 'dias') + '</span></div>' : '') + '<div class="tl-flow">' + html + '</div>'
     + (!all && days.length > showDays.length ? '<button type="button" class="tl-more">Ver tudo (' + days.length + ' dias)</button>' : '') + '</div>';
 }
 // ao salvar a leitura: guarda a hora e a página nos registros novos de hoje (páginas lidas e comentário/emoções)
