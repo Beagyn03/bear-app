@@ -9873,6 +9873,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13359,7 +13360,7 @@ function dueSheet(e) {
     const mx = Math.max(1, ...p.list.map((x) => x.n)); { let acc = (readingInfo(e).now || 0); for (const x of p.list) { acc += x.n; x.ate = Math.min(acc, readingInfo(e).total || Number(e.totalPages) || acc); } }
     out.innerHTML = `<div class="dp-sum"><b>${p.perDay}</b> páginas por dia<small>${p.rem} páginas em ${plural(p.work, 'dia de leitura', 'dias de leitura')}${p.work < p.days ? ' · ' + plural(p.days - p.work, 'folga', 'folgas') : ''}</small></div>
       ${dueRow(p, e)}
-      <small class="hint" style="margin:0">Toque num dia para marcar folga (vale para esse dia da semana até o prazo). A capa ganha cor conforme você lê.</small>`;
+      <small class="hint" style="margin:0">Toque num dia para marcar folga (vale para esse dia da semana até o prazo).</small>`;
     out.querySelectorAll('.dk[data-w], .dc-d[data-w], .dc-h[data-w]').forEach((b) => b.addEventListener('click', () => { const w = Number(b.dataset.w); off = off.includes(w) ? off.filter((x) => x !== w) : [...off, w]; show(); })); };
   inp.value = e.dueAt || ''; show(); inp.addEventListener('input', show);
   f.querySelectorAll('.dq').forEach((b) => b.addEventListener('click', () => { inp.value = b.dataset.d; show(); }));
@@ -15394,6 +15395,54 @@ function openOrbita(ym) {
   };
   setTimeout(show, 4000);
   window.addEventListener('appinstalled', () => { document.querySelector('.inst-pop')?.remove(); }); }
+// --- 99_prazo_tela.js ---
+// "Quando quer terminar?" mais arrumado (Bia, 17/11): seções com título (Data · Plano · Lembrete), atalhos numa linha
+// com o escolhido destacado, data embaixo, lembrete com interruptor, e Salvar fixo no rodapé. Sem espaços vazios.
+{ const st = document.createElement('style'); st.textContent = `
+.due-sh form{gap:0!important;padding-bottom:84px!important;align-content:start!important;grid-auto-rows:auto!important}.due-sh .ds-q .dq{height:auto!important;align-self:center}
+.due-sh form > *{margin:0!important}
+.due-sh .dp-top{margin:0 0 .25rem!important}
+.due-sh .dp-top + .hint{margin:0 0 .9rem!important;font-size:.8rem!important;line-height:1.35}
+.due-sh .ds-t{display:block;margin:.95rem 0 .45rem!important;font-size:.68rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.due-sh .ds-q{display:flex!important;gap:.4rem!important;flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.due-sh .ds-q::-webkit-scrollbar{display:none}
+html .due-sh .ds-q .dq{flex:none;padding:.5rem .9rem!important;font-size:.84rem!important;border-radius:99px!important;border:1.5px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;font-weight:800!important}
+html .due-sh .ds-q .dq.on{background:var(--acc)!important;border-color:var(--acc)!important;color:var(--on-acc,#fff)!important}
+.due-sh .ds-date{display:flex!important;align-items:center;gap:.6rem;margin-top:.55rem!important;font-size:.82rem;font-weight:700;color:var(--ink-2)}
+.due-sh .ds-date input{flex:1;min-width:0;margin:0!important;border-radius:12px!important}
+.due-sh .dp:empty{display:none}
+.due-sh .dp{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:.75rem .8rem}
+.due-sh .rem-box{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.35rem .8rem!important;padding:.75rem .85rem!important;border-radius:16px!important;background:var(--panel)!important}
+.due-sh .rem-box > label.ck-row{grid-column:1;display:block!important;font-size:.88rem;line-height:1.3;cursor:pointer}
+.due-sh .rem-box > label.ck-row input{position:absolute;opacity:0;pointer-events:none}
+.due-sh .rem-box .ds-sw{grid-column:2;grid-row:1;width:46px;height:28px;border-radius:99px;background:color-mix(in srgb,var(--ink) 18%,transparent);position:relative;cursor:pointer;transition:background .2s}
+.due-sh .rem-box .ds-sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.due-sh .rem-box.on .ds-sw{background:var(--acc)}.due-sh .rem-box.on .ds-sw::after{transform:translateX(18px)}
+.due-sh .rem-box > label:not(.ck-row){grid-column:1/-1;font-size:.84rem!important;color:var(--ink-2)}
+.due-sh .rem-box:not(.on) > label:not(.ck-row){opacity:.45;pointer-events:none}
+.due-sh .rem-box select{border-radius:99px!important;padding:0 .8rem!important;font-weight:800}
+.due-sh .rem-box .hint{grid-column:1/-1}
+.due-sh button.primary{position:fixed!important;left:16px;right:16px;bottom:max(16px,env(safe-area-inset-bottom));max-width:608px;margin:0 auto!important;z-index:3;height:50px!important;border-radius:14px!important;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+html .due-sh .dx{margin-top:.8rem!important;justify-self:center}
+`; document.head.append(st); }
+{ const _ds = dueSheet; dueSheet = function (e) {
+    const r = _ds.apply(this, arguments);
+    try {
+      const wrap = [...document.querySelectorAll('body > .sheet.due-sh')].pop(); if (!wrap) return r;
+      const f = wrap.querySelector('form'), inp = f.querySelector('input[name=due]'), dq = f.querySelector('.dq'), qrow = dq && dq.parentElement;
+      const T = (txt) => { const x = document.createElement('b'); x.className = 'ds-t'; x.textContent = txt; return x; };
+      if (qrow) { qrow.classList.add('ds-q'); qrow.removeAttribute('style'); qrow.before(T('Até quando')); }
+      const lab = inp && inp.closest('label'); if (lab) { lab.classList.add('ds-date'); if (lab.firstChild && lab.firstChild.nodeType === 3) lab.firstChild.textContent = 'ou escolha a data'; }
+      const dp = f.querySelector('.dp'); if (dp) dp.before(Object.assign(T('Seu plano'), { className: 'ds-t ds-plan' }));
+      const rb = f.querySelector('.rem-box'); if (rb) { rb.before(T('Lembrete'));
+        const ck = rb.querySelector('input[name=rem]'), sw = document.createElement('span'); sw.className = 'ds-sw'; sw.setAttribute('role', 'switch');
+        rb.querySelector('label.ck-row').after(sw); const sync = () => { rb.classList.toggle('on', ck.checked); sw.setAttribute('aria-checked', ck.checked); };
+        sw.addEventListener('click', () => { ck.checked = !ck.checked; sync(); }); ck.addEventListener('change', sync); sync(); }
+      const mark = () => { f.querySelectorAll('.dq').forEach((b) => b.classList.toggle('on', b.dataset.d === inp.value));
+        const pl = f.querySelector('.ds-plan'); if (pl) pl.style.display = inp.value ? '' : 'none'; };
+      inp.addEventListener('input', mark); f.querySelectorAll('.dq').forEach((b) => b.addEventListener('click', () => setTimeout(mark, 0))); mark();
+    } catch (err) { console.warn('tela do prazo', err); }
+    return r;
+  }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
