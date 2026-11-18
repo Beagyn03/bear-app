@@ -16895,6 +16895,9 @@ drawTabbar = function () {
   pill(0); drawTabbar(); return r;
 }; }
 drawTabbar();
+
+// a inicial da aba Você acompanha o nome/foto sempre que o cabeçalho é redesenhado (antes ficava "V" de "Você")
+{ const _dh = drawHud; drawHud = function () { const r = _dh.apply(this, arguments); const a = document.querySelector('#tabbar .tb-av'); if (a) { a.textContent = r.ph ? '' : initial((typeof socialProfile !== 'undefined' && socialProfile && socialProfile.displayName) || r.name); a.style.backgroundImage = r.ph ? cssUrl(r.ph) : ''; } return r; }; }
 // --- b5_v2_sessao.js ---
 // v2 fase 1 (Bia, 18/11): Ler = sessão de leitura. Céu escuro com o livro, anel de progresso e cronômetro; "Virei a página",
 // −/+10; Trecho e Anotação abrem o diário do próprio livro; "Só marcar a página" abre o Atualizar de sempre.
@@ -16916,6 +16919,12 @@ drawTabbar();
 .v2ses .flip:active{transform:scale(.97)}.v2ses .flip svg{width:20px;height:20px}
 .v2ses .pgl{font-size:.82rem;font-weight:800;color:#ddd5ff;margin-top:.6rem;display:flex;align-items:center;gap:.4rem}
 .v2ses .pgl button{border:0;background:rgba(255,255,255,.13);color:#fff;border-radius:99px;min-width:30px;height:30px;font:inherit;font-weight:900;padding:0 .5rem}
+.v2ses .calm{margin:.9rem 0 0;max-width:260px;font-size:.84rem;line-height:1.4;color:#ddd5ff;font-weight:700}.v2ses .calm b{color:#fff}
+.v2sum .stop{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center}
+.v2sum .stop input{width:100%;height:56px;border:2px solid var(--acc);border-radius:16px;background:var(--bg);color:var(--ink);font:inherit;font-size:1.6rem;font-weight:900;text-align:center;font-variant-numeric:tabular-nums}
+.v2sum .mode{display:flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden}.v2sum .mode button{border:0;background:var(--panel);color:var(--ink-2);font:inherit;font-weight:900;font-size:.8rem;padding:.55rem .7rem}.v2sum .mode button.on{background:var(--acc);color:var(--on-acc,#fff)}
+.v2sum .hint{font-size:.74rem;color:var(--ink-2);font-weight:700;margin:.35rem 0 0}
+.v2sum .cap{width:100%;margin-top:.5rem;height:42px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit;font-size:.88rem;padding:0 .8rem}
 .v2ses .just{margin-top:.35rem;border:0;background:none;color:#cfc4ff;font:inherit;font-size:.76rem;font-weight:800;text-decoration:underline}
 .v2ses .tools{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;padding:0 1rem 1.1rem;position:relative;z-index:2}
 .v2ses .tools button{border:0;border-radius:16px;background:rgba(255,255,255,.1);color:#fff;padding:.75rem 0;font:inherit;font-size:.76rem;font-weight:800;display:grid;justify-items:center;gap:.25rem}
@@ -16966,21 +16975,17 @@ function v2SesOpen(e, s) {
       <div class="mid"><div class="orb"><svg viewBox="0 0 190 190"><circle cx="95" cy="95" r="84" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="5"/><circle cx="95" cy="95" r="84" fill="none" stroke="#e0ad3a" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(p * 527.8).toFixed(1)} 528" transform="rotate(-90 95 95)"/></svg>
         ${e.cover ? `<img class="cv" src="${esc(e.cover)}" alt="">` : `<span class="cv">${esc(String(e.title || '?').charAt(0))}</span>`}<span class="moon" style="left:${mx.toFixed(1)}px;top:${my.toFixed(1)}px"></span></div>
         <div class="bt">${esc(e.title)}</div><div class="tm" id="v2tm">${v2Clock(s)}</div>
-        <button type="button" class="flip" data-a="flip">${v2Svg('flip')}Virei a página</button>
-        <div class="pgl"><button type="button" data-a="m1" aria-label="Voltar uma página">−</button><span>pág. <b>${s.pg}</b> de ${total} · ${s.pg - s.pg0 >= 0 ? '+' : ''}${s.pg - s.pg0} nesta sessão</span><button type="button" data-a="p10" aria-label="Mais dez páginas">+10</button></div>
+        <div class="pgl"><span>começou na pág. <b>${s.pg0}</b> de ${total}</span></div>
+        <p class="calm">Leia em paz. Quando parar, toque em <b>Encerrar</b> e diga em que página ficou.</p>
         <button type="button" class="just" data-a="just">Só marcar a página, sem cronômetro</button></div>
       <div class="tools"><button type="button" data-a="qt">${v2Svg('qt')}Trecho</button><button type="button" data-a="nt">${v2Svg('nt')}Anotação</button></div>`;
   };
-  const set = (pg) => { const { total } = readingInfo(e); s.pg = Math.max(0, Math.min(total || pg, pg)); v2SesPut(s); draw(); };
   const diary = (pane) => { w.hidden = true; ssOpenUpdate(e); const ed = $('#editor');
     setTimeout(() => { const b = ed && ed.querySelector(`.lz-acts [data-p=${pane}]`); if (b) b.click(); }, 120);
     const ob = new MutationObserver(() => { if (ed.hidden) { ob.disconnect(); if (w.isConnected) { w.hidden = false; } } });
     if (ed) ob.observe(ed, { attributes: true, attributeFilter: ['hidden'] }); };
   w.addEventListener('click', (ev) => { const b = ev.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a;
-    if (a === 'flip') { set(s.pg + 1); try { navigator.vibrate && navigator.vibrate(20); } catch {} }
-    else if (a === 'p10') set(s.pg + 10);
-    else if (a === 'm1') set(s.pg - 1);
-    else if (a === 'min') { clearInterval(v2Tick); w.remove(); toast('A sessão continua contando. Toque em Ler para voltar.'); }
+    if (a === 'min') { clearInterval(v2Tick); w.remove(); toast('A sessão continua contando. Toque em Ler para voltar.'); }
     else if (a === 'just') { clearInterval(v2Tick); w.remove(); v2SesPut(null); ssOpenUpdate(e); }
     else if (a === 'qt') diary('trecho');
     else if (a === 'nt') diary('nota');
@@ -16990,29 +16995,50 @@ function v2SesOpen(e, s) {
   v2Tick = setInterval(() => { const t = w.querySelector('#v2tm'); if (!w.isConnected) return clearInterval(v2Tick); if (t) t.textContent = v2Clock(s); }, 1000);
 }
 const V2FEEL = ['😱 Chocante', '🥹 Emocionante', '😍 Apaixonante', '😴 Arrastado', '🤯 Reviravolta', '😌 Tranquilo'];
+// Encerrar: pergunta onde parou (página exata, ou % no e-book), já com a estimativa pelo ritmo da pessoa; capítulo é opcional
+function v2Pace() { const f = (db.focus || []).filter((x) => x.minutes > 0 && x.pages > 0).slice(-20); const m = f.reduce((a, x) => a + x.minutes, 0), p = f.reduce((a, x) => a + x.pages, 0); return m >= 10 ? p / m : 0.6; }
 function v2SesEnd(e, s, w) {
-  const secs = Math.floor((Date.now() - s.start) / 1000), min = Math.max(1, Math.round(secs / 60)), pages = s.pg - s.pg0, rate = pages > 0 ? Math.round(pages / (secs / 3600 || 1)) : 0;
-  const feel = new Set();
+  const secs = Math.floor((Date.now() - s.start) / 1000), min = Math.max(1, Math.round(secs / 60)), { total } = readingInfo(e);
+  const est = Math.min(total || Infinity, s.pg0 + Math.round((secs / 60) * v2Pace()));
+  const feel = new Set(); let mode = 'pg', exact = est;
   const o = document.createElement('div'); o.className = 'v2sum';
-  o.innerHTML = `<div class="bx" role="dialog" aria-label="Resumo da sessão"><h3>Boa sessão!</h3><p class="s">${esc(e.title)} · ${pages > 0 ? `agora na pág. ${s.pg}` : 'sem páginas novas'}</p>
-    <div class="nums"><div><b>${secs < 60 ? '<1' : min}</b><small>minutos</small></div><div><b>${Math.max(0, pages)}</b><small>páginas</small></div><div><b>${secs >= 60 && rate ? rate : '—'}</b><small>pág. por hora</small></div></div>
+  o.innerHTML = `<div class="bx" role="dialog" aria-label="Resumo da sessão"><h3>Boa sessão!</h3><p class="s">${esc(e.title)} · começou na pág. ${s.pg0}</p>
+    <div class="lb" id="v2stoplb">Em que página você parou?</div>
+    <div class="stop"><input id="v2stop" type="number" inputmode="numeric" min="0" max="${total || ''}" value="${est}" aria-labelledby="v2stoplb"><div class="mode"><button type="button" class="on" data-m="pg">pág.</button><button type="button" data-m="pc">%</button></div></div>
+    <p class="hint" id="v2hint">${est > s.pg0 ? 'Estimativa pelo seu ritmo. Corrija se for outra.' : 'Digite a página em que parou.'}</p>
+    <input class="cap" id="v2cap" type="text" maxlength="40" placeholder="Capítulo (opcional)" value="${esc(s.cap || '')}">
+    <div class="nums" style="margin-top:.8rem"><div><b>${secs < 60 ? '<1' : min}</b><small>minutos</small></div><div><b id="v2np">0</b><small>páginas</small></div><div><b id="v2nr">—</b><small>pág. por hora</small></div></div>
     <div class="lb">Como foi?</div><div class="ch">${V2FEEL.map((f, i) => `<button type="button" data-f="${i}">${f}</button>`).join('')}</div>
     <div class="ac"><button type="button" data-a="back">Continuar lendo</button><button type="button" class="p" data-a="save">Salvar</button></div>
     <button type="button" data-a="drop" style="display:block;margin:.7rem auto 0;border:0;background:none;color:var(--ink-2);font:inherit;font-size:.78rem;font-weight:800;text-decoration:underline">Descartar sessão</button></div>`;
-  o.addEventListener('click', (ev) => { if (ev.target === o) { o.remove(); return; } const f = ev.target.closest('[data-f]');
+  const inp = o.querySelector('#v2stop');
+  const page = () => { const v = Number(inp.value); if (!isFinite(v) || inp.value === '') return s.pg0; const p = mode === 'pc' && total ? Math.round(total * Math.min(100, v) / 100) : Math.round(v); return Math.max(0, total ? Math.min(total, p) : p); };
+  const upd = () => { const pg = page(), n = Math.max(0, pg - s.pg0), r = secs >= 60 && n ? Math.round(n / (secs / 3600)) : 0;
+    o.querySelector('#v2np').textContent = n; o.querySelector('#v2nr').textContent = r || '—';
+    if (mode === 'pc') o.querySelector('#v2hint').textContent = total ? `Isso dá a pág. ${pg} de ${total}.` : 'Informe o total de páginas do livro para usar %.'; };
+  inp.addEventListener('input', () => { if (mode === 'pg') { exact = page(); o.querySelector('#v2hint').textContent = total ? `de ${total} páginas` : ''; } upd(); }); inp.addEventListener('focus', () => inp.select());
+  o.addEventListener('click', (ev) => { if (ev.target === o) { o.remove(); return; }
+    const m = ev.target.closest('[data-m]');
+    if (m) { const pg = page(); mode = m.dataset.m; o.querySelectorAll('[data-m]').forEach((x) => x.classList.toggle('on', x === m));
+      inp.max = mode === 'pc' ? 100 : (total || ''); inp.value = mode === 'pc' && total ? Math.round(pg / total * 100) : (Math.abs(exact - pg) <= Math.ceil((total || 100) / 100) ? exact : pg);
+      o.querySelector('#v2stoplb').textContent = mode === 'pc' ? 'Em que porcentagem você parou?' : 'Em que página você parou?';
+      if (mode === 'pg') o.querySelector('#v2hint').textContent = 'Digite a página em que parou.'; upd(); inp.focus(); return; }
+    const f = ev.target.closest('[data-f]');
     if (f) { const k = V2FEEL[Number(f.dataset.f)]; feel.has(k) ? feel.delete(k) : feel.add(k); f.classList.toggle('on', feel.has(k)); return; }
     const b = ev.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a;
-    if (a === 'back') { o.remove(); return; }
+    if (a === 'back') { s.cap = o.querySelector('#v2cap').value.trim(); v2SesPut(s); o.remove(); return; }
     if (a === 'drop') { if (!confirm('Descartar esta sessão? Nada será registrado.')) return; o.remove(); clearInterval(v2Tick); w.remove(); v2SesPut(null); toast('Sessão descartada'); return; }
     if (a === 'save') {
+      const pg = page(), cap = o.querySelector('#v2cap').value.trim();
+      if (pg < s.pg0 && !confirm(`A página ${pg} é antes de onde você começou (${s.pg0}). Salvar mesmo assim?`)) return;
       o.remove(); clearInterval(v2Tick); w.remove(); v2SesPut(null);
       const { g, gb, now } = readingInfo(e);
-      if (secs >= 60) { db.focus = [...(db.focus || []), { id: uid(), date: todayISO(), start: new Date(s.start).toISOString(), minutes: min, libId: e.id, fromPage: now, pages: Math.max(0, s.pg - now), via: 'ler', ...(feel.size ? { feel: [...feel] } : {}) }]; save(); }
-      if (s.pg !== now) { if (gb) quickLog(g, gb, String(s.pg)); else libLog(e, String(s.pg), false); }
+      if (secs >= 60) { db.focus = [...(db.focus || []), { id: uid(), date: todayISO(), start: new Date(s.start).toISOString(), minutes: min, libId: e.id, fromPage: now, pages: Math.max(0, pg - now), via: 'ler', ...(cap ? { chapter: cap } : {}), ...(feel.size ? { feel: [...feel] } : {}) }]; save(); }
+      if (pg !== now) { if (gb) quickLog(g, gb, String(pg)); else libLog(e, String(pg), false); }
       else { renderHome(todayISO()); toast(secs >= 60 ? `${min} min de leitura registrados` : 'Sessão salva'); }
     }
   });
-  TR.append(o);
+  TR.append(o); upd(); setTimeout(() => { try { inp.focus(); inp.select(); } catch {} }, 150);
 }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
