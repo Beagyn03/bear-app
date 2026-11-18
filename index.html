@@ -9883,6 +9883,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -10688,7 +10689,7 @@ const qtFeel = (k, cls = '', on = false) => { const x = QT_FEELS.find((y) => y[0
     const drawList = () => {
       ff();
       const n = normT(q), bio = (T().bio || '').trim(), list = all().filter((x) => !fe || x.f.includes(fe)).filter((x) => !n || normT(x.t).includes(n) || normT(x.e.title).includes(n) || normT(x.e.author || '').includes(n));
-      v.querySelector('.qt-list').innerHTML = list.length ? list.map((x, k) => `<button type="button" class="qt-it qt-cv" data-k="${k}">${cvh(x.e.title, x.e.cover, '')}<span><q>${esc(x.t)}</q><small>❝ ${esc(x.e.title)}${x.p ? ` · pág. ${x.p}` : ''}${bio && bio === bioOf(x) ? '<span class="qt-bio">frase do perfil</span>' : ''}</small>${x.f.length ? `<span class="qt-fl">${x.f.map((k) => qtFeel(k)).join('')}</span>` : ''}</span></button>`).join('')
+      v.querySelector('.qt-list').innerHTML = list.length ? list.map((x, k) => `<button type="button" class="qt-it qt-cv" data-k="${k}">${cvh(x.e.title, x.e.cover, '')}<span><q>${esc(x.t)}</q><small>❝ ${esc(x.e.title)}${x.p ? ` · pág. ${x.p}` : ''}${x.at ? ` · ${String(x.at).slice(8, 10)}/${String(x.at).slice(5, 7)}${String(x.at).slice(0, 4) !== todayISO().slice(0, 4) ? '/' + String(x.at).slice(0, 4) : ''}` : ''}${bio && bio === bioOf(x) ? '<span class="qt-bio">frase do perfil</span>' : ''}</small>${x.f.length ? `<span class="qt-fl">${x.f.map((k) => qtFeel(k)).join('')}</span>` : ''}</span></button>`).join('')
         : `<p class="sl-empty">${all().length ? (fe ? 'Nenhum trecho com esse sentimento.' : 'Nenhum trecho com esse texto.') : 'Toque em “+ Novo” para guardar uma frase de um livro. Também dá para salvar pelo menu do livro (Trechos e anotação).'}</p>`;
       try { paintCv(v.querySelector('.qt-list')); } catch {}
       $$('.qt-it', v).forEach((b) => b.addEventListener('click', () => {
