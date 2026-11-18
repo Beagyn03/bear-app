@@ -9894,6 +9894,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -16072,7 +16073,7 @@ const RT_LOGO = {}; ['claro', 'escuro'].forEach((k) => { const im = new Image();
 function rtLoadCover(src) { return new Promise((res) => { if (!src) return res(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 4; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 4, 4); const d = x.getImageData(0, 0, 4, 4).data; let r = 0, g = 0, b = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; } im._avg = [r / 16, g / 16, b / 16]; res(im); } catch { res(null); } }; im.onerror = () => res(null); im.src = src; setTimeout(() => res(null), 6000); }); }
 function rtWrap(x, t, maxW, maxL) { const words = String(t).split(/\s+/), L = []; let cur = ''; for (const w of words) { const n = cur ? cur + ' ' + w : w; if (x.measureText(n).width > maxW && cur) { L.push(cur); cur = w; if (L.length === maxL) break; } else cur = n; } if (L.length < maxL && cur) L.push(cur); else if (L.length === maxL && cur && !L.includes(cur)) L[maxL - 1] = L[maxL - 1].replace(/\s*\S*$/, '') + '…'; return L; }
 function rtDraw(D, O, cover) {
-  const W = 1080, H = O.fmt === 'post' ? 1350 : 1920, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const W = 1080, H = O.fmt === 'post' ? 1350 : 1920, c = document.createElement('canvas'); c.width = W; c.height = H * 2; const x = c.getContext('2d');
   const T = { ...RT_THEMES[O.theme] }; if (O.theme === 'capa' && cover && cover._avg) { const [r, g, b] = cover._avg; T.bg = ['rgb(' + [r, g, b].map((v) => Math.round(v * 0.75)).join(',') + ')', 'rgb(' + [r, g, b].map((v) => Math.round(v * 0.18)).join(',') + ')']; }
   const FN = RT_FONTS[O.font || T.font] || RT_FONTS.classica, K = O.size || 1;
   let s0 = 7; const rnd = () => ((s0 = (s0 * 9301 + 49297) % 233280) / 233280);
@@ -16099,18 +16100,15 @@ function rtDraw(D, O, cover) {
   x.textAlign = 'center'; if (hd && O.show.user !== false) { x.fillStyle = T.sub; x.font = SANS(800, 30); x.fillText(hd, W / 2, y); y += post ? 70 : 84; }
   const head = (O.head ?? 'Leitura concluída').trim();
   if (head) { x.fillStyle = T.ink; x.font = DISP(false, post ? 70 : 84); rtWrap(x, head, W - 120, 2).forEach((l) => { x.fillText(l, W / 2, y); y += Math.round((post ? 76 : 92) * K); }); y += post ? -26 : -22; }
-  y += post ? 40 : 56;
+  // a marca fica entre o título e a capa (no meio da imagem, longe do que o Instagram cobre); não dá para trocar nem tirar
+  { y += post ? 6 : 10; const lg = RT_LOGO[T.dark ? 'escuro' : 'claro'], lh = post ? 76 : 100;
+    if (lg && lg.complete && lg.naturalWidth) { const lw = lh * lg.naturalWidth / lg.naturalHeight; x.drawImage(lg, (W - lw) / 2, y, lw, lh); } else { x.fillStyle = T.sub; x.font = 'italic 700 ' + Math.round(lh * 0.6) + 'px Georgia, serif'; x.fillText('Livroverso', W / 2, y + lh * 0.7); }
+    y += lh + (post ? 34 : 46); }
   // capa
   const cw = post ? 300 : 420, ch = cw * 1.5, cx = (W - cw) / 2;
   x.save(); x.shadowColor = O.show.nota && D.paws ? mg : 'rgba(0,0,0,.5)'; x.shadowBlur = 60; x.fillStyle = mg; x.fillRect(cx - 8, y - 8, cw + 16, ch + 16); x.restore();
   if (cover) x.drawImage(cover, cx, y, cw, ch); else { x.fillStyle = '#2a2340'; x.fillRect(cx, y, cw, ch); x.fillStyle = '#fff'; x.font = SANS(900, 40); rtWrap(x, e.title, cw - 40, 5).forEach((l, i) => x.fillText(l, W / 2, y + 90 + i * 50)); }
-  // selo da marca preso na borda de baixo da capa (metade dentro, metade fora): cortar ou apagar estraga a capa
-  { const lg = RT_LOGO[T.dark ? 'escuro' : 'claro'], sh = post ? 74 : 92, lh = sh - 30;
-    if (lg && lg.complete && lg.naturalWidth) { const lw = lh * lg.naturalWidth / lg.naturalHeight, sw = lw + 64, sx = (W - sw) / 2, sy = y + ch - sh / 2;
-      x.save(); x.shadowColor = 'rgba(0,0,0,.35)'; x.shadowBlur = 24; x.shadowOffsetY = 6; x.fillStyle = T.dark ? 'rgba(22,15,32,.92)' : 'rgba(255,250,243,.96)'; x.beginPath(); x.roundRect(sx, sy, sw, sh, sh / 2); x.fill(); x.restore();
-      x.strokeStyle = T.acc; x.globalAlpha = 0.7; x.lineWidth = 3; x.beginPath(); x.roundRect(sx, sy, sw, sh, sh / 2); x.stroke(); x.globalAlpha = 1;
-      x.drawImage(lg, (W - lw) / 2, sy + 15, lw, lh); } }
-  y += ch + (post ? 100 : 136);
+  y += ch + (post ? 70 : 100);
   x.fillStyle = T.ink; x.font = DISP(true, post ? 54 : 66); rtWrap(x, e.title, W - 160, 2).forEach((l) => { x.fillText(l, W / 2, y); y += Math.round((post ? 62 : 76) * K); });
   x.fillStyle = T.sub; x.font = SANS(800, 32); if (e.author) { x.fillText(e.author, W / 2, y); y += post ? 56 : 66; }
   if (O.show.nota && D.paws) { const sz = post ? 50 : 60, gap = 14, x0 = (W - (sz * 5 + gap * 4)) / 2, cy = y - 8;
@@ -16131,11 +16129,9 @@ function rtDraw(D, O, cover) {
   if (O.show.pers && (D.fav || D.hate)) { x.font = SANS(800, 30); x.fillStyle = T.sub; if (D.fav) { x.fillText('Personagem favorito: ' + D.fav, W / 2, y); y += 46; } if (D.hate) { x.fillText('Amei odiar: ' + D.hate, W / 2, y); y += 46; } y += 20; }
   const qt = String(O.qt ?? (D.q ? D.q.t : '')).trim();
   if (O.show.trecho && qt) { x.fillStyle = T.ink; x.font = DISP(true, post ? 36 : 42); const L = rtWrap(x, '“' + qt + '”', W - 200, post ? 3 : 5); L.forEach((l) => { x.fillText(l, W / 2, y); y += Math.round((post ? 48 : 56) * K); }); }
-  // composição: fundo, conteúdo (encolhe se não couber) e a marca no rodapé, que não muda
+  // composição: fundo e conteúdo (encolhe se não couber)
   const F = document.createElement('canvas'); F.width = W; F.height = H; const fx = F.getContext('2d'); bgPaint(fx);
-  { const room = H - 190; if (y > room) { const k = room / y; fx.drawImage(c, (W - W * k) / 2, 10, W * k, H * k); } else fx.drawImage(c, 0, Math.round((room - y) / 2)); }
-  const lg = RT_LOGO[T.dark ? 'escuro' : 'claro']; if (lg && lg.complete && lg.naturalWidth) { const lh = 92, lw = lh * lg.naturalWidth / lg.naturalHeight; fx.drawImage(lg, (W - lw) / 2, H - lh - 46, lw, lh); }
-  else { fx.textAlign = 'center'; fx.fillStyle = T.sub; fx.font = 'italic 700 40px Georgia, serif'; fx.fillText('Livroverso', W / 2, H - 66); }
+  { const room = H - 90, ch2 = Math.min(c.height, Math.ceil(y + 30)); if (y > room) { const k = room / y; fx.drawImage(c, 0, 0, W, ch2, (W - W * k) / 2, 10, W * k, ch2 * k); } else fx.drawImage(c, 0, 0, W, ch2, 0, Math.round((room - y) / 2), W, ch2); }
   return F;
 }
 function openRetro(e, auto) {
