@@ -2434,7 +2434,7 @@ async function publishReview(b) {
     if (!socialProfile) return; // sem @usuário ainda: publica tudo ao criar
     const rv = b.review;
     if (!rv || rv.share === false) { await sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`); return; }
-    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler, ressaca: rv.ressaca === 'curou' ? 'curou' : rv.ressaca ? 'deu' : null, readerPct: readerPctOf(e.title), ...(e.status === 'LIDO' && e.finishedAt && /^\d{4}-\d{2}-\d{2}$/.test(e.finishedAt) ? { readAt: e.finishedAt } : {}), ...(rv.spoiler && rv.spoilerKind ? { spoilerKind: rv.spoilerKind, ...(rv.spoilerAt ? { spoilerAt: rv.spoilerAt } : {}) } : {}) });
+    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler, ressaca: rv.ressaca === 'curou' ? 'curou' : rv.ressaca ? 'deu' : null, readerPct: readerPctOf(e.title), bookStatus: ['LIDO', 'LENDO', 'HIBERNANDO', 'ABANDONEI', 'QUERO'].includes(e.status) ? e.status : null, ...(e.status === 'LIDO' && e.finishedAt && /^\d{4}-\d{2}-\d{2}$/.test(e.finishedAt) ? { readAt: e.finishedAt } : {}), ...(rv.spoiler && rv.spoilerKind ? { spoilerKind: rv.spoilerKind, ...(rv.spoilerAt ? { spoilerAt: rv.spoilerAt } : {}) } : {}) });
   } catch {}
 }
 async function publishAllReviews() { libSync(); for (const e of (db.library || [])) if (e.review && e.review.share !== false) await publishReview(e); }
@@ -9898,6 +9898,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -13102,7 +13103,7 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       const posts = a && a.status === 200 && a.data ? (a.data.items || []).filter((x) => x.type !== 'review') : [];
       const net = b && b.status === 200 && b.data ? b.data : {};
       const seen = new Set(); const revs = [];
-      const asRev = (x, mine) => ({ type: 'review', id: x.id, user: x.user, paws: x.paws, text: x.text, spoiler: !!x.spoiler, createdAt: x.updatedAt, mine: !!mine, readerPct: x.readerPct ?? null });
+      const asRev = (x, mine) => ({ type: 'review', id: x.id, user: x.user, paws: x.paws, text: x.text, spoiler: !!x.spoiler, createdAt: x.updatedAt, mine: !!mine, readerPct: x.readerPct ?? null, bookStatus: x.bookStatus || null });
       if (net.mine) { revs.push(asRev(net.mine, true)); seen.add(net.mine.id); }
       for (const x of [...(net.friends || []), ...(net.public || [])]) if (!seen.has(x.id)) { seen.add(x.id); revs.push(asRev(x, false)); }
       data = { posts, revs, avg: net.avg ?? null, count: net.count || 0, at: Date.now() }; S.bkRede[key] = data;
@@ -16269,6 +16270,8 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
   } catch (err) { console.warn('avaliação retro', err); }
   return r;
 }; }
+// a avaliação publicada leva a situação do livro (Abandonou, Pausou…): quando a situação muda, publica de novo
+{ const _sl = setLibStatus; setLibStatus = function (e, st) { const was = e && e.status; const r = _sl.apply(this, arguments); try { if (e && e.review && was !== e.status) setTimeout(() => { try { publishReview(e); } catch {} }, 300); } catch {} return r; }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
