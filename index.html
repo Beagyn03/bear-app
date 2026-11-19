@@ -17415,7 +17415,7 @@ Object.assign(V2I, {
 // --- c1_v2_hoje.js ---
 // v2 Hoje refeito (Bia, 19/11, branch livroverso-2): a cara do protótipo com os dados reais.
 //  - Topo: data + "Boa tarde, <nome>"; o livro atual grande dentro do anel de progresso, com a lua onde a leitura está.
-//  - "Ler agora" (sessão), "Atualizar página" e "•••" (o menu do livro de sempre). Vários livros em leitura: troca rápida.
+//  - "Atualizar página" como botão principal (a sessão de leitura fica só no Ler do menu de baixo, 19/11), "•••" (o menu do livro de sempre). Vários livros em leitura: troca rápida.
 //  - Embaixo, nesta ordem: prazo da semana (o cartão antigo enxuto), Pergunta do dia, Órbita + Meta lado a lado,
 //    Qual leio agora + Na fila, e o resto (indicações, Comunidade…). O cartão grande "Lendo agora" e a "Próxima conquista" saem.
 //  - A ordem vem do CSS (grid + order); Personalizar Início continua ligando e desligando as seções.
@@ -17471,7 +17471,7 @@ Object.assign(V2I, {
 .v2hero .empty b{display:block;font-family:var(--v2-disp);font-size:1.15rem;color:var(--ink)}
 .v2hero .empty p{margin:.3rem 0 .8rem;font-size:.82rem;color:var(--ink-2)}
 `; TR.append(st); }
-Object.assign(V2I, { ok: '<circle class="d" cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9"/>', junto: '<circle class="d" cx="9" cy="8" r="3.5"/><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.9-3.4 3.6-5 6.5-5s5.6 1.6 6.5 5M18 8v6M15 11h6"/>' });
+Object.assign(V2I, { pag: '<path class="d" d="M6 3.5h9l3.5 3.5v13.5H6z"/><path d="M6 3.5h9l3.5 3.5v13.5H6zM15 3.5V7h3.5M9 12h6M9 15.5h4"/>', ok: '<circle class="d" cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9"/>', junto: '<circle class="d" cx="9" cy="8" r="3.5"/><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.9-3.4 3.6-5 6.5-5s5.6 1.6 6.5 5M18 8v6M15 11h6"/>' });
 const V2H_DOW = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 function v2hGreet() { const h = new Date().getHours(); return h < 5 || h >= 18 ? 'Boa noite' : h < 12 ? 'Bom dia' : 'Boa tarde'; }
 function v2hName() { const n = (typeof socialProfile !== 'undefined' && socialProfile && socialProfile.displayName) || (NAME && NAME !== 'Você' ? NAME : ''); return String(n || '').trim().split(/\s+/)[0]; }
@@ -17493,8 +17493,7 @@ function v2hHTML(m) {
     <b class="bt">${esc(e.title)}</b>${e.author ? `<span class="au">${esc(e.author)}</span>` : ''}
     ${total ? `<span class="pg">pág. ${now} de ${total} · ${pct}% lido</span>` : ''}
     ${m.due ? `<span class="due">${esc(m.due)}</span>` : ''}
-    <div class="acts"><button type="button" class="go" data-h="ler">${V2SVG('ler', 20)}${m.ses ? 'Voltar à sessão' : 'Ler agora'}</button><button type="button" class="mo" data-h="fim" aria-label="Concluir: terminei o livro" title="Concluir">${V2SVG('ok', 20)}</button><button type="button" class="mo" data-h="inv" aria-label="Convidar para ler junto" title="Ler junto">${V2SVG('junto', 20)}</button><button type="button" class="mo" data-h="more" aria-label="Mais opções do livro">${V2SVG('dots', 20)}</button></div>
-    <button type="button" class="lk" data-h="upd" style="margin-top:.55rem">Atualizar página</button>
+    <div class="acts"><button type="button" class="go" data-h="upd">${V2SVG('pag', 20)}Atualizar página</button><button type="button" class="mo" data-h="fim" aria-label="Concluir: terminei o livro" title="Concluir">${V2SVG('ok', 20)}</button><button type="button" class="mo" data-h="inv" aria-label="Convidar para ler junto" title="Ler junto">${V2SVG('junto', 20)}</button><button type="button" class="mo" data-h="more" aria-label="Mais opções do livro">${V2SVG('dots', 20)}</button></div>
     ${m.others.length ? `<div class="sw"><small>Também lendo</small>${m.others.map((x) => `<button type="button" data-h="sw" data-id="${esc(x.id)}">${cvh(x.title, x.cover, 'v2h-mini')}<span>${esc(x.title)}</span></button>`).join('')}</div>` : ''}
   </section>`;
 }
@@ -17521,7 +17520,8 @@ function v2hBind(h) {
     // Órbita e Meta lado a lado; se só existir um, ocupa a linha toda
     const orb = [...col.querySelectorAll(':scope > .orb-row > *')].filter((c) => !c.classList.contains('v2-conq') && getComputedStyle(c).display !== 'none');
     const meta = col.querySelector(':scope > .v2-meta-t');
-    const solo = (orb.length + (meta ? 1 : 0)) === 1; [...orb, meta].filter(Boolean).forEach((c) => c.classList.toggle('v2-solo', solo));
+    // meta do ano com capas precisa da linha inteira; lado a lado só o convite curto (19/11)
+    const solo = (orb.length + (meta ? 1 : 0)) === 1 || !!(meta && meta.id === 'ini-meta'); [...orb, meta].filter(Boolean).forEach((c) => c.classList.toggle('v2-solo', solo));
   };
   const put = () => { if (busy) return; const col = TR.querySelector('.v3-colA'); if (!col || !col.querySelector(':scope > .v3-now')) return; busy = true;
     try { mark(col); const m = v2hModel(), html = v2hHTML(m), key = html.length + '|' + html.slice(0, 40) + (m.R ? m.R.e.id + m.R.now + m.R.total : '') + m.due + m.ses + m.others.map((x) => x.id).join(',');
