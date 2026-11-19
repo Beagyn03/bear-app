@@ -17916,6 +17916,156 @@ async function v2RsShare(M, d) {
       b.addEventListener('click', () => { try { closeDrawer(); } catch {} v2ResumoOpen(1); }); st.after(b); } }
   };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 80); }).observe(TR, { childList: true, subtree: true }); }
+// --- c6_v2_folhas.js ---
+// v2 etapa 2 (19/11, branch livroverso-2): folhas, menus flutuantes, botões e campos no padrão novo, no app inteiro.
+//  - Folhas (#editor compacto, .sheet antiga, painel de filtro): cantos 26px em cima, puxador, título em serifa,
+//    linhas de opção com raio 14px e toque suave.
+//  - Menus flutuantes (.pop, .bkm do livro, painel da Estante): cartão de 18px, sombra macia, itens com raio 12px.
+//  - Botões: principal em degradê do acento (o mesmo do "Ler agora"); secundário claro com borda.
+//  - Campos: raio 14px, fundo do tema, foco com anel do acento.
+//  - Abas em pílula (segmentado), iguais às de Avisos, para todas as telas que usam .v3-seg.
+// Só visual: nenhuma função muda de lugar.
+{ const st = document.createElement('style'); st.textContent = `
+:host{--v2-pri:linear-gradient(135deg,color-mix(in srgb,var(--acc) 62%,#ffd6a3),var(--acc));--v2-pri-sh:0 8px 18px color-mix(in srgb,var(--acc) 32%,transparent);--v2-seg:color-mix(in srgb,var(--line) 55%,var(--bg))}
+/* ---------- folhas ---------- */
+#editor.compact .ed-body{border-radius:26px 26px 0 0!important;padding-top:1.55rem!important;box-shadow:0 -14px 40px rgba(20,10,0,.22)!important}
+#editor.compact .ed-body::before,.sheet .box::before{content:"";position:absolute;left:50%;top:.55rem;width:42px;height:4.5px;margin-left:-21px;border-radius:9px;background:color-mix(in srgb,var(--ink) 18%,transparent)}
+#editor .ed-body > h3,#editor .ed-body h3:first-child,.sheet .box > h3{font-family:var(--v2-disp)!important;font-size:1.22rem!important;font-weight:700!important;letter-spacing:0!important;color:var(--ink)!important;margin:0 0 .2rem!important;text-align:left}
+.sheet .box{position:relative;border-radius:26px 26px 0 0!important;padding:1.55rem 1rem calc(1rem + env(safe-area-inset-bottom,0px))!important;background:var(--panel)!important;border:0!important;box-shadow:0 -14px 40px rgba(20,10,0,.22)!important;display:grid;gap:.35rem}
+.sheet .box > button{border:0!important;border-radius:14px!important;background:var(--bg)!important;color:var(--ink)!important;font:inherit;font-weight:800!important;text-align:left;padding:.85rem 1rem!important;min-height:48px}
+.sheet .box > button.cancel{background:none!important;text-align:center;color:var(--ink-2)!important}
+.bm-list{display:grid;gap:.3rem}
+#editor .bm-it{border:0!important;border-radius:14px!important;background:color-mix(in srgb,var(--ink) 3.5%,var(--panel))!important;padding:.8rem .95rem!important;min-height:50px;font-weight:800!important;color:var(--ink)!important;transition:background .15s}
+#editor .bm-it:hover,#editor .bm-it:active{background:color-mix(in srgb,var(--acc) 10%,var(--panel))!important}
+#editor .bm-it.on{background:color-mix(in srgb,var(--acc) 14%,var(--panel))!important;color:var(--acc)!important}
+#editor .bm-it.danger{color:#c0392b!important}
+#editor .bm-it small{color:var(--ink-2)!important;font-weight:700!important}
+#editor .bm-list hr,.pop hr,.bkm hr{border:0!important;border-top:1px solid var(--line)!important;margin:.25rem .4rem!important}
+#editor .bm-close{border-radius:14px!important}
+/* ---------- menus flutuantes ---------- */
+.pop,.bkm{border-radius:18px!important;border:1px solid var(--line)!important;background:var(--panel)!important;box-shadow:0 18px 44px rgba(20,10,0,.24),0 2px 6px rgba(20,10,0,.08)!important;padding:.35rem!important;overflow:hidden}
+.pop .pop-it,.bkm button{border-radius:12px!important;border:0!important;background:none;color:var(--ink);transition:background .12s}
+.pop .pop-it{padding:.62rem .75rem!important;min-height:44px}
+.pop .pop-it:hover,.bkm button:hover,.pop .pop-it:active,.bkm button:active{background:color-mix(in srgb,var(--acc) 9%,var(--panel))!important}
+.pop .pop-it.on{color:var(--acc)!important;background:color-mix(in srgb,var(--acc) 11%,var(--panel))!important}
+.pop .pop-it small{color:var(--ink-2)!important}
+.bkm > header,.bkm .bkm-h{border-radius:12px;background:color-mix(in srgb,var(--acc) 6%,var(--panel))}
+.esn-sheet.esn-pop .box{border-radius:20px!important;box-shadow:0 18px 44px rgba(20,10,0,.24)!important}
+.esn-sheet.esn-pop .box h3{font-family:var(--v2-disp)!important;font-size:1.08rem!important}
+/* ---------- botões ---------- */
+#editor .op,#editor button.p,#editor .bp-btn.pri,.bp-btn.pri,.esn-sheet .acts .p,#editor .rv-ok,#editor .sv-ok,#editor button.pri,.ct-go,.v2-btn-pri{background:var(--v2-pri)!important;color:var(--on-acc,#fff)!important;border:0!important;border-radius:16px!important;font-weight:900!important;box-shadow:var(--v2-pri-sh)!important}
+#editor .cn,#editor button.ghost,.esn-sheet .acts button:not(.p),.bp-btn:not(.pri){border-radius:16px!important;border:1.5px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;font-weight:800!important;box-shadow:none!important}
+/* ---------- campos ---------- */
+#editor input[type=text],#editor input[type=number],#editor input[type=search],#editor input[type=date],#editor input:not([type]),#editor textarea,#editor select,.fs-input,#lista input#esn-q{border-radius:14px!important;border:1.5px solid var(--line)!important;background:var(--bg)!important;color:var(--ink)!important;font:inherit;transition:border-color .15s,box-shadow .15s}
+#editor input:focus,#editor textarea:focus,#editor select:focus,.fs-input:focus{outline:none!important;border-color:var(--acc)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 18%,transparent)!important}
+#editor label > b,#editor .lb,#editor .fld > span{font-size:.7rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+/* ---------- abas em pílula ---------- */
+.v3-seg,.esn-tabs,.bp-tabs{display:flex!important;gap:.25rem!important;padding:.25rem!important;border-radius:14px!important;background:var(--v2-seg)!important;border:0!important;box-shadow:none!important}
+.v3-seg > button,.esn-tabs > button,.bp-tabs > button{flex:1 1 0;min-width:0;height:38px!important;border:0!important;border-radius:11px!important;background:none!important;color:var(--ink-2)!important;font:inherit;font-size:.84rem!important;font-weight:900!important;white-space:nowrap;box-shadow:none!important;padding:0 .5rem!important}
+.v3-seg > button::after,.esn-tabs > button::after,.bp-tabs > button::after{display:none!important}
+.v3-seg > button.on,.esn-tabs > button.on,.bp-tabs > button.on{background:var(--panel)!important;color:var(--ink)!important;box-shadow:0 1px 4px rgba(0,0,0,.09)!important}
+`; TR.append(st); }
+// --- c7_v2_estante.js ---
+// v2 etapa 2 (19/11): Estante no padrão novo (Minha biblioteca e Estantes).
+//  - Cabeçalho como o do Hoje: rótulo pequeno + título em serifa + resumo ("13 livros · 7 lidos").
+//  - Busca em pílula, filtro redondo, "+" no degradê do acento; abas em pílula (c6); filtros de status mais leves.
+//  - Capas com cantos e sombra de livro; nota vira selo redondo no canto de baixo (mesmas cores: 5 furta-cor, ouro,
+//    prata, bronze, ferro); livro em leitura ganha barra de progresso na própria capa; lido ganha ✓ discreto.
+//  - Estantes em cartões com a "tábua" embaixo das capas; "+ Nova estante" tracejado.
+// Só visual: as ações (abrir, menu, filtros, seleção, ordem) são as mesmas.
+{ const st = document.createElement('style'); st.textContent = `
+#lista .v2-eh{padding:.35rem .15rem .65rem}
+#lista .v2-eh .eb{font-size:.68rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-2)}
+#lista .v2-eh h1{margin:.12rem 0 0;font-family:var(--v2-disp);font-size:1.7rem;line-height:1.1;color:var(--ink)}
+#lista .v2-eh small{display:block;margin-top:.2rem;font-size:.8rem;font-weight:800;color:var(--ink-2)}
+#lista .esn-top{gap:.5rem!important;align-items:center}
+#lista .esn-q{border-radius:999px!important;border:1.5px solid var(--line)!important;background:var(--panel)!important;box-shadow:var(--v2-sh)!important;min-height:46px}
+#lista .esn-q input#esn-q{border:0!important;background:none!important;box-shadow:none!important}
+#lista .esn-ib{width:46px!important;height:46px!important;border-radius:50%!important;border:1.5px solid var(--line)!important;background:var(--panel)!important;box-shadow:var(--v2-sh)!important;color:var(--ink)!important}
+#lista .esn-ib.acc{background:var(--v2-pri)!important;border:0!important;color:var(--on-acc,#fff)!important;box-shadow:var(--v2-pri-sh)!important;font-size:1.35rem!important}
+#lista .esn-tabs{margin:.85rem 0 .7rem!important}
+#lista .esn-seg{gap:.4rem!important;padding:.1rem 0 .2rem!important}
+#lista .esn-seg > button{border-radius:999px!important;border:1.5px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;font-weight:800!important;height:36px!important;padding:0 .85rem!important;box-shadow:none!important}
+#lista .esn-seg > button small{opacity:.55;font-weight:800;margin-left:.25rem}
+#lista .esn-seg > button.on{background:var(--ink)!important;border-color:var(--ink)!important;color:var(--bg)!important}
+#lista .esn-seg > button.on small{opacity:.75}
+#lista .esn-bar{margin:.35rem 0 .6rem!important;align-items:center}
+#lista .esn-bar > b{font-family:var(--v2-disp);font-size:1.02rem;font-weight:700}
+#lista .esn-bar > button{border-radius:999px!important;border:1.5px solid var(--line)!important;background:var(--panel)!important;height:34px!important;padding:0 .8rem!important;font-weight:800!important;color:var(--ink)!important}
+#lista .esn-bar > button[aria-label]{width:34px!important;padding:0!important;display:grid!important;place-items:center}
+/* grade de capas */
+#lista .esn-grid{gap:1.05rem .8rem!important}
+#lista .es4-bk{position:relative}
+#lista .es4-bk > b{font-size:.8rem!important;font-weight:900!important;line-height:1.2!important;margin-top:.45rem!important;color:var(--ink)}
+#lista .es4-bk > small{font-size:.7rem!important;font-weight:800!important;color:var(--ink-2)!important;text-transform:none}
+#lista .es-bk{position:relative;border-radius:5px 10px 10px 5px!important;overflow:visible}
+#lista .es-bk .es-cv{border-radius:4px 9px 9px 4px!important}
+#lista .es-bk .es-cv:not(.rt){box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 10px 20px rgba(40,20,5,.22),0 2px 5px rgba(40,20,5,.14)!important}
+#lista .es-bk .es-cv::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;border-radius:4px 0 0 4px;background:linear-gradient(90deg,rgba(0,0,0,.22),rgba(255,255,255,.08) 60%,transparent);pointer-events:none;z-index:1}
+/* nota: selo redondo embaixo à direita (no lugar da estrela grande em cima) */
+#lista .es-bk .mk-bear{left:auto!important;top:auto!important;right:-6px!important;bottom:-6px!important;width:30px!important;height:30px!important;border-radius:50%!important;display:grid!important;place-items:center;background:var(--v2-seal,#c9a14a)!important;border:2.5px solid var(--bg)!important;box-shadow:0 3px 8px rgba(0,0,0,.25)!important;z-index:9001!important;transform:none!important}
+#lista .es-bk .mk-bear::before,#lista .es-bk .mk-bear::after{display:none!important}
+#lista .es-bk .mk-bear > *:not(b){display:none!important}
+#lista .es-bk .mk-bear b{position:static!important;font-size:.68rem!important;font-weight:900!important;color:#fff!important;text-shadow:0 1px 1px rgba(0,0,0,.35);letter-spacing:-.02em;transform:none!important}
+#lista .es-bk .mk-bear.t-5{--v2-seal:conic-gradient(from 30deg,#f7d36b,#ff9fd0,#a78bfa,#7dd3fc,#f7d36b)}
+#lista .es-bk .mk-bear.t-ouro{--v2-seal:linear-gradient(135deg,#f1c95a,#b8862b)}
+#lista .es-bk .mk-bear.t-prata{--v2-seal:linear-gradient(135deg,#d9dde3,#8d96a3)}
+#lista .es-bk .mk-bear.t-bronze{--v2-seal:linear-gradient(135deg,#d39a62,#8a5a2e)}
+#lista .es-bk .mk-bear.t-ferro{--v2-seal:linear-gradient(135deg,#9aa0a6,#5a5f66)}
+#lista .es-bk .mk-bear.t-5 b{color:#3a2a00!important;text-shadow:none}
+/* progresso na capa e ✓ de lido */
+#lista .es-bk .v2-pg{position:absolute;left:6px;right:6px;bottom:6px;height:5px;border-radius:9px;background:rgba(0,0,0,.35);z-index:3;overflow:hidden}
+#lista .es-bk .v2-pg i{position:absolute;left:0;top:0;bottom:0;border-radius:9px;background:linear-gradient(90deg,#ffd6a3,var(--acc))}
+#lista .es-bk .v2-ok{position:absolute;right:-6px;bottom:-6px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#2f8a52;color:#fff;border:2.5px solid var(--bg);font-size:.72rem;font-weight:900;z-index:9001;box-shadow:0 3px 8px rgba(0,0,0,.2)}
+#lista .es4-dim .es-bk{opacity:.55;filter:saturate(.6)}
+/* lista */
+#lista .esn-list{gap:.55rem!important}
+#lista .esn-li{border-radius:18px!important;border:1px solid var(--line)!important;background:var(--panel)!important;box-shadow:var(--v2-sh)!important;padding:.6rem .7rem!important}
+/* estantes em cartões com tábua */
+#lista .esn-sh{border-radius:var(--v2-r)!important;border:1px solid var(--line)!important;background:var(--panel)!important;box-shadow:var(--v2-sh)!important;padding:.85rem .9rem 1rem!important;margin-bottom:1rem!important}
+#lista .esn-shh .nm b{font-family:var(--v2-disp)!important;font-size:1.08rem!important;font-weight:700!important}
+#lista .esn-shh .nm small{font-weight:800!important;color:var(--ink-2)!important}
+#lista .esn-mini{width:34px!important;height:34px!important;border-radius:50%!important;border:1.5px solid var(--line)!important;background:var(--bg)!important;color:var(--ink)!important}
+#lista .esn-pr{height:6px!important;border-radius:9px!important;margin:.55rem 0 .8rem!important}
+#lista .esn-row{position:relative;padding-bottom:12px!important;gap:.55rem!important}
+#lista .esn-row::after{content:"";position:absolute;left:-.3rem;right:-.3rem;bottom:0;height:10px;border-radius:3px 3px 6px 6px;background:linear-gradient(#c9a37a,#a77b4f);box-shadow:0 4px 8px rgba(80,45,15,.22),inset 0 1px 0 rgba(255,255,255,.35)}
+#lista .esn-row .es-bk{z-index:1}
+#lista .esn-new{border-radius:var(--v2-r)!important;border:2px dashed color-mix(in srgb,var(--acc) 45%,var(--line))!important;background:none!important;color:var(--acc)!important;font-weight:900!important;min-height:56px}
+#lista .esn-empty{border-radius:var(--v2-r);border:1px dashed var(--line);padding:1.2rem;text-align:center;color:var(--ink-2)}
+/* barra de seleção */
+.sel-dock,.esn-dock,.v2-dock,#seldock{border-radius:20px!important;box-shadow:0 14px 34px rgba(20,10,0,.28)!important}
+`; TR.append(st); }
+{ let tm = 0;
+  const paint = () => {
+    const L = TR.querySelector('#lista'); if (!L) return; const top = L.querySelector('.esn-top');
+    // cabeçalho
+    if (top) {
+      const tabOn = (L.querySelector('.esn-tabs .on') || {}).textContent || '';
+      const lib0 = lib(), lidos = lib0.filter((e) => e.status === 'LIDO').length, nSh = (db.shelves || []).length;
+      const est = /Estantes/.test(tabOn), title = est ? 'Suas estantes' : 'Minha biblioteca';
+      const sub = est ? (nSh ? `${nSh} ${nSh === 1 ? 'estante' : 'estantes'}` : 'Monte listas do seu jeito') : `${lib0.length} ${lib0.length === 1 ? 'livro' : 'livros'} · ${lidos} ${lidos === 1 ? 'lido' : 'lidos'}`;
+      let h = L.querySelector('.v2-eh');
+      const html = `<div class="eb">Sua estante</div><h1>${esc(title)}</h1><small>${esc(sub)}</small>`;
+      if (!h) { h = document.createElement('div'); h.className = 'v2-eh'; top.before(h); }
+      if (h.innerHTML !== html) h.innerHTML = html;
+    }
+    // progresso na capa e ✓ de lido
+    L.querySelectorAll('.es4-bk').forEach((w) => {
+      const b = w.querySelector('.es-bk'); if (!b) return; const s = (w.querySelector(':scope > small') || {}).textContent || '';
+      const m = s.match(/lendo\s*·\s*(\d+)%/i);
+      let pg = b.querySelector('.v2-pg');
+      if (m) { if (!pg) { pg = document.createElement('span'); pg.className = 'v2-pg'; pg.innerHTML = '<i></i>'; b.append(pg); } const wd = Math.max(4, Number(m[1])) + '%'; if (pg.firstChild.style.width !== wd) pg.firstChild.style.width = wd; }
+      else if (pg) pg.remove();
+      const lido = /^lido\b/i.test(s.trim()) || (!s.trim() && b.querySelector('.cv.rt'));
+      let ok = b.querySelector('.v2-ok');
+      if (lido && !b.querySelector('.mk-bear')) { if (!ok) { ok = document.createElement('span'); ok.className = 'v2-ok'; ok.textContent = '✓'; ok.setAttribute('aria-hidden', 'true'); b.append(ok); } }
+      else if (ok) ok.remove();
+    });
+  };
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { paint(); } catch (err) { console.warn('v2 estante', err); } }, 60); })
+    .observe(TR, { childList: true, subtree: true });
+  setTimeout(paint, 900);
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
