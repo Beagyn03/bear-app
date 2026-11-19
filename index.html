@@ -11237,6 +11237,8 @@ S.nav = { st: [], cur: null, depth: 0, restoring: false, hidAt: 0, ntAt: 0, bar:
 function navEnter(fn, tab) {
   const N = S.nav; if (N.depth > 0) return; N.flush && N.flush();
   const entry = { fn, tab: tab || S.tab };
+  // a mesma página reaberta (ex.: a conversa se redesenha sozinha) não empilha de novo: senão o Voltar reabre ela mesma (19/11)
+  if (!N.restoring && fn && fn.key && N.cur && N.cur.fn && N.cur.fn.key === fn.key && $('#shelflist') && !$('#shelflist').hidden) { N.cur = entry; return; }
   if (N.restoring) { N.cur = entry; return; }
   const v = $('#shelflist'), vis = !!(v && !v.hidden), recent = Date.now() - N.hidAt < 140;
   if (Date.now() - N.bar < 400) N.st = [];
@@ -11255,8 +11257,11 @@ function navBack() { // volta uma página; false se não havia para onde
 }
 function navToProfileEntry() { return { fn: () => goTab('eu'), tab: 'eu' }; }
 { // envolve quem abre página no #shelflist
-  const wrap = (get, set, mk) => { const o = get(); if (typeof o !== 'function') return; set(function (...a) {
-    navEnter(mk(a)); const N = S.nav; N.depth++;
+  const navKey = (name, a) => { try { return name + '|' + JSON.stringify(a.map((x) => (x && typeof x === 'object' ? x.id || x.handle || x.title || '' : x))); } catch { return null; } };
+  // skip: chamadas que só desenham dentro de outra tela (ex.: o feed embutido no Início) não contam como navegação (19/11)
+  const wrap = (get, set, mk, skip) => { const o = get(); if (typeof o !== 'function') return; const name = o.name || String(Math.random()); set(function (...a) {
+    if (skip && skip(a)) return o.apply(this, a);
+    const fn = mk(a); fn.key = navKey(name, a); navEnter(fn); const N = S.nav; N.depth++;
     let r; try { r = o.apply(this, a); } catch (err) { N.depth--; throw err; }
     if (r && typeof r.then === 'function') r.then(() => { N.depth--; }, () => { N.depth--; }); else N.depth--;
     return r; }); };
@@ -11273,7 +11278,7 @@ function navToProfileEntry() { return { fn: () => goTab('eu'), tab: 'eu' }; }
   wrap(() => openFriendsV3, (f) => { openFriendsV3 = f; }, () => () => openFriendsV3());
   wrap(() => openThreads, (f) => { openThreads = f; }, () => () => openThreads());
   wrap(() => openChat, (f) => { openChat = f; }, (a) => () => openChat(...a));
-  wrap(() => openNovidades, (f) => { openNovidades = f; }, (a) => () => openNovidades(...a));
+  wrap(() => openNovidades, (f) => { openNovidades = f; }, (a) => () => openNovidades(...a), (a) => !!a[1]); // com host: feed embutido, não é página
   wrap(() => openGoalsV4, (f) => { openGoalsV4 = f; }, () => () => openGoalsV4());
   wrap(() => openGoalPage, (f) => { openGoalPage = f; }, (a) => () => openGoalPage(...a));
   wrap(() => openAuthorPage, (f) => { openAuthorPage = f; }, (a) => () => openAuthorPage(...a));
