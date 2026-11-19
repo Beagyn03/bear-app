@@ -17964,7 +17964,9 @@ async function v2RsShare(M, d) {
 .v3-seg > button,.esn-tabs > button,.bp-tabs > button{flex:1 1 0;min-width:0;height:38px!important;border:0!important;border-radius:11px!important;background:none!important;color:var(--ink-2)!important;font:inherit;font-size:.84rem!important;font-weight:900!important;white-space:nowrap;box-shadow:none!important;padding:0 .5rem!important}
 .v3-seg > button::after,.esn-tabs > button::after,.bp-tabs > button::after{display:none!important}
 .v3-seg > button.on,.esn-tabs > button.on,.bp-tabs > button.on{background:var(--panel)!important;color:var(--ink)!important;box-shadow:0 1px 4px rgba(0,0,0,.09)!important}
-`; TR.append(st); }
+`; TR.append(st);
+  // a folha antiga (sheet) e a avaliação em página inteira ficam no document.body, fora do shadow root: mesmo estilo lá
+  const hd = document.createElement('style'); hd.textContent = ":root{--v2-r:20px;--v2-sh:0 1px 2px rgba(60,35,10,.05),0 8px 22px rgba(60,35,10,.06);--v2-disp:Georgia,'Times New Roman',serif}" + st.textContent.replace(/:host{/g, ':root{'); document.head.append(hd); }
 // --- c7_v2_estante.js ---
 // v2 etapa 2 (19/11): Estante no padrão novo (Minha biblioteca e Estantes).
 //  - Cabeçalho como o do Hoje: rótulo pequeno + título em serifa + resumo ("13 livros · 7 lidos").
@@ -18121,7 +18123,36 @@ async function v2RsShare(M, d) {
 #shelflist .bq q{font-family:var(--v2-disp);font-style:italic;font-size:.98rem;line-height:1.45}
 #shelflist .bp-src{font-size:.72rem;color:var(--ink-2);text-align:center;margin:.2rem 0 .6rem}
 #shelflist .sl-top .es-dots{width:40px!important;height:40px!important;border-radius:50%!important;border:1.5px solid var(--line)!important;background:var(--panel)!important}
-`; TR.append(st); }
+/* avaliação em página inteira (Sua avaliação / Avaliar) — fica no document.body */
+.rt-view .rtf-top,.rt-full .rtf-top{background:var(--bg)}
+.rtf-top b{font-family:var(--v2-disp)!important;font-size:1.25rem!important;font-weight:700!important;color:var(--ink)}
+.rtf-x{width:40px;height:40px;border-radius:50%!important;border:1.5px solid var(--line)!important}
+.rtf-hd{border-radius:24px!important;border:1px solid var(--line)!important;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--acc) 16%,var(--panel)),var(--panel) 70%)!important;box-shadow:var(--v2-sh)!important;padding:1rem!important}
+.rtf-hd .cv{border-radius:4px 9px 9px 4px!important;box-shadow:0 12px 24px rgba(40,20,5,.26)!important}
+.rtf-info b{font-family:var(--v2-disp)!important;font-size:1.2rem!important;font-weight:700!important;line-height:1.2}
+.rtf-ed{background:var(--v2-pri)!important;color:var(--on-acc,#fff)!important;box-shadow:var(--v2-pri-sh)!important;border-radius:999px!important}
+.rtf-lb{font-family:var(--v2-disp)!important;font-size:1.05rem!important;font-weight:700!important}
+.rv-dates > *{border-radius:16px!important;border:1px solid var(--line)!important;background:var(--panel)!important;box-shadow:var(--v2-sh)!important}
+.rv-paws{font-family:var(--v2-disp)}
+.rtf-view .rv-txt{border-radius:var(--v2-r);border:1px solid var(--line);background:var(--panel);box-shadow:var(--v2-sh);padding:.9rem 1rem;line-height:1.55}
+/* Atualizar leitura (diário): abas em pílula, status em pílulas, atalhos em blocos, Salvar no degradê */
+#editor .ss-title{font-family:var(--v2-disp)!important;font-size:1.22rem!important;font-weight:700!important;color:var(--ink)!important}
+#editor .ss-hd{border-radius:18px;background:color-mix(in srgb,var(--acc) 7%,var(--panel));padding:.6rem .7rem}
+#editor .ss-hd .cv{border-radius:3px 7px 7px 3px!important;box-shadow:0 6px 14px rgba(40,20,5,.22)!important}
+#editor .tl-tabs,#editor .up-seg{display:flex!important;gap:.25rem!important;padding:.25rem!important;border-radius:14px!important;background:var(--v2-seg)!important;border:0!important}
+#editor .tl-tabs > button,#editor .up-seg > button{flex:1 1 0;height:36px!important;border:0!important;border-radius:11px!important;background:none!important;color:var(--ink-2)!important;font-weight:900!important;box-shadow:none!important}
+#editor .tl-tabs > button.on,#editor .up-seg > button.on{background:var(--panel)!important;color:var(--ink)!important;box-shadow:0 1px 4px rgba(0,0,0,.09)!important}
+#editor .ss-chips{gap:.35rem!important}
+#editor .ss-chips > button{border-radius:999px!important;border:1.5px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;font-weight:800!important}
+#editor .ss-chips > button.on{background:var(--ink)!important;border-color:var(--ink)!important;color:var(--bg)!important}
+#editor .lz-acts{gap:.45rem!important}
+#editor .lz-acts > button{border-radius:16px!important;border:1px solid var(--line)!important;background:var(--panel)!important;box-shadow:var(--v2-sh)!important}
+#editor .up-big input{border-radius:18px!important;font-family:var(--v2-disp)}
+#editor .up-save{background:var(--v2-pri)!important;color:var(--on-acc,#fff)!important;border:0!important;border-radius:16px!important;box-shadow:var(--v2-pri-sh)!important;font-weight:900!important}
+#editor .up-fin{border-radius:16px!important;border:1.5px solid #2f8a52!important;background:var(--panel)!important;color:#2f8a52!important;font-weight:900!important}
+`; TR.append(st);
+  // a avaliação em página inteira (.rtf-*) vive no document.body: as mesmas regras valem lá
+  const hd = document.createElement('style'); hd.textContent = st.textContent; document.head.append(hd); }
 // --- c9_v2_busca.js ---
 // v2 etapa 2 (19/11): Busca e catálogo no padrão novo.
 //  - Cabeçalho como o das outras telas ("Buscar" + linha de ajuda); campo em pílula com a lupa, leitor de ISBN redondo
