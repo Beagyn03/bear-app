@@ -8835,8 +8835,9 @@ TR.addEventListener('click', (ev) => {
 // ---------- 4.3: busca prefere a obra principal (adaptações, quadrinhos, resumos e boxes vão para o fim) ----------
 { const _sb = searchBooks; searchBooks = async function (q, ...rest) {
   const list = await _sb(q, ...rest); if (!Array.isArray(list)) return list;
-  const qn = normT(q || ''), side = /\b(quadrinhos?|hq|graphic|novel grafic|grafica|manga|adaptacao|adaptado|resumo|analise|box|colecao|kit|livro de colorir|guia|edicao comentada)\b/;
-  const score = (it) => { const t = normT(it.title || ''); let s = 0; if (side.test(t) && !side.test(qn)) s += 10; if (!it.coverUrl) s += 2; if (t === qn) s -= 3; return s; };
+  const qn = normT(q || ''), side = /\b(quadrinhos?|hq|graphic|novel grafic|grafica|manga|adaptacao|adaptado|resumo|analise|box|colecao|coleccion|collection|pack|set|kit|livro de colorir|guia|edicao comentada)\b/;
+  // português na frente mesmo sem capa (Binding 13, 18/11): edição estrangeira com capa não passa mais à frente
+  const score = (it) => { const t = normT(it.title || ''); let s = 0; if (side.test(t) && !side.test(qn)) s += 10; if (!it.coverUrl) s += 2; if (langOf(it) !== 'pt') s += 3; if (t === qn) s -= 3; return s; };
   return list.map((it, i) => [it, i]).sort((a, b) => score(a[0]) - score(b[0]) || a[1] - b[1]).map((x) => x[0]);
 }; }
 // ---------- 4.4: menu único do livro (toque na capa, "•••" do Início e da página do livro abrem o mesmo menu) ----------
@@ -8914,7 +8915,7 @@ function bookMenuOpen(anchor, b) {
     const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw();
     refresh(); toast(`“${e.title}” voltou para Quero ler: progresso, avaliação, prazo e posts na comunidade apagados.`);
   };
-  const rateIt = ['paw', rv && rv.paws ? 'Minha avaliação' : 'Avaliar', () => rateForm(e, { logs: [] }, () => renderHome(todayISO())), e.status === 'LIDO' || e.status === 'ABANDONEI' ? '' : 'ao terminar ou abandonar'];
+  const rateIt = ['paw', rv && rv.paws ? 'Minha avaliação' : 'Avaliar', () => rateForm(e, { logs: [] }, () => renderHome(todayISO())), e && (e.status === 'LIDO' || e.status === 'ABANDONEI') ? '' : 'ao terminar ou abandonar'];
   const canReset = !!(e && (pg > 0 || rv || (e.status !== 'QUERO') || (e.readLog || []).length));
   // o que se faz o tempo todo fica à vista; o resto em grupos que abrem no lugar (um por vez)
   // item: [ícone, texto, ação, detalhe, classe, fica aberto (abre outro passo do menu)]
