@@ -8618,10 +8618,10 @@ function bookQuickMenu(anchor, b) {
 }
 function removeFromLib(e) {
   if (e.link) return toast(`“${e.title}” faz parte de uma meta com prazo. Tire o livro da meta para remover.`);
-  if (!confirm(`Tirar “${e.title}” da sua estante?`)) return;
+  if (!confirm(`Tirar “${e.title}” da Minha biblioteca? Sai também das suas estantes.`)) return;
   db.library = db.library.filter((x) => x !== e); (db.shelves || []).forEach((s) => { s.bookIds = (s.bookIds || []).filter((i) => i !== e.id); });
   if (T().nextId === e.id) T().nextId = null; if (T().currentId === e.id) T().currentId = null;
-  save(); refresh(); const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw(); toast(`“${e.title}” saiu da estante`);
+  save(); refresh(); const v = $('#shelflist'); if (!v.hidden && S.listRedraw) S.listRedraw(); toast(`“${e.title}” saiu da Minha biblioteca`);
 }
 // toque numa capa (fora da página do livro) abre o menuzinho
 TR.addEventListener('click', (ev) => {
@@ -8962,7 +8962,7 @@ function bookMenuOpen(anchor, b) {
       ...((e.quotes || []).length ? [['book', `Ver trechos (${e.quotes.length})`, () => openBookPage(e, 'trechos')]] : [])] },
     { id: 'dt', ic: 'book', label: 'Detalhes do livro', items: [['book', 'Ver no catálogo', () => (e ? openBookPage(e) : openAnyBook(b.title, b.author, b.cover)), 'sinopse e ficha'],
       ...(e ? [['pen', 'Corrigir total de páginas', () => fixPages(e), tot ? `${tot} pág.` : ''], ['swap', 'Trocar edição', () => changeEdition(e), 'capa, páginas e ISBN'],
-        ['note', 'Formato', () => askFormat((f) => { setFormat(e, f); save(); refresh(); }, `Como você lê “${e.title}”?`), fmtTxt(e)]] : []),
+        ['note', 'Formato', () => askFormat((f) => { setFormat(e, f); save(); refresh(); }, `Como você lê “${e.title}”?`), fmtTxt(e)], ...(mine ? [['x', 'Tirar da Minha biblioteca', () => { bqClose(); removeFromLib(e); }, 'sai de todas as estantes', 'danger']] : [])] : []),
       ...(typeof COVM !== 'undefined' && COVM.admin ? [['pen', 'Trocar capa para todos', () => modCoverSheet(e || b), 'moderação']] : [])] },
     { row: ['shelves', 'Estantes', () => moveToShelf(e || addAs(b, 'QUERO'))] },
     mine && inShelf && { row: ['x', `Tirar de “${inShelf.name}”`, () => { inShelf.bookIds = (inShelf.bookIds || []).filter((i) => i !== e.id); save(); reload(); toast(`“${e.title}” saiu de ${inShelf.name}`); }] },
