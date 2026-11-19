@@ -9912,6 +9912,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -17150,6 +17151,38 @@ TR.addEventListener('click', (ev) => {
     const c = box.querySelector('#orb-card'); if (!c) return; const unit = c.parentElement && c.parentElement.classList.contains('orb-row') ? c.parentElement : c;
     if (now.nextElementSibling !== unit) now.after(unit); };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(move, 140); }).observe(TR, { childList: true, subtree: true }); }
+
+// Acabamento de Avisos (Bia, 19/11):
+//  - título "Avisos" nas duas abas. Uma regra antiga força "Notificações" no #g-t (MutationObserver), então em vez de
+//    disputar o texto, um título próprio (#g-avt) aparece no lugar do #g-t enquanto Avisos está aberto;
+//  - as duas abas na mesma altura: some a linha de cima (Voltar / ícone) das duas telas; "Nova mensagem" vai para
+//    a linha de título da lista, embaixo das abas;
+//  - a bolinha da aba Comunidade não acende mais só por mensagem (o 🔔 já conta).
+{ const st = document.createElement('style'); st.textContent = `
+.gtop #g-avt{display:none;flex:1;min-width:0;font-size:1.05rem;font-weight:900;color:var(--ink)}
+.gtop.av-on #g-t{display:none!important}.gtop.av-on #g-avt{display:block}
+#editor.ntpage .nt-top{display:none!important}
+#shelflist.av-msg .sl-body > .sl-top{display:none!important}
+#editor.ntpage .av-tabs,#shelflist.av-msg .av-tabs{margin:.2rem 0 .8rem}
+.av-lh{display:flex;align-items:center;justify-content:space-between;margin:0 0 .5rem}
+.av-lh b{font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.av-lh #th-new{display:inline-flex!important;align-items:center;gap:.35rem;width:auto!important;height:34px!important;margin:0!important;padding:0 .8rem!important;border:1.5px solid var(--line)!important;border-radius:99px!important;background:var(--panel)!important;color:var(--ink)!important;font:inherit!important;font-size:.8rem!important;font-weight:900!important}
+.av-lh #th-new svg{width:15px;height:15px}
+`; TR.append(st); }
+{ const PEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
+  let tm = 0;
+  const fix = () => {
+    const gt = TR.querySelector('#g-t'), top = gt && gt.parentElement, ed = $('#editor'), v = $('#shelflist');
+    const nt = !!(ed && !ed.hidden && ed.classList.contains('ntpage')), msg = !!(v && !v.hidden && S.navView && S.navView.t === 'threads');
+    if (top) { if (!top.querySelector('#g-avt')) gt.insertAdjacentHTML('afterend', '<b id="g-avt">Avisos</b>'); top.classList.toggle('av-on', nt || msg); }
+    if (v) v.classList.toggle('av-msg', msg);
+    if (msg) { const body = v.querySelector('.sl-body'), tabs = body && body.querySelector('.av-tabs'), add = body && body.querySelector('#th-new');
+      if (tabs && add) { let lh = body.querySelector('.av-lh'); if (!lh) { tabs.insertAdjacentHTML('afterend', '<div class="av-lh"><b>Conversas</b></div>'); lh = body.querySelector('.av-lh'); }
+        if (add.parentElement !== lh) lh.append(add); if (!add.dataset.v2) { add.dataset.v2 = '1'; add.innerHTML = PEN + 'Nova mensagem'; add.setAttribute('aria-label', 'Nova mensagem'); add.removeAttribute('title'); } } }
+    // bolinha da Comunidade: só por novidade da comunidade, nunca só por mensagem
+    const d = TR.querySelector('#tabbar [data-tab="comunidade"] .tb-dot'); if (d) { let on = false; try { on = S.tab !== 'comunidade' && commNews(); } catch {} if (!on) d.remove(); }
+  };
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; fix(); }, 40); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
