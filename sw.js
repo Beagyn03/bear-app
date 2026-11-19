@@ -4,7 +4,7 @@
 // que mostra "Nova versão disponível · Atualizar" (um toque recarrega já com a versão nova).
 // API e o resto seguem direto para a rede, sem cache. Capas de livros (Open Library, Google Livros…) ficam guardadas
 // numa gaveta própria (17/11): a primeira vez vem da internet, depois abre do celular, até sem internet (até 1.500 capas).
-const CACHE = 'livroverso-v2-21'; // nome novo: renova ícones em cache (17/11)
+const CACHE = 'livroverso-v2-22'; // nome novo: renova ícones em cache (17/11)
 const SHELL = ['./', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 const CAPAS = 'livroverso-capas-1', CAPAS_MAX = 1500;
 const COVER_HOST = /(^|\.)covers\.openlibrary\.org$|(^|\.)archive\.org$|(^|\.)books\.google\.[a-z.]+$|googleusercontent\.com$|(^|\.)media-amazon\.com$|ssl-images-amazon\.com$/;
