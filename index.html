@@ -17756,7 +17756,7 @@ function v2Afi(d) {
 // ao abrir outro perfil, refaz o cartão de afinidade
 { const _fp = friendPage; friendPage = function () { const v = $('#shelflist'); if (v) delete v.dataset.v2afi; return _fp.apply(this, arguments); }; }
 // --- c3_v2_comunidade.js ---
-// v2 Comunidade (Bia, 19/11, branch livroverso-2): "Desafio da semana" no topo da Rede (um por semana, sempre o mesmo na semana;
+// v2 Comunidade (Bia, 19/11, branch livroverso-2): "Desafio da semana" no cartão do post novo, no topo da Rede (um por semana, sempre o mesmo na semana;
 // Responder abre o post novo já com o desafio no texto, sem publicar sozinho); curtir/reagir "pula" ao tocar;
 // posts e leitura conjunta no cartão novo (cantos, sombra e títulos em serifa do padrão v2).
 const V2WK = [
@@ -17776,6 +17776,8 @@ const v2WkQ = () => V2WK[v2Week() % V2WK.length];
 .v2wk .row{display:flex;align-items:center;gap:.6rem}.v2wk .row button{border:0;border-radius:99px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:900;font-size:.84rem;padding:.5rem 1rem}
 .v2wk .row small{font-size:.74rem;color:var(--ink-2);font-weight:700}
 #rd-host .rd-new{border-radius:var(--v2-r)!important;box-shadow:var(--v2-sh)}
+#lista .rd-new.v2wk-new{background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 12%,var(--panel)),color-mix(in srgb,#7e63c9 12%,var(--panel)))}
+#lista .rd-new em{display:block;font-style:normal;font-size:.62rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--acc);margin-bottom:.1rem}
 #rd-host article,#rd-host .rd2{border-radius:var(--v2-r)!important;box-shadow:var(--v2-sh)!important;border:1px solid var(--line)!important}
 #rd-host .rd-day,#rd-host h3{font-family:var(--v2-disp)}
 #rd-host .rd-like.v2pop,#rd-host [class*=rx].v2pop,.bud-rx.v2pop{animation:v2pop .38s cubic-bezier(.2,.9,.3,1.4)}
@@ -17785,13 +17787,11 @@ const v2WkQ = () => V2WK[v2Week() % V2WK.length];
 // reação "pula" ao tocar (curtir da Rede, reações do Ler junto)
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('.rd-like, [data-rx], .rx-b, .bud-rx, [class*="rx-"]'); if (!b || b.closest('.v2wk')) return;
   b.classList.remove('v2pop'); void b.offsetWidth; b.classList.add('v2pop'); }, true);
-{ let tm = 0, card = null; const put = () => { const host = TR.querySelector('#lista #rd-host'); if (!host || !host.querySelector('#rd-new')) return;
-    if (!card) { const q = v2WkQ(); card = document.createElement('section'); card.className = 'v2wk';
-      card.innerHTML = `<div class="k">Desafio da semana</div><div class="q">${esc(q)}</div><div class="row"><button type="button">Responder</button><small>escolha o livro e conte</small></div>`;
-      card.querySelector('button').addEventListener('click', () => openRdComposer({ kind: 'comment', text: `Desafio da semana: ${q}
-` })); }
-    if (card.parentElement !== host || host.firstElementChild !== card) host.prepend(card); };
-  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true }); }
+// Desafio da semana mora no próprio cartão do post novo (19/11): antes eram dois cartões seguidos pedindo para postar.
+{ let tm = 0; const put = () => { const nw = TR.querySelector('#lista > .cm-new'); if (!nw || nw.dataset.wk) return; const q = v2WkQ(); nw.dataset.wk = '1'; nw.classList.add('v2wk-new');
+    const sp = nw.querySelector('span'); if (sp) sp.innerHTML = `<em>Desafio da semana</em><b>${esc(q)}</b><small>Responda ou escreva o que quiser</small>`;
+    nw.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); openRdComposer({ kind: 'comment', text: `Desafio da semana: ${q}\n` }); }, true); };
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true }); setInterval(put, 600); }
 // --- c4_v2_funcoes.js ---
 // v2 "Funções do app" (Bia, 19/11, branch livroverso-2): em Ajustes, o primeiro item escolhe o que aparece no app.
 // Desligar só esconde as entradas (cartões do Hoje, itens do menu lateral, seções do perfil, aba da barra); nada é apagado.
