@@ -17411,7 +17411,7 @@ Object.assign(V2I, {
 `; TR.append(st); }
 { const ICON = { 'g-av': 'menu', 'g-bell': 'bell', 'g-imore': 'dots' };
   let tm = 0; const paint = () => { Object.entries(ICON).forEach(([id, k]) => { const b = TR.querySelector('#' + id); if (!b || b.querySelector(':scope > .v2i')) return; b.classList.add('v2ic'); b.insertAdjacentHTML('afterbegin', V2SVG(k, 24)); }); };
-  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 40); }).observe(TR, { childList: true, subtree: true }); setTimeout(paint, 600); }
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; paint(); }, 40); }).observe(TR, { childList: true, subtree: true }); setTimeout(paint, 600); }
 // --- c1_v2_hoje.js ---
 // v2 Hoje refeito (Bia, 19/11, branch livroverso-2): a cara do protótipo com os dados reais.
 //  - Topo: data + "Boa tarde, <nome>"; o livro atual grande dentro do anel de progresso, com a lua onde a leitura está.
@@ -17528,7 +17528,139 @@ function v2hBind(h) {
       let h = col.querySelector(':scope > .v2hero');
       if (!h || h.dataset.k !== key) { const w = document.createElement('div'); w.innerHTML = html; const n = w.firstElementChild; n.dataset.k = key; v2hBind(n); if (h) h.replaceWith(n); else col.prepend(n); paintCv(n); }
     } finally { busy = false; } };
-  new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(put, 50); }).observe(TR, { childList: true, subtree: true }); setTimeout(put, 900); }
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 50); }).observe(TR, { childList: true, subtree: true }); setTimeout(put, 900); }
+// --- c2_v2_perfil.js ---
+// v2 Perfil refeito (Bia, 19/11, branch livroverso-2).
+//  Seu perfil: foto com anel colorido, nome, @ · lendo, frase em serifa; números (lidos, na fila, amizades, meta) que abrem as listas;
+//  Editar perfil | Compartilhar | •••; "Seu DNA literário" (gêneros dos lidos); Top 5 em leque. O cabeçalho e a grade de números
+//  antigos ficam escondidos (os botões deles continuam funcionando por trás: foto, Ajustes, •••); páginas, nota e resenhas
+//  continuam em Estatísticas ("Ver estatísticas").
+//  Perfil de amizade: cartão "Vocês combinam N%" (livros em comum + gêneros parecidos), os livros em comum e o DNA lado a lado.
+//  O DNA da amizade vem do resumo publicado (shelf.stats.dna), que passa a levar os gêneros (só porcentagens, sem títulos).
+const V2DNA_CO = ['#7e63c9', '#b8442a', '#e45f9b', '#2e8b57', '#c9b79f'];
+function v2Genre(e) { const g = e.genre || (e.meta && (e.meta.cat || e.meta.genre)) || ''; return String(g).split(/[\/,;›>]/)[0].trim(); }
+function v2DnaOf(list) {
+  const c = new Map(); list.forEach((e) => { const g = v2Genre(e); if (g) c.set(g, (c.get(g) || 0) + 1); });
+  const tot = [...c.values()].reduce((a, b) => a + b, 0); if (tot < 2) return null;
+  const top = [...c.entries()].sort((a, b) => b[1] - a[1]); const main = top.slice(0, 4), rest = top.slice(4).reduce((a, x) => a + x[1], 0);
+  const out = main.map(([g, n]) => [g, Math.round(n / tot * 100)]); if (rest) out.push(['Outros', Math.round(rest / tot * 100)]);
+  return { n: tot, parts: out };
+}
+{ const _ms = myStatsSnap; myStatsSnap = function () { const r = _ms.apply(this, arguments); try { const d = v2DnaOf(lib().filter((e) => e.status === 'LIDO')); if (d) r.dna = d.parts; } catch {} return r; }; }
+const v2DnaBar = (parts, cmap) => `<div class="bar2">${parts.map(([g, p]) => `<i style="width:${p}%;background:${cmap(g)}" title="${esc(g)} ${p}%"></i>`).join('')}</div>`;
+{ const st = document.createElement('style'); st.textContent = `
+#shelflist.v2pf .yo-top .yo-av{outline:3px solid #e0ad3a;outline-offset:3px}
+#shelflist.v2pf .yo-top .yo-id b{font-family:var(--v2-disp);font-size:1.35rem}
+#shelflist.v2pf .yo-nums > .v2-zero{display:none!important}
+#shelflist.v2pf .yo-top.v2-old,#shelflist.v2pf .yo-nums.v2-old{display:none!important}
+.v2pv{padding:.4rem .1rem 0;margin-bottom:.4rem}
+.v2pv .top{display:flex;align-items:center;gap:.85rem}
+.v2pv .avx{width:78px;height:78px;border-radius:50%;padding:3px;border:0;background:conic-gradient(#e0ad3a,#ff8fc8,#7e63c9,#6fd3ff,#e0ad3a);flex:none;cursor:pointer}
+.v2pv .avx span{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;border:3px solid var(--bg,#fbf6ee);background:#c46f2e center/cover no-repeat;color:#fff;font-size:1.8rem;font-weight:900}
+.v2pv .nm{flex:1;min-width:0}.v2pv .nm h2{margin:0;font-family:var(--v2-disp);font-size:1.5rem;line-height:1.1;color:var(--ink)}
+.v2pv .nm small{display:block;margin-top:.2rem;font-size:.8rem;color:var(--ink-2);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v2pv q{display:block;margin:.8rem 0 0;font-family:var(--v2-disp);font-style:italic;font-size:1rem;line-height:1.4;color:var(--ink);quotes:"“" "”"}
+.v2pv .nums{display:flex;flex-wrap:wrap;gap:.3rem 1.1rem;margin-top:.85rem}
+.v2pv .nums button{border:0;background:none;padding:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+.v2pv .nums b{font-size:1.1rem;font-variant-numeric:tabular-nums}.v2pv .nums small{margin-left:.25rem;font-size:.78rem;color:var(--ink-2);font-weight:800}
+.v2pv .nums .lk{color:var(--acc);font-size:.78rem;font-weight:900}
+.v2pv .acts{display:flex;gap:.5rem;margin-top:.9rem}
+.v2pv .acts button{flex:1;display:flex;justify-content:center;align-items:center;gap:.4rem;height:44px;border-radius:14px;border:1.5px solid var(--line);background:var(--panel);font:inherit;font-weight:900;font-size:.86rem;color:var(--ink)}
+.v2pv .acts .p{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
+.v2pv .acts .sq{flex:0 0 44px}
+.v2pv .acts svg{width:18px;height:18px}
+.v2dna{margin:1rem 0 .4rem;padding:.85rem .9rem;border:1px solid var(--line);border-radius:var(--v2-r);background:var(--panel);box-shadow:var(--v2-sh)}
+.v2dna .t{display:flex;justify-content:space-between;align-items:baseline}.v2dna .t b{font-family:var(--v2-disp);font-size:1.05rem;color:var(--ink)}.v2dna .t small{font-size:.72rem;color:var(--ink-2);font-weight:800}
+.v2dna .bar2,.v2afi .bar2{display:flex;height:14px;border-radius:99px;overflow:hidden;margin:.6rem 0 .5rem;background:var(--line)}.v2dna .bar2 i,.v2afi .bar2 i{display:block;height:100%}
+.v2dna .lg{display:flex;flex-wrap:wrap;gap:.25rem .8rem;font-size:.75rem;font-weight:800;color:var(--ink-2)}.v2dna .lg span{display:inline-flex;align-items:center;gap:.3rem}.v2dna .lg i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.v2afi{margin:1rem 0 .4rem;padding:.9rem;border-radius:var(--v2-r);background:linear-gradient(135deg,#2a1f4a,#4a3585);color:#fff;box-shadow:var(--v2-sh)}
+.v2afi .t{display:flex;align-items:center;gap:.7rem}.v2afi .t b{font-family:var(--v2-disp);font-size:1.1rem}.v2afi .t small{display:block;color:#d9cffc;font-size:.76rem;font-weight:700;margin-top:.1rem}
+.v2afi .pc{margin-left:auto;font-family:var(--v2-disp);font-size:2rem;font-weight:700;color:#ffd6a3}
+.v2afi .row{display:flex;gap:.45rem;overflow-x:auto;margin-top:.7rem;padding-bottom:.2rem}.v2afi .row .v2a-cv{width:46px;height:68px;border-radius:4px;flex:none;box-shadow:0 0 0 2px rgba(255,214,163,.55)}
+.v2afi .vs{display:grid;gap:.25rem;margin-top:.5rem}.v2afi .vs div{display:grid;grid-template-columns:52px 1fr;gap:.5rem;align-items:center;font-size:.72rem;font-weight:900;color:#ddd5ff}.v2afi .vs .bar2{margin:0;height:10px;background:rgba(255,255,255,.15)}
+/* Top 5 em leque */
+#shelflist.v2pf .t5-row{position:relative;display:block!important;height:170px;margin:.3rem 0 .8rem;overflow:visible!important}
+#shelflist.v2pf .t5-row .t5-bk{position:absolute!important;bottom:0;width:88px!important;transform-origin:50% 120%;transition:transform .2s;padding:0!important}
+#shelflist.v2pf .t5-row .t5-bk:hover{transform:translateY(-10px) rotate(0)!important;z-index:9}
+#shelflist.v2pf .t5-row .t5-bk:nth-child(1){left:calc(50% - 44px - 128px);transform:rotate(-14deg);z-index:1}
+#shelflist.v2pf .t5-row .t5-bk:nth-child(2){left:calc(50% - 44px - 66px);transform:rotate(-7deg);z-index:2}
+#shelflist.v2pf .t5-row .t5-bk:nth-child(3){left:calc(50% - 44px);transform:translateY(-6px);z-index:3}
+#shelflist.v2pf .t5-row .t5-bk:nth-child(4){left:calc(50% - 44px + 66px);transform:rotate(7deg);z-index:2}
+#shelflist.v2pf .t5-row .t5-bk:nth-child(5){left:calc(50% - 44px + 128px);transform:rotate(14deg);z-index:1}
+#shelflist.v2pf .t5-row .t5-bk em{position:absolute;left:-6px;top:-8px;z-index:2;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--bg,#fff);font-style:normal;font-size:.7rem;font-weight:900;display:grid;place-items:center;border:2px solid var(--bg,#fff)}
+#shelflist.v2pf .t5-row .t5-bk small,#shelflist.v2pf .t5-row .t5-bk b{display:none!important}
+`; TR.append(st); }
+function v2pvOwnHTML(d, v) {
+  const L = lib(), lidos = L.filter((e) => e.status === 'LIDO').length, fila = L.filter((e) => e.status === 'QUERO').length;
+  const fr = ((typeof SOC !== 'undefined' && SOC.fr && SOC.fr.friends) || []).length, y = todayISO().slice(0, 4), goal = Number((db.yearGoals || {})[y]) || 0;
+  const feitos = L.filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').startsWith(y)).length;
+  const old = v.querySelector('.yo-av'), photo = old && old.style.backgroundImage, name = d.displayName || NAME || '', R = reading();
+  const bio = d.bio || (typeof socialProfile !== 'undefined' && socialProfile && socialProfile.bio) || '';
+  return `<section class="v2pv"><div class="top"><button type="button" class="avx" data-p="photo" aria-label="Trocar foto"><span style="${photo ? 'background-image:' + esc(photo) : ''}">${photo ? '' : esc(initial(name))}</span></button>
+    <div class="nm"><h2>${esc(name)}</h2><small>@${esc(d.handle || '')}${R ? ' · lendo ' + esc(R.e.title) : ''}</small></div></div>
+    ${bio ? `<q>${esc(bio)}</q>` : ''}
+    <div class="nums"><button type="button" data-p="lidos"><b>${lidos}</b><small>lidos</small></button><button type="button" data-p="fila"><b>${fila}</b><small>na fila</small></button>${fr ? `<button type="button" data-p="amigos"><b>${fr}</b><small>${fr === 1 ? 'amizade' : 'amizades'}</small></button>` : ''}${goal ? `<button type="button" data-p="meta"><b>${feitos}/${goal}</b><small>meta</small></button>` : ''}<button type="button" data-p="stats" class="lk">Ver estatísticas ›</button></div>
+    <div class="acts"><button type="button" data-p="edit">Editar perfil</button><button type="button" class="p" data-p="share">Compartilhar</button><button type="button" class="sq" data-p="more" aria-label="Mais opções do perfil">${V2SVG('dots', 18)}</button></div></section>`;
+}
+function v2pvBind(h, v, d) {
+  h.addEventListener('click', (ev) => { const b = ev.target.closest('[data-p]'); if (!b) return; const k = b.dataset.p;
+    const numBtn = (re) => [...v.querySelectorAll('.yo-nums > *')].find((x) => re.test(x.textContent));
+    if (k === 'photo') { const p = v.querySelector('#yo-photo'); return p ? p.click() : (v.hidden = true, S.ajMode = 'perfil', goTab('perfil')); }
+    if (k === 'lidos') { const n = numBtn(/lidos/); return n ? n.click() : goTab('estante'); }
+    if (k === 'fila') { const n = numBtn(/quero ler/); return n ? n.click() : goTab('estante'); }
+    if (k === 'amigos') return openFriendsV3();
+    if (k === 'meta') { try { return openGoalsV4(); } catch { return goTab('progresso'); } }
+    if (k === 'stats') return goTab('progresso');
+    if (k === 'edit') { v.hidden = true; S.ajMode = 'perfil'; return goTab('perfil'); }
+    if (k === 'share') { const url = location.origin + location.pathname, text = `Me encontre no Livroverso: @${d.handle}`;
+      if (navigator.share) return navigator.share({ title: 'Livroverso', text, url }).catch(() => {});
+      try { navigator.clipboard.writeText(text + ' ' + url); toast('Link do perfil copiado'); } catch { toast(text); } return; }
+    if (k === 'more') return popMenu(b, [
+      { label: 'Ajustes', sub: 'tema, avisos, dados e conta', fn: () => { const a = v.querySelector('.v2-ajpill'); if (a) a.click(); else { v.hidden = true; S.ajMode = 'sistema'; goTab('perfil'); } } },
+      { label: 'Organizar meu perfil', sub: 'o que aparece: leituras, estantes, conquistas e avaliações', fn: () => socialSettingsSheet('perfil') },
+      { label: 'Moldura e selo', fn: () => flairSheet() },
+    ]);
+  });
+}
+function v2Dna(parts, n, title) {
+  const cmap = (g) => V2DNA_CO[parts.findIndex((x) => x[0] === g) % V2DNA_CO.length];
+  return `<section class="v2dna"><div class="t"><b>${title}</b><small>${n} ${n === 1 ? 'livro' : 'livros'} com gênero</small></div>${v2DnaBar(parts, cmap)}<div class="lg">${parts.map(([g, p]) => `<span><i style="background:${cmap(g)}"></i>${esc(g)} ${p}%</span>`).join('')}</div></section>`;
+}
+function v2Afi(d) {
+  const sh = d.shelf || {}, theirs = [...(sh.lidos || []), ...(sh.potinho || []), ...((d.reading || sh.reading) || [])];
+  if (!theirs.length) return '';
+  const mine = new Map(lib().filter((e) => e.status !== 'QUERO').map((e) => [normT(e.title), e]));
+  const seen = new Set(), both = theirs.filter((b) => { const k = normT(b.title); if (seen.has(k) || !mine.has(k)) return false; seen.add(k); return true; });
+  const myD = v2DnaOf(lib().filter((e) => e.status === 'LIDO')), thD = sh.stats && sh.stats.dna;
+  let gs = 0; if (myD && thD) { const a = new Map(myD.parts), b = new Map(thD); const keys = new Set([...a.keys(), ...b.keys()]); let mn = 0, mx = 0; keys.forEach((k) => { mn += Math.min(a.get(k) || 0, b.get(k) || 0); mx += Math.max(a.get(k) || 0, b.get(k) || 0); }); gs = mx ? mn / mx : 0; }
+  const uniq = new Set(theirs.map((b) => normT(b.title))).size, ts = both.length / Math.max(8, uniq);
+  if (!both.length && !gs) return '';
+  const pc = Math.max(5, Math.min(95, Math.round(100 * (thD && myD ? 0.6 * Math.min(1, ts * 1.4) + 0.4 * gs : Math.min(1, ts * 1.4)))));
+  const cmap = (g) => { const all = [...(myD ? myD.parts : []), ...(thD || [])].map((x) => x[0]); return V2DNA_CO[[...new Set(all)].indexOf(g) % V2DNA_CO.length]; };
+  return `<section class="v2afi"><div class="t"><span><b>Vocês combinam</b><small>${both.length ? `${both.length} ${both.length === 1 ? 'livro' : 'livros'} em comum` : 'gostos de leitura parecidos'}</small></span><span class="pc">${pc}%</span></div>
+    ${both.length ? `<div class="row">${both.slice(0, 10).map((b) => cvh(b.title, b.cover, 'v2a-cv')).join('')}</div>` : ''}
+    ${myD && thD ? `<div class="vs"><div>Você${v2DnaBar(myD.parts, cmap)}</div><div>${esc((d.displayName || '').split(' ')[0] || 'Amizade')}${v2DnaBar(thD, cmap)}</div></div>` : ''}</section>`;
+}
+{ let tm = 0;
+  const put = () => { const v = $('#shelflist'); if (!v || v.hidden) return; const top = v.querySelector('.yo-top'); if (!top) { v.classList.remove('v2pf'); return; }
+    let d = S.fpData; const mine = v.classList.contains('mine-page');
+    if (mine && (!d || !d.self)) { const sm = top.querySelector('.yo-id small'), nm = top.querySelector('.yo-id b'); d = { self: true, handle: (typeof socialProfile !== 'undefined' && socialProfile && socialProfile.handle) || String(sm ? sm.textContent : '').replace(/^@/, '').trim(), displayName: (typeof socialProfile !== 'undefined' && socialProfile && socialProfile.displayName) || (nm ? nm.textContent.trim() : NAME) }; }
+    if (!d) return;
+    v.classList.add('v2pf');
+    if (d.self) {
+      top.classList.add('v2-old'); v.querySelector('.yo-nums')?.classList.add('v2-old');
+      const html = v2pvOwnHTML(d, v), key = d.handle + '|' + html.length; let h = v.querySelector('.v2pv');
+      if (!h || h.dataset.k !== key) { const w = document.createElement('div'); w.innerHTML = html; const n = w.firstElementChild; n.dataset.k = key; v2pvBind(n, v, d); if (h) h.replaceWith(n); else top.before(n); }
+      const dn = v2DnaOf(lib().filter((e) => e.status === 'LIDO')); let x = v.querySelector('.v2dna');
+      if (dn && !x) { const w = document.createElement('div'); w.innerHTML = v2Dna(dn.parts, dn.n, 'Seu DNA literário'); (v.querySelector('.yo-nums') || v.querySelector('.v2pv')).after(w.firstElementChild); }
+    } else if (!v.querySelector('.v2afi') && !v.dataset.v2afi) {
+      v.querySelectorAll('.yo-nums > *').forEach((c) => { const b = c.querySelector('b, strong') || c; if (/^\s*(0|–|—|-)\s*$/.test(b.textContent || '')) c.classList.add('v2-zero'); });
+      v.dataset.v2afi = d.handle; const html = v2Afi(d); if (html) { const w = document.createElement('div'); w.innerHTML = html; (v.querySelector('.yo-nums') || top).after(w.firstElementChild); try { paintCv(v); } catch {} }
+    }
+  };
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+// ao abrir outro perfil, refaz o cartão de afinidade
+{ const _fp = friendPage; friendPage = function () { const v = $('#shelflist'); if (v) delete v.dataset.v2afi; return _fp.apply(this, arguments); }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
