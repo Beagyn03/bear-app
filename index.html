@@ -17537,6 +17537,11 @@ function v2hBind(h) {
 //  continuam em Estatísticas ("Ver estatísticas").
 //  Perfil de amizade: cartão "Vocês combinam N%" (livros em comum + gêneros parecidos), os livros em comum e o DNA lado a lado.
 //  O DNA da amizade vem do resumo publicado (shelf.stats.dna), que passa a levar os gêneros (só porcentagens, sem títulos).
+//  19/11 (Bia: "a barra ficou cópia do outro app"): a barra do DNA saiu. No lugar, "Seu jeito de ler": um título de
+//  personalidade pelos gêneros (sem gênero gramatical), uma linha explicando, até 3 traços tirados dos dados reais
+//  (tamanho dos livros, hora das sessões, notas, trechos, formato, abandonos, ritmo, autor, releituras, órbita), os gêneros
+//  como selos e "Compartilhar" (imagem 1080×1350, só texto). No perfil de amizade: o jeito de ler dela/dele e
+//  "Vocês combinam em: …" dentro do cartão de afinidade.
 const V2DNA_CO = ['#7e63c9', '#b8442a', '#e45f9b', '#2e8b57', '#c9b79f'];
 function v2Genre(e) { const g = e.genre || (e.meta && (e.meta.cat || e.meta.genre)) || ''; return String(g).split(/[\/,;›>]/)[0].trim(); }
 function v2DnaOf(list) {
@@ -17569,10 +17574,20 @@ const v2DnaBar = (parts, cmap) => `<div class="bar2">${parts.map(([g, p]) => `<i
 .v2pv .acts .p{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
 .v2pv .acts .sq{flex:0 0 44px}
 .v2pv .acts svg{width:18px;height:18px}
-.v2dna{margin:1rem 0 .4rem;padding:.85rem .9rem;border:1px solid var(--line);border-radius:var(--v2-r);background:var(--panel);box-shadow:var(--v2-sh)}
-.v2dna .t{display:flex;justify-content:space-between;align-items:baseline}.v2dna .t b{font-family:var(--v2-disp);font-size:1.05rem;color:var(--ink)}.v2dna .t small{font-size:.72rem;color:var(--ink-2);font-weight:800}
-.v2dna .bar2,.v2afi .bar2{display:flex;height:14px;border-radius:99px;overflow:hidden;margin:.6rem 0 .5rem;background:var(--line)}.v2dna .bar2 i,.v2afi .bar2 i{display:block;height:100%}
-.v2dna .lg{display:flex;flex-wrap:wrap;gap:.25rem .8rem;font-size:.75rem;font-weight:800;color:var(--ink-2)}.v2dna .lg span{display:inline-flex;align-items:center;gap:.3rem}.v2dna .lg i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.v2jl{position:relative;overflow:hidden;margin:1rem 0 .4rem;padding:1rem 1rem .95rem;border:1px solid var(--line);border-radius:var(--v2-r);box-shadow:var(--v2-sh);
+  background:radial-gradient(120% 90% at 100% 0,color-mix(in srgb,#7e63c9 22%,transparent),transparent 60%),linear-gradient(160deg,color-mix(in srgb,var(--acc) 12%,var(--panel)),var(--panel) 70%)}
+.v2jl::after{content:"✦";position:absolute;right:.9rem;top:.6rem;font-size:1.1rem;color:#e0ad3a;opacity:.85}
+.v2jl .ey{font-size:.66rem;font-weight:900;letter-spacing:.12em;color:var(--acc)}
+.v2jl h3{margin:.3rem 2rem 0 0;font-family:var(--v2-disp);font-size:1.55rem;line-height:1.12;color:var(--ink)}
+.v2jl .sub{margin:.35rem 0 0;font-size:.82rem;line-height:1.35;color:var(--ink-2);font-weight:700}
+.v2jl ul{list-style:none;margin:.75rem 0 0;padding:0;display:grid;gap:.35rem}
+.v2jl li{display:flex;align-items:center;gap:.5rem;font-size:.9rem;font-weight:800;color:var(--ink)}.v2jl li::before{content:"";width:7px;height:7px;border-radius:50%;background:#e0ad3a;box-shadow:0 0 0 3px color-mix(in srgb,#e0ad3a 25%,transparent);flex:none}
+.v2jl .ft{display:flex;align-items:center;gap:.5rem;margin-top:.85rem}
+.v2jl .sel{display:flex;flex-wrap:wrap;gap:.3rem;flex:1;min-width:0}.v2jl .sel span{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:.22rem .6rem;font-size:.72rem;font-weight:900;color:var(--ink-2)}
+.v2jl .sh{flex:none;border:0;border-radius:99px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:900;font-size:.8rem;padding:.5rem .9rem;cursor:pointer}
+.v2jl .pg{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:.7rem 0 .3rem}.v2jl .pg i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#e0ad3a)}
+.v2jl .pgt{font-size:.74rem;font-weight:900;color:var(--ink-2)}
+.v2afi .cm{margin-top:.55rem;font-size:.8rem;font-weight:700;color:#e4dcff}.v2afi .cm b{color:#ffd6a3;font-family:var(--v2-disp);font-size:.95rem}
 .v2afi{margin:1rem 0 .4rem;padding:.9rem;border-radius:var(--v2-r);background:linear-gradient(135deg,#2a1f4a,#4a3585);color:#fff;box-shadow:var(--v2-sh)}
 .v2afi .t{display:flex;align-items:center;gap:.7rem}.v2afi .t b{font-family:var(--v2-disp);font-size:1.1rem}.v2afi .t small{display:block;color:#d9cffc;font-size:.76rem;font-weight:700;margin-top:.1rem}
 .v2afi .pc{margin-left:auto;font-family:var(--v2-disp);font-size:2rem;font-weight:700;color:#ffd6a3}
@@ -17622,9 +17637,79 @@ function v2pvBind(h, v, d) {
     ]);
   });
 }
-function v2Dna(parts, n, title) {
-  const cmap = (g) => V2DNA_CO[parts.findIndex((x) => x[0] === g) % V2DNA_CO.length];
-  return `<section class="v2dna"><div class="t"><b>${title}</b><small>${n} ${n === 1 ? 'livro' : 'livros'} com gênero</small></div>${v2DnaBar(parts, cmap)}<div class="lg">${parts.map(([g, p]) => `<span><i style="background:${cmap(g)}"></i>${esc(g)} ${p}%</span>`).join('')}</div></section>`;
+// ----- Seu jeito de ler -----
+// título pelo gênero principal (sem gênero gramatical); pares fortes ganham um título próprio
+const V2ARQ = { 'Fantasia': 'Passaporte para outros mundos', 'Romance': 'Coração de romance', 'Suspense e mistério': 'Mente de detetive', 'Ficção científica': 'Olhos no futuro',
+  'Terror': 'Coleção de arrepios', 'Jovem adulto': 'Sede de aventura', 'Clássicos': 'Olhar de clássico', 'Ficção': 'Colecionando vidas', 'Biografia': 'Gente que vira história',
+  'História': 'Viagem no tempo', 'Autoajuda': 'Em construção constante', 'Poesia': 'Alma de verso', 'HQ e mangá': 'Quadro a quadro', 'Não ficção': 'Curiosidade sem fim' };
+const V2ARQ2 = [[['Fantasia', 'Romance'], 'Coração de dragão'], [['Suspense e mistério', 'Terror'], 'Alma de reviravoltas'], [['Romance', 'Jovem adulto'], 'Borboletas no estômago'],
+  [['Ficção científica', 'Fantasia'], 'Mapa de universos'], [['Biografia', 'História'], 'Memória viva'], [['Não ficção', 'Autoajuda'], 'Curiosidade sem fim'], [['Suspense e mistério', 'Romance'], 'Coração em suspense']];
+const v2Low = (g) => String(g || '').toLowerCase();
+// parts: [[gênero, %], …] do maior para o menor ("Outros"/"Outro" não contam para o título)
+function v2ArqOf(parts) {
+  const P = (parts || []).filter(([g]) => g && !/^outros?$/i.test(g)); if (!P.length) return null;
+  const [g1, p1] = P[0], g2 = P[1] && P[1][1] >= 20 ? P[1][0] : null;
+  if (p1 < 35) return { t: 'Leitura sem fronteiras', s: 'você circula entre ' + P.slice(0, 3).map(([g]) => v2Low(g)).join(', ').replace(/, ([^,]*)$/, ' e $1') + ', sem gênero dono' };
+  const pair = g2 && V2ARQ2.find(([k]) => k.includes(g1) && k.includes(g2));
+  const t = pair ? pair[1] : V2ARQ[g1] || 'Alma de ' + v2Low(g1);
+  const s = g2 ? `${v2Low(g1)} e ${v2Low(g2)} puxam a maior parte das suas leituras` : `${v2Low(g1)} puxa ${p1}% das suas leituras`;
+  return { t, s };
+}
+function v2GenreCounts() { const c = new Map(); lib().filter((e) => e.status === 'LIDO').forEach((e) => { const g = v2Genre(e); if (g && !/^outros?$/i.test(g)) c.set(g, (c.get(g) || 0) + 1); }); return c; }
+// traços: cada um só aparece com dado por trás; ficam os 3 mais fortes
+function v2Traits() {
+  const L = lib(), lidos = L.filter((e) => e.status === 'LIDO'), out = [];
+  const pg = lidos.map((e) => Number(e.totalPages) || 0).filter((n) => n > 20);
+  if (pg.length >= 3) { const a = pg.reduce((x, y) => x + y, 0) / pg.length; if (a > 420) out.push(['prefere livros longos', 1 + (a - 420) / 100]); else if (a < 260) out.push(['gosta de livros curtos e certeiros', 1 + (260 - a) / 60]); }
+  const hrs = (db.focus || []).map((f) => f && f.start && new Date(f.start)).filter((d) => d && !isNaN(d)).map((d) => d.getHours());
+  if (hrs.length >= 5) { const nt = hrs.filter((h) => h >= 20 || h < 5).length / hrs.length, mn = hrs.filter((h) => h >= 5 && h < 12).length / hrs.length;
+    if (nt >= 0.5) out.push(['lê mais à noite', 1 + nt]); else if (mn >= 0.5) out.push(['lê mais de manhã', 1 + mn]); }
+  const notas = lidos.map((e) => e.review && Number(e.review.paws)).filter((n) => n > 0);
+  if (notas.length >= 3) { const a = notas.reduce((x, y) => x + y, 0) / notas.length; if (a >= 4.3) out.push(['se apaixona fácil', 1.2 + (a - 4.3)]); else if (a <= 3.4) out.push(['exigente nas notas', 1.2 + (3.4 - a)]); }
+  const nq = L.reduce((a, e) => a + (e.quotes || []).length, 0); if (nq >= 15) out.push(['coleciona trechos', 1 + nq / 50]);
+  const fm = L.filter((e) => e.status === 'LIDO' || e.status === 'LENDO').map((e) => e.format).filter(Boolean);
+  if (fm.length >= 4) { const eb = fm.filter((f) => f === 'EBOOK').length / fm.length, au = fm.filter((f) => f === 'AUDIO').length / fm.length;
+    if (eb > 0.5) out.push(['lê mais no e-book', 0.8 + eb / 2]); else if (au > 0.5) out.push(['ouve mais do que lê', 0.9 + au / 2]); }
+  const ab = L.filter((e) => e.status === 'ABANDONEI').length; if (ab >= 3 && ab >= lidos.length * 0.1) out.push(['abandona sem culpa', 1 + ab / 20]);
+  const y = todayISO().slice(0, 4), noAno = lidos.filter((e) => String(e.finishedAt || '').startsWith(y)).length, meses = Math.max(1, new Date().getMonth() + 1);
+  if (noAno / meses >= 3) out.push(['devora livros', 1 + noAno / meses / 5]);
+  const au = new Map(); lidos.forEach((e) => { const a = String(e.author || '').split(',')[0].trim(); if (a) au.set(a, (au.get(a) || 0) + 1); });
+  const ta = [...au.entries()].sort((a, b) => b[1] - a[1])[0]; if (ta && ta[1] >= 3) out.push(['fiel a ' + ta[0], 1 + ta[1] / 5]);
+  if (L.some((e) => Number(e.rereading) > 0)) out.push(['relê os favoritos', 1.1]);
+  try { const o = orbStats(); if (o.best >= 14) out.push([`constância de órbita: ${o.best} dias seguidos`, 1 + o.best / 60]); } catch {}
+  return out.sort((a, b) => b[1] - a[1]).slice(0, 3).map((x) => x[0]);
+}
+function v2JeitoData() {
+  const c = v2GenreCounts(), n = [...c.values()].reduce((a, b) => a + b, 0);
+  if (n < 5) return { n };
+  const parts = [...c.entries()].sort((a, b) => b[1] - a[1]).map(([g, k]) => [g, Math.round(k / n * 100)]);
+  return { n, parts, arq: v2ArqOf(parts), traits: v2Traits() };
+}
+function v2JeitoHTML(J) {
+  if (!J.parts) return `<section class="v2jl" data-k="v2jl-${J.n}"><div class="ey">SEU JEITO DE LER</div><p class="sub" style="font-size:.9rem;color:var(--ink)">Seu jeito de ler aparece depois de 5 livros lidos com gênero.</p><div class="pg"><i style="width:${Math.min(100, J.n * 20)}%"></i></div><div class="pgt">${J.n} de 5</div></section>`;
+  const sel = J.parts.slice(0, 3).map(([g]) => `<span>${esc(g)}</span>`).join('') + (J.parts.length > 3 ? `<span>+${J.parts.length - 3}</span>` : '');
+  return `<section class="v2jl"><div class="ey">SEU JEITO DE LER</div><h3>${esc(J.arq.t)}</h3><p class="sub">${esc(J.arq.s)}</p>
+    ${J.traits.length ? `<ul>${J.traits.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+    <div class="ft"><div class="sel">${sel}</div><button type="button" class="sh" data-jl="share">Compartilhar</button></div></section>`;
+}
+// imagem para postar: 1080×1350, só texto, no roxo e dourado do app
+async function v2JeitoShare(J) {
+  const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const gr = x.createLinearGradient(0, 0, W, H); gr.addColorStop(0, '#2a1f4a'); gr.addColorStop(.6, '#4a3585'); gr.addColorStop(1, '#7e4a8c'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#fff'; for (let i = 0; i < 90; i++) { x.globalAlpha = Math.random() * .6 + .2; x.fillRect(Math.random() * W, Math.random() * H, 3, 3); } x.globalAlpha = 1;
+  const wrap = (txt, maxW, lh, y0, font, color, x0 = 90) => { x.font = font; x.fillStyle = color; const ws = String(txt).split(' '); let line = '', y = y0;
+    ws.forEach((w) => { const t = line ? line + ' ' + w : w; if (x.measureText(t).width > maxW && line) { x.fillText(line, x0, y); line = w; y += lh; } else line = t; }); if (line) x.fillText(line, x0, y); return y + lh; };
+  x.fillStyle = '#e0ad3a'; x.font = '900 34px Nunito, sans-serif'; x.fillText('MEU JEITO DE LER', 90, 200);
+  let y = wrap(J.arq.t, 900, 104, 330, '700 92px Georgia, serif', '#fff');
+  y = wrap(J.arq.s, 900, 52, y + 10, '700 38px Nunito, sans-serif', '#d9cffc');
+  y += 40; J.traits.forEach((t) => { x.fillStyle = '#e0ad3a'; x.beginPath(); x.arc(104, y - 14, 10, 0, Math.PI * 2); x.fill(); y = wrap(t, 840, 60, y, '800 44px Nunito, sans-serif', '#fff', 136) + 10; });
+  y += 30; let px = 90; x.font = '900 32px Nunito, sans-serif';
+  J.parts.slice(0, 3).forEach(([g]) => { const w = x.measureText(g).width + 56; if (px + w > W - 90) return; x.fillStyle = 'rgba(255,255,255,.14)'; x.beginPath(); x.roundRect(px, y, w, 64, 32); x.fill(); x.fillStyle = '#fff'; x.fillText(g, px + 28, y + 43); px += w + 16; });
+  x.fillStyle = '#ffd6a3'; x.font = '700 40px Georgia, serif'; x.fillText('Livroverso', 90, 1280);
+  const blob = await new Promise((r) => c.toBlob(r, 'image/png')); if (!blob) return toast('Não consegui gerar a imagem');
+  const file = new File([blob], 'livroverso-jeito-de-ler.png', { type: 'image/png' });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) return await navigator.share({ files: [file], title: 'Meu jeito de ler' }); } catch {}
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.append(a); a.click(); a.remove(); toast('Imagem salva');
 }
 function v2Afi(d) {
   const sh = d.shelf || {}, theirs = [...(sh.lidos || []), ...(sh.potinho || []), ...((d.reading || sh.reading) || [])];
@@ -17636,10 +17721,14 @@ function v2Afi(d) {
   const uniq = new Set(theirs.map((b) => normT(b.title))).size, ts = both.length / Math.max(8, uniq);
   if (!both.length && !gs) return '';
   const pc = Math.max(5, Math.min(95, Math.round(100 * (thD && myD ? 0.6 * Math.min(1, ts * 1.4) + 0.4 * gs : Math.min(1, ts * 1.4)))));
-  const cmap = (g) => { const all = [...(myD ? myD.parts : []), ...(thD || [])].map((x) => x[0]); return V2DNA_CO[[...new Set(all)].indexOf(g) % V2DNA_CO.length]; };
+  // jeito de ler da amizade (pelo resumo publicado) e os gêneros que as duas contas têm em comum
+  const thArq = thD && v2ArqOf(thD), nome = esc((d.displayName || '').split(' ')[0] || '');
+  const mineG = myD ? new Set(myD.parts.map(([g]) => g).filter((g) => !/^outros?$/i.test(g))) : new Set();
+  const emComum = thD ? thD.map(([g]) => g).filter((g) => mineG.has(g)).slice(0, 3).map(v2Low) : [];
   return `<section class="v2afi"><div class="t"><span><b>Vocês combinam</b><small>${both.length ? `${both.length} ${both.length === 1 ? 'livro' : 'livros'} em comum` : 'gostos de leitura parecidos'}</small></span><span class="pc">${pc}%</span></div>
     ${both.length ? `<div class="row">${both.slice(0, 10).map((b) => cvh(b.title, b.cover, 'v2a-cv')).join('')}</div>` : ''}
-    ${myD && thD ? `<div class="vs"><div>Você${v2DnaBar(myD.parts, cmap)}</div><div>${esc((d.displayName || '').split(' ')[0] || 'Amizade')}${v2DnaBar(thD, cmap)}</div></div>` : ''}</section>`;
+    ${thArq ? `<div class="cm">Jeito de ler${nome ? ' de ' + nome : ''}: <b>${esc(thArq.t)}</b></div>` : ''}
+    ${emComum.length ? `<div class="cm">Vocês combinam em: ${esc(emComum.join(', '))}</div>` : ''}</section>`;
 }
 { let tm = 0;
   const put = () => { const v = $('#shelflist'); if (!v || v.hidden) return; const top = v.querySelector('.yo-top'); if (!top) { v.classList.remove('v2pf'); return; }
@@ -17651,8 +17740,12 @@ function v2Afi(d) {
       top.classList.add('v2-old'); v.querySelector('.yo-nums')?.classList.add('v2-old');
       const html = v2pvOwnHTML(d, v), key = d.handle + '|' + html.length; let h = v.querySelector('.v2pv');
       if (!h || h.dataset.k !== key) { const w = document.createElement('div'); w.innerHTML = html; const n = w.firstElementChild; n.dataset.k = key; v2pvBind(n, v, d); if (h) h.replaceWith(n); else top.before(n); }
-      const dn = v2DnaOf(lib().filter((e) => e.status === 'LIDO')); let x = v.querySelector('.v2dna');
-      if (dn && !x) { const w = document.createElement('div'); w.innerHTML = v2Dna(dn.parts, dn.n, 'Seu DNA literário'); (v.querySelector('.yo-nums') || v.querySelector('.v2pv')).after(w.firstElementChild); }
+      const J = v2JeitoData(), jh = v2JeitoHTML(J); let x = v.querySelector('.v2jl');
+      if (!x || x.dataset.h !== String(jh.length) + '|' + jh.slice(-80)) {
+        const w = document.createElement('div'); w.innerHTML = jh; const n = w.firstElementChild; n.dataset.h = String(jh.length) + '|' + jh.slice(-80);
+        n.addEventListener('click', (ev) => { if (ev.target.closest('[data-jl=share]')) v2JeitoShare(v2JeitoData()); });
+        if (x) x.replaceWith(n); else (v.querySelector('.v2pv') || v.querySelector('.yo-nums')).after(n); } // logo abaixo do cabeçalho
+      else if (x.previousElementSibling !== v.querySelector('.v2pv') && v.querySelector('.v2pv')) v.querySelector('.v2pv').after(x);
     } else if (!v.querySelector('.v2afi') && !v.dataset.v2afi) {
       v.querySelectorAll('.yo-nums > *').forEach((c) => { const b = c.querySelector('b, strong') || c; if (/^\s*(0|–|—|-)\s*$/.test(b.textContent || '')) c.classList.add('v2-zero'); });
       v.dataset.v2afi = d.handle; const html = v2Afi(d); if (html) { const w = document.createElement('div'); w.innerHTML = html; (v.querySelector('.yo-nums') || top).after(w.firstElementChild); try { paintCv(v); } catch {} }
