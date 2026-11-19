@@ -17457,8 +17457,8 @@ Object.assign(V2I, {
 .v2hero .pg{display:block;font-size:.8rem;color:var(--ink-2);font-weight:800;margin-top:.3rem;font-variant-numeric:tabular-nums}
 .v2hero .due{display:inline-flex;align-items:center;gap:.35rem;margin-top:.45rem;padding:.3rem .7rem;border-radius:99px;background:color-mix(in srgb,var(--acc) 12%,var(--panel));color:var(--acc);font-size:.76rem;font-weight:900}
 .v2hero .acts{display:flex;justify-content:center;align-items:center;gap:.45rem;margin-top:.85rem}
-.v2hero .go{border:0;border-radius:16px;background:linear-gradient(135deg,#e9a35c,#c46f2e);color:#fff;font:inherit;font-weight:900;font-size:.98rem;padding:.8rem 1.5rem;box-shadow:0 8px 20px rgba(196,111,46,.35);display:inline-flex;align-items:center;gap:.45rem}
-.v2hero .go svg{width:20px;height:20px}
+.v2hero .go{border:0;border-radius:16px;background:linear-gradient(135deg,#e9a35c,#c46f2e);color:#fff;font:inherit;font-weight:900;font-size:.92rem;padding:.6rem 1.05rem;white-space:nowrap;box-shadow:0 6px 16px rgba(196,111,46,.3);display:inline-flex;align-items:center;gap:.4rem}
+.v2hero .go svg{width:18px;height:18px}
 .v2hero .lk{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.84rem;text-decoration:underline;text-underline-offset:3px}
 .v2hero .mo{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);display:grid;place-items:center;padding:0}
 .v2hero .mo svg{width:20px;height:20px}
@@ -17493,7 +17493,7 @@ function v2hHTML(m) {
     <b class="bt">${esc(e.title)}</b>${e.author ? `<span class="au">${esc(e.author)}</span>` : ''}
     ${total ? `<span class="pg">pág. ${now} de ${total} · ${pct}% lido</span>` : ''}
     ${m.due ? `<span class="due">${esc(m.due)}</span>` : ''}
-    <div class="acts"><button type="button" class="go" data-h="upd">${V2SVG('pag', 20)}Atualizar página</button><button type="button" class="mo" data-h="fim" aria-label="Concluir: terminei o livro" title="Concluir">${V2SVG('ok', 20)}</button><button type="button" class="mo" data-h="inv" aria-label="Convidar para ler junto" title="Ler junto">${V2SVG('junto', 20)}</button><button type="button" class="mo" data-h="more" aria-label="Mais opções do livro">${V2SVG('dots', 20)}</button></div>
+    <div class="acts"><button type="button" class="go" data-h="upd" aria-label="Atualizar página">${V2SVG('pag', 18)}Atualizar</button><button type="button" class="mo" data-h="fim" aria-label="Concluir: terminei o livro" title="Concluir">${V2SVG('ok', 20)}</button><button type="button" class="mo" data-h="inv" aria-label="Convidar para ler junto" title="Ler junto">${V2SVG('junto', 20)}</button><button type="button" class="mo" data-h="more" aria-label="Mais opções do livro">${V2SVG('dots', 20)}</button></div>
     ${m.others.length ? `<div class="sw"><small>Também lendo</small>${m.others.map((x) => `<button type="button" data-h="sw" data-id="${esc(x.id)}">${cvh(x.title, x.cover, 'v2h-mini')}<span>${esc(x.title)}</span></button>`).join('')}</div>` : ''}
   </section>`;
 }
