@@ -74,7 +74,7 @@ function retroData(e) {
   const PER = [['de madrugada', (h) => h < 5], ['de manhã', (h) => h >= 5 && h < 12], ['à tarde', (h) => h >= 12 && h < 18], ['à noite', (h) => h >= 18]];
   let per = null; if (hrs.length >= 2) { const c = PER.map(([n, f]) => [n, hrs.filter(f).length]).sort((a, b) => b[1] - a[1]); if (c[0][1] >= Math.ceil(hrs.length / 2)) per = c[0][0]; }
   let meta = null; try { const dl = tlEvents(e), hit = dl.filter((x) => x.ok).length, n = dl.filter((x) => x.inDue && !x.off && x.per).length; if (n && hit) meta = { hit, n: Math.max(n, hit) }; } catch {} // só aparece se bateu a meta em algum dia
-  const cnt = new Map(), add = (k, w) => k && cnt.set(k, (cnt.get(k) || 0) + w);
+  const cnt = new Map(), add = (k0, w) => { const k = emoKey(k0); if (k) cnt.set(k, (cnt.get(k) || 0) + w); };
   (e.diary || []).forEach((x) => (x.fe || []).forEach((k) => add(k, 1))); (e.quotes || []).forEach((x) => (x.f || []).forEach((k) => add(k, 1))); ((e.fin || {}).fe || []).forEach((k) => add(k, 2));
   const emo = [...cnt.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => ({ k, n, name: (QT_FEELS.find((y) => y[0] === k) || [, k])[1] }));
   const rv = (() => { try { return reviewOfLib(e) || {}; } catch { return e.review || {}; } })();

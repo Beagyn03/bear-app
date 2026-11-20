@@ -20,14 +20,23 @@
 .qt-ff .qt-fe{flex:none;height:30px;font-size:.74rem}
 `; TR.append(st); }
 // sentimentos do trecho: o que a pessoa sentiu ao ler (os 4 primeiros usam os ursinhos das reações)
-const QT_GROUPS = [['Gostando', [['alegria', 'Alegria'], ['euforia', 'Euforia'], ['paixao', 'Paixão'], ['excitacao', 'Excitação'], ['borboletas', 'Borboletas no estômago'], ['shippando', 'Shippando forte'], ['rindo', 'Rindo alto'], ['conforto', 'Leitura conforto']]],
-  ['Prendendo', [['naoparo', 'Não consigo parar'], ['curiosidade', 'Curiosidade'], ['ansiedade', 'Ansiedade'], ['tensao', 'Tensão total'], ['intensidade', 'Intensidade'], ['arrepios', 'Arrepios']]],
-  ['O plot', [['plot_surpresa', 'Plot surpreendente'], ['plot_previsivel', 'Plot previsível'], ['plot_fraco', 'Plot fraco']]],
-  ['Mexeu comigo', [['coracao_partido', 'Coração partido'], ['chorei_litros', 'Chorei litros'], ['ressaca', 'Vou ter ressaca']]],
-  ['Não está rolando', [['tedio', 'Tédio'], ['confusao', 'Confusão'], ['frustracao', 'Frustração'], ['raiva_personagem', 'Raiva do personagem'], ['cringe', 'Vergonha alheia'], ['nojo', 'Nojo']]]];
+// Lista única de emoções (Bia, 20/11; a mesma do protótipo em Atualizar, Terminei, sessão, trechos, posts e Top 3).
+// Chaves antigas que coincidem foram mantidas (naoparo, tensao, euforia...). As outras antigas continuam nos dados salvos e
+// contam pela tabela EMO_OLD (null = não é emoção, fica fora do ranking).
+const QT_GROUPS = [['Principais', [['naoparo', 'Não paro'], ['tensao', 'Tensão'], ['reviravolta', 'Reviravolta'], ['chorei', 'Chorei'], ['ri', 'Ri alto'], ['arrastado', 'Arrastado']]],
+  ['Mais', [['apaixonei', 'Me apaixonei'], ['emocionei', 'Me emocionei'], ['surpreendente', 'Surpreendente'], ['encanto', 'Encanto'], ['euforia', 'Euforia'], ['esperanca', 'Esperança'], ['ansiedade', 'Ansiedade'], ['medo', 'Medo'], ['angustia', 'Angústia'], ['arrepio', 'Arrepio'], ['confusao', 'Confusão'], ['doeu', 'Doeu'], ['raiva', 'Raiva'], ['identifiquei', 'Me identifiquei'], ['tedio', 'Tédio'], ['cringe', 'Cringe']]]];
 const QT_PICK = QT_GROUPS.flatMap((g) => g[1]); // o que se escolhe hoje
-const QT_FEELS = [...QT_PICK, ...[['amei', 'Amei', 'rx_amei'], ['ri', 'Ri', 'rx_haha'], ['choque', 'Choque', 'rx_choque'], ['chorei', 'Chorei', 'rx_chorei'], ['identifiquei', 'Me identifiquei'], ['arrepiei', 'Arrepiei'], ['pensando', 'Fiquei pensando'], ['inspirou', 'Inspirou'], ['saudade', 'Saudade'], ['raiva', 'Raiva']]]; // para mostrar (inclui as emoções antigas de posts e trechos já salvos)
-const qtFeel = (k, cls = '', on = false) => { const x = QT_FEELS.find((y) => y[0] === k); if (!x) return ''; const im = x[2] ? `<img src="img/${x[2]}_p.webp" alt="">` : ''; return cls ? `<button type="button" class="${cls}${on ? ' on' : ''}" data-fe="${k}" aria-pressed="${on}">${im}${x[1]}</button>` : `<span>${im}${x[1]}</span>`; };
+const EMO_OLD = { alegria: 'euforia', paixao: 'apaixonei', excitacao: 'euforia', borboletas: 'apaixonei', shippando: 'apaixonei', rindo: 'ri', conforto: null,
+  curiosidade: 'naoparo', intensidade: 'tensao', arrepios: 'arrepio', plot_surpresa: 'surpreendente', plot_previsivel: 'tedio', plot_fraco: 'tedio',
+  coracao_partido: 'doeu', chorei_litros: 'chorei', ressaca: 'emocionei', frustracao: 'raiva', raiva_personagem: 'raiva', nojo: 'cringe',
+  amei: 'apaixonei', choque: 'surpreendente', arrepiei: 'arrepio', pensando: 'emocionei', inspirou: 'esperanca', saudade: 'doeu',
+  // rótulos antigos da sessão de leitura (db.focus[].feel) e da primeira versão da lista única
+  '😱 Chocante': 'surpreendente', '🥹 Emocionante': 'emocionei', '😍 Apaixonante': 'apaixonei', '😴 Arrastado': 'arrastado', '🤯 Reviravolta': 'reviravolta', '😌 Tranquilo': null };
+// qualquer valor salvo (chave nova, chave antiga, rótulo) → chave da lista única, ou null
+const emoKey = (k) => { if (k == null) return null; if (QT_PICK.some((y) => y[0] === k)) return k; if (k in EMO_OLD) return EMO_OLD[k]; const byLabel = QT_PICK.find((y) => y[1] === k); return byLabel ? byLabel[0] : null; };
+// para mostrar: chaves antigas aparecem com o nome novo
+const QT_FEELS = [...QT_PICK, ...Object.keys(EMO_OLD).filter((k) => EMO_OLD[k]).map((k) => [k, QT_PICK.find((y) => y[0] === EMO_OLD[k])[1]])];
+const qtFeel = (k, cls = '', on = false) => { const x = QT_FEELS.find((y) => y[0] === k); if (!x) return ''; const im = ''; return cls ? `<button type="button" class="${cls}${on ? ' on' : ''}" data-fe="${k}" aria-pressed="${on}">${im}${x[1]}</button>` : `<span>${im}${x[1]}</span>`; };
 {
   const bioOf = (x) => { const tail = ` — ${x.e.title}`, room = 160 - tail.length - 2; const t = x.t.length > room ? x.t.slice(0, Math.max(10, room - 1)).trim() + '…' : x.t; return `“${t}”${tail}`.slice(0, 160); };
   const setBio = async (bio) => { T().bio = bio; save(); refresh(); if (connected() && socialProfile) { const r = await sapi('PUT', '/v1/me/bio', { bio }); toast(r.status === 200 ? 'Agora é a frase do seu perfil' : 'Frase salva só neste aparelho por enquanto'); } else toast('Agora é a frase do seu perfil'); };

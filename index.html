@@ -10677,14 +10677,23 @@ TR.addEventListener('click', (ev) => {
 .qt-ff .qt-fe{flex:none;height:30px;font-size:.74rem}
 `; TR.append(st); }
 // sentimentos do trecho: o que a pessoa sentiu ao ler (os 4 primeiros usam os ursinhos das reações)
-const QT_GROUPS = [['Gostando', [['alegria', 'Alegria'], ['euforia', 'Euforia'], ['paixao', 'Paixão'], ['excitacao', 'Excitação'], ['borboletas', 'Borboletas no estômago'], ['shippando', 'Shippando forte'], ['rindo', 'Rindo alto'], ['conforto', 'Leitura conforto']]],
-  ['Prendendo', [['naoparo', 'Não consigo parar'], ['curiosidade', 'Curiosidade'], ['ansiedade', 'Ansiedade'], ['tensao', 'Tensão total'], ['intensidade', 'Intensidade'], ['arrepios', 'Arrepios']]],
-  ['O plot', [['plot_surpresa', 'Plot surpreendente'], ['plot_previsivel', 'Plot previsível'], ['plot_fraco', 'Plot fraco']]],
-  ['Mexeu comigo', [['coracao_partido', 'Coração partido'], ['chorei_litros', 'Chorei litros'], ['ressaca', 'Vou ter ressaca']]],
-  ['Não está rolando', [['tedio', 'Tédio'], ['confusao', 'Confusão'], ['frustracao', 'Frustração'], ['raiva_personagem', 'Raiva do personagem'], ['cringe', 'Vergonha alheia'], ['nojo', 'Nojo']]]];
+// Lista única de emoções (Bia, 20/11; a mesma do protótipo em Atualizar, Terminei, sessão, trechos, posts e Top 3).
+// Chaves antigas que coincidem foram mantidas (naoparo, tensao, euforia...). As outras antigas continuam nos dados salvos e
+// contam pela tabela EMO_OLD (null = não é emoção, fica fora do ranking).
+const QT_GROUPS = [['Principais', [['naoparo', 'Não paro'], ['tensao', 'Tensão'], ['reviravolta', 'Reviravolta'], ['chorei', 'Chorei'], ['ri', 'Ri alto'], ['arrastado', 'Arrastado']]],
+  ['Mais', [['apaixonei', 'Me apaixonei'], ['emocionei', 'Me emocionei'], ['surpreendente', 'Surpreendente'], ['encanto', 'Encanto'], ['euforia', 'Euforia'], ['esperanca', 'Esperança'], ['ansiedade', 'Ansiedade'], ['medo', 'Medo'], ['angustia', 'Angústia'], ['arrepio', 'Arrepio'], ['confusao', 'Confusão'], ['doeu', 'Doeu'], ['raiva', 'Raiva'], ['identifiquei', 'Me identifiquei'], ['tedio', 'Tédio'], ['cringe', 'Cringe']]]];
 const QT_PICK = QT_GROUPS.flatMap((g) => g[1]); // o que se escolhe hoje
-const QT_FEELS = [...QT_PICK, ...[['amei', 'Amei', 'rx_amei'], ['ri', 'Ri', 'rx_haha'], ['choque', 'Choque', 'rx_choque'], ['chorei', 'Chorei', 'rx_chorei'], ['identifiquei', 'Me identifiquei'], ['arrepiei', 'Arrepiei'], ['pensando', 'Fiquei pensando'], ['inspirou', 'Inspirou'], ['saudade', 'Saudade'], ['raiva', 'Raiva']]]; // para mostrar (inclui as emoções antigas de posts e trechos já salvos)
-const qtFeel = (k, cls = '', on = false) => { const x = QT_FEELS.find((y) => y[0] === k); if (!x) return ''; const im = x[2] ? `<img src="img/${x[2]}_p.webp" alt="">` : ''; return cls ? `<button type="button" class="${cls}${on ? ' on' : ''}" data-fe="${k}" aria-pressed="${on}">${im}${x[1]}</button>` : `<span>${im}${x[1]}</span>`; };
+const EMO_OLD = { alegria: 'euforia', paixao: 'apaixonei', excitacao: 'euforia', borboletas: 'apaixonei', shippando: 'apaixonei', rindo: 'ri', conforto: null,
+  curiosidade: 'naoparo', intensidade: 'tensao', arrepios: 'arrepio', plot_surpresa: 'surpreendente', plot_previsivel: 'tedio', plot_fraco: 'tedio',
+  coracao_partido: 'doeu', chorei_litros: 'chorei', ressaca: 'emocionei', frustracao: 'raiva', raiva_personagem: 'raiva', nojo: 'cringe',
+  amei: 'apaixonei', choque: 'surpreendente', arrepiei: 'arrepio', pensando: 'emocionei', inspirou: 'esperanca', saudade: 'doeu',
+  // rótulos antigos da sessão de leitura (db.focus[].feel) e da primeira versão da lista única
+  '😱 Chocante': 'surpreendente', '🥹 Emocionante': 'emocionei', '😍 Apaixonante': 'apaixonei', '😴 Arrastado': 'arrastado', '🤯 Reviravolta': 'reviravolta', '😌 Tranquilo': null };
+// qualquer valor salvo (chave nova, chave antiga, rótulo) → chave da lista única, ou null
+const emoKey = (k) => { if (k == null) return null; if (QT_PICK.some((y) => y[0] === k)) return k; if (k in EMO_OLD) return EMO_OLD[k]; const byLabel = QT_PICK.find((y) => y[1] === k); return byLabel ? byLabel[0] : null; };
+// para mostrar: chaves antigas aparecem com o nome novo
+const QT_FEELS = [...QT_PICK, ...Object.keys(EMO_OLD).filter((k) => EMO_OLD[k]).map((k) => [k, QT_PICK.find((y) => y[0] === EMO_OLD[k])[1]])];
+const qtFeel = (k, cls = '', on = false) => { const x = QT_FEELS.find((y) => y[0] === k); if (!x) return ''; const im = ''; return cls ? `<button type="button" class="${cls}${on ? ' on' : ''}" data-fe="${k}" aria-pressed="${on}">${im}${x[1]}</button>` : `<span>${im}${x[1]}</span>`; };
 {
   const bioOf = (x) => { const tail = ` — ${x.e.title}`, room = 160 - tail.length - 2; const t = x.t.length > room ? x.t.slice(0, Math.max(10, room - 1)).trim() + '…' : x.t; return `“${t}”${tail}`.slice(0, 160); };
   const setBio = async (bio) => { T().bio = bio; save(); refresh(); if (connected() && socialProfile) { const r = await sapi('PUT', '/v1/me/bio', { bio }); toast(r.status === 200 ? 'Agora é a frase do seu perfil' : 'Frase salva só neste aparelho por enquanto'); } else toast('Agora é a frase do seu perfil'); };
@@ -16064,7 +16073,7 @@ function retroData(e) {
   const PER = [['de madrugada', (h) => h < 5], ['de manhã', (h) => h >= 5 && h < 12], ['à tarde', (h) => h >= 12 && h < 18], ['à noite', (h) => h >= 18]];
   let per = null; if (hrs.length >= 2) { const c = PER.map(([n, f]) => [n, hrs.filter(f).length]).sort((a, b) => b[1] - a[1]); if (c[0][1] >= Math.ceil(hrs.length / 2)) per = c[0][0]; }
   let meta = null; try { const dl = tlEvents(e), hit = dl.filter((x) => x.ok).length, n = dl.filter((x) => x.inDue && !x.off && x.per).length; if (n && hit) meta = { hit, n: Math.max(n, hit) }; } catch {} // só aparece se bateu a meta em algum dia
-  const cnt = new Map(), add = (k, w) => k && cnt.set(k, (cnt.get(k) || 0) + w);
+  const cnt = new Map(), add = (k0, w) => { const k = emoKey(k0); if (k) cnt.set(k, (cnt.get(k) || 0) + w); };
   (e.diary || []).forEach((x) => (x.fe || []).forEach((k) => add(k, 1))); (e.quotes || []).forEach((x) => (x.f || []).forEach((k) => add(k, 1))); ((e.fin || {}).fe || []).forEach((k) => add(k, 2));
   const emo = [...cnt.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => ({ k, n, name: (QT_FEELS.find((y) => y[0] === k) || [, k])[1] }));
   const rv = (() => { try { return reviewOfLib(e) || {}; } catch { return e.review || {}; } })();
@@ -17008,9 +17017,8 @@ function v2SesOpen(e, s) {
   v2Tick = setInterval(() => { const t = w.querySelector('#v2tm'); if (!w.isConnected) return clearInterval(v2Tick); if (t) t.textContent = v2Clock(s); }, 1000);
 }
 // Emoções da sessão = as 6 principais da lista única do app (Bia, 20/11; protótipo UPF). As antigas salvas em db.focus[].feel
-// continuam guardadas; V2FEEL_OLD diz para qual da lista nova cada uma conta (Tranquilo não conta: não é emoção).
-const V2FEEL = ['Não paro', 'Tensão', 'Reviravolta', 'Chorei', 'Ri alto', 'Arrastado'];
-const V2FEEL_OLD = { '😱 Chocante': 'Surpreendente', '🥹 Emocionante': 'Me emocionei', '😍 Apaixonante': 'Me apaixonei', '😴 Arrastado': 'Arrastado', '🤯 Reviravolta': 'Reviravolta', '😌 Tranquilo': null };
+// continuam guardadas e contam pela tabela EMO_OLD (20_trechos.js); Tranquilo não conta: não é emoção.
+const V2FEEL = ['naoparo', 'tensao', 'reviravolta', 'chorei', 'ri', 'arrastado']; // chaves da lista única (QT_GROUPS)
 // Encerrar: pergunta onde parou (página exata, ou % no e-book), já com a estimativa pelo ritmo da pessoa; capítulo é opcional
 function v2Pace() { const f = (db.focus || []).filter((x) => x.minutes > 0 && x.pages > 0).slice(-20); const m = f.reduce((a, x) => a + x.minutes, 0), p = f.reduce((a, x) => a + x.pages, 0); return m >= 10 ? p / m : 0.6; }
 function v2SesEnd(e, s, w) {
@@ -17024,7 +17032,7 @@ function v2SesEnd(e, s, w) {
     <p class="hint" id="v2hint">${est > s.pg0 ? 'Estimativa pelo seu ritmo. Corrija se for outra.' : 'Digite a página em que parou.'}</p>
     <input class="cap" id="v2cap" type="text" maxlength="40" placeholder="Capítulo (opcional)" value="${esc(s.cap || '')}">
     <div class="nums" style="margin-top:.8rem"><div><b>${secs < 60 ? '<1' : min}</b><small>minutos</small></div><div><b id="v2np">0</b><small>páginas</small></div><div><b id="v2nr">—</b><small>pág. por hora</small></div></div>
-    <div class="lb">Como foi?</div><div class="ch">${V2FEEL.map((f, i) => `<button type="button" data-f="${i}">${f}</button>`).join('')}</div>
+    <div class="lb">Como foi?</div><div class="ch">${V2FEEL.map((f, i) => `<button type="button" data-f="${i}">${esc((QT_PICK.find((y) => y[0] === f) || [, f])[1])}</button>`).join('')}</div>
     <div class="ac"><button type="button" data-a="back">Continuar lendo</button><button type="button" class="p" data-a="save">Salvar</button></div>
     <button type="button" data-a="drop" style="display:block;margin:.7rem auto 0;border:0;background:none;color:var(--ink-2);font:inherit;font-size:.78rem;font-weight:800;text-decoration:underline">Descartar sessão</button></div>`;
   const inp = o.querySelector('#v2stop');
@@ -19356,6 +19364,27 @@ const V3EMO = {"swap":"<path d=\"M4 8h14l-3-3M20 16H6l3 3\"/>","friends":"<circl
 { const st = document.createElement('style'); st.textContent = '.drw [data-go=ach]{display:none!important}'; TR.append(st); }
 // Curtir com o coração de traço: curtido fica preenchido na cor de destaque.
 { const st = document.createElement('style'); st.textContent = '.rd-like .v3ico{width:20px!important;height:20px!important}.rd-like.on .v3ico{color:var(--acc)}.rd-like.on .v3ico svg{fill:currentColor}'; TR.append(st); }
+// --- f6_v2_emocoes_ver_todas.js ---
+// Emoções com "ver todas" em todo seletor (Bia, 20/11; mesmo comportamento do protótipo): aparecem as 6 principais e as
+// já marcadas; o resto abre em "ver todas" e fecha em "ver menos". Vale para os seletores feitos a partir de QT_PICK
+// (trechos, post, atualizar, diário, terminei, avaliação). Feito no DOM porque cada seletor monta a lista do seu jeito.
+{ const st = document.createElement('style'); st.textContent = '.v3emo-x{display:none!important}.v3emo-more{border:0;background:none;color:var(--acc);font:inherit;font-size:.8rem;font-weight:800;padding:.35rem .2rem;cursor:pointer;flex-basis:100%;text-align:left}'; TR.append(st);
+  const MAIN = new Set(QT_GROUPS[0][1].map((y) => y[0])), ALL = new Set(QT_PICK.map((y) => y[0]));
+  const keyOf = (b) => b.dataset.f || b.dataset.fe || b.dataset.v || b.dataset.k || '';
+  const isOn = (b) => b.classList.contains('on') || b.getAttribute('aria-pressed') === 'true';
+  const apply = (box) => {
+    const chips = [...box.children].filter((b) => ALL.has(keyOf(b))); if (chips.length < 12) return;
+    const open = box.dataset.emoOpen === '1';
+    chips.forEach((b) => b.classList.toggle('v3emo-x', !open && !MAIN.has(keyOf(b)) && !isOn(b)));
+    let more = box.querySelector(':scope > .v3emo-more');
+    if (!more) { more = document.createElement('button'); more.type = 'button'; more.className = 'v3emo-more'; more.addEventListener('click', (ev) => { ev.stopPropagation(); box.dataset.emoOpen = box.dataset.emoOpen === '1' ? '' : '1'; apply(box); }); box.append(more); }
+    more.textContent = open ? 'ver menos' : 'ver todas (' + chips.filter((b) => !MAIN.has(keyOf(b))).length + ')';
+  };
+  const scan = (root) => { if (!root || !root.querySelectorAll) return; const boxes = new Set(); root.querySelectorAll('button, span').forEach((b) => { if (b.parentElement && ALL.has(keyOf(b))) boxes.add(b.parentElement); }); if (root.parentElement && ALL.has(keyOf(root))) boxes.add(root.parentElement); boxes.forEach(apply); };
+  let t = 0; new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => scan(TR), 30); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'aria-pressed'] });
+  scan(TR); }
+// o seletor agrupado (anotação/trecho no Lendo) mostra os dois grupos; o título do grupo "Mais" some junto com as escondidas
+{ const st = document.createElement('style'); st.textContent = '.fe-gt:nth-of-type(n+2){display:none}'; TR.append(st); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
