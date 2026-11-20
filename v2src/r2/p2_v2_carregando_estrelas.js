@@ -1,5 +1,5 @@
 // Carregando com estrelas cadentes (Bia, 20/11): a tela de estrelas do perfil antigo vale para o app todo, mas só quando a
-// tela demora. Um pedido à API que sai logo depois de um toque e passa de 0,3 s mostra as estrelas sobre o conteúdo
+// tela demora e ainda não há nada para ver (nunca cobre uma tela que já apareceu). Um pedido à API que sai logo depois de um toque e passa de 0,3 s mostra as estrelas sobre o conteúdo
 // (topo e barra de baixo continuam visíveis); quando aparecem, ficam ao menos 0,4 s. Pedidos de fundo (sem toque) não contam.
 { const st = document.createElement('style'); st.textContent = `
 .v7load{position:fixed;left:0;right:0;top:56px;bottom:64px;z-index:45;background:var(--bg);display:grid;place-items:center;overflow:hidden;pointer-events:none;opacity:0;transition:opacity .18s ease}
@@ -16,9 +16,13 @@
 @media (prefers-reduced-motion:reduce){.v7load s,.v3pfwait s{display:none}.v3pfwait.v7st .sp{display:block}}
 `; TR.append(st); }
 { let tap = 0, pend = 0, ov = null, shownAt = 0, showT = 0, label = 'Carregando…';
-  addEventListener('pointerup', () => { tap = Date.now(); }, true);
+  let drew = 0; addEventListener('pointerup', () => { tap = Date.now(); drew = 0; }, true);
+  // a tela que já apareceu (do cache ou pronta) não é coberta: as estrelas só entram se, passado 0,3 s, nada foi desenhado ou o que está na tela é um "Carregando…"
+  new MutationObserver((ms) => { if (Date.now() - tap > 1500) return; for (const m of ms) drew += m.addedNodes.length; }).observe(TR, { childList: true, subtree: true });
+  const ready = () => { try { return ready0(); } catch (err) { return false; } };
+  const ready0 = () => { const sl = TR.querySelector('#shelflist'), box = sl && !sl.hidden ? sl : TR.querySelector('#lista'); if (!box || drew < 3) return false; const t = [box, ...[...box.querySelectorAll('*')].filter((x) => x.shadowRoot).map((x) => x.shadowRoot)].map((r) => r.innerText != null ? r.innerText : [...r.children].filter((c) => c.tagName !== 'STYLE').map((c) => c.innerText || '').join(' ')).join(' ').slice(0, 6000); return t.trim().length > 40 && !/Carregando|Abrindo/i.test(t); };
   const lbl = (p) => /^\/v1\/users\//.test(p) ? 'Abrindo perfil…' : /^\/v1\/(books|reviews|niveis|ressaca|markers\/book|echoes)|[?&]book=/.test(p) ? 'Abrindo livro…' : /^\/v1\/buddies/.test(p) ? 'Abrindo leitura conjunta…' : /^\/v1\/(feed|rede|board|qday|trends)/.test(p) ? 'Abrindo comunidade…' : /^\/v1\/messages/.test(p) ? 'Abrindo conversa…' : 'Carregando…';
-  const show = () => { showT = 0; if (!pend || ov || TR.querySelector('.v3pfwait, .fp-load')) return;
+  const show = () => { showT = 0; if (!pend || ov || TR.querySelector('.v3pfwait, .fp-load') || ready()) return;
     ov = document.createElement('div'); ov.className = 'v7load'; ov.setAttribute('aria-live', 'polite');
     ov.innerHTML = '<s></s><s></s><s></s><s></s><s></s><b><i>★</i>' + esc(label) + '</b>'; TR.append(ov); shownAt = Date.now(); requestAnimationFrame(() => ov && ov.classList.add('on')); };
   const hide = () => { if (pend) return; clearTimeout(showT); showT = 0; if (!ov) return; const o = ov, wait = Math.max(0, 400 - (Date.now() - shownAt));
