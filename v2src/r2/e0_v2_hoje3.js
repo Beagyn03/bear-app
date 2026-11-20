@@ -73,7 +73,8 @@ function v3Buddy(e) { const bm = (SOC.buddyMap || {})[e.id] || (T().buddy || {})
   return { on: false, names: bm.names || '' }; }
 function v3HeroHTML(col) {
   const R = reading(), off = (() => { try { return homePrefs().off; } catch { return []; } })(), H = TR.host || document.body;
-  const head = `<div class="hello"><small>${esc(v2hDate())}</small><b>${v2hGreet()}${v2hName() ? ', ' + esc(v2hName()) : ''}</b></div>`;
+  // abertura do dia (bloco r0) no lugar de data + saudação
+  const head = typeof v8DiaHTML === 'function' ? (() => { try { return v8DiaHTML(); } catch { return ''; } })() : `<div class="hello"><small>${esc(v2hDate())}</small><b>${v2hGreet()}${v2hName() ? ', ' + esc(v2hName()) : ''}</b></div>`;
   if (!R) return head + `<div class="v3empty"><b>Escolha sua próxima leitura</b><p>Nenhum livro em leitura agora.</p><button type="button" data-h3="pick">${lib().some((x) => x.status === 'QUERO') ? 'Qual leio agora?' : 'Buscar um livro'}</button></div>`;
   const { e, now, total } = R, pct = total ? Math.min(100, Math.round((now / total) * 100)) : 0, p = pct / 100, a = p * 2 * Math.PI - Math.PI / 2;
   const left = total ? Math.max(0, total - now) : 0, near = total && pct >= 90;
