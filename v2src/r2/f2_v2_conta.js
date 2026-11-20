@@ -37,7 +37,7 @@ setTimeout(v2ModCheck, 3500);
 { let tm = 0; const put = () => { const v = $('#shelflist'), d = S.fpData, m = S.modStatus; if (!v || v.hidden || !d || !d.self || !m || m.status === 'ok') return;
     const body = v.querySelector('.sl-body'); if (!body || body.querySelector('.v2sus')) return; const anchor = body.querySelector(':scope > .v2pv') || body.querySelector(':scope > .yo-top'); if (!anchor) return;
     const dt = m.until ? new Date(m.until).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
-    anchor.insertAdjacentHTML('afterend', '<div class="v2sus"><span>⚠</span><span>' + (m.status === 'banned' ? 'Conta banida: seu perfil não aparece para ninguém e você não pode publicar.' : 'Conta suspensa até ' + dt + ': seu perfil está escondido e você não pode publicar. Sua estante, leituras e metas continuam normais.') + '</span></div>'); };
+    anchor.insertAdjacentHTML('afterend', '<div class="v2sus"><span><i class=v3e data-i=alert></i></span><span>' + (m.status === 'banned' ? 'Conta banida: seu perfil não aparece para ninguém e você não pode publicar.' : 'Conta suspensa até ' + dt + ': seu perfil está escondido e você não pode publicar. Sua estante, leituras e metas continuam normais.') + '</span></div>'); };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 160); }).observe(TR, { childList: true, subtree: true }); }
 // silenciar
 async function v2MuteToggle(d) {

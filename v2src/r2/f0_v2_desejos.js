@@ -121,8 +121,8 @@ function gfManage(g, after) {
   const sh = gfSheetBox('gfm-sh', '<div class="ex-hd">' + cvh(g.title, g.cover, '') + '<div><b>Presente para ' + esc(who) + '</b><small>' + esc(g.title) + (g.due ? ' · reservado até ' + exD(g.due) : '') + '</small></div></div>'
     + '<div class="gfm-l">'
     + '<button type="button" data-a="given"><i>✓</i><span><b>Já dei</b><small>sai de Vou dar; ' + esc(who) + ' passa a ver em Ganhei</small></span></button>'
-    + '<button type="button" data-a="date"><i>📅</i><span><b>Mudar a data</b><small>adiar ou antecipar a reserva</small></span></button>'
-    + '<button type="button" data-a="buy"><i>🛒</i><span><b>Onde comprar</b><small>lojas com o livro já buscado</small></span></button>'
+    + '<button type="button" data-a="date"><i><i class=v3e data-i=cal></i></i><span><b>Mudar a data</b><small>adiar ou antecipar a reserva</small></span></button>'
+    + '<button type="button" data-a="buy"><i><i class=v3e data-i=cart></i></i><span><b>Onde comprar</b><small>lojas com o livro já buscado</small></span></button>'
     + '<button type="button" class="dng" data-a="quit"><i>✕</i><span><b>Não vou mais dar</b><small>o livro volta a ficar livre para outras pessoas</small></span></button>'
     + '</div><div class="acts" style="grid-template-columns:1fr"><button type="button" data-a="x">Fechar</button></div>');
   const close = () => sh.remove();
@@ -203,9 +203,9 @@ async function v2WishPaint(v, d, host) {
     if (S.fpData !== d) return;
     p.innerHTML = (L.length ? tip('tipWf', 'ao tocar em “Vou dar”, o livro fica reservado para você até a data que escolher. As outras amizades veem só “Alguém já vai dar”, e ' + esc(who) + ' não vê nada.') : '')
       + (L.length ? '<div class="v2wgrid">' + L.map((b, i) => { const c = claims.get(exKey(b.title));
-          const st = c && c.mine ? '<button type="button" class="v2wg on" data-g="' + i + '">🎁 Você vai dar</button>' + (c.due ? '<small class="v2wdt">até ' + exD(c.due) + '</small>' : '')
-            : c ? '<span class="v2wg taken">🎁 Alguém já vai dar</span>' + (c.watching ? '<button type="button" class="v2wlk" data-w="' + i + '" data-on="1">aviso pedido · cancelar</button>' : '<button type="button" class="v2wlk" data-w="' + i + '">Me avise se liberar</button>')
-            : '<button type="button" class="v2wg" data-g="' + i + '">🎁 Vou dar</button>';
+          const st = c && c.mine ? '<button type="button" class="v2wg on" data-g="' + i + '"><i class=v3e data-i=gift></i>Você vai dar</button>' + (c.due ? '<small class="v2wdt">até ' + exD(c.due) + '</small>' : '')
+            : c ? '<span class="v2wg taken"><i class=v3e data-i=gift></i>Alguém já vai dar</span>' + (c.watching ? '<button type="button" class="v2wlk" data-w="' + i + '" data-on="1">aviso pedido · cancelar</button>' : '<button type="button" class="v2wlk" data-w="' + i + '">Me avise se liberar</button>')
+            : '<button type="button" class="v2wg" data-g="' + i + '"><i class=v3e data-i=gift></i>Vou dar</button>';
           return '<div class="v2wi"><button type="button" class="cvb" data-i="' + i + '">' + cvh(b.title, b.cover, '') + '</button><b>' + esc(b.title) + '</b><small>' + esc(String(b.author || '').split(',')[0]) + '</small>' + st + '</div>'; }).join('') + '</div>'
         : '<p class="v2wempty">' + esc(who) + ' ainda não marcou livros em “Quero ter”.</p>');
     p.querySelectorAll('[data-g]').forEach((bt) => bt.addEventListener('click', () => { const b = L[+bt.dataset.g], c = claims.get(exKey(b.title)), redo = () => { if (S.fpData === d) v2WishPaint(v, d, p.parentElement); };

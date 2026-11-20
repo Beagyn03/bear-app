@@ -29,7 +29,7 @@
       dates.before(dl); dl.querySelector('button').addEventListener('click', () => { dates.classList.remove('lz-hide'); dl.remove(); }); }
     // três ações
     const acts = document.createElement('div'); acts.className = 'lz-acts';
-    acts.innerHTML = '<button type="button" data-p="nota"><span>✎</span>Anotação<small>só você vê</small></button><button type="button" data-p="trecho"><span>❝</span>Trecho<small>guardar uma frase</small></button><button type="button" data-p="emo"><span>✨</span>Emoções<small>até 3</small></button><button type="button" data-p="coment"><span>💬</span>Comentar<small>vai para a Comunidade</small></button>';
+    acts.innerHTML = '<button type="button" data-p="nota"><span><i class=v3e data-i=pen></i></span>Anotação<small>só você vê</small></button><button type="button" data-p="trecho"><span>❝</span>Trecho<small>guardar uma frase</small></button><button type="button" data-p="emo"><span><i class=v3e data-i=heart></i></span>Emoções<small>até 3</small></button><button type="button" data-p="coment"><span><i class=v3e data-i=reply></i></span>Comentar<small>vai para a Comunidade</small></button>';
     const pNota = document.createElement('div'); pNota.className = 'lz-pane'; pNota.hidden = true;
     pNota.innerHTML = '<textarea maxlength="2000" placeholder="Uma anotação sobre o livro (só você vê)"></textarea><div class="lz-row"><span>fica salva no livro</span></div>';
     const tn = pNota.querySelector('textarea'); tn.value = e.note || ''; tn.addEventListener('input', () => { e.note = tn.value.trim() ? tn.value : undefined; if (!e.note) delete e.note; save(); });

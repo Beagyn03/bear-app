@@ -15,7 +15,7 @@ function addNote(e, t, p) {
     const acts = ed.querySelector('.lz-acts'); if (ed.hidden || !acts) return;
     const b = acts.querySelector('[data-p=nota]'); if (!b || b.dataset.nt) return; b.dataset.nt = '1';
     const e = S.tlE || ((() => { try { return reading().e; } catch { return null; } })()); if (!e) return;
-    const n = notesOf(e).length; b.innerHTML = '<span>🔒</span>Anotação<small>' + (n ? n + (n > 1 ? ' anotações' : ' anotação') : 'só você vê') + '</small>';
+    const n = notesOf(e).length; b.innerHTML = '<span><i class=v3e data-i=lock></i></span>Anotação<small>' + (n ? n + (n > 1 ? ' anotações' : ' anotação') : 'só você vê') + '</small>';
     const pane = [...ed.querySelectorAll('.lz-pane')].find((p) => p.querySelector('textarea[placeholder*="anotação"], textarea[placeholder*="nota"]')); if (!pane) return;
     const rng = ed.querySelector('#up-r'), pg = (rng && rng.value) || '';
     pane.innerHTML = '<textarea maxlength="2000" placeholder="Uma anotação só sua sobre esta parte do livro"></textarea><div class="lz-row"><label>pág. <input type="number" min="1" class="lz-pg" value="' + esc(String(pg)) + '"></label><button type="button" class="lz-ok">Salvar anotação</button></div>';
@@ -54,7 +54,7 @@ function qnPaint() {
   const all = lib().flatMap((e) => notesOf(e).map((x) => ({ e, x }))).sort((a, b) => String(b.x.at || '').localeCompare(String(a.x.at || '')));
   const box = document.createElement('div'); box.className = 'qn-notes';
   const grp = []; all.forEach((r) => { let g = grp.find((y) => y.e === r.e); if (!g) { g = { e: r.e, its: [] }; grp.push(g); } g.its.push(r.x); });
-  box.innerHTML = all.length ? grp.map((g) => '<div class="qt-g"><button type="button" class="qt-gh qn-gh" data-book="' + esc(g.e.id) + '">' + cvh(g.e.title, g.e.cover, '') + '<span><b>' + esc(g.e.title) + '</b><small>' + esc(g.e.author || '') + (g.e.author ? ' · ' : '') + g.its.length + (g.its.length > 1 ? ' anotações' : ' anotação') + '</small></span></button>' + g.its.map((x) => '<button type="button" class="qn-it qn-in" data-id="' + esc(g.e.id) + '" data-nid="' + esc(x.id || '') + '"><p>' + esc(x.t) + '</p><small>🔒 ' + (x.p ? 'pág. ' + x.p : 'sem página') + (x.at ? ' · ' + String(x.at).slice(8, 10) + '/' + String(x.at).slice(5, 7) : '') + '</small></button>').join('') + '</div>').join('')
+  box.innerHTML = all.length ? grp.map((g) => '<div class="qt-g"><button type="button" class="qt-gh qn-gh" data-book="' + esc(g.e.id) + '">' + cvh(g.e.title, g.e.cover, '') + '<span><b>' + esc(g.e.title) + '</b><small>' + esc(g.e.author || '') + (g.e.author ? ' · ' : '') + g.its.length + (g.its.length > 1 ? ' anotações' : ' anotação') + '</small></span></button>' + g.its.map((x) => '<button type="button" class="qn-it qn-in" data-id="' + esc(g.e.id) + '" data-nid="' + esc(x.id || '') + '"><p>' + esc(x.t) + '</p><small><i class=v3e data-i=lock></i>' + (x.p ? 'pág. ' + x.p : 'sem página') + (x.at ? ' · ' + String(x.at).slice(8, 10) + '/' + String(x.at).slice(5, 7) : '') + '</small></button>').join('') + '</div>').join('')
     : '<p class="sl-empty">Suas anotações aparecem aqui. Escreva no Diário de leitura, no botão Anotação: só você vê.</p>';
   seg.after(box); try { paintCv(box); } catch {}
   box.querySelectorAll('.qn-gh').forEach((b) => b.addEventListener('click', () => { const e = byId(b.dataset.book); if (e) openBookPage(e); }));

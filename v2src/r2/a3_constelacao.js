@@ -47,20 +47,20 @@ function tlHTML2(e, all) {
   const html = show.map((c, i) => {
     const w = csWhen(c.d, c.at), x = CS_X[i % CS_X.length];
     let star = '<span class="cs-s">✦</span>', body = '';
-    if (c.k === 'rl') { star = '<span class="cs-s big' + (c.ok ? ' ok' : '') + '">★</span>'; body = card('📖', 'Leitura atualizada', w, '<div class="cs-pg">' + (c.page ? 'pág. ' + c.page : 'leitura registrada') + (c.pages ? '<i>' + (c.pages > 0 ? '+' : '') + c.pages + ' pág.</i>' : '') + (c.hit ? '<em>bateu a meta do dia</em>' : '') + '</div>', 'rl:' + c.ix); }
-    else if (c.k === 'nt') body = card('🔒', 'Nova anotação', w, pg(c.x.p) + '<p>' + esc(c.x.t) + '</p>', 'nt:' + (e.notes || []).indexOf(c.x));
+    if (c.k === 'rl') { star = '<span class="cs-s big' + (c.ok ? ' ok' : '') + '">★</span>'; body = card('<i class=v3e data-i=ler></i>', 'Leitura atualizada', w, '<div class="cs-pg">' + (c.page ? 'pág. ' + c.page : 'leitura registrada') + (c.pages ? '<i>' + (c.pages > 0 ? '+' : '') + c.pages + ' pág.</i>' : '') + (c.hit ? '<em>bateu a meta do dia</em>' : '') + '</div>', 'rl:' + c.ix); }
+    else if (c.k === 'nt') body = card('<i class=v3e data-i=lock></i>', 'Nova anotação', w, pg(c.x.p) + '<p>' + esc(c.x.t) + '</p>', 'nt:' + (e.notes || []).indexOf(c.x));
     else if (c.k === 'qt') body = card('❝', 'Novo trecho', w, pg(c.x.p) + '<p class="tl-q">' + esc(c.x.t) + '</p>', 'qt:' + (e.quotes || []).indexOf(c.x));
-    else if (c.k === 'dy') body = card(c.x.text ? '💬' : '✨', c.x.text ? 'Novo comentário' : 'Emoções', w, pg(c.page) + (c.x.text ? '<p>' + esc(c.x.text) + '</p>' : '') + (c.x.fe && c.x.fe.length ? '<div class="tl-fe">' + names(c.x.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : ''), 'dy:' + (e.diary || []).indexOf(c.x));
-    else if (c.k === 'start') { star = '<span class="cs-s big ev">✦</span>'; const d = c.d; body = card('🚀', 'Começou a ler', 'em ' + d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) + (c.at ? ' às ' + tlHM(c.at) : ''), ''); }
+    else if (c.k === 'dy') body = card(c.x.text ? '<i class=v3e data-i=reply></i>' : '<i class=v3e data-i=heart></i>', c.x.text ? 'Novo comentário' : 'Emoções', w, pg(c.page) + (c.x.text ? '<p>' + esc(c.x.text) + '</p>' : '') + (c.x.fe && c.x.fe.length ? '<div class="tl-fe">' + names(c.x.fe).map((n) => '<span>' + esc(n) + '</span>').join('') + '</div>' : ''), 'dy:' + (e.diary || []).indexOf(c.x));
+    else if (c.k === 'start') { star = '<span class="cs-s big ev">✦</span>'; const d = c.d; body = card('<i class=v3e data-i=play></i>', 'Começou a ler', 'em ' + d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) + (c.at ? ' às ' + tlHM(c.at) : ''), ''); }
     else if (c.k === 'fin') { star = '<span class="cs-s big ok">★</span>'; let D = null; try { D = retroData(e); } catch {}
-      body = '<div class="tl-c cs-fin"><span class="tl-ic">🏁</span><div><div class="tl-ct">Leitura concluída<span class="cs-w">· ' + w + '</span></div>'
+      body = '<div class="tl-c cs-fin"><span class="tl-ic"><i class=v3e data-i=ok></i></span><div><div class="tl-ct">Leitura concluída<span class="cs-w">· ' + w + '</span></div>'
         + (D ? '<div class="cs-mini"><span>' + RT_DIA(D.days) + '</span>' + (D.pages ? '<span>' + D.pages + ' pág.</span>' : '') + (D.paws ? '<span>nota ' + String(D.paws).replace('.', ',') + '</span>' : '') + '</div>' : '')
         + '<button type="button" class="cs-retro" data-id="' + esc(e.id) + '">✦ Ver sua retrospectiva</button></div></div>'; }
-    else if (c.k === 'due') { star = '<span class="cs-s ev">✦</span>'; body = card('⏳', 'Prazo definido', w, '<div class="cs-pg">ler até ' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje')) + '</div>'); }
+    else if (c.k === 'due') { star = '<span class="cs-s ev">✦</span>'; body = card('<i class=v3e data-i=cal></i>', 'Prazo definido', w, '<div class="cs-pg">ler até ' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje')) + '</div>'); }
     return '<div class="cs-n" style="--x:' + x + 'px">' + star + body + '</div>';
   }).join('');
   const dayList = tlEvents(e), hit = dayList.filter((x) => x.ok).length, dueN = dayList.filter((x) => x.inDue && !x.off && x.per && x.d <= todayISO()).length;
-  return '<div class="tl">' + (e.dueAt ? '<div class="tl-sum"><span>⏳ Prazo: <b>' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje')) + '</b></span><span>★ meta batida em <b>' + hit + ' de ' + Math.max(dueN, hit) + '</b> ' + (Math.max(dueN, hit) === 1 ? 'dia' : 'dias') + '</span></div>' : '')
+  return '<div class="tl">' + (e.dueAt ? '<div class="tl-sum"><span><i class=v3e data-i=cal></i>Prazo: <b>' + esc(tlDay(e.dueAt).replace(/^Hoje$/, 'hoje')) + '</b></span><span>★ meta batida em <b>' + hit + ' de ' + Math.max(dueN, hit) + '</b> ' + (Math.max(dueN, hit) === 1 ? 'dia' : 'dias') + '</span></div>' : '')
     + '<div class="cs-flow"><span class="cs-sky"></span><svg class="cs-lines"></svg>' + html + '</div>'
     + (!all && ev.length > show.length ? '<button type="button" class="tl-more">Ver tudo (' + ev.length + ')</button>' : '') + '</div>';
 }

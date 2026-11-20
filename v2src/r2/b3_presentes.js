@@ -30,7 +30,7 @@ const WB_STORES = [
 ];
 const wbQuery = (b) => [b.title, String(b.author || '').split(',')[0]].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
 const wbOpen = (u) => { try { window.open(u, '_blank', 'noopener'); } catch { location.href = u; } };
-const wbList = (b) => '<button type="button" class="wb-cmp" data-cmp="1"><span style="font-size:1.3rem">🔎</span><span><b>Comparar preços</b><small>Google Shopping: várias lojas lado a lado, do menor preço</small></span><span>↗</span></button>'
+const wbList = (b) => '<button type="button" class="wb-cmp" data-cmp="1"><span style="font-size:1.3rem"><i class=v3e data-i=busca></i></span><span><b>Comparar preços</b><small>Google Shopping: várias lojas lado a lado, do menor preço</small></span><span>↗</span></button>'
   + '<div class="wb-l">' + WB_STORES.map(([k, n, c, ab, , sub]) => '<button type="button" class="wb-it" data-st="' + k + '"><i style="background:' + c + '">' + ab + '</i><span><b>' + n + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</span><em>↗</em></button>').join('') + '</div>'
   + '<p class="wb-note">As lojas abrem fora do app, já com o livro buscado. Preço e frete são os da loja; o app não vê nem guarda dados de pagamento.</p>';
 const wbBind = (root, b, before) => { const q = wbQuery(b), isbn = String(b.isbn || '').replace(/\D/g, '');
@@ -57,7 +57,7 @@ function giftSheet(d, b, onDone) {
     const due = (sh.querySelector('.gf-due') || {}).value || ''; gfList().push({ h, name: d.displayName || h, title: b.title, author: b.author || null, cover: b.cover || null, at: todayISO(), ...(due ? { due } : {}) }); save(); return true; };
   sh.innerHTML = '<div class="box"><div class="ex-hd">' + cvh(b.title, b.cover, '') + '<div><b>' + esc(b.title) + '</b><small>' + (cur ? 'Você vai dar para ' + esc(first) : 'Presente para ' + esc(first)) + '</small></div></div>'
     + (cur ? '' : '<label class="gf-ck"><input type="checkbox" class="gf-res" checked><span><b>Reservar “vou dar de presente”</b><small>as outras amizades veem que já tem presente; ' + esc(first) + ' não vê nada</small></span></label>'
-      + '<label class="gf-ck"><span style="font-size:1.1rem">📅</span><span><b>Me lembrar de entregar</b><small>opcional: aniversário, encontro…</small></span><input type="date" class="gf-due" min="' + todayISO() + '"></label>')
+      + '<label class="gf-ck"><span style="font-size:1.1rem"><i class=v3e data-i=cal></i></span><span><b>Me lembrar de entregar</b><small>opcional: aniversário, encontro…</small></span><input type="date" class="gf-due" min="' + todayISO() + '"></label>')
     + '<h4>Onde comprar</h4>' + wbList(b)
     + '<div class="acts">' + (cur ? '<button type="button" data-a="giveup">Desistir do presente</button><button type="button" class="p" data-a="x">Fechar</button>' : '<button type="button" data-a="x">Agora não</button><button type="button" class="p" data-a="res">Só reservar</button>') + '</div></div>';
   try { paintCv(sh); } catch {}
@@ -77,13 +77,13 @@ function openGifts() {
       + (L.length ? L.map((g, i) => { const late = g.due && g.due < todayISO() && !g.given; return '<div class="gf-it">' + cvh(g.title, g.cover, '') + '<div><b>' + esc(g.title) + '</b><small>para ' + esc(String(g.name || '@' + g.h).split(' ')[0]) + ' · reservado em ' + exD(g.at) + '</small>'
           + '<small>' + (g.bought ? '<span class="st">✓ comprado</span>' : 'ainda não comprado') + (g.due ? ' · ' + (late ? '<span class="late">entrega era ' + exD(g.due) + '</span>' : 'entregar até ' + exD(g.due)) : '') + '</small>'
           + '<div class="gf-ac">' + (g.bought ? '' : '<button type="button" class="p" data-i="' + i + '" data-a="buy">Onde comprar</button><button type="button" data-i="' + i + '" data-a="got">Já comprei</button>') + '<button type="button" data-i="' + i + '" data-a="done">Entreguei</button><button type="button" data-i="' + i + '" data-a="quit">Desistir</button></div></div></div>'; }).join('')
-        : '<p class="sl-empty">Nenhum presente reservado. No perfil de uma amizade, em “✨ Quero ter”, toque em “🎁 Vou dar” para escolher um livro.</p>');
+        : '<p class="sl-empty">Nenhum presente reservado. No perfil de uma amizade, em “Desejos”, toque em “Vou dar” para escolher um livro.</p>');
     try { paintCv(v); } catch {}
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
     v.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', async () => { const g = L[+b.dataset.i]; if (!g) return; const a = b.dataset.a;
       if (a === 'buy') return whereToBuy(g);
       if (a === 'got') { g.bought = true; save(); toast('Anotado: já comprado'); return draw(); }
-      if (a === 'done') { db.gifts = gfList().filter((x) => x !== g); save(); toast('Presente entregue 🎉'); return draw(); }
+      if (a === 'done') { db.gifts = gfList().filter((x) => x !== g); save(); toast('Presente entregue'); return draw(); }
       if (a === 'quit') { if (await gfUnclaim(g.h, g.title)) { db.gifts = gfList().filter((x) => x !== g); save(); toast('Presente liberado para outra amizade'); draw(); } else toast('Não consegui agora'); } }));
   };
   S.listRedraw = draw; draw(); v.hidden = false; v.scrollTop = 0; try { syncTopTitle(); } catch {}
@@ -94,7 +94,7 @@ function openGifts() {
     const soon = (d) => d && Math.round((Date.parse(d) - Date.parse(todayISO())) / 864e5) <= 3;
     const it = gfList().filter((g) => soon(g.due)); if (!it.length) return;
     const w = document.createElement('div'); w.className = 'ex-alert gf-alert';
-    w.innerHTML = it.slice(0, 2).map((g, k) => { const late = exLate(g.due); return '<button type="button" data-k="' + k + '" class="' + (late ? 'late' : '') + '"><i>🎁</i><span><b>Entregar “' + esc(g.title) + '” para ' + esc(String(g.name || g.h).split(' ')[0]) + '</b><small>' + (late ? 'era para ' + exD(g.due) : g.due === todayISO() ? 'hoje' : 'até ' + exD(g.due)) + (g.bought ? ' · já comprado' : ' · ainda não comprado') + '</small></span></button>'; }).join('');
+    w.innerHTML = it.slice(0, 2).map((g, k) => { const late = exLate(g.due); return '<button type="button" data-k="' + k + '" class="' + (late ? 'late' : '') + '"><i><i class=v3e data-i=gift></i></i><span><b>Entregar “' + esc(g.title) + '” para ' + esc(String(g.name || g.h).split(' ')[0]) + '</b><small>' + (late ? 'era para ' + exD(g.due) : g.due === todayISO() ? 'hoje' : 'até ' + exD(g.due)) + (g.bought ? ' · já comprado' : ' · ainda não comprado') + '</small></span></button>'; }).join('');
     w.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', openGifts));
     anchor.after(w); };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 140); }).observe(TR, { childList: true, subtree: true }); }
@@ -102,6 +102,6 @@ function openGifts() {
 { let tm = 0; const put = () => { const v = $('#shelflist'); if (!v || v.hidden || !S.exBookId) return; const ex = v.querySelector('.bp-ex'); if (!ex) return; const e = byId(S.exBookId); if (!e) return;
     const want = exOf(e).own !== 'tenho'; let b = v.querySelector('.bp-buy');
     if (!want) { b && b.remove(); return; } if (b) { if (b.previousElementSibling !== ex) ex.after(b); return; }
-    b = document.createElement('button'); b.type = 'button'; b.className = 'bp-buy'; b.innerHTML = '<i style="font-style:normal">🛒</i><span><b>Onde comprar</b><small>comparar preços nas lojas</small></span><em>›</em>';
+    b = document.createElement('button'); b.type = 'button'; b.className = 'bp-buy'; b.innerHTML = '<i style="font-style:normal"><i class=v3e data-i=cart></i></i><span><b>Onde comprar</b><small>comparar preços nas lojas</small></span><em>›</em>';
     b.addEventListener('click', () => whereToBuy(byId(S.exBookId))); ex.after(b); };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 80); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }

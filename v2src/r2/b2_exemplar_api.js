@@ -44,7 +44,7 @@ setTimeout(exPullBorrowed, 4000); setInterval(exPullBorrowed, 5 * 60 * 1000);
       if (!wrap) { wrap = document.createElement('div'); wrap.className = 'ex-gw'; b.before(wrap); wrap.append(b); }
       wrap.querySelector('.ex-gift')?.remove();
       const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ex-gift' + (c && c.mine ? ' mine' : c ? ' taken' : '');
-      btn.textContent = c && c.mine ? '🎁 Você vai dar' : c ? '🎁 Alguém vai dar' : '🎁 Vou dar'; btn.title = c && !c.mine ? 'Outra amizade já vai dar este livro' : '';
+      btn.textContent = c && c.mine ? 'Você vai dar' : c ? 'Alguém vai dar' : 'Vou dar'; btn.title = c && !c.mine ? 'Outra amizade já vai dar este livro' : '';
       btn.addEventListener('click', (ev) => { ev.stopPropagation(); if (c && !c.mine) return toast('Outra amizade já vai dar este livro');
         // folha do presente: reservar, lembrete de entrega e onde comprar (Bia, 19/11)
         const cvEl = b.querySelector('.cv'), m = cvEl && String(cvEl.style.backgroundImage || '').match(/url\(["']?(.*?)["']?\)/);

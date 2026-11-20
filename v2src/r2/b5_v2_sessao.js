@@ -107,7 +107,7 @@ function v2SesEnd(e, s, w) {
     <p class="hint" id="v2hint">${est > s.pg0 ? 'Estimativa pelo seu ritmo. Corrija se for outra.' : 'Digite a página em que parou.'}</p>
     <input class="cap" id="v2cap" type="text" maxlength="40" placeholder="Capítulo (opcional)" value="${esc(s.cap || '')}">
     <div class="nums" style="margin-top:.8rem"><div><b>${secs < 60 ? '<1' : min}</b><small>minutos</small></div><div><b id="v2np">0</b><small>páginas</small></div><div><b id="v2nr">—</b><small>pág. por hora</small></div></div>
-    <div class="lb">Como foi?</div><div class="ch">${V2FEEL.map((f, i) => `<button type="button" data-f="${i}">${f}</button>`).join('')}</div>
+    <div class="lb">Como foi?</div><div class="ch">${V2FEEL.map((f, i) => `<button type="button" data-f="${i}">${f.replace(/^\S+\s/, '')}</button>`).join('')}</div>
     <div class="ac"><button type="button" data-a="back">Continuar lendo</button><button type="button" class="p" data-a="save">Salvar</button></div>
     <button type="button" data-a="drop" style="display:block;margin:.7rem auto 0;border:0;background:none;color:var(--ink-2);font:inherit;font-size:.78rem;font-weight:800;text-decoration:underline">Descartar sessão</button></div>`;
   const inp = o.querySelector('#v2stop');

@@ -42,15 +42,15 @@ function exSheet(e, view) {
     const x = exOf(e), today = todayISO();
     let h = '<div class="box"><div class="ex-hd">' + cvh(e.title, e.cover, '') + '<div><b>' + esc(e.title) + '</b><small>' + esc(e.author || '') + '</small></div></div>';
     if (mode === 'main') {
-      h += '<h4>Meu exemplar</h4><div class="ex-opt">' + [['tenho', '📚', 'Tenho'], ['quero', '✨', 'Quero ter'], ['pegou', '🤝', 'Peguei emprestado']].map(([k, i, n]) => '<button type="button" data-own="' + k + '" class="' + (x.own === k ? 'on' : '') + '"><i>' + i + '</i>' + n + '</button>').join('') + '</div>';
+      h += '<h4>Meu exemplar</h4><div class="ex-opt">' + [['tenho', '<i class=v3e data-i=estante></i>', 'Tenho'], ['quero', '<i class=v3e data-i=heart></i>', 'Quero ter'], ['pegou', '<i class=v3e data-i=friends></i>', 'Peguei emprestado']].map(([k, i, n]) => '<button type="button" data-own="' + k + '" class="' + (x.own === k ? 'on' : '') + '"><i>' + i + '</i>' + n + '</button>').join('') + '</div>';
       if (x.own === 'tenho') {
         h += '<h4>Formato</h4><div class="ch">' + EX_FMT.map(([k, n]) => '<button type="button" data-fmt="' + k + '" class="' + ((x.fmt || 'PAPER') === k ? 'on' : '') + '">' + n + '</button>').join('') + '</div>';
         h += '<h4>Empréstimo</h4>' + (x.loan ? '<div class="ex-loan"><div><b>Com ' + esc(exName(x.loan.to)) + '</b><small> desde ' + exD(x.loan.at) + (x.loan.due ? ' · volta ' + exD(x.loan.due) : '') + '</small>' + (exLate(x.loan.due) ? '<div class="late">Atrasado ' + plural(exLate(x.loan.due), 'dia', 'dias') + '</div>' : '') + '</div><div class="r"><button type="button" data-a="back">Devolveram</button><button type="button" data-a="loan">Mudar</button></div></div>'
-          : '<button type="button" class="ex-go" data-a="loan"><span>📤 Emprestar</span><em>›</em></button>');
+          : '<button type="button" class="ex-go" data-a="loan"><span><i class=v3e data-i=swap></i>Emprestar</span><em>›</em></button>');
         h += '<h4>Detalhes <span style="text-transform:none;letter-spacing:0;font-weight:700">(opcional)</span></h4><div class="ch">' + EX_TAGS.map(([k, n]) => '<button type="button" data-tag="' + k + '" class="' + ((x.tags || []).includes(k) ? 'on' : '') + '">' + n + '</button>').join('') + '</div>';
       } else if (x.own === 'pegou') {
         h += '<h4>Peguei emprestado</h4>' + (x.borrow ? '<div class="ex-loan"><div><b>De ' + esc(exName(x.borrow.from)) + '</b><small> desde ' + exD(x.borrow.at) + (x.borrow.due ? ' · devolver até ' + exD(x.borrow.due) : '') + '</small>' + (exLate(x.borrow.due) ? '<div class="late">Passou ' + plural(exLate(x.borrow.due), 'dia', 'dias') + ' da data</div>' : '') + '</div><div class="r"><button type="button" data-a="gaveback">Devolvi</button><button type="button" data-a="borrow">Mudar</button></div></div>'
-          : '<button type="button" class="ex-go" data-a="borrow"><span>🤝 De quem e até quando</span><em>›</em></button>');
+          : '<button type="button" class="ex-go" data-a="borrow"><span><i class=v3e data-i=friends></i>De quem e até quando</span><em>›</em></button>');
       } else if (x.own === 'quero') h += '<p style="font-size:.82rem;color:var(--ink-2);margin:.6rem 0 0;line-height:1.4">Aparece em “Quero ter” no seu perfil, para as amizades verem (ideia de presente).</p>';
       h += '<div class="acts" style="grid-template-columns:1fr"><button type="button" class="p" data-a="ok">Pronto</button></div>';
     } else {
@@ -88,14 +88,14 @@ function exSheet(e, view) {
   let tm = 0; const put = () => { const v = $('#shelflist'); if (!v || v.hidden || !S.exBookId) return; const hero = v.querySelector('.bp-hero'); if (!hero) return; const e = byId(S.exBookId); if (!e) return;
     const x = exOf(e), late = x.loan && exLate(x.loan.due), want = (x.own || '') + '|' + exSum(e) + '|' + late; let b = v.querySelector('.bp-ex');
     if (b && b.dataset.k === want) return; if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'bp-ex'; b.addEventListener('click', () => exSheet(byId(S.exBookId))); }
-    b.dataset.k = want; b.innerHTML = '<i style="font-style:normal">' + (x.loan ? '📤' : x.own === 'pegou' ? '🤝' : x.own === 'quero' ? '✨' : '📚') + '</i><span><b>Meu exemplar</b><small>' + esc(exSum(e)) + '</small></span><em>›</em>';
+    b.dataset.k = want; b.innerHTML = '<i style="font-style:normal">' + (x.loan ? '<i class=v3e data-i=swap></i>' : x.own === 'pegou' ? '<i class=v3e data-i=friends></i>' : x.own === 'quero' ? '<i class=v3e data-i=heart></i>' : '<i class=v3e data-i=estante></i>') + '</i><span><b>Meu exemplar</b><small>' + esc(exSum(e)) + '</small></span><em>›</em>';
     if (b.previousElementSibling !== hero) hero.after(b); };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 // Início: devoluções que chegaram (ou passaram) da data
 { let tm = 0; const put = () => {
     if (S.tab !== 'inicio') return; const box = TR.querySelector('#lista:not(.lista-snap)'); if (!box || box.querySelector('.ex-alert')) return; const anchor = box.querySelector('.v3-now'); if (!anchor) return;
     const soon = (d) => d && Math.round((Date.parse(d) - Date.parse(todayISO())) / 864e5) <= 3;
-    const items = lib().flatMap((e) => { const x = exOf(e), r = []; if (x.loan && soon(x.loan.due)) r.push({ e, i: '📤', t: e.title + ' está com ' + exName(x.loan.to), d: x.loan.due }); if (x.own === 'pegou' && x.borrow && soon(x.borrow.due)) r.push({ e, i: '🤝', t: 'Devolver ' + e.title + ' para ' + exName(x.borrow.from), d: x.borrow.due }); return r; });
+    const items = lib().flatMap((e) => { const x = exOf(e), r = []; if (x.loan && soon(x.loan.due)) r.push({ e, i: '<i class=v3e data-i=swap></i>', t: e.title + ' está com ' + exName(x.loan.to), d: x.loan.due }); if (x.own === 'pegou' && x.borrow && soon(x.borrow.due)) r.push({ e, i: '<i class=v3e data-i=friends></i>', t: 'Devolver ' + e.title + ' para ' + exName(x.borrow.from), d: x.borrow.due }); return r; });
     if (!items.length) return;
     const w = document.createElement('div'); w.className = 'ex-alert';
     w.innerHTML = items.slice(0, 3).map((it, k) => { const late = exLate(it.d); return '<button type="button" data-k="' + k + '" class="' + (late ? 'late' : '') + '"><i>' + it.i + '</i><span><b>' + esc(it.t) + '</b><small>' + (late ? 'atrasado ' + plural(late, 'dia', 'dias') : it.d === todayISO() ? 'devolução hoje' : 'devolução em ' + exD(it.d)) + '</small></span></button>'; }).join('');
@@ -111,7 +111,7 @@ function exSheet(e, view) {
     const mine = !!d.self, hide = mine && (db.prefs || {}).wishHide, books = mine ? lib().filter((e) => exOf(e).own === 'quero').map((e) => ({ title: e.title, author: e.author, cover: e.cover })) : ((d.shelf && d.shelf.wish) || []);
     if (!books.length) return r;
     const t = document.createElement('div'); t.className = 'ex-wish';
-    t.innerHTML = '<div class="v3-sh"><b>✨ Quero ter</b>' + (mine ? '<button type="button" class="v3-link ex-wh">' + (hide ? 'Mostrar no perfil' : 'Esconder do perfil') + '</button>' : '') + '</div>'
+    t.innerHTML = '<div class="v3-sh"><b><i class=v3e data-i=heart></i>Quero ter</b>' + (mine ? '<button type="button" class="v3-link ex-wh">' + (hide ? 'Mostrar no perfil' : 'Esconder do perfil') + '</button>' : '') + '</div>'
       + (hide ? '<p style="font-size:.8rem;color:var(--ink-2);margin:0 0 .8rem">Escondido: só você vê.</p>' : '')
       + '<div class="t5-row">' + books.map((b) => '<button type="button" class="t5-bk es-bk" data-book="' + esc(b.title) + '" data-author="' + esc(b.author || '') + '">' + cvh(b.title, b.cover, 'es-cv') + '</button>').join('') + '</div>'
       + (!mine ? '<p style="font-size:.76rem;color:var(--ink-2);margin:.2rem 0 .9rem">Livros que ' + esc(String(d.displayName || '@' + d.handle).split(' ')[0]) + ' quer ter. Uma ideia de presente.</p>' : '');
