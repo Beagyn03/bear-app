@@ -1,5 +1,5 @@
 // Página do livro, aba "Rede" (Bia, 16/11): comentários (posts da Rede) e avaliações de todo mundo sobre o livro, inclusive os seus (com borda destacada), em ordem de postagem,
-// com curtir e responder. Filtros: tipo (tudo, avaliações, comentários), nota e "sem spoiler". Vale também para livro do catálogo.
+// com curtir e responder. 20/11: sem "+ Comentar" aqui; só posts e avaliações feitos a partir de uma leitura. Filtros: tipo (tudo, avaliações, comentários), nota e "sem spoiler". Vale também para livro do catálogo.
 const bookKeyRede = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 200); // igual ao bear_book_key da API
 S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: false };
 { const st = document.createElement('style'); st.textContent = `
@@ -9,7 +9,7 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
 .bp-rede .rd-new2{border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:99px;padding:.45rem .9rem;font:inherit;font-weight:800;font-size:.84rem}
 .br-f{display:flex;gap:.35rem;flex-wrap:nowrap;align-items:center;overflow-x:auto;scrollbar-width:none}.br-f > *{flex:none}
 .br-f button,.br-f select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.32rem .75rem;font:inherit;font-weight:800;font-size:.8rem}
-.br-f button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
+.br-f button.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .bp-rede .bp-load{margin:0}
 .bp-rede .rd-card.mine{border-color:var(--acc)}
 `; TR.append(st); }
@@ -25,7 +25,9 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
     let data = S.bkRede[key];
     if (!data || Date.now() - data.at > 2 * 60000) {
       const [a, b] = await Promise.all([sapi('GET', '/v1/rede?book=' + encodeURIComponent(key)).catch(() => null), sapi('GET', '/v1/books/reviews?key=' + encodeURIComponent(normT(title).slice(0, 200))).catch(() => null)]);
-      const posts = a && a.status === 200 && a.data ? (a.data.items || []).filter((x) => x.type !== 'review') : [];
+      // só o que nasceu de uma leitura (Bia, 20/11): post com página/% de quem lê, trecho ou atividade de leitura. Comentário solto sobre o livro não entra aqui
+      const deLeitura = (x) => x.readerPct != null || x.page != null || x.kind === 'quote' || x.type === 'activity' || !!x.bookStatus;
+      const posts = a && a.status === 200 && a.data ? (a.data.items || []).filter((x) => x.type !== 'review' && deLeitura(x)) : [];
       const net = b && b.status === 200 && b.data ? b.data : {};
       const seen = new Set(); const revs = [];
       const asRev = (x, mine) => ({ type: 'review', id: x.id, user: x.user, paws: x.paws, text: x.text, spoiler: !!x.spoiler, createdAt: x.updatedAt, mine: !!mine, readerPct: x.readerPct ?? null, bookStatus: x.bookStatus || null });
@@ -45,17 +47,15 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       if (F.semSp) list = list.filter((x) => x.mine || !(x.spoiler || x.spoilerKind));
       list.sort((a, z) => new Date(z.createdAt) - new Date(a.createdAt)); // por ordem de postagem (mais recente primeiro)
       const total = mineLocal.length + data.revs.length + data.posts.length;
-      sec.innerHTML = '<div class="br-top"><div class="br-avg">' + (data.avg != null ? '<b>' + esc(pawTxt(data.avg)) + '</b><small>média de ' + plural(data.count, 'nota', 'notas') + '</small>' : '<small>Ainda sem avaliações</small>') + '</div><button type="button" class="rd-new2">+ Comentar</button></div>'
-        + (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
+      sec.innerHTML = (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
           + '<button type="button" data-sp class="' + (F.semSp ? 'on' : '') + '">Sem spoiler</button></div>' : '')
         + (list.length ? list.map((it, i) => rdCardHTML({ ...it, book: null }, i, it.local ? { noFoot: true } : {})).join('')
-          : '<p class="bp-load">' + (total ? 'Nada com esses filtros.' : 'Ninguém comentou nem avaliou este livro ainda. Que tal começar?') + '</p>');
+          : '<p class="bp-load">' + (total ? 'Nada com esses filtros.' : 'Ninguém comentou este livro ainda.') + '</p>');
       const sel = sec.querySelector('select[data-n]'); if (sel) sel.value = F.nota;
       sec.querySelectorAll('.rd-card').forEach((c) => { const it = list[+c.dataset.i]; if (it && it.mine) c.classList.add('mine'); });
       sec.querySelectorAll('[data-t]').forEach((b) => b.addEventListener('click', () => { F.tipo = b.dataset.t; if (F.tipo !== 'aval') F.nota = ''; draw(); }));
       sel?.addEventListener('change', () => { F.nota = sel.value; draw(); });
       sec.querySelector('[data-sp]')?.addEventListener('click', () => { F.semSp = !F.semSp; draw(); });
-      sec.querySelector('.rd-new2').addEventListener('click', () => { try { openRdComposer({ book: { title, author: author || null, cover: lr ? lr.cover || null : null } }); } catch (err) { console.warn(err); } });
       rdBind(sec, list, draw);
     };
     draw();
