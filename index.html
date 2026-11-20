@@ -17913,7 +17913,7 @@ function v2ResumoOpen(off = 1) {
     v.querySelector('.v2rs .share')?.addEventListener('click', () => v2RsShare(M, d));
     paintCv(v);
   };
-  S.listRedraw = draw; S.navView = { t: 'resumo', a: [] }; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0;
+  S.listRedraw = draw; S.navView = { t: 'resumo', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); S.v4fromMe = S.tab === 'eu' || S.v4fromMe; draw(); v.hidden = false; v.scrollTop = 0;
 }
 async function v2RsShare(M, d) {
   const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
@@ -18225,10 +18225,9 @@ async function v2RsShare(M, d) {
 { let tm = 0;
   const paint = () => {
     const v = TR.querySelector('#shelflist'); if (!v || v.hidden) return; const f = v.querySelector('.ct-form'); if (!f) return;
-    const tp = v.querySelector('.sl-top'); if (tp && tp.offsetParent) return; // catálogo/autor: a página já tem topo próprio
-    let h = v.querySelector('.v2-bh'); const html = '<div class="eb">Catálogo e leitores</div><h1>Buscar</h1>';
-    if (!h) { h = document.createElement('div'); h.className = 'v2-bh'; f.before(h); }
-    if (h.innerHTML !== html) h.innerHTML = html;
+    // Busca no padrão do protótipo (Bia, 20/11): título 'Buscar' no topo do app (o syncTopTitle lê o <b> do .sl-top), sem cabeçalho grande
+    v.querySelector('.v2-bh')?.remove();
+    const tp = v.querySelector('.sl-body > .sl-top'); if (tp && !tp.querySelector(':scope > b') && !v.querySelector('.ct-book, .au-hero')) { const b = document.createElement('b'); b.textContent = 'Buscar'; const bk = tp.querySelector('.sl-back'); bk ? bk.after(b) : tp.prepend(b); }
   };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { paint(); } catch (err) { console.warn('v2 busca', err); } }, 50); })
     .observe(TR, { childList: true, subtree: true });
@@ -19516,6 +19515,34 @@ const V3EMO = {"swap":"<path d=\"M4 8h14l-3-3M20 16H6l3 3\"/>","friends":"<circl
 // textContent igual em nó que só tem texto (saudação, nome no topo, contadores): não troca o nó de texto à toa
 { const td = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
   if (td && td.set) Object.defineProperty(Node.prototype, 'textContent', { ...td, set(v) { const s = v == null ? '' : String(v); if (this.nodeType === 1 && this.childNodes.length === 1 && this.firstChild.nodeType === 3 && this.firstChild.data === s) return; td.set.call(this, v); } }); }
+// --- f9b_v2_titulos.js ---
+// Título e Voltar das páginas que fugiam da regra (Bia, 20/11; protótipo: toda página interna tem Voltar e o próprio título):
+// - Busca e Avisos mostravam a marca no topo: o título antigo (syncTopTitle) não sabe delas. Aqui o próprio elemento do
+//   título troca a marca pelo nome da página enquanto ela estiver aberta (sem brigar com o temporizador antigo).
+// - Estatísticas (aba "progresso") e Busca ganham o Voltar do topo.
+{ const pageTitle = () => {
+    const v = TR.querySelector('#shelflist'), ed = TR.querySelector('#editor');
+    if (ed && !ed.hidden && ed.classList.contains('ntpage')) return 'Avisos';
+    if (v && !v.hidden && v.querySelector('.sl-body > .ct-form') && !v.querySelector('.ct-book, .au-hero, .bp-hero')) return 'Buscar';
+    return '';
+  };
+  const hook = () => { const t = TR.querySelector('#g-t'); if (!t || t.dataset.v4t) return; t.dataset.v4t = '1';
+    const td = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent'), cl = t.classList, tog = cl.toggle;
+    Object.defineProperty(t, 'textContent', { configurable: true, get() { return td.get.call(this); }, set(x) { const p = pageTitle(); td.set.call(this, p || x); } });
+    cl.toggle = function (c, f) { if (c === 'g-brand' && pageTitle()) f = false; return tog.call(this, c, f); };
+    let was = false; const fix = () => { const p = pageTitle(); if (p) { was = true; if (td.get.call(t) !== p) td.set.call(t, p); tog.call(cl, 'g-brand', false); } else if (was) { was = false; try { syncTopTitle(); } catch {} } };
+    let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; fix(); }, 80); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); fix(); };
+  hook(); setTimeout(hook, 1000); }
+// Voltar no topo para Estatísticas e Busca (abertas como aba, sem a linha de voltar própria)
+{ const st = document.createElement('style'); st.textContent = '.v4back2{display:inline-grid;place-items:center;width:36px;height:36px;border:0;background:none;color:var(--ink);margin-right:.15rem}.v4back2 svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'; TR.append(st);
+  const need = () => { const v = TR.querySelector('#shelflist'), main = !!TR.querySelector('.gtop .v4back:not([hidden])'); if (main) return false;
+    if (S.tab === 'progresso' && (!v || v.hidden)) return true;
+    return !!(v && !v.hidden && v.querySelector('.sl-body > .ct-form') && !v.querySelector('.ct-book, .au-hero, .bp-hero')); };
+  const sync = () => { const top = TR.querySelector('.gtop'); if (!top) return; let b = top.querySelector('.v4back2');
+    if (need()) { if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'v4back2'; b.setAttribute('aria-label', 'Voltar'); b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+        b.addEventListener('click', () => { const v = TR.querySelector('#shelflist'); if (v && !v.hidden) v.hidden = true; try { goTab(S.v4lastTab || 'inicio'); } catch {} }); (top.querySelector('#g-t') || top.firstElementChild).before(b); } b.hidden = false; }
+    else if (b) b.hidden = true; };
+  let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; sync(); }, 70); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] }); }
 // --- g0_v2_ler_v4.js ---
 // v4 Ler, Atualizar e Terminei (Bia, 20/11; etapas 2 e 3 do alinhamento com o protótipo v3 https://claude.ai/artifact/FZDpofzVvP8EJjSrugBoJc).
 // Telas numa camada própria (.v4ler, dentro de um shadow root próprio) com o CSS do protótipo isolado (tokens ligados aos do app).

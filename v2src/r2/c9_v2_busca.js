@@ -31,10 +31,9 @@
 { let tm = 0;
   const paint = () => {
     const v = TR.querySelector('#shelflist'); if (!v || v.hidden) return; const f = v.querySelector('.ct-form'); if (!f) return;
-    const tp = v.querySelector('.sl-top'); if (tp && tp.offsetParent) return; // catálogo/autor: a página já tem topo próprio
-    let h = v.querySelector('.v2-bh'); const html = '<div class="eb">Catálogo e leitores</div><h1>Buscar</h1>';
-    if (!h) { h = document.createElement('div'); h.className = 'v2-bh'; f.before(h); }
-    if (h.innerHTML !== html) h.innerHTML = html;
+    // Busca no padrão do protótipo (Bia, 20/11): título 'Buscar' no topo do app (o syncTopTitle lê o <b> do .sl-top), sem cabeçalho grande
+    v.querySelector('.v2-bh')?.remove();
+    const tp = v.querySelector('.sl-body > .sl-top'); if (tp && !tp.querySelector(':scope > b') && !v.querySelector('.ct-book, .au-hero')) { const b = document.createElement('b'); b.textContent = 'Buscar'; const bk = tp.querySelector('.sl-back'); bk ? bk.after(b) : tp.prepend(b); }
   };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { paint(); } catch (err) { console.warn('v2 busca', err); } }, 50); })
     .observe(TR, { childList: true, subtree: true });

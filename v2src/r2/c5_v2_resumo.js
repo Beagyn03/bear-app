@@ -47,7 +47,7 @@ function v2ResumoOpen(off = 1) {
     v.querySelector('.v2rs .share')?.addEventListener('click', () => v2RsShare(M, d));
     paintCv(v);
   };
-  S.listRedraw = draw; S.navView = { t: 'resumo', a: [] }; closeEd(); v.classList.remove('feedview'); draw(); v.hidden = false; v.scrollTop = 0;
+  S.listRedraw = draw; S.navView = { t: 'resumo', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); S.v4fromMe = S.tab === 'eu' || S.v4fromMe; draw(); v.hidden = false; v.scrollTop = 0;
 }
 async function v2RsShare(M, d) {
   const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
