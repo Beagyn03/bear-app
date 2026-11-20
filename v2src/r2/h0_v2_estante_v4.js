@@ -479,7 +479,7 @@ bookMenu = function (e) { if (e && lib().includes(e)) return v5Menu(e); };
     v.classList.toggle('v5bp-minha', t === 'minha');
     if (t === 'minha') { const tabs = v.querySelector('.bp-tabs'), ex = v.querySelector('.bp-ex'), buy = v.querySelector('.bp-buy'); if (tabs && ex && tabs.nextElementSibling !== ex) { tabs.after(ex); if (buy) ex.after(buy); } }
     const [ic, lb] = prim(e); let row = v.querySelector('.v5bpacts');
-    if (!row || row.dataset.k !== e.id + e.status) { if (row) row.remove(); hero.insertAdjacentHTML('afterend', `<div class="v5bpacts" data-k="${esc(e.id + e.status)}"><button type="button" class="pri" data-a="pri"><svg viewBox="0 0 24 24" aria-hidden="true">${V4ICON[ic] || ''}</svg>${lb}</button><button type="button" class="dots" data-a="more" aria-label="Mais opções do livro">•••</button></div>`); row = v.querySelector('.v5bpacts');
+    if (!row || row.dataset.k !== e.id + e.status) { if (row) row.remove(); const nc = hero.nextElementSibling && hero.nextElementSibling.classList.contains('v8nc') ? hero.nextElementSibling : hero; nc.insertAdjacentHTML('afterend', `<div class="v5bpacts" data-k="${esc(e.id + e.status)}"><button type="button" class="pri" data-a="pri"><svg viewBox="0 0 24 24" aria-hidden="true">${V4ICON[ic] || ''}</svg>${lb}</button><button type="button" class="dots" data-a="more" aria-label="Mais opções do livro">•••</button></div>`); row = v.querySelector('.v5bpacts');
       row.querySelector('[data-a=more]').addEventListener('click', () => v5Menu(e));
       row.querySelector('[data-a=pri]').addEventListener('click', () => { try {
         if (e.status === 'LENDO') { const s4 = v4State(); s4.sheet = 'upd'; s4.sheetE = e.id; s4.e = s4.e || e.id; v4UpdInit(); v4Root(); v4Draw(); }

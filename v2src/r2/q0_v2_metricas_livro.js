@@ -1,14 +1,16 @@
 // Números do livro (Bia, 20/11; API 035): a estante vai para o servidor (PUT /v1/me/books, só quando muda) e a aba Sobre
-// da página do livro mostra o bloco "Na comunidade": lendo, leram, querem ler, abandonaram, avaliações (★ média),
+// da página do livro mostra os números logo abaixo do topo (duas fileiras como a faixa do perfil): lendo, leram, querem ler, abandonaram, avaliações (★ média),
 // comentários e ressaca (deu / curou). Só totais, nunca quem; números zerados não aparecem.
 { const st = document.createElement('style'); st.textContent = `
-#shelflist .v8nc{margin:0 0 .85rem;padding:.8rem .85rem .85rem;border:1px solid var(--line);border-radius:18px;background:var(--panel)}
-#shelflist .v8nc > b{display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin:0 0 .55rem;font-weight:900}
-#shelflist .v8nc .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:.45rem}
-#shelflist .v8nc .g > span{display:flex;flex-direction:column;gap:.1rem;padding:.5rem .6rem;border-radius:12px;background:color-mix(in srgb,var(--ink) 5%,transparent);min-width:0}
-#shelflist .v8nc .g em{font-style:normal;font-weight:900;font-size:1.05rem;color:var(--ink);line-height:1.15}
-#shelflist .v8nc .g small{font-size:.72rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#shelflist .v8nc .g em i{font-style:normal;color:var(--acc);font-size:.85rem;margin-left:.15rem}
+#shelflist .v8nc{margin:.1rem 0 .85rem;border:1px solid var(--line);background:var(--panel);border-radius:16px;overflow:hidden}
+#shelflist .v8nc .r1{display:grid;grid-template-columns:1fr 1fr 1fr 1.25fr}
+#shelflist .v8nc .r1 + .r1{border-top:1px solid var(--line)}
+#shelflist .v8nc .r1 > span{border-right:1px solid var(--line);padding:.55rem .3rem;text-align:center;min-width:0}
+#shelflist .v8nc .r1 > span:last-child{border-right:0}
+#shelflist .v8nc .r1 b{display:block;font-size:1.05rem;font-weight:900;color:var(--ink);white-space:nowrap}
+#shelflist .bp-chips[data-v8] .bp-chip:not(.gold){background:color-mix(in srgb,var(--ink) 7%,transparent)!important;color:var(--ink)!important;border-color:transparent!important}
+#shelflist .v8nc .r1 b i{font-style:normal;color:var(--acc)}
+#shelflist .v8nc .r1 small{display:block;font-size:.66rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 `; TR.append(st); }
 // ---------- sincronização da estante ----------
 { const OK = new Set(['LENDO', 'LIDO', 'QUERO', 'ABANDONEI', 'HIBERNANDO']);
@@ -25,29 +27,39 @@
   };
   setTimeout(push, 6000); setInterval(push, 20000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') push(); }); }
-// ---------- bloco "Na comunidade" na aba Sobre ----------
+// ---------- números do livro, abaixo do topo (perfil do livro; Bia, 20/11) ----------
 { const cache = new Map(), asked = new Map();
   const fmt = (n) => Number(n).toLocaleString('pt-BR');
   const html = (s) => {
-    const T = [[s.lendo, 'lendo'], [s.leram, 'leram'], [s.querem, 'querem ler'], [s.abandonaram, 'abandonaram'],
-      [s.avaliacoes, s.avaliacoes === 1 ? 'avaliação' : 'avaliações', s.media], [s.comentarios, s.comentarios === 1 ? 'comentário' : 'comentários'],
-      [s.ressaca && s.ressaca.deu, 'deu ressaca'], [s.ressaca && s.ressaca.curou, 'curou ressaca']].filter((x) => Number(x[0]) > 0);
-    if (!T.length) return '';
-    return '<section class="v8nc"><b>Na comunidade</b><div class="g">' + T.map(([n, l, m]) => '<span><em>' + fmt(n) + (m ? '<i>★ ' + String(m).replace('.', ',') + '</i>' : '') + '</em><small>' + l + '</small></span>').join('') + '</div></section>';
+    const n = (x) => Number(x) || 0, av = n(s.avaliacoes), r = s.ressaca || {};
+    if (!(n(s.leram) + n(s.lendo) + n(s.querem) + av + n(s.abandonaram) + n(s.comentarios) + n(r.deu) + n(r.curou))) return '';
+    const cell = (b, l) => '<span><b>' + b + '</b><small>' + l + '</small></span>';
+    const nota = av && s.media != null ? cell('<i>★</i> ' + String(s.media).replace('.', ','), fmt(av) + (av === 1 ? ' avaliação' : ' avaliações')) : cell('–', 'sem avaliações');
+    const r2 = [n(s.abandonaram), n(s.comentarios), n(r.deu), n(r.curou)].some(Boolean)
+      ? '<div class="r1">' + cell(fmt(n(s.abandonaram)), 'abandonaram') + cell(fmt(n(s.comentarios)), 'comentários') + cell(fmt(n(r.deu)), 'deu ressaca') + cell(fmt(n(r.curou)), 'curou ressaca') + '</div>' : '';
+    return '<section class="v8nc"><div class="r1">' + cell(fmt(n(s.leram)), 'leram') + cell(fmt(n(s.lendo)), 'lendo') + cell(fmt(n(s.querem)), 'querem ler') + nota + '</div>' + r2 + '</section>';
   };
+  // topo do livro (Bia, 20/11): no lugar de status e formato, a ficha desta edição: editora, páginas, idioma e gênero (a sua nota fica)
+  const chips = (hero, title) => {
+    const box = hero.querySelector('.bp-chips'); if (!box) return; let e = null; try { e = lib().find((x) => normT(x.title) === normT(title)); } catch {} if (!e) return;
+    const m = e.meta || {}; let pg = 0; try { pg = readingInfo(e).total || e.totalPages || 0; } catch { pg = e.totalPages || 0; }
+    const lang = m.lang ? ((typeof LANGS !== 'undefined' && LANGS[m.lang]) || m.lang) : '', gen = e.genre || m.cat || '';
+    const gold = box.querySelector('.bp-chip.gold');
+    const L = [m.pub, pg ? pg + ' pág.' : '', lang, gen].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean);
+    const sig = L.join('|') + '|' + (gold ? gold.textContent : ''); if (box.dataset.v8 === sig) return;
+    box.innerHTML = L.map((x) => '<span class="bp-chip">' + esc(x) + '</span>').join('') + (gold ? gold.outerHTML : ''); box.dataset.v8 = sig; };
   const put = () => {
-    const v = $('#shelflist'); if (!v || v.hidden || v.dataset.bt !== 'sobre') return;
-    const body = v.querySelector('.sl-body'), tabs = body && body.querySelector(':scope > .bp-tabs'); if (!tabs) return;
+    const v = $('#shelflist'); if (!v || v.hidden) return;
+    const body = v.querySelector('.sl-body'), hero = body && body.querySelector(':scope > .bp-hero'); if (!hero) return;
     const title = ((v.querySelector('.bp-ht h2') || {}).textContent || '').trim(); if (!title) return;
+    try { chips(hero, title); } catch {}
     const k = normT(title), s = cache.get(k), cur = body.querySelector(':scope > .v8nc');
     if (!s) { if (cur) cur.remove(); const t = asked.get(k) || 0; if (Date.now() - t < 60000) return; asked.set(k, Date.now());
       sapi('GET', '/v1/books/stats?title=' + encodeURIComponent(title)).then((r) => { if (r && r.status === 200 && r.data) { cache.set(k, r.data); setTimeout(() => cache.delete(k), 5 * 60000); put(); } }).catch(() => {}); return; }
     const h = html(s); if (!h) { if (cur) cur.remove(); return; }
-    if (cur && cur.dataset.k === k) return;
-    const w = document.createElement('div'); w.innerHTML = h; const n = w.firstElementChild; n.dataset.k = k;
-    // logo depois da sinopse (primeiro cartão depois das abas); sem sinopse, logo depois das abas
-    const first = tabs.nextElementSibling && tabs.nextElementSibling.matches('section, .bp-card') ? tabs.nextElementSibling : null;
-    if (cur) cur.replaceWith(n); else (first || tabs).after(n);
+    if (cur && cur.dataset.k === k) { if (hero.nextElementSibling !== cur) hero.after(cur); return; }
+    const w = document.createElement('div'); w.innerHTML = h; const el = w.firstElementChild; el.dataset.k = k;
+    if (cur) cur.replaceWith(el); else hero.after(el);
   };
   let tm = 0; const v = $('#shelflist');
   if (v) new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { put(); } catch {} }, 80); }).observe(v, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'data-bt'] }); }
