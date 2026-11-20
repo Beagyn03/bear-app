@@ -198,8 +198,10 @@ function v6V4Input(ev) { const t = ev.target; if (t && t.id === 'v6ta') { const 
 let V6QD = null, V6QDAt = 0, V6QDBusy = false;
 async function v6QdLoad(force) {
   if (!connected() || !socialProfile || V6QDBusy || (!force && Date.now() - V6QDAt < 10 * 60000)) return; V6QDBusy = true;
-  try { const r = await sapi('GET', '/v1/qday'); if (r.status === 200 && r.data && r.data.question) { V6QD = r.data; V6QDAt = Date.now(); } } catch {} finally { V6QDBusy = false; }
-  v6QdRefresh();
+  // falha ou resposta sem pergunta também conta como tentativa (nova tentativa em 1 min): antes, cada redesenho pedia de novo e o Hoje e a página da pergunta entravam em laço
+  let ok = false; const before = JSON.stringify(V6QD);
+  try { const r = await sapi('GET', '/v1/qday'); if (r.status === 200 && r.data && r.data.question) { V6QD = r.data; ok = true; } } catch {} finally { V6QDBusy = false; V6QDAt = ok ? Date.now() : Date.now() - 9 * 60000; }
+  if (JSON.stringify(V6QD) !== before) v6QdRefresh();
 }
 function v6QdRefresh() { try { if (S.tab === 'inicio' && typeof v2HojeEnsure === 'function') v2HojeEnsure(); } catch {} const st = v4State(); if (st.view === 'v6qday') v4Draw(); }
 const v6QdRow = (x, tot, i, mine) => { const pc = tot ? Math.round(x.votes / tot * 100) : 0, me = mine && normT(mine.title) === normT(x.title);
