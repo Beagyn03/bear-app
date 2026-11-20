@@ -18557,7 +18557,7 @@ function v3HeroHTML(col) {
   const L = off.includes('tambem') ? [e] : [e, ...lib().filter((x) => x.status === 'LENDO' && x.id !== e.id).slice(0, 6)];
   const nx = L.length > 1 ? L[1] : null; S.v3L = L.map((x) => x.id);
   // prazo: fica no cartão do livro (caixa "Hoje, leia até a pág. N"); sem prazo, o "Definir prazo" fica no Mais (menu do livro)
-  let due = null; if (e.dueAt) { try { const d = dueToday(e), dd = new Date(e.dueAt + 'T12:00:00Z'), dow = V2H_DOW[dd.getUTCDay()].slice(0, 3).toLowerCase(); due = d ? { ok: d.done, off: d.todayOff, target: d.target, falta: Math.max(0, d.target - d.now), dow } : { late: true, dow }; } catch {} }
+  let due = null; if (e.dueAt && vFn('prazos')) { try { const d = dueToday(e), dd = new Date(e.dueAt + 'T12:00:00Z'), dow = V2H_DOW[dd.getUTCDay()].slice(0, 3).toLowerCase(); due = d ? { ok: d.done, off: d.todayOff, target: d.target, falta: Math.max(0, d.target - d.now), dow } : { late: true, dow }; } catch {} }
   const CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
   const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
   const dueBox = due ? `<button type="button" class="eta due${due.ok ? ' ok' : ''}" data-h3="prazo"><span class="dt">${due.late ? 'O prazo passou' : due.ok ? 'Leitura de hoje feita' : due.off ? 'Hoje é folga' : `Hoje, leia até a <b>pág. ${due.target}</b>`}</span><small>${CAL}${due.late ? 'escolha uma data nova' : due.ok || due.off ? 'prazo ' + due.dow : 'faltam ' + due.falta + ' pág. · prazo ' + due.dow}</small></button>` : '';
@@ -18581,7 +18581,7 @@ function v3HeroHTML(col) {
       <button type="button" class="v3qa p" data-h3="upd" aria-label="Atualizar página">${V2SVG('pag', 20)}Atualizar</button>
       <button type="button" class="v3qa${near ? ' hi' : ''}" data-h3="fim" aria-label="Terminei o livro">${V2SVG('ok', 20)}Terminei</button>
       ${v2Mods().trechos ? `<button type="button" class="v3qa" data-h3="qt" aria-label="Salvar um trecho">${V2SVG('qt', 20)}Trecho</button>` : ''}
-      ${v2Mods().comunidade ? `<button type="button" class="v3qa" data-h3="junto" aria-label="${esc(jl)}">${jt}Ler junto</button>` : ''}
+      ${vFn('junto') ? `<button type="button" class="v3qa" data-h3="junto" aria-label="${esc(jl)}">${jt}Ler junto</button>` : ''}
       <button type="button" class="v3qa" data-h3="more" aria-label="Mais opções do livro">${V2SVG('dots', 20)}Mais</button>
     </div></section></div>
     ${nx ? `<div class="v3dots"><span class="pp">${L.map((x) => `<button type="button" data-h3="sw" data-id="${esc(x.id)}" class="${x.id === e.id ? 'on' : ''}" aria-label="${esc(x.title)}"></button>`).join('')}</span><button type="button" class="nx" data-h3="sw" data-id="${esc(nx.id)}" data-d="l">${esc(nx.title)}${(() => { try { if (!nx.dueAt) return ''; const d = dueToday(nx); return d && !d.done && !d.todayOff ? ` <small class="cdue">${CAL}até pág. ${d.target}</small>` : ''; } catch { return ''; } })()} ${CHEV}</button></div>` : ''}
@@ -18631,7 +18631,7 @@ function v3Bind(n) {
       slot('v3x-a', keyA); slot('v3x-b', keyB);
       if (S.v3slide) { const h = col.querySelector(':scope > .v3x-a .v3hero'); if (h) h.classList.add(S.v3slide); S.v3slide = null; }
       // destaque do dia: um cartão só
-      const cands = [col.querySelector(':scope > .ex-alert'), col.querySelector(':scope > .v2rs-card'), (v2Mods().comunidade ? col.querySelector(':scope > [data-v2qd]') : null)].filter(Boolean);
+      const cands = [col.querySelector(':scope > .ex-alert'), col.querySelector(':scope > .v2rs-card'), (vFn('qday') ? col.querySelector(':scope > [data-v2qd]') : null)].filter(Boolean);
       const pick = cands[0] || null; col.querySelectorAll(':scope > .v3mom').forEach((x) => { if (x !== pick) x.classList.remove('v3mom'); }); if (pick && !pick.classList.contains('v3mom')) pick.classList.add('v3mom');
       // sem livro em leitura: "Comece por aqui" (conta nova) aparece logo abaixo
       const cm = col.querySelector(':scope > [data-in=comece]'); if (cm) cm.classList.toggle('v3show', !R);
@@ -19636,7 +19636,7 @@ const v4Due = (e) => { if (!e || !e.dueAt) return null; try { const d = dueToday
 // ---------- ecos: GET/POST /v1/echoes (só texto do que você já alcançou) ----------
 const V4ECO = new Map(); // libId -> { seen, ahead, aheadTotal, aheadFriends, pg }
 async function v4EcoLoad(e, pg) {
-  if (!v4On('comunidade') || !connected()) return null;
+  if (!vFn('ecos') || !connected()) return null;
   const { total } = v4Info(e), pct = total ? Math.min(100, Math.round(pg / total * 10000) / 100) : null;
   const q = new URLSearchParams({ title: e.title, page: String(pg), ...(pct != null ? { pct: String(pct) } : {}), scope: (db.prefs || {}).ecoDe === 'amigos' ? 'amigos' : 'rede' });
   try { const r = await sapi('GET', '/v1/echoes?' + q.toString()); if (r.status === 200 && r.data) { const o = { ...r.data, pg }; V4ECO.set(e.id, o); return o; } } catch {}
@@ -19646,13 +19646,13 @@ const v4EcoColor = (x) => x.mine ? '#ffe2a8' : x.friend ? '#e0ad3a' : '#cfc4ff';
 const V4POS = [[10, 14], [88, 30], [7, 40], [92, 48], [20, 8], [76, 12], [58, 5]];
 function v4SkyHTML(e) {
   const E = V4ECO.get(e.id), stars = (S.v4stars = S.v4stars || Array.from({ length: 40 }, () => { let x, y; do { x = Math.random() * 100; y = Math.random() * 100; } while (x > 8 && x < 92 && y > 52 && y < 92); return `<i style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%;animation-delay:${(Math.random() * 3).toFixed(1)}s"></i>`; }).join(''));
-  if (!E || !v4On('comunidade')) return `<div class="sky">${stars}</div>`;
+  if (!E || !vFn('ecos')) return `<div class="sky">${stars}</div>`;
   const mine = (E.seen || []).filter((x) => x.mine).slice(-3).map((x, k) => `<b class="ecs me" style="left:${[64, 36, 80][k % 3]}%;top:${[9, 16, 22][k % 3]}%" title="Seu eco, pág. ${x.page}"></b>`).join('');
   const ah = (E.ahead || []).slice(0, 7).map((x, k) => `<b class="ecs${x.friend ? '' : ' rd'}" style="left:${V4POS[k % 7][0]}%;top:${V4POS[k % 7][1]}%;--c:${x.friend ? '#e0ad3a' : '#fff'};animation-delay:${(k * 0.9).toFixed(1)}s"></b>`).join('');
   return `<div class="sky">${stars}${mine}${ah}</div>`;
 }
 function v4EcotHTML(e) {
-  const E = V4ECO.get(e.id); if (!E || !v4On('comunidade') || !E.aheadTotal) return '';
+  const E = V4ECO.get(e.id); if (!E || !vFn('ecos') || !E.aheadTotal) return '';
   const dots = (E.ahead || []).slice().sort((a, b) => (b.friend ? 1 : 0) - (a.friend ? 1 : 0)).slice(0, 3).map((x) => `<i style="background:${x.friend ? '#e0ad3a' : '#cfc4ff'}"></i>`).join('');
   return `<small class="ecot"><span class="st">${dots}</span>${E.aheadTotal} ${E.aheadTotal > 1 ? 'ecos' : 'eco'} à sua frente${E.aheadFriends ? `, ${E.aheadFriends} de amizades` : ''}<button class="qm" data-a="sheet" data-s="ecohelp" aria-label="O que são ecos">?</button></small>`;
 }
@@ -19712,7 +19712,7 @@ const v4PgLine = (P, what) => `<div class="v6pgl"><span>na pág.</span><button d
 function v4PgPaint(P, keepInput) { if (!V4) return; const i = V4.querySelector('#v6edpg'); if (i && !keepInput) i.value = P.pg; const x = V4.querySelector('.v6pgx'); if (x && /chegar/.test(x.textContent)) x.textContent = 'aparece para quem chegar na pág. ' + P.pg; const n = V4.querySelector('.v6pgn'); if (n) n.textContent = P.pg; }
 function v4SesHTML(e, s) {
   const st = v4State(), { total } = v4Info(e), pg = s.pg, c = v4Clock(s), due = v4Due(e), E = V4ECO.get(e.id);
-  const tools = [v4On('trechos') ? `<button data-a="qtfoto">${v4ic('scan', 18)}Trecho por foto</button>` : '', `<button data-a="notaed">${v4ic('pen', 18)}Anotar</button>`, v4On('comunidade') ? `<button data-a="ecoed">${v4ic('orb', 18)}Deixar um eco</button>` : ''].filter(Boolean);
+  const tools = [v4On('trechos') ? `<button data-a="qtfoto">${v4ic('scan', 18)}Trecho por foto</button>` : '', `<button data-a="notaed">${v4ic('pen', 18)}Anotar</button>`, vFn('ecos') ? `<button data-a="ecoed">${v4ic('orb', 18)}Deixar um eco</button>` : ''].filter(Boolean);
   const meta = due ? (pg >= due.target ? '<span><small>meta de hoje</small><b class="ok">cumprida</b></span>' : `<span><small>meta de hoje</small><b class="g">pág. ${due.target}</b></span>`) : total ? `<span><small>faltam</small><b>${Math.max(0, total - pg)} pág.</b></span>` : '';
   return `<div class="ses">${v4SkyHTML(e)}
     <div class="top"><button data-a="sheet" data-s="end">${v4ic('x', 15)}Encerrar</button><button class="${s.amb ? 'on' : ''}" data-a="sheet" data-s="amb">${s.amb ? esc(s.amb) : 'Som ambiente'}</button></div>
@@ -19720,7 +19720,7 @@ function v4SesHTML(e, s) {
       <div class="tmrow"><div class="tm${s.pz ? ' paused' : ''}" id="v4clk">${c.t}</div><button class="pz" data-a="pz" aria-label="${s.pz ? 'Continuar' : 'Pausar'}">${s.pz ? v4ic('play', 20) : v4ic('pause', 20)}</button></div>
       <small class="durh" id="v4clkh">${s.pz ? 'pausado' : s.dur ? (c.done ? 'tempo cumprido; continue se quiser' : 'restantes de ' + (s.dur === 60 ? '1 h' : s.dur + ' min')) : 'tempo livre'}</small>
       <div class="pgcard${st.ed === 'pg' ? ' on' : ''}" data-a="pged">${pg > s.pg0 ? `<span><small>agora na</small><b>pág. ${pg} <i class="plus">+${pg - s.pg0}</i></b></span>` : `<span><small>começou na</small><b>pág. ${s.pg0}</b></span>`}${meta ? '<i></i>' + meta : ''}<i></i><button class="pgup" data-a="pged" aria-label="Atualizar página" aria-expanded="${st.ed === 'pg'}">Atualizar</button></div>
-      ${E && E.aheadTotal && v4On('comunidade') ? `<div class="ecobar">${v4EcotHTML(e)}</div>` : ''}</div>
+      ${E && E.aheadTotal && vFn('ecos') ? `<div class="ecobar">${v4EcotHTML(e)}</div>` : ''}</div>
     ${st.ed === 'pg' ? v4PgEdHTML(e, s) : st.ed === 'eco' ? v4EcoEdHTML(e, s) : st.ed === 'nota' ? v4NotaEdHTML(e, s) : ''}
     <div class="tools" style="grid-template-columns:repeat(${tools.length},1fr)">${tools.join('')}</div></div>`;
 }
@@ -20075,7 +20075,7 @@ v3LerPre = function (e) { if (e) v4Open(e); };
 `; TR.append(st); }
 const V4ATF = [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['prog', 'Progresso'], ['ecos', 'Ecos']];
 { const _va = v3Ativ; v3Ativ = function (d, host) {
-    const on = !!(d && d.self) && v4On('comunidade');
+    const on = !!(d && d.self) && vFn('ecos');
     if (on && S.v3atf === 'ecos') return v4AtivEcos(d, host);
     const r = _va.apply(this, arguments);
     if (on) { const ch = host.querySelector('.v3chips'); if (ch && !ch.querySelector('[data-af=ecos]')) { const b = document.createElement('button'); b.type = 'button'; b.dataset.af = 'ecos'; b.textContent = 'Ecos'; b.addEventListener('click', () => { S.v3atf = 'ecos'; v3Ativ(d, host); }); ch.append(b); } }
@@ -20276,13 +20276,13 @@ const v5hd = (e, h, sub) => `<div class="sh-bk">${v4cv(e)}<div><h3>${h}</h3><spa
 function v5BmHTML(e) {
   const st = e.status, pg = libProgress(e), tot = Number(e.totalPages) || 0, due = (() => { try { return v4Due(e); } catch { return null; } })(), soc = v4On('comunidade');
   const shN = v5Shelves().filter((s) => (s.bookIds || []).includes(e.id)).map((s) => s.name);
-  const top = st === 'LENDO' ? [v5li('v5upd', 'pag', 'Atualizar página'), v5li('v5fim', 'ok', 'Terminei', 'nota, datas e o que sentiu'), soc ? v5li('v5junto', 'friends', 'Ler junto') : '', v5li('v5prazo', 'cal', e.dueAt ? 'Prazo' : 'Definir prazo', e.dueAt ? (due && !due.done ? `hoje, até a pág. ${due.target}` : 'mudar a data ou tirar') : 'quando quer terminar?'), v5li('sheet', 'stop', 'Parar de ler', 'pausar, desistir ou marquei por engano', ' data-s="v5stop"')]
+  const top = st === 'LENDO' ? [v5li('v5upd', 'pag', 'Atualizar página'), v5li('v5fim', 'ok', 'Terminei', 'nota, datas e o que sentiu'), vFn('junto') ? v5li('v5junto', 'friends', 'Ler junto') : '', vFn('prazos') && v5li('v5prazo', 'cal', e.dueAt ? 'Prazo' : 'Definir prazo', e.dueAt ? (due && !due.done ? `hoje, até a pág. ${due.target}` : 'mudar a data ou tirar') : 'quando quer terminar?'), v5li('sheet', 'stop', 'Parar de ler', 'pausar, desistir ou marquei por engano', ' data-s="v5stop"')]
     : st === 'QUERO' ? [v5li('v5start', 'ler', 'Começar a ler'), v5li('v5prio', 'sort', 'Prioridade', { 1: 'alta', 2: 'normal', 3: 'baixa' }[e.prio || 2]), v5li('v5fim', 'ok', 'Já li', 'nota e quando leu')]
     : st === 'LIDO' ? [v5li('v5fim', 'quote', 'Minha avaliação', 'nota, emoções e níveis do enredo'), v5li('v5retro', 'cal', 'Retrospectiva'), v5li('sheet', 'swap', 'Ler de novo', 'a leitura anterior fica no histórico', ' data-s="v5reler"'), v5li('sheet', 'undo', 'Não terminei', 'marquei como lido por engano', ' data-s="v5unlido"')]
     : st === 'HIBERNANDO' ? [v5li('v5start', 'ler', 'Retomar', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5aband', 'stop', 'Desistir de vez', 'vai para Abandonados')]
     : [v5li('v5start', 'ler', 'Tentar de novo', pg ? 'volta para o Hoje na pág. ' + pg : ''), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')];
   return `<button class="sh-bk sh-go" data-a="v5open" aria-label="Abrir página do livro">${v4cv(e)}<div style="flex:1;min-width:0;text-align:left"><h3>${esc(e.title)}</h3><span class="mut">${esc(e.author || '')}${e.author ? ' · ' : ''}${V5ST[st] || ''}${st === 'LENDO' && pg ? ' · pág. ' + pg + (tot ? ' de ' + tot : '') : ''}</span><small class="sh-lk">Ver página do livro</small></div><span class="r">${v4ic('chev', 18)}</span></button>
-  <div class="list">${top.join('')}
+  <div class="list">${top.filter(Boolean).join('')}
   ${v4On('emprest') ? v5li('v5lend', 'swap', 'Emprestar', 'para uma amizade ou alguém de fora') : ''}
   ${v5li('v5shelves', 'estante', 'Estantes', shN.length ? esc(shN.slice(0, 2).join(', ')) + (shN.length > 2 ? ' e mais ' + (shN.length - 2) : '') : 'em nenhuma estante')}
   ${v5li('sheet', 'pag', 'Trocar edição', 'capa, páginas, formato e idioma', ' data-s="v5edicao"')}
@@ -21266,6 +21266,7 @@ function openLembretes() {
     // 1. prazo
     const R = (() => { try { return reading(); } catch { return null; } })(), cur = R && R.e;
     const due = lib().filter((e) => e.status === 'LENDO' && e.dueAt);
+    if (vFn('prazos')) {
     h += '<div class="v4lb">Prazo de leitura</div><div class="v4card">';
     if (!due.length) h += '<div class="v4lm"><div class="hd"><span></span><span><b>Nenhum livro com prazo</b><small>Defina um prazo no menu do livro (segure a capa) e o lembrete aparece aqui.</small></span><span></span></div></div>';
     else {
@@ -21280,6 +21281,7 @@ function openLembretes() {
         h += '<div class="v4lm"><div class="alt">' + cvh(e.title, e.cover, '') + '<span><b>' + esc(e.title) + '</b><small>prazo ' + d.slice(8, 10) + '/' + d.slice(5, 7) + (main ? ' · o lembrete vale para um livro por vez' : '') + '</small></span><button type="button" class="lnk" data-a="pz-use" data-id="' + esc(String(e.id)) + '">Lembrar deste</button></div></div>'; });
     }
     h += '</div>';
+    } // fim do prazo (some com a função Prazos desligada)
     // 2. órbita
     if (v4Mod('orbita')) {
       const o = v4orb() || { on: false, hour: 21, minute: 0, off: [] }; let n = 0; try { n = streakNow(); } catch {}
@@ -21757,6 +21759,80 @@ body > .sheet form.pv2 .v6hide{display:none!important}`; document.head.append(st
   const s2 = document.createElement('style'); s2.textContent = `
 .sl-body.v6prev .v4mysh-bar,.sl-body.v6prev [data-v3=top5],.sl-body.v6prev .v2wadd,.sl-body.v6prev .v2tip,.sl-body.v6prev [data-del],.sl-body.v6prev .v3hubw,.sl-body.v6prev .v3tpe,.sl-body.v6prev .rd-more,.sl-body.v6prev [data-tip]{display:none!important}
 .sl-body.v6noread .v3lag{display:none!important}`; TR.append(s2);
+}
+// --- n0_v2_funcoes_mais.js ---
+// Funções do app: 5 interruptores novos (Bia, 20/11, "se não quebrar nada"). Desligar NUNCA apaga dado; religar volta tudo.
+// - Ecos (independente da Comunidade): bolinhas, "N ecos à sua frente", (?), Deixar um eco, filtro Ecos da Atividade.
+// - Ler junto e Pergunta do dia: ficam "dentro" da Comunidade (só valem com ela ligada; sem ela, aparecem cinza).
+// - Para você: a seção de indicações do Hoje (e "Seus gostos").
+// - Prazos: caixa "Hoje, leia até a pág. X", arco pontilhado, Prazo/Definir prazo do menu, lembrete de prazo em Lembretes;
+//   enquanto desligada, o lembrete de prazo na API fica desligado (ao religar, volta sozinho).
+var V6SUB = { junto: 'comunidade', qday: 'comunidade' };
+function vFn(k) { try { const m = v2Mods(); if (V6SUB[k] && m[V6SUB[k]] === false) return false; if (k === 'presentes') return v4Mod('presentes'); return m[k] !== false; } catch { return true; } }
+{ const add = (after, item) => { const i = V2MODS.findIndex((x) => x[0] === after); if (V2MODS.some((x) => x[0] === item[0])) return; V2MODS.splice(i < 0 ? V2MODS.length : i + 1, 0, item); };
+  add('comunidade', ['qday', 'Pergunta do dia', 'cartão do Hoje e Mais votados']);
+  add('comunidade', ['junto', 'Ler junto', 'convites e leitura com amizades']);
+  add('qday', ['ecos', 'Ecos', 'frases que leitores deixam nas páginas']);
+  add('metas', ['prazos', 'Prazos', 'data para terminar um livro, plano do dia e lembrete']);
+  add('trechos', ['pv', 'Para você', 'indicações de livros no Hoje']);
+  v2ModsApply = function () { const m = v2Mods(), h = TR.host; if (!h) return; V2MODS.forEach(([k]) => h.classList.toggle('v2off-' + k, !vFn(k))); h.classList.remove('v2off-conq'); if (!m.comunidade && S.tab === 'comunidade') { try { goTab('inicio'); } catch {} } };
+  const st = document.createElement('style'); st.textContent = `
+:host(.v2off-pv) #pv-host,:host(.v2off-pv) [data-in=pv]{display:none!important}
+:host(.v2off-junto) .v3-bud,:host(.v2off-junto) #v3-bud-inv{display:none!important}
+.v4fn.sub{padding-left:1.4rem}.v4fn.sub b::before{content:"↳ ";color:var(--ink-2);font-weight:700}
+.v4fn.dis{opacity:.45}.v4fn.dis small::after{content:" · precisa da Comunidade"}
+`; TR.append(st);
+  // página: subitens recuados; sem Comunidade, ficam cinza e não mudam
+  v2FuncoesSheet = function () {
+    const draw = () => {
+      const row = ([k, n, d]) => { const sub = V6SUB[k], dis = sub && !v4Mod(sub), on = v2Mods()[k] !== false && !(k === 'presentes' && !v4Mod('presentes'));
+        return '<div class="v4fn' + (sub ? ' sub' : '') + (dis ? ' dis' : '') + '"><span><b>' + esc(n) + '</b><small>' + esc(d) + '</small></span><button type="button" class="v2fn-tg' + (on && !dis ? ' on' : '') + '" data-k="' + k + '" role="switch" aria-checked="' + (on && !dis) + '" aria-label="' + esc(n) + '"' + (dis ? ' aria-disabled="true"' : '') + '></button></div>'; };
+      const v = v4Page('Funções do app', '<p class="v4pg-intro">Desligue o que você não usa. O app se reorganiza e some com os botões, abas e números dessa função. Nada é apagado: ao religar, volta tudo.</p><div class="v4card">' + V2MODS.map(row).join('') + '</div>', () => v2FuncoesSheet());
+      v.querySelectorAll('.v2fn-tg').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; if (V6SUB[k] && !v4Mod(V6SUB[k])) return toast('Ligue a Comunidade primeiro');
+        const mods = { ...((db.prefs || {}).mods || {}) }; if (mods.presentes === undefined) mods.presentes = mods.emprest !== false;
+        const now = k === 'presentes' ? v4Mod('presentes') : mods[k] !== false; mods[k] = !now; db.prefs = { ...(db.prefs || {}), mods }; save(); v2ModsApply(); try { drawTabbar(); } catch {}
+        if (k === 'prazos') { try { if (mods.prazos === false) sapi('DELETE', '/v1/me/reminder').catch(() => {}); else { const R = reading(); reminderSync(R && R.e); } } catch {} }
+        try { refresh(); } catch {} draw(); }));
+    };
+    S.listRedraw = draw; draw();
+  };
+  // com Prazos desligado, o lembrete de prazo não volta a ser enviado por outro caminho
+  const _rs = reminderSync; reminderSync = async function () { if (!vFn('prazos')) { try { if (connected()) await sapi('DELETE', '/v1/me/reminder'); } catch {} return; } return _rs.apply(this, arguments); };
+  [0, 600, 1800].forEach((ms) => setTimeout(() => { try { v2ModsApply(); } catch {} }, ms));
+}
+// --- n1_v2_personalizar_inicio.js ---
+// Personalizar Início alinhado ao Hoje novo (Bia, 20/11). O cartão do livro atual fica sempre primeiro. Itens:
+// Linha do dia (Órbita e Meta; fica logo abaixo do livro), Destaque do dia (Pergunta do dia, lembretes, Resumo do mês),
+// A seguir, Para você. Saem Comece por aqui (aparece sozinho em conta sem livros), Também lendo (virou deslizar no cartão),
+// Próxima conquista, Meta do ano e Na fila (estão na Linha do dia e em A seguir). Sem duplicar Funções do app: item de função
+// desligada fica cinza ("desligado em Funções do app") e o toque leva para lá. Guardado em db.prefs.home2; as escolhas
+// antigas (db.prefs.home.off) migram uma vez: Indicações → Para você, Na fila → A seguir, Pergunta do dia → Destaque.
+var V6H = [['dia', 'Linha do dia', 'Órbita e Meta, logo abaixo do livro'], ['dest', 'Destaque do dia', 'Pergunta do dia, lembretes e Resumo do mês'], ['seguir', 'A seguir', 'o próximo da fila e "Qual leio agora?"'], ['pv', 'Para você', 'indicações de livros e Seus gostos']];
+{ const P = () => { db.prefs = db.prefs || {}; if (!db.prefs.home2) { const old = (db.prefs.home && db.prefs.home.off) || [], off = [];
+      if (old.includes('recs')) off.push('pv'); if (old.includes('fila')) off.push('seguir'); if (old.includes('qday')) off.push('dest');
+      db.prefs.home2 = { order: V6H.map((x) => x[0]), off }; } const h = db.prefs.home2; V6H.forEach(([k]) => { if (!h.order.includes(k)) h.order.push(k); }); return h; };
+  const fnOff = (k) => { try { if (k === 'dia') return !vFn('metas') && !vFn('orbita'); if (k === 'pv') return !vFn('pv'); return false; } catch { return false; } };
+  // aplicar no Hoje: esconder e ordenar (o livro e a Linha do dia ficam sempre em cima)
+  const st = document.createElement('style'); st.textContent = `
+:host(.v6h-dia) .v3day,:host(.v6h-dest) .v3-colA.v3h > .v3mom,:host(.v6h-seguir) .v3-colA.v3h > .v3x-b,:host(.v6h-pv) .v3-colA.v3h > #pv-host{display:none!important}
+.v6hp .v4fn .ud{display:flex;gap:2px;margin-right:6px}.v6hp .v4fn .ud button{width:28px;height:28px;border:0;background:none;color:var(--ink-2);font-size:15px}.v6hp .v4fn .ud button:disabled{opacity:.25}
+.v6hp .v4fn.dis{opacity:.5}.v6hp .v4fn.dis small::after{content:" · desligado em Funções do app"}
+.v6hp .v4pg-top{font-size:.8rem;color:var(--ink-2);margin:0 0 .6rem}`; TR.append(st);
+  const apply = () => { const h = TR.host; if (!h) return; const p = P(); V6H.forEach(([k]) => h.classList.toggle('v6h-' + k, p.off.includes(k)));
+    const col = TR.querySelector('.v3-colA.v3h'); if (!col) return; const sel = { dest: ':scope > .v3mom', seguir: ':scope > .v3x-b', pv: ':scope > #pv-host' };
+    let n = 3; p.order.filter((k) => sel[k]).forEach((k) => { const el = col.querySelector(sel[k]); if (el && el.style.order !== String(n)) el.style.order = String(n); n++; }); };
+  let tm = 0; new MutationObserver(() => { if (!tm) tm = setTimeout(() => { tm = 0; apply(); }, 80); }).observe(TR, { childList: true, subtree: true }); setTimeout(apply, 300);
+  homePrefsSheet = function () {
+    const draw = () => { const p = P(), O = p.order.filter((k) => V6H.some((x) => x[0] === k));
+      const row = (k, i) => { const it = V6H.find((x) => x[0] === k), dis = fnOff(k), on = !p.off.includes(k) && !dis;
+        return '<div class="v4fn' + (dis ? ' dis' : '') + '" data-k="' + k + '"><span><b>' + esc(it[1]) + '</b><small>' + esc(it[2]) + '</small></span><span class="ud"><button type="button" data-mv="-1" data-k="' + k + '" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>↑</button><button type="button" data-mv="1" data-k="' + k + '" aria-label="Descer"' + (i === O.length - 1 ? ' disabled' : '') + '>↓</button></span><button type="button" class="v2fn-tg' + (on ? ' on' : '') + '" data-tg="' + k + '" role="switch" aria-checked="' + on + '" aria-label="' + esc(it[1]) + '"></button></div>'; };
+      const v = v4Page('Personalizar Início', '<p class="v4pg-top">O livro que você está lendo fica sempre em primeiro. Escolha o que aparece embaixo dele e em que ordem.</p><div class="v4card v6hp">' + O.map(row).join('') + '</div>', () => homePrefsSheet());
+      v.querySelectorAll('[data-tg]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.tg; if (fnOff(k)) { try { v2FuncoesSheet(); } catch {} return; } p.off = p.off.includes(k) ? p.off.filter((x) => x !== k) : [...p.off, k]; save(); apply(); draw(); }));
+      v.querySelectorAll('.v4fn.dis span:first-child').forEach((s) => s.addEventListener('click', () => { try { v2FuncoesSheet(); } catch {} }));
+      v.querySelectorAll('[data-mv]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k, i = p.order.indexOf(k), j = i + +b.dataset.mv; if (i < 0 || j < 0 || j >= p.order.length) return; [p.order[i], p.order[j]] = [p.order[j], p.order[i]]; save(); apply(); draw(); }));
+    };
+    S.listRedraw = draw; draw();
+  };
 }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }

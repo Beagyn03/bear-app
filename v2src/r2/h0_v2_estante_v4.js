@@ -176,13 +176,13 @@ const v5hd = (e, h, sub) => `<div class="sh-bk">${v4cv(e)}<div><h3>${h}</h3><spa
 function v5BmHTML(e) {
   const st = e.status, pg = libProgress(e), tot = Number(e.totalPages) || 0, due = (() => { try { return v4Due(e); } catch { return null; } })(), soc = v4On('comunidade');
   const shN = v5Shelves().filter((s) => (s.bookIds || []).includes(e.id)).map((s) => s.name);
-  const top = st === 'LENDO' ? [v5li('v5upd', 'pag', 'Atualizar página'), v5li('v5fim', 'ok', 'Terminei', 'nota, datas e o que sentiu'), soc ? v5li('v5junto', 'friends', 'Ler junto') : '', v5li('v5prazo', 'cal', e.dueAt ? 'Prazo' : 'Definir prazo', e.dueAt ? (due && !due.done ? `hoje, até a pág. ${due.target}` : 'mudar a data ou tirar') : 'quando quer terminar?'), v5li('sheet', 'stop', 'Parar de ler', 'pausar, desistir ou marquei por engano', ' data-s="v5stop"')]
+  const top = st === 'LENDO' ? [v5li('v5upd', 'pag', 'Atualizar página'), v5li('v5fim', 'ok', 'Terminei', 'nota, datas e o que sentiu'), vFn('junto') ? v5li('v5junto', 'friends', 'Ler junto') : '', vFn('prazos') && v5li('v5prazo', 'cal', e.dueAt ? 'Prazo' : 'Definir prazo', e.dueAt ? (due && !due.done ? `hoje, até a pág. ${due.target}` : 'mudar a data ou tirar') : 'quando quer terminar?'), v5li('sheet', 'stop', 'Parar de ler', 'pausar, desistir ou marquei por engano', ' data-s="v5stop"')]
     : st === 'QUERO' ? [v5li('v5start', 'ler', 'Começar a ler'), v5li('v5prio', 'sort', 'Prioridade', { 1: 'alta', 2: 'normal', 3: 'baixa' }[e.prio || 2]), v5li('v5fim', 'ok', 'Já li', 'nota e quando leu')]
     : st === 'LIDO' ? [v5li('v5fim', 'quote', 'Minha avaliação', 'nota, emoções e níveis do enredo'), v5li('v5retro', 'cal', 'Retrospectiva'), v5li('sheet', 'swap', 'Ler de novo', 'a leitura anterior fica no histórico', ' data-s="v5reler"'), v5li('sheet', 'undo', 'Não terminei', 'marquei como lido por engano', ' data-s="v5unlido"')]
     : st === 'HIBERNANDO' ? [v5li('v5start', 'ler', 'Retomar', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5aband', 'stop', 'Desistir de vez', 'vai para Abandonados')]
     : [v5li('v5start', 'ler', 'Tentar de novo', pg ? 'volta para o Hoje na pág. ' + pg : ''), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')];
   return `<button class="sh-bk sh-go" data-a="v5open" aria-label="Abrir página do livro">${v4cv(e)}<div style="flex:1;min-width:0;text-align:left"><h3>${esc(e.title)}</h3><span class="mut">${esc(e.author || '')}${e.author ? ' · ' : ''}${V5ST[st] || ''}${st === 'LENDO' && pg ? ' · pág. ' + pg + (tot ? ' de ' + tot : '') : ''}</span><small class="sh-lk">Ver página do livro</small></div><span class="r">${v4ic('chev', 18)}</span></button>
-  <div class="list">${top.join('')}
+  <div class="list">${top.filter(Boolean).join('')}
   ${v4On('emprest') ? v5li('v5lend', 'swap', 'Emprestar', 'para uma amizade ou alguém de fora') : ''}
   ${v5li('v5shelves', 'estante', 'Estantes', shN.length ? esc(shN.slice(0, 2).join(', ')) + (shN.length > 2 ? ' e mais ' + (shN.length - 2) : '') : 'em nenhuma estante')}
   ${v5li('sheet', 'pag', 'Trocar edição', 'capa, páginas, formato e idioma', ' data-s="v5edicao"')}

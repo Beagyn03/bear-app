@@ -52,6 +52,7 @@ function openLembretes() {
     // 1. prazo
     const R = (() => { try { return reading(); } catch { return null; } })(), cur = R && R.e;
     const due = lib().filter((e) => e.status === 'LENDO' && e.dueAt);
+    if (vFn('prazos')) {
     h += '<div class="v4lb">Prazo de leitura</div><div class="v4card">';
     if (!due.length) h += '<div class="v4lm"><div class="hd"><span></span><span><b>Nenhum livro com prazo</b><small>Defina um prazo no menu do livro (segure a capa) e o lembrete aparece aqui.</small></span><span></span></div></div>';
     else {
@@ -66,6 +67,7 @@ function openLembretes() {
         h += '<div class="v4lm"><div class="alt">' + cvh(e.title, e.cover, '') + '<span><b>' + esc(e.title) + '</b><small>prazo ' + d.slice(8, 10) + '/' + d.slice(5, 7) + (main ? ' · o lembrete vale para um livro por vez' : '') + '</small></span><button type="button" class="lnk" data-a="pz-use" data-id="' + esc(String(e.id)) + '">Lembrar deste</button></div></div>'; });
     }
     h += '</div>';
+    } // fim do prazo (some com a função Prazos desligada)
     // 2. órbita
     if (v4Mod('orbita')) {
       const o = v4orb() || { on: false, hour: 21, minute: 0, off: [] }; let n = 0; try { n = streakNow(); } catch {}

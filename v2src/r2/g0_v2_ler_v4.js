@@ -71,7 +71,7 @@ const v4Due = (e) => { if (!e || !e.dueAt) return null; try { const d = dueToday
 // ---------- ecos: GET/POST /v1/echoes (só texto do que você já alcançou) ----------
 const V4ECO = new Map(); // libId -> { seen, ahead, aheadTotal, aheadFriends, pg }
 async function v4EcoLoad(e, pg) {
-  if (!v4On('comunidade') || !connected()) return null;
+  if (!vFn('ecos') || !connected()) return null;
   const { total } = v4Info(e), pct = total ? Math.min(100, Math.round(pg / total * 10000) / 100) : null;
   const q = new URLSearchParams({ title: e.title, page: String(pg), ...(pct != null ? { pct: String(pct) } : {}), scope: (db.prefs || {}).ecoDe === 'amigos' ? 'amigos' : 'rede' });
   try { const r = await sapi('GET', '/v1/echoes?' + q.toString()); if (r.status === 200 && r.data) { const o = { ...r.data, pg }; V4ECO.set(e.id, o); return o; } } catch {}
@@ -81,13 +81,13 @@ const v4EcoColor = (x) => x.mine ? '#ffe2a8' : x.friend ? '#e0ad3a' : '#cfc4ff';
 const V4POS = [[10, 14], [88, 30], [7, 40], [92, 48], [20, 8], [76, 12], [58, 5]];
 function v4SkyHTML(e) {
   const E = V4ECO.get(e.id), stars = (S.v4stars = S.v4stars || Array.from({ length: 40 }, () => { let x, y; do { x = Math.random() * 100; y = Math.random() * 100; } while (x > 8 && x < 92 && y > 52 && y < 92); return `<i style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%;animation-delay:${(Math.random() * 3).toFixed(1)}s"></i>`; }).join(''));
-  if (!E || !v4On('comunidade')) return `<div class="sky">${stars}</div>`;
+  if (!E || !vFn('ecos')) return `<div class="sky">${stars}</div>`;
   const mine = (E.seen || []).filter((x) => x.mine).slice(-3).map((x, k) => `<b class="ecs me" style="left:${[64, 36, 80][k % 3]}%;top:${[9, 16, 22][k % 3]}%" title="Seu eco, pág. ${x.page}"></b>`).join('');
   const ah = (E.ahead || []).slice(0, 7).map((x, k) => `<b class="ecs${x.friend ? '' : ' rd'}" style="left:${V4POS[k % 7][0]}%;top:${V4POS[k % 7][1]}%;--c:${x.friend ? '#e0ad3a' : '#fff'};animation-delay:${(k * 0.9).toFixed(1)}s"></b>`).join('');
   return `<div class="sky">${stars}${mine}${ah}</div>`;
 }
 function v4EcotHTML(e) {
-  const E = V4ECO.get(e.id); if (!E || !v4On('comunidade') || !E.aheadTotal) return '';
+  const E = V4ECO.get(e.id); if (!E || !vFn('ecos') || !E.aheadTotal) return '';
   const dots = (E.ahead || []).slice().sort((a, b) => (b.friend ? 1 : 0) - (a.friend ? 1 : 0)).slice(0, 3).map((x) => `<i style="background:${x.friend ? '#e0ad3a' : '#cfc4ff'}"></i>`).join('');
   return `<small class="ecot"><span class="st">${dots}</span>${E.aheadTotal} ${E.aheadTotal > 1 ? 'ecos' : 'eco'} à sua frente${E.aheadFriends ? `, ${E.aheadFriends} de amizades` : ''}<button class="qm" data-a="sheet" data-s="ecohelp" aria-label="O que são ecos">?</button></small>`;
 }
@@ -147,7 +147,7 @@ const v4PgLine = (P, what) => `<div class="v6pgl"><span>na pág.</span><button d
 function v4PgPaint(P, keepInput) { if (!V4) return; const i = V4.querySelector('#v6edpg'); if (i && !keepInput) i.value = P.pg; const x = V4.querySelector('.v6pgx'); if (x && /chegar/.test(x.textContent)) x.textContent = 'aparece para quem chegar na pág. ' + P.pg; const n = V4.querySelector('.v6pgn'); if (n) n.textContent = P.pg; }
 function v4SesHTML(e, s) {
   const st = v4State(), { total } = v4Info(e), pg = s.pg, c = v4Clock(s), due = v4Due(e), E = V4ECO.get(e.id);
-  const tools = [v4On('trechos') ? `<button data-a="qtfoto">${v4ic('scan', 18)}Trecho por foto</button>` : '', `<button data-a="notaed">${v4ic('pen', 18)}Anotar</button>`, v4On('comunidade') ? `<button data-a="ecoed">${v4ic('orb', 18)}Deixar um eco</button>` : ''].filter(Boolean);
+  const tools = [v4On('trechos') ? `<button data-a="qtfoto">${v4ic('scan', 18)}Trecho por foto</button>` : '', `<button data-a="notaed">${v4ic('pen', 18)}Anotar</button>`, vFn('ecos') ? `<button data-a="ecoed">${v4ic('orb', 18)}Deixar um eco</button>` : ''].filter(Boolean);
   const meta = due ? (pg >= due.target ? '<span><small>meta de hoje</small><b class="ok">cumprida</b></span>' : `<span><small>meta de hoje</small><b class="g">pág. ${due.target}</b></span>`) : total ? `<span><small>faltam</small><b>${Math.max(0, total - pg)} pág.</b></span>` : '';
   return `<div class="ses">${v4SkyHTML(e)}
     <div class="top"><button data-a="sheet" data-s="end">${v4ic('x', 15)}Encerrar</button><button class="${s.amb ? 'on' : ''}" data-a="sheet" data-s="amb">${s.amb ? esc(s.amb) : 'Som ambiente'}</button></div>
@@ -155,7 +155,7 @@ function v4SesHTML(e, s) {
       <div class="tmrow"><div class="tm${s.pz ? ' paused' : ''}" id="v4clk">${c.t}</div><button class="pz" data-a="pz" aria-label="${s.pz ? 'Continuar' : 'Pausar'}">${s.pz ? v4ic('play', 20) : v4ic('pause', 20)}</button></div>
       <small class="durh" id="v4clkh">${s.pz ? 'pausado' : s.dur ? (c.done ? 'tempo cumprido; continue se quiser' : 'restantes de ' + (s.dur === 60 ? '1 h' : s.dur + ' min')) : 'tempo livre'}</small>
       <div class="pgcard${st.ed === 'pg' ? ' on' : ''}" data-a="pged">${pg > s.pg0 ? `<span><small>agora na</small><b>pág. ${pg} <i class="plus">+${pg - s.pg0}</i></b></span>` : `<span><small>começou na</small><b>pág. ${s.pg0}</b></span>`}${meta ? '<i></i>' + meta : ''}<i></i><button class="pgup" data-a="pged" aria-label="Atualizar página" aria-expanded="${st.ed === 'pg'}">Atualizar</button></div>
-      ${E && E.aheadTotal && v4On('comunidade') ? `<div class="ecobar">${v4EcotHTML(e)}</div>` : ''}</div>
+      ${E && E.aheadTotal && vFn('ecos') ? `<div class="ecobar">${v4EcotHTML(e)}</div>` : ''}</div>
     ${st.ed === 'pg' ? v4PgEdHTML(e, s) : st.ed === 'eco' ? v4EcoEdHTML(e, s) : st.ed === 'nota' ? v4NotaEdHTML(e, s) : ''}
     <div class="tools" style="grid-template-columns:repeat(${tools.length},1fr)">${tools.join('')}</div></div>`;
 }
@@ -510,7 +510,7 @@ v3LerPre = function (e) { if (e) v4Open(e); };
 `; TR.append(st); }
 const V4ATF = [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['prog', 'Progresso'], ['ecos', 'Ecos']];
 { const _va = v3Ativ; v3Ativ = function (d, host) {
-    const on = !!(d && d.self) && v4On('comunidade');
+    const on = !!(d && d.self) && vFn('ecos');
     if (on && S.v3atf === 'ecos') return v4AtivEcos(d, host);
     const r = _va.apply(this, arguments);
     if (on) { const ch = host.querySelector('.v3chips'); if (ch && !ch.querySelector('[data-af=ecos]')) { const b = document.createElement('button'); b.type = 'button'; b.dataset.af = 'ecos'; b.textContent = 'Ecos'; b.addEventListener('click', () => { S.v3atf = 'ecos'; v3Ativ(d, host); }); ch.append(b); } }

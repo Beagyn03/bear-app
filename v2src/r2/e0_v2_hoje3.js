@@ -85,7 +85,7 @@ function v3HeroHTML(col) {
   const L = off.includes('tambem') ? [e] : [e, ...lib().filter((x) => x.status === 'LENDO' && x.id !== e.id).slice(0, 6)];
   const nx = L.length > 1 ? L[1] : null; S.v3L = L.map((x) => x.id);
   // prazo: fica no cartão do livro (caixa "Hoje, leia até a pág. N"); sem prazo, o "Definir prazo" fica no Mais (menu do livro)
-  let due = null; if (e.dueAt) { try { const d = dueToday(e), dd = new Date(e.dueAt + 'T12:00:00Z'), dow = V2H_DOW[dd.getUTCDay()].slice(0, 3).toLowerCase(); due = d ? { ok: d.done, off: d.todayOff, target: d.target, falta: Math.max(0, d.target - d.now), dow } : { late: true, dow }; } catch {} }
+  let due = null; if (e.dueAt && vFn('prazos')) { try { const d = dueToday(e), dd = new Date(e.dueAt + 'T12:00:00Z'), dow = V2H_DOW[dd.getUTCDay()].slice(0, 3).toLowerCase(); due = d ? { ok: d.done, off: d.todayOff, target: d.target, falta: Math.max(0, d.target - d.now), dow } : { late: true, dow }; } catch {} }
   const CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
   const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
   const dueBox = due ? `<button type="button" class="eta due${due.ok ? ' ok' : ''}" data-h3="prazo"><span class="dt">${due.late ? 'O prazo passou' : due.ok ? 'Leitura de hoje feita' : due.off ? 'Hoje é folga' : `Hoje, leia até a <b>pág. ${due.target}</b>`}</span><small>${CAL}${due.late ? 'escolha uma data nova' : due.ok || due.off ? 'prazo ' + due.dow : 'faltam ' + due.falta + ' pág. · prazo ' + due.dow}</small></button>` : '';
@@ -109,7 +109,7 @@ function v3HeroHTML(col) {
       <button type="button" class="v3qa p" data-h3="upd" aria-label="Atualizar página">${V2SVG('pag', 20)}Atualizar</button>
       <button type="button" class="v3qa${near ? ' hi' : ''}" data-h3="fim" aria-label="Terminei o livro">${V2SVG('ok', 20)}Terminei</button>
       ${v2Mods().trechos ? `<button type="button" class="v3qa" data-h3="qt" aria-label="Salvar um trecho">${V2SVG('qt', 20)}Trecho</button>` : ''}
-      ${v2Mods().comunidade ? `<button type="button" class="v3qa" data-h3="junto" aria-label="${esc(jl)}">${jt}Ler junto</button>` : ''}
+      ${vFn('junto') ? `<button type="button" class="v3qa" data-h3="junto" aria-label="${esc(jl)}">${jt}Ler junto</button>` : ''}
       <button type="button" class="v3qa" data-h3="more" aria-label="Mais opções do livro">${V2SVG('dots', 20)}Mais</button>
     </div></section></div>
     ${nx ? `<div class="v3dots"><span class="pp">${L.map((x) => `<button type="button" data-h3="sw" data-id="${esc(x.id)}" class="${x.id === e.id ? 'on' : ''}" aria-label="${esc(x.title)}"></button>`).join('')}</span><button type="button" class="nx" data-h3="sw" data-id="${esc(nx.id)}" data-d="l">${esc(nx.title)}${(() => { try { if (!nx.dueAt) return ''; const d = dueToday(nx); return d && !d.done && !d.todayOff ? ` <small class="cdue">${CAL}até pág. ${d.target}</small>` : ''; } catch { return ''; } })()} ${CHEV}</button></div>` : ''}
@@ -159,7 +159,7 @@ function v3Bind(n) {
       slot('v3x-a', keyA); slot('v3x-b', keyB);
       if (S.v3slide) { const h = col.querySelector(':scope > .v3x-a .v3hero'); if (h) h.classList.add(S.v3slide); S.v3slide = null; }
       // destaque do dia: um cartão só
-      const cands = [col.querySelector(':scope > .ex-alert'), col.querySelector(':scope > .v2rs-card'), (v2Mods().comunidade ? col.querySelector(':scope > [data-v2qd]') : null)].filter(Boolean);
+      const cands = [col.querySelector(':scope > .ex-alert'), col.querySelector(':scope > .v2rs-card'), (vFn('qday') ? col.querySelector(':scope > [data-v2qd]') : null)].filter(Boolean);
       const pick = cands[0] || null; col.querySelectorAll(':scope > .v3mom').forEach((x) => { if (x !== pick) x.classList.remove('v3mom'); }); if (pick && !pick.classList.contains('v3mom')) pick.classList.add('v3mom');
       // sem livro em leitura: "Comece por aqui" (conta nova) aparece logo abaixo
       const cm = col.querySelector(':scope > [data-in=comece]'); if (cm) cm.classList.toggle('v3show', !R);
