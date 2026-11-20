@@ -21894,11 +21894,14 @@ if (typeof V4ICON !== 'undefined' && !V4ICON.cart) V4ICON.cart = '<path d="M3 4h
 //  2) O que a pessoa está lendo → Pedir para entrar: o livro entra no seu Lendo (se ainda não estiver) e ela recebe o convite
 //     no mesmo livro; quando aceitar, a leitura conjunta começa (a API não tem "pedido para entrar": é um convite comum);
 //  3) Outro livro → busca nos seus livros e no catálogo; livro novo entra no seu Quero ler e o convite vai junto.
+// 20/11 (API 036, "grupo de leitura coletiva do mesmo livro"): se a pessoa já lê aquele livro em grupo (d.groups do perfil),
+//  "Pedir para entrar · N pessoas lendo" manda um PEDIDO ao grupo (POST /v1/buddies/:id/join-requests); qualquer pessoa do
+//  grupo aceita em Avisos, no Hoje ou na página Lendo junto. Sem grupo, continua o convite comum para a pessoa.
 const ljCtx = () => v4State().v7 || {};
 function ljOpen(d) {
   if (needAccount()) return;
   const first = String(d.displayName || d.handle || '').split(' ')[0] || '@' + d.handle;
-  v7Sheet('v7lj', { lj: { h: d.handle, n: first, reading: (d.reading || []).slice(0, 6) }, q: '', res: null });
+  v7Sheet('v7lj', { lj: { h: d.handle, n: first, reading: (d.reading || []).slice(0, 6), groups: (d.groups || []).map((g) => ({ ...g })) }, q: '', res: null });
   ljArm();
 }
 function ljArm() { const R = v4Root(); if (!R || R.dataset.lj) return; R.dataset.lj = 1; R.addEventListener('click', ljClick, true); R.addEventListener('input', ljInput, true);
@@ -21920,9 +21923,17 @@ const ljMine = (t) => lib().find((x) => normT(x.title) === normT(t || ''));
     const q = String(c.q || '').trim(), nq = normT(q);
     const locais = nq ? lib().filter((x) => normT(x.title + ' ' + (x.author || '')).includes(nq)).slice(0, 4) : [];
     const cat = nq && Array.isArray(c.res) ? c.res.filter((it) => !ljMine(it.title)).slice(0, 5) : [];
+    // livro que a pessoa lê em grupo: pedido ao grupo (ou o estado do seu pedido)
+    const grp = (t) => (P.groups || []).find((g) => normT(g.title || '') === normT(t || ''));
+    const gRow = (x, sm, g) => { const gi = (P.groups || []).indexOf(g), ppl = g.members + (g.members === 1 ? ' pessoa lendo' : ' pessoas lendo');
+      if (g.me === 'member') return row(x, sm, v4ic('friends', 15) + 'Vocês já leem juntas', 'ljopen', `data-g="${gi}"`);
+      if (g.me === 'invited') return row(x, sm, v4ic('ok', 15) + 'Você tem convite', 'ljinv', `data-g="${gi}"`);
+      if (g.me === 'asked') return row(x, sm + ' · ' + ppl, v4ic('ok', 15) + 'Pedido enviado', 'ljcancel', `data-g="${gi}"`);
+      if (g.full) return row(x, sm + ' · grupo cheio', 'Grupo cheio', 'ljfull', `data-g="${gi}"`);
+      return row(x, sm + ' · grupo com ' + g.members + (g.members === 1 ? ' pessoa' : ' pessoas'), v4ic('plus', 15) + 'Pedir para entrar', 'ljjoin', `data-g="${gi}" data-i="${(P.reading || []).findIndex((b) => normT(b.title) === normT(x.title))}"`); };
     return `<h3>Ler junto com ${n}</h3><p class="mut" style="margin:0 0 4px">Vocês veem a página uma da outra e conversam sem spoiler.</p>
-    ${meus.length ? `<div class="lbl">O que você está lendo</div><div class="list v7l">${meus.map((x) => { const o = tb(x); return row(x, pg(x) + (o ? ' · ' + n + ' também lê, ' + Math.round(Number(o.pct) || 0) + '%' : ''), v4ic('send', 15) + 'Convidar', 'ljme', `data-id="${esc(x.id)}"`); }).join('')}</div>` : ''}
-    ${dela.length ? `<div class="lbl">O que ${n} está lendo</div><div class="list v7l">${dela.map((b, i) => row(b, n + ' em ' + Math.round(Number(b.pct) || 0) + '%', v4ic('plus', 15) + 'Pedir para entrar', 'ljher', `data-i="${(P.reading || []).indexOf(b)}"`)).join('')}</div>` : ''}
+    ${meus.length ? `<div class="lbl">O que você está lendo</div><div class="list v7l">${meus.map((x) => { const o = tb(x), g = grp(x.title), sm = pg(x) + (o ? ' · ' + n + ' também lê, ' + Math.round(Number(o.pct) || 0) + '%' : ''); return g ? gRow(x, sm, g) : row(x, sm, v4ic('send', 15) + 'Convidar', 'ljme', `data-id="${esc(x.id)}"`); }).join('')}</div>` : ''}
+    ${dela.length ? `<div class="lbl">O que ${n} está lendo</div><div class="list v7l">${dela.map((b, i) => { const g = grp(b.title), sm = n + ' em ' + Math.round(Number(b.pct) || 0) + '%'; return g ? gRow(b, sm, g) : row(b, sm, v4ic('plus', 15) + 'Pedir para entrar', 'ljher', `data-i="${(P.reading || []).indexOf(b)}"`); }).join('')}</div>` : ''}
     <div class="lbl">Outro livro</div><label class="ljsrch">${v4ic('busca', 18)}<input id="ljq" type="search" placeholder="Título ou autor" value="${esc(q)}" autocomplete="off"></label>
     ${nq ? `<div class="list v7l">${locais.map((x) => row(x, esc(x.author || ''), v4ic('send', 15) + 'Convidar', 'ljme', `data-id="${esc(x.id)}"`)).join('')}${cat.map((it, i) => row({ title: it.title, cover: it.coverUrl }, esc(it.author || '') + ' · entra no seu Quero ler', v4ic('send', 15) + 'Convidar', 'ljcat', `data-i="${c.res.indexOf(it)}"`)).join('')}
       ${c.res === null ? '<div class="ljmut">Buscando no catálogo…</div>' : !locais.length && !cat.length ? '<div class="ljmut">Nada com esse nome.</div>' : ''}</div>` : ''}`;
@@ -21944,6 +21955,28 @@ function ljClick(ev) {
   if (a === 'ljme') return ljSend(lib().find((x) => x.id === b.dataset.id));
   if (a === 'ljher') { const r = (P.reading || [])[+b.dataset.i]; if (!r) return; const had = ljMine(r.title); const e = ljAdd(r, 'LENDO');
     if (!e) return toast('Não consegui colocar o livro na sua estante'); return ljSend(e, (had ? '' : 'O livro entrou no seu Lendo. ') + 'Quando ' + P.n + ' aceitar, a leitura conjunta começa'); }
+  const g = b.dataset.g != null ? (P.groups || [])[+b.dataset.g] : null;
+  if (a === 'ljjoin' && g) { if (b.dataset.busy) return; b.dataset.busy = 1;
+    (async () => {
+      let r = null; try { r = await sapi('POST', `/v1/buddies/${g.id}/join-requests`); } catch {}
+      delete b.dataset.busy;
+      if (!r) return toast('Não consegui enviar agora. Tente de novo em instantes.');
+      if (r.status === 200 || r.status === 201) {
+        const src = (P.reading || [])[+b.dataset.i] || { title: g.title }; const had = ljMine(g.title); ljAdd(src, 'LENDO');
+        g.me = 'asked'; v4Draw(); try { syncSocial3(true); } catch {}
+        return toast((had ? '' : 'O livro entrou no seu Lendo. ') + 'Pedido enviado. Quando alguém do grupo aceitar, você entra.'); }
+      const er = r.data && r.data.error;
+      if (er === 'FULL') { g.full = true; v4Draw(); return toast('Este grupo já está cheio'); }
+      if (er === 'ALREADY_MEMBER') { g.me = 'member'; v4Draw(); return toast('Você já está nesta leitura'); }
+      if (er === 'ALREADY_INVITED') { g.me = 'invited'; v4Draw(); return toast('Você já tem um convite: aceite em Avisos'); }
+      if (r.status === 404) { const src = (P.reading || [])[+b.dataset.i] || { title: g.title }; const e = ljAdd(src, 'LENDO'); return ljSend(e, 'Quando ' + P.n + ' aceitar, a leitura conjunta começa'); }
+      toast('Não consegui enviar agora. Tente de novo em instantes.');
+    })(); return; }
+  if (a === 'ljcancel' && g) { (async () => { let r = null; try { r = await sapi('DELETE', `/v1/buddies/${g.id}/join-requests`); } catch {}
+    if (!r || r.status >= 300) return toast('Não consegui cancelar agora'); g.me = null; v4Draw(); toast('Pedido cancelado'); })(); return; }
+  if (a === 'ljfull') return toast('Este grupo já está com 12 pessoas');
+  if (a === 'ljinv') { v7Close(); try { closeEd(); } catch {} return toast('O convite está no Hoje e em Avisos: toque em Aceitar'); }
+  if (a === 'ljopen' && g) { const e = ljMine(g.title); v7Close(); if (e) { try { return openBuddyPage(e); } catch {} } return toast('Abra o livro no Hoje para ver a leitura conjunta'); }
   if (a === 'ljcat') { const it = (c.res || [])[+b.dataset.i]; if (!it) return; const e = ljAdd(it, 'QUERO'); if (!e) return toast('Não consegui colocar o livro na sua estante'); return ljSend(e, 'Convite enviado para ' + P.n + ' · o livro está no seu Quero ler'); }
 }
 let ljT = 0;
@@ -21952,6 +21985,91 @@ function ljInput(ev) { const t = ev.target; if (!t || t.id !== 'ljq') return; co
   redraw(); clearTimeout(ljT); const q = c.q.trim(); if (q.length < 2) { c.res = []; return; }
   ljT = setTimeout(async () => { let L = []; try { L = await searchBooks(q); } catch {} const c2 = ljCtx(); if (c2.q.trim() !== q || v4State().sheet !== 'v7lj') return; c2.res = (L || []).filter((x) => x && x.title); const n = v4Root().querySelector('#ljq'), p2 = n ? n.selectionStart : q.length; v4Draw(); const m = v4Root().querySelector('#ljq'); if (m) { m.focus(); try { m.setSelectionRange(p2, p2); } catch {} } }, 450);
 }
+// --- p1_v2_ler_junto_pedidos.js ---
+// Pedidos para entrar no grupo de leitura conjunta (Bia, 20/11; API 036; protótipo: Avisos com Recusar / Aceitar no alto).
+// Quem já está no grupo vê cada pedido com Recusar / Aceitar em três lugares: Avisos (no alto, junto com os convites de
+// leitura conjunta, que antes só apareciam no Hoje), no Hoje (mesma faixa dos convites) e na página Lendo junto do livro.
+// Dados: GET /v1/buddies (items[].requests), que a sincronização social já busca.
+{ const st = document.createElement('style'); st.textContent = `
+.v8ask{display:grid;gap:.45rem;margin:.2rem 0 .7rem}
+.v8ask .v8it{display:grid;grid-template-columns:auto 1fr;gap:.2rem .6rem;align-items:center;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:.6rem .7rem;font-size:.86rem}
+.v8ask .v8it p{margin:0;line-height:1.35;min-width:0}.v8ask .v8it small{display:block;color:var(--ink-2);font-size:.74rem;margin-top:.1rem}
+.v8ask .v8bt{grid-column:1/-1;display:flex;gap:.5rem;justify-content:flex-end}
+.v8ask .v8bt button{min-height:36px;border-radius:99px;border:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-weight:800;font-size:.82rem;padding:0 .9rem}
+.v8ask .v8bt button.ok{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
+.v8ask .v8sec{font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin:.2rem 0 0}
+`; TR.append(st); }
+const v8Buds = () => (Array.isArray(SOC.buddies) ? SOC.buddies : []);
+const v8First = (s) => String(s || 'Alguém').split(' ')[0];
+const v8Av = (h, n) => `<span class="av sm" ${h ? `data-avh="${esc(h)}"` : ''} style="background:${friendColor(h || n || '')}">${esc(initial(n))}</span>`;
+function v8ReqItems(onlyRead) {
+  const out = [];
+  for (const r of v8Buds()) {
+    if (r.myStatus !== 'ACCEPTED' || r.closedAt || (onlyRead && r.id !== onlyRead)) continue;
+    const n = (r.members || []).filter((m) => m.status === 'ACCEPTED').length;
+    for (const q of r.requests || []) out.push(`<div class="v8it" data-jr="${esc(q.id)}" data-r="${esc(r.id)}">${v8Av(q.handle, q.displayName)}<p><b>${esc(v8First(q.displayName))}</b> quer entrar na leitura de <b>${esc(r.title)}</b><small>${onlyRead ? '@' + esc(q.handle || '') + ' · ' : ''}grupo com ${n} ${n === 1 ? 'pessoa' : 'pessoas'} · ${esc(relTime(q.createdAt))}</small></p><div class="v8bt"><button type="button" data-v8="no">Recusar</button><button type="button" class="ok" data-v8="ok">Aceitar</button></div></div>`);
+  }
+  return out;
+}
+function v8InvItems() {
+  return v8Buds().filter((r) => r.myStatus === 'INVITED').map((r) => { const o = (r.members || []).find((m) => m.status === 'ACCEPTED' && !m.me) || {};
+    return `<div class="v8it" data-bi="${esc(r.id)}">${v8Av(o.handle, o.displayName)}<p><b>${esc(v8First(o.displayName))}</b> te convidou para ler junto<small>${esc(r.title)}</small></p><div class="v8bt"><button type="button" data-v8="no">Recusar</button><button type="button" class="ok" data-v8="ok">Aceitar</button></div></div>`; });
+}
+async function v8Act(btn) {
+  const it = btn.closest('.v8it'); if (!it || it.dataset.busy) return; it.dataset.busy = 1; const ok = btn.dataset.v8 === 'ok';
+  try {
+    if (it.dataset.jr) {
+      const r = await sapi('POST', `/v1/buddies/${it.dataset.r}/join-requests/${it.dataset.jr}/${ok ? 'accept' : 'decline'}`);
+      if (r.status >= 300) { delete it.dataset.busy; return toast(r.data && r.data.error === 'FULL' ? 'O grupo já está cheio' : 'Não consegui agora'); }
+      const g = v8Buds().find((x) => x.id === it.dataset.r); const q = g && (g.requests || []).find((x) => x.id === it.dataset.jr);
+      if (g) g.requests = (g.requests || []).filter((x) => x.id !== it.dataset.jr);
+      toast(ok ? `${v8First(q && q.displayName)} entrou no grupo` : 'Pedido recusado');
+    } else if (it.dataset.bi) {
+      const id = it.dataset.bi, r0 = v8Buds().find((x) => x.id === id);
+      const r = await sapi('POST', `/v1/buddies/${id}/${ok ? 'accept' : 'decline'}`); if (r.status !== 200) { delete it.dataset.busy; return toast('Não consegui agora'); }
+      if (ok && r0 && !lib().some((e) => bookKey(e) === r0.bookKey)) addToLibrary({ title: r0.title, author: r0.author || null, totalPages: r0.totalPages || null, cover: null }, null, 'LENDO');
+      if (r0) r0.myStatus = ok ? 'ACCEPTED' : 'DECLINED';
+      toast(ok ? `Leitura conjunta de “${r0 ? r0.title : ''}” aceita` : 'Convite recusado');
+    }
+    it.remove(); try { syncSocial3(true); } catch {}
+  } catch { delete it.dataset.busy; toast('Não consegui agora'); }
+}
+// 1) Hoje: pedidos na mesma faixa dos convites
+{ const _ih = invitesHTML; invitesHTML = function () {
+    const h = _ih.apply(this, arguments), rq = v8ReqItems();
+    return rq.length ? h + `<div class="v8ask v8hoje">${rq.join('')}</div>` : h; };
+  const _bi = bindInvites; bindInvites = function (box) { const r = _bi.apply(this, arguments);
+    $$('.v8hoje [data-v8]', box).forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); v8Act(b); })); return r; }; }
+// 2) Avisos: convites e pedidos no alto, com resposta
+function v8AvPut() { const ed = $('#editor');
+    if (ed.hidden || !ed.classList.contains('ntpage')) return; const body = ed.querySelector('.ed-body'), list = body && body.querySelector('.nt-list'); if (!list) return;
+    const items = [...v8InvItems(), ...v8ReqItems()], sig = items.join('');
+    let box = body.querySelector(':scope > .v8ask, .v8ask.v8av');
+    if (!items.length) { if (box) box.remove(); return; }
+    if (box && box.dataset.sig === sig) return;
+    if (!box) { box = document.createElement('div'); box.className = 'v8ask v8av'; box.addEventListener('click', (ev) => { const b = ev.target.closest('[data-v8]'); if (b) { ev.stopPropagation(); v8Act(b); } }); }
+    box.dataset.sig = sig; box.innerHTML = `<div class="v8sec">Leitura conjunta</div>${items.join('')}`;
+    if (box.nextElementSibling !== list) list.before(box);
+    const empty = list.querySelector('.nt-empty'); if (empty) empty.hidden = true;
+}
+{ const ed = $('#editor'); let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { v8AvPut(); } catch {} }, 40); }).observe(ed, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] }); }
+// 3) Página Lendo junto: pedidos daquele grupo logo abaixo do cabeçalho
+function v8BjPut() { const v = $('#shelflist');
+    if (v.hidden) return; const head = v.querySelector('.bj-head'); if (!head) return;
+    const t = (head.querySelector('b') || {}).textContent || ''; const r = v8Buds().find((x) => x.myStatus === 'ACCEPTED' && !x.closedAt && normT(x.title || '') === normT(t));
+    const items = r ? v8ReqItems(r.id) : [], sig = items.join(''); let box = v.querySelector('.v8ask.v8bj');
+    if (!items.length) { if (box) box.remove(); return; }
+    if (box && box.dataset.sig === sig && box.previousElementSibling === head) return;
+    if (!box) { box = document.createElement('div'); box.className = 'v8ask v8bj'; box.addEventListener('click', (ev) => { const b = ev.target.closest('[data-v8]'); if (b) { ev.stopPropagation(); v8Act(b); } }); }
+    box.dataset.sig = sig; box.innerHTML = `<div class="v8sec">Pedidos para entrar</div>${items.join('')}`;
+    if (box.previousElementSibling !== head) head.after(box);
+}
+{ const v = $('#shelflist'); let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { v8BjPut(); } catch {} }, 60); }).observe(v, { childList: true, subtree: true }); }
+// a lista de leituras conjuntas muda (pedido novo, aceito): redesenha o que estiver aberto
+{ const _mb = mapBuddies; mapBuddies = function () { const r = _mb.apply(this, arguments);
+    const sig = JSON.stringify(v8Buds().map((x) => [x.id, x.myStatus, (x.requests || []).map((q) => q.id)]));
+    if (sig !== S.v8sig) { S.v8sig = sig; try { v8AvPut(); } catch {} try { v8BjPut(); } catch {} }
+    return r; }; }
 // --- q0_v2_metricas_livro.js ---
 // Números do livro (Bia, 20/11; API 035): a estante vai para o servidor (PUT /v1/me/books, só quando muda) e a aba Sobre
 // da página do livro mostra o bloco "Na comunidade": lendo, leram, querem ler, abandonaram, avaliações (★ média),
