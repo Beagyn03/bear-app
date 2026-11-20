@@ -99,3 +99,18 @@ TR.addEventListener('click', (ev) => {
 // cometa: só na 1ª abertura do dia, fora do HTML do cartão (para a chave do Hoje não mudar)
 new MutationObserver(() => { const c = TR.querySelector('#lista:not(.lista-snap) .v8dia'); if (!c || c.dataset.cm) return; c.dataset.cm = '1'; let seen = ''; try { seen = localStorage.getItem('lv.v8dia') || ''; } catch {}
   const t = todayISO(); if (seen === t) return; try { localStorage.setItem('lv.v8dia', t); } catch {} const i = document.createElement('i'); i.className = 'comet'; i.setAttribute('aria-hidden', 'true'); c.append(i); setTimeout(() => i.remove(), 2000); }).observe(TR, { childList: true, subtree: true });
+// deslizar o cartão para o lado = mesmo efeito do × (1º: próximo assunto; 2º: fecha até amanhã). Sessão aberta só volta ao lugar.
+{ const st = document.createElement('style'); st.textContent = `.v8diaw{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overflow:clip;overflow-clip-margin:2px}.v8diaw>*{transform:translateX(var(--dx,0px))}.v8diaw.back,.v8diaw.back>*{transition:transform .22s ease,opacity .22s ease}.v8diaw.out,.v8diaw.out>*{transition:transform .2s ease-in,opacity .2s ease-in}`; TR.append(st); }
+{ let d = null;
+  TR.addEventListener('pointerdown', (ev) => { const w = ev.target.closest && ev.target.closest('.v8diaw'); if (!w || ev.target.closest('.v8x') || (ev.pointerType === 'mouse' && ev.button)) return;
+    d = { w, x: ev.clientX, y: ev.clientY, dx: 0, on: false, id: ev.pointerId }; }, true);
+  window.addEventListener('pointermove', (ev) => { if (!d || ev.pointerId !== d.id) return; if (!d.w.isConnected) { const n = TR.querySelector('#lista:not(.lista-snap) .v8diaw'); if (!n) { d = null; return; } d.w = n; if (d.on) n.classList.add('drag'); } const dx = ev.clientX - d.x, dy = ev.clientY - d.y;
+    if (!d.on) { if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { d = null; return; } if (Math.abs(dx) < 10) return; d.on = true; d.w.classList.remove('back'); d.w.classList.add('drag'); }
+    d.dx = dx; const can = !!d.w.querySelector('.v8x'), v = can ? dx : dx * 0.25; d.w.style.setProperty('--dx', v + 'px'); d.w.style.opacity = can ? String(Math.max(0.3, 1 - Math.abs(dx) / (d.w.offsetWidth || 300))) : ''; }, true);
+  const end = (ev) => { if (!d || ev.pointerId !== d.id) return; let { w, dx, on } = d; d = null; if (!on) return; if (!w.isConnected) w = TR.querySelector('#lista:not(.lista-snap) .v8diaw') || w;
+    w.classList.remove('drag'); const xb = w.querySelector('.v8x[data-v8x]'), lim = (w.offsetWidth || 300) * 0.3;
+    const stop = (e) => { e.stopPropagation(); e.preventDefault(); }; window.addEventListener('click', stop, { capture: true, once: true }); setTimeout(() => window.removeEventListener('click', stop, true), 350);
+    if (xb && Math.abs(dx) > lim) { w.classList.add('out'); w.style.setProperty('--dx', (dx > 0 ? 1 : -1) * (w.offsetWidth + 20) + 'px'); w.style.opacity = '0';
+      setTimeout(() => { const s = v8DiaSt(); if (s.skip.length) s.closed = true; else s.skip.push(xb.dataset.v8x); v8DiaPut(s); v8DiaRedraw(w); }, 200); return; }
+    w.classList.add('back'); w.style.removeProperty('--dx'); w.style.opacity = ''; };
+  window.addEventListener('pointerup', end, true); window.addEventListener('pointercancel', end, true); }
