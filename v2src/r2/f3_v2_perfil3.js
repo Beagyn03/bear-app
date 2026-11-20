@@ -188,7 +188,7 @@ function v3Go(v, d, k) {
   if (k === 'orbita') { try { openOrbita(); } catch {} return; }
   if (k === 'resumo') { try { v2ResumoOpen(1); } catch { toast('Resumo do mês indisponível agora'); } return; }
   if (k === 'presentes') return openGifts();
-  if (k === 'emprest') { v.hidden = true; goTab('estante'); setTimeout(() => { const b = TR.querySelector('#lista .esn-seg [data-own=emp]'); if (b && !b.classList.contains('on')) b.click(); else if (!b) toast('Nenhum livro emprestado agora'); }, 700); }
+  if (k === 'emprest') { const n = lib().filter((e) => (e.ex || {}).loan || (e.ex || {}).own === 'pegou').length; if (!n) return toast('Nenhum empréstimo agora'); const P = ESN(); P.own = lib().some((e) => (e.ex || {}).loan) ? 'emp' : 'peg'; P.tab = 'bib'; save(); v.hidden = true; goTab('estante'); return; }
 }
 function v3Wire(v, d, hd, x) {
   const on = (k, fn) => hd.querySelectorAll('[data-v3=' + k + ']').forEach((b) => b.addEventListener('click', fn));

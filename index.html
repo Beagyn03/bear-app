@@ -16503,9 +16503,10 @@ drawEstante = function (box) {
     const cnt = (k) => (k === 'ALL' ? all.length : all.filter((e) => e.status === k).length);
     const base = esnSort(shelfBooks('ALL'), P.sort), list = esnFilter(base, P, q);
     const exC = { tenho: all.filter((e) => (e.ex || {}).own === 'tenho').length, quero: all.filter((e) => (e.ex || {}).own === 'quero').length, emp: all.filter((e) => (e.ex || {}).loan).length, peg: all.filter((e) => (e.ex || {}).own === 'pegou').length };
-    const chips = [P.nota && ['nota', { 5: '★ 5', 4: '★ 4 ou mais', 3: '★ 3 ou mais', none: 'Sem nota' }[P.nota]], P.fmt && ['fmt', { PAPER: 'Físico', EBOOK: 'E-book', AUDIO: 'Audiolivro' }[P.fmt]], P.gen && ['gen', P.gen]].filter(Boolean);
+    if (P.own === 'quero') P.own = '';
+    const chips = [P.own && ['own', { tenho: 'Tenho', emp: 'Emprestados', peg: 'Peguei emprestado' }[P.own]], P.nota && ['nota', { 5: '★ 5', 4: '★ 4 ou mais', 3: '★ 3 ou mais', none: 'Sem nota' }[P.nota]], P.fmt && ['fmt', { PAPER: 'Físico', EBOOK: 'E-book', AUDIO: 'Audiolivro' }[P.fmt]], P.gen && ['gen', P.gen]].filter(Boolean);
     body = `<div class="esn-seg">${ESN_ST.filter(([k]) => k === 'ALL' || cnt(k)).map(([k, n]) => `<button type="button" data-st="${k}" class="${P.st === k ? 'on' : ''}">${n}<small>${cnt(k)}</small></button>`).join('')}</div>`
-      + (exC.tenho + exC.quero + exC.emp + exC.peg ? `<div class="esn-seg">${[['tenho', '<i class=v3e data-i=estante></i>Tenho'], ['quero', '<i class=v3e data-i=heart></i>Quero ter'], ['emp', '<i class=v3e data-i=swap></i>Emprestados'], ['peg', '<i class=v3e data-i=friends></i>Peguei']].filter(([k]) => exC[k] || P.own === k).map(([k, n]) => `<button type="button" data-own="${k}" class="${P.own === k ? 'on' : ''}">${n}<small>${exC[k]}</small></button>`).join('')}</div>` : '')
+      /* linha de exemplar saiu da Estante (Bia, 20/11): Tenho/Emprestados/Peguei ficam no filtro; Quero ter mora em Você > Desejos */
       + (chips.length ? `<div class="esn-chips">${chips.map(([k, n]) => `<button type="button" data-clr="${k}">${esc(n)} ×</button>`).join('')}</div>` : '')
       + `<div class="esn-bar"><b>${plural(list.length, 'livro', 'livros')}${q ? ` com “${esc(q)}”` : ''}</b><button type="button" data-a="sort">${esc((ESN_SORT.find((x) => x[0] === (P.sort || 'conclusao')) || ESN_SORT[0])[1])} ▾</button><button type="button" data-a="view" aria-label="${P.view === 'lista' ? 'Ver em grade' : 'Ver em lista'}">${P.view === 'lista' ? ESN_ICO.grid : ESN_ICO.list}</button></div>`
       + (list.length ? (P.view === 'lista' ? `<div class="esn-list">${list.map((e) => esnBook(e, 'lista')).join('')}</div>` : `<div class="esn-grid">${list.map((e) => esnBook(e, 'grade')).join('')}</div>`)
@@ -16549,7 +16550,7 @@ function esnFilterSheet(redraw) {
     sh.innerHTML = `<div class="box"><h3>Filtrar e organizar</h3>`
       + `<h4>Situação</h4>${ch('st', ESN_ST)}`
       + `<h4>Nota</h4>${ch('nota', [['', 'Qualquer'], ['5', '★ 5'], ['4', '★ 4 ou mais'], ['3', '★ 3 ou mais'], ['none', 'Sem nota']])}`
-      + `<h4>Meu exemplar</h4>${ch('own', [['', 'Qualquer'], ['tenho', 'Tenho'], ['quero', 'Quero ter'], ['emp', 'Emprestados'], ['peg', 'Peguei emprestado']])}`
+      + `<h4>Meu exemplar</h4>${ch('own', [['', 'Qualquer'], ['tenho', 'Tenho'], ['emp', 'Emprestados'], ['peg', 'Peguei emprestado']])}`
       + `<h4>Formato</h4>${ch('fmt', [['', 'Qualquer'], ['PAPER', 'Físico'], ['EBOOK', 'E-book'], ['AUDIO', 'Audiolivro']])}`
       + (gens.length ? `<h4>Gênero</h4>${ch('gen', [['', 'Qualquer'], ...gens.map((g) => [g, g])])}` : '')
       + `<h4>Ordenar por</h4>${ch('sort', ESN_SORT.map(([k, n]) => [k === 'conclusao' ? '' : k, n]))}`
@@ -19233,7 +19234,7 @@ function v3Go(v, d, k) {
   if (k === 'orbita') { try { openOrbita(); } catch {} return; }
   if (k === 'resumo') { try { v2ResumoOpen(1); } catch { toast('Resumo do mês indisponível agora'); } return; }
   if (k === 'presentes') return openGifts();
-  if (k === 'emprest') { v.hidden = true; goTab('estante'); setTimeout(() => { const b = TR.querySelector('#lista .esn-seg [data-own=emp]'); if (b && !b.classList.contains('on')) b.click(); else if (!b) toast('Nenhum livro emprestado agora'); }, 700); }
+  if (k === 'emprest') { const n = lib().filter((e) => (e.ex || {}).loan || (e.ex || {}).own === 'pegou').length; if (!n) return toast('Nenhum empréstimo agora'); const P = ESN(); P.own = lib().some((e) => (e.ex || {}).loan) ? 'emp' : 'peg'; P.tab = 'bib'; save(); v.hidden = true; goTab('estante'); return; }
 }
 function v3Wire(v, d, hd, x) {
   const on = (k, fn) => hd.querySelectorAll('[data-v3=' + k + ']').forEach((b) => b.addEventListener('click', fn));
