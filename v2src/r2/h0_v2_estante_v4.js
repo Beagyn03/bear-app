@@ -273,6 +273,7 @@ function v5TqFormHTML() {
   ${F.c ? `<p class="mut" style="margin:6px 0 0;font-size:12px">${V5PROP.find((x) => x[0] === F.c)[2]}</p>` : ''}
   <div class="lbl lblrow"><span>Sentimento <small>(opcional, até 3)</small></span><button data-a="v5tqmais">${F.more ? 'ver menos' : 'ver todas'}</button></div><div class="chips" style="flex-wrap:wrap;margin:0;padding:2px 0">${L.map(([k, n]) => `<button class="chip ${F.f.includes(k) ? 'on' : ''}" data-a="v5tqfe" data-k="${k}">${esc(n)}</button>`).join('')}</div>
   <div class="lbl">Nota <small>(opcional, só você vê)</small></div><textarea class="fld" id="v5tqn" rows="2" maxlength="300" placeholder="O que você pensou">${esc(F.n)}</textarea>
+  ${F.i < 0 && v4On('comunidade') ? `<button class="li" data-a="v5tqpub" style="margin-top:6px">${v4ic('send', 20)}<span class="t">Publicar na Comunidade<small>${F.pub ? (F.vis === 'friends' ? 'só amizades veem' : 'todo mundo vê') : 'fica só com você'}</small></span><span class="tg ${F.pub ? 'on' : ''}"></span></button>${F.pub ? `<div class="seg" style="margin-top:6px"><button class="${F.vis !== 'friends' ? 'on' : ''}" data-a="v5tqvis" data-k="public">Todos</button><button class="${F.vis === 'friends' ? 'on' : ''}" data-a="v5tqvis" data-k="friends">Só amizades</button></div>` : ''}` : ''}
   <button class="btn p w" data-a="v5tqsave" style="margin-top:14px">Salvar</button>`;
 }
 function v5TqInit(x) {
@@ -426,13 +427,19 @@ function v5V4Click(ev) {
   if (a === 'v5tqsetbk') { F.eid = d.id; if (F.i < 0) { const bk = v5Book(d.id); F.p = bk && bk.status === 'LENDO' ? libProgress(bk) || '' : ''; } st.sheet = 'v5tqnew'; return v4Draw(); }
   if (a === 'v5tqc') { F.c = F.c === d.k ? '' : d.k; return v4Draw(); }
   if (a === 'v5tqmais') { F.more = !F.more; return v4Draw(); }
+  if (a === 'v5tqpub') { F.pub = !F.pub; return v4Draw(); }
+  if (a === 'v5tqvis') { F.vis = d.k; return v4Draw(); }
   if (a === 'v5tqfe') { const k = d.k; if (F.f.includes(k)) F.f = F.f.filter((y) => y !== k); else if (F.f.length < 3) F.f = [...F.f, k]; else return toast('Escolha até 3'); return v4Draw(); }
   if (a === 'v5tqfoto') { const w = (m) => { const o = V4 && V4.querySelector('#v5tqocr'); if (o) o.textContent = m || ''; };
     return v4PickPhoto(async (f) => { w('Lendo a foto…'); const t = await v4Ocr(f, w); w(t ? 'Pronto: o texto da foto entrou no trecho.' : 'Não consegui ler a foto.'); if (t) { F.t = (F.t ? F.t + ' ' : '') + t; const ta = V4 && V4.querySelector('#v5tqt'); if (ta) ta.value = F.t; } }); }
   if (a === 'v5tqsave') { const bk = v5Book(F.eid); if (!bk) return toast('Escolha o livro'); const t = String(F.t || '').trim(); if (!t) return toast('Digite o trecho');
     const q = { t: t.slice(0, 600), p: Number(F.p) || null, ...(F.c ? { c: F.c } : {}), ...(F.f.length ? { f: F.f.slice(0, 3) } : {}), ...(String(F.n || '').trim() ? { n: String(F.n).trim().slice(0, 300) } : {}) };
     if (F.i >= 0) { const src = v5Book(F.src || F.eid); const arr = (src && src.quotes) || []; const keep = arr[F.i]; q.at = (keep && keep.at) || new Date().toISOString(); if (src === bk) { bk.quotes[F.i] = q; } else { if (src) src.quotes = arr.filter((_, i) => i !== F.i); bk.quotes = [...(bk.quotes || []), q].slice(-200); } }
-    else { q.at = new Date().toISOString(); bk.quotes = [...(bk.quotes || []), q].slice(-200); }
+    else { q.at = new Date().toISOString(); bk.quotes = [...(bk.quotes || []), q].slice(-200);
+      // publicar o trecho (só se a pessoa ligou; Bia, 20/11)
+      if (F.pub && v4On('comunidade') && connected() && socialProfile) { let tot = 0, pg = Number(F.p) || 0; try { tot = v4Info(bk).total || 0; } catch {}
+        sapi('POST', '/v1/posts', { kind: 'quote', text: '', quote: q.t.slice(0, 600), page: pg || null, visibility: F.vis === 'friends' ? 'friends' : 'public', ...(tot && pg ? { readerPct: Math.min(100, Math.round(pg / tot * 100)) } : {}), book: { title: String(bk.title).slice(0, 200), author: bk.author ? String(bk.author).slice(0, 120) : null, cover: /^https:\/\//.test(bk.cover || '') ? bk.cover : null } })
+          .then((x) => { if (x.status === 201) toast(F.vis === 'friends' ? 'Trecho postado para suas amizades' : 'Trecho postado na Comunidade'); else if (x.status >= 400) toast('Trecho guardado (não deu para postar agora)'); }).catch(() => {}); } }
     st.v5tq = null; v5Save(); return done(F.i >= 0 ? 'Trecho salvo' : 'Trecho guardado'); }
 }
 function v5V4Input(ev) {

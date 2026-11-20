@@ -6,7 +6,8 @@
 //   emoções da lista única, Curtir · Responder · N · Salvar · Enviar. Nome/foto abre o perfil (o seu vai para Você).
 // - Meu post: Editar, Quem vê (Todos/Só amizades), Marcar spoiler, Excluir com confirmação (API PATCH/DELETE /v1/posts/:id).
 // - Pergunta do dia de verdade (API /v1/qday): votar numa capa (ou buscar outro livro), top 3 com barras no Hoje, página "Mais votados".
-const V6CSS = `.v6com{position:static!important;inset:auto!important;z-index:auto!important;padding:0 0 24px;background:transparent!important}
+const V6CSS = `.v6spt{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:1px 7px;border-radius:99px;font-size:10.5px;font-weight:800;color:var(--ink2);background:color-mix(in srgb,var(--ink) 8%,transparent);vertical-align:middle}.v6spt svg{width:12px;height:12px}
+.v6com{position:static!important;inset:auto!important;z-index:auto!important;padding:0 0 24px;background:transparent!important}
 .v6com .post .pcv{border:0;background:none;padding:0;cursor:pointer;flex:none}
 .v6com .cv:not(.img),.v4ler .v6q .cv:not(.img){background:linear-gradient(160deg,var(--c,#7e63c9),color-mix(in srgb,var(--c,#7e63c9) 55%,#000));color:#fff;font-family:var(--f-disp);font-weight:700;font-size:10px;line-height:1.1;padding:6px;display:flex;align-items:flex-end;overflow:hidden;box-sizing:border-box}
 .v6com .cv.img,.v4ler .v6q .cv.img{background-size:cover;background-position:center}
@@ -101,7 +102,7 @@ function v6PostHTML(it, i) {
   const fe = (it.feelings || []).map(v6Lbl).filter(Boolean);
   let saved = false; try { saved = rdIsSaved(it); } catch {}
   return `<article class="card post" data-i="${i}"><div class="who"><button class="whob" data-a="v6who" data-i="${i}" aria-label="Ver o perfil de ${esc(u.displayName || u.handle || '')}"><span class="av" data-avh="${esc(u.handle || '')}" style="background-color:${friendColor(u.handle || '')}">${esc(initial(u.displayName || u.handle || '?'))}</span><span><b>${esc(u.displayName || '@' + (u.handle || ''))}</b> <small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${vis}</small></span></button><button class="ib more" data-a="v6more" data-i="${i}" aria-label="Mais">${v4ic('dots', 18)}</button></div>
-    <div class="pbody">${it.book ? `<button class="pcv" data-a="v6book" data-i="${i}" aria-label="${esc(it.book.title)}">${cvh(it.book.title, it.book.cover)}</button>` : ''}<div class="ptx">${v6Act(it)}
+    <div class="pbody">${it.book ? `<button class="pcv" data-a="v6book" data-i="${i}" aria-label="${esc(it.book.title)}">${cvh(it.book.title, it.book.cover)}</button>` : ''}<div class="ptx">${v6Act(it)}${mine && sp ? `<span class="v6spt">${v4ic('eye', 12)}spoiler</span>` : ''}
     ${sp && !open ? `<span class="spz" data-a="v6sp" data-i="${i}" role="button"><span class="spzt">${body || '<p>…</p>'}</span><span class="spveil on"><em>${v4ic('eye', 15)}Cuidado, spoiler</em><small>Eu quero ver mesmo assim</small></span></span>`
       : `${body}${sp && S6.open[key] && !mine ? `<button class="sphide" data-a="v6sph" data-i="${i}">${v4ic('eye', 13)}Spoiler aberto · esconder de novo</button>` : ''}`}
     ${fe.length ? `<div class="pfe">${fe.map((n) => `<span>${esc(n)}</span>`).join('')}</div>` : ''}</div></div>
@@ -144,7 +145,7 @@ function v6Click(ev) {
   if (a === 'v6rp') return openRdThread(it);
   if (a === 'v6send') return rdShareMenu(it, b);
   if (a === 'v6save') { const on = rdToggleSave(it); b.classList.toggle('saved', on); if (S6.f === 'salvos') v6Paint(); return; }
-  if (a === 'v6like') { const on = !it.liked; v6All(it).concat([it]).forEach((x) => { x.liked = on; x.likes = Math.max(0, (Number(x.likes) || 0) + (on ? 1 : -1)); }); it.likes = v6All(it)[0] ? v6All(it)[0].likes : it.likes;
+  if (a === 'v6like') { const on = !it.liked; [...new Set(v6All(it).concat([it]))].forEach((x) => { x.liked = on; x.likes = Math.max(0, (Number(x.likes) || 0) + (on ? 1 : -1)); }); it.likes = v6All(it)[0] ? v6All(it)[0].likes : it.likes;
     b.classList.toggle('liked', on); b.setAttribute('aria-pressed', on); b.innerHTML = v4ic('heart', 18) + (it.likes || '');
     const base = it.type === 'review' ? `/v1/reviews/${it.id}/like` : `/v1/posts/${it.id}/like`;
     sapi(on ? 'POST' : 'DELETE', base).then((r) => { if (r.status >= 300) toast('Não consegui agora'); }).catch(() => toast('Não consegui agora')); return; }
@@ -172,7 +173,7 @@ v4SheetHTML = function (k) {
   return '';
 };
 async function v6Patch(it, body) {
-  try { const r = await sapi('PATCH', `/v1/posts/${it.id}`, body); if (r.status === 200 && r.data) { v6All(it).concat([it]).forEach((x) => Object.assign(x, r.data, { mine: true })); return true; } } catch {}
+  try { const r = await sapi('PATCH', `/v1/posts/${it.id}`, body); if (r.status === 200 && r.data) { [...new Set(v6All(it).concat([it]))].forEach((x) => Object.assign(x, r.data, { mine: true })); return true; } } catch {}
   toast('Não consegui salvar agora'); return false;
 }
 function v6V4Click(ev) {

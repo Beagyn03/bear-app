@@ -168,13 +168,13 @@ function v4PgEdHTML(e, s) { const st = v4State(), P = st.pgEd || (st.pgEd = { u:
     <div class="pgv"><b id="v4pgl">${v4Lbl(e, P.v, P.u)}</b><small id="v4pgs">${v4Sub(e, P.u)}</small></div>
     <div class="pgsl"><button data-a="pgst" data-n="-1" aria-label="Voltar">−</button><input type="range" id="v4pgr" min="0" max="${total || Math.max(500, P.v + 100)}" value="${P.v}" aria-label="Página"><button data-a="pgst" data-n="1" aria-label="Avançar">+</button></div>
     <div class="row" style="gap:8px;margin-top:10px"><button class="btn s" style="flex:1" data-a="pged">Cancelar</button><button class="btn p" style="flex:1" data-a="pgok">Salvar</button></div></div>`; }
-function v4EcoEdHTML(e, s) { const E = v4State().ecoEd || (v4State().ecoEd = { t: '', rec: false, pg: v4EstPg(e, s), up: true });
+function v4EcoEdHTML(e, s) { const E = v4State().ecoEd || (v4State().ecoEd = { t: '', rec: false, pg: (s && s.pg) || v4Info(e).now || 1, up: false });
   return `<div class="pged eced"><div class="eh"><b>Deixar um eco</b></div>${v4PgLine(E, 'eco')}
     <div class="ebox${E.rec ? ' rec' : ''}"><textarea id="v4ecot" maxlength="80" rows="2" placeholder="${E.rec ? 'Ouvindo… pode falar' : 'O que você sentiu nesta página?'}">${esc(E.t)}</textarea>
       <button class="mic" data-a="ecomic" aria-label="${E.rec ? 'Parar de ouvir' : 'Falar em vez de digitar'}">${E.rec ? '<i></i><i></i><i></i>' : v4ic('mic', 22)}</button></div>
     <div class="emeta"><span>${E.rec ? 'ouvindo… toque de novo para parar' : 'toque no microfone e fale; o texto aparece aqui'}</span><span id="v4ecoc">${E.t.length}/80</span></div>
     <div class="row" style="gap:8px;margin-top:10px"><button class="btn s" style="flex:1" data-a="ecoed">Cancelar</button><button class="btn p" style="flex:1" data-a="ecook">Deixar eco</button></div></div>`; }
-function v4NotaEdHTML(e, s) { const N = v4State().notaEd || (v4State().notaEd = { t: '', rec: false, ocr: '', pg: v4EstPg(e, s), up: true });
+function v4NotaEdHTML(e, s) { const N = v4State().notaEd || (v4State().notaEd = { t: '', rec: false, ocr: '', pg: (s && s.pg) || v4Info(e).now || 1, up: false });
   return `<div class="pged eced"><div class="eh"><b>Anotar</b></div>${v4PgLine(N, 'nota')}
     <div class="ebox${N.rec ? ' rec' : ''}"><textarea id="v4notat" rows="3" placeholder="${N.rec ? 'Ouvindo… pode falar' : 'O que você pensou?'}">${esc(N.t)}</textarea></div>
     <div class="ntools"><button class="${N.rec ? 'on' : ''}" data-a="nmic">${v4ic('mic', 18)}<span>${N.rec ? 'Ouvindo…' : 'Ditar'}</span></button><button data-a="nfoto">${v4ic('scan', 18)}<span>Foto vira texto</span></button></div>
@@ -288,7 +288,7 @@ async function v4UpdSave(k) {
   const text = U.text.trim(), fe = [...U.fe];
   if (text || fe.length) { const pct = total ? Math.round(pg / total * 100) : 0; e.diary = [...(e.diary || []), { d: todayISO(), page: pg, pct, text, fe, ...(U.cap ? { cap: U.cap } : {}) }].slice(-200); save();
     if (text && U.pub && v4On('comunidade') && connected() && socialProfile) {
-      sapi('POST', '/v1/posts', { kind: 'comment', text: text.slice(0, 280), feelings: fe.slice(0, 3), visibility: U.vis === 'friends' ? 'friends' : 'public', readerPct: Math.min(100, pct),
+      sapi('POST', '/v1/posts', { kind: 'comment', text: ((U.cap ? 'cap. ' + U.cap + ' · ' : '') + text).slice(0, 280), feelings: fe.slice(0, 3), visibility: U.vis === 'friends' ? 'friends' : 'public', readerPct: Math.min(100, pct),
         book: { title: String(e.title).slice(0, 200), author: e.author ? String(e.author).slice(0, 120) : null, cover: /^https:\/\//.test(e.cover || '') ? e.cover : null },
         ...(U.sp ? (pg > 0 && total && pg < total ? { spoiler: { kind: 'page', at: pg } } : total && pg >= total ? { spoiler: { kind: 'end' } } : { spoiler: { kind: 'yes' } }) : {}) })
         .then((x) => { if (x.status === 201) toast(U.vis === 'friends' ? 'Comentário postado para suas amizades' : 'Comentário postado na Comunidade'); else if (x.status >= 400) toast('Salvo no seu diário (não deu para postar agora)'); }).catch(() => {}); } }
@@ -422,14 +422,14 @@ function v4Click(ev) {
     const before = new Set(((V4ECO.get(e.id) || {}).seen || []).map((x) => x.id));
     v4EcoLoad(e, nv).then((E) => { if (!E || !V4) return; const hits = (E.seen || []).filter((x) => !x.mine && !before.has(x.id)); redraw(); v4Float(hits); }); return; }
   if (a === 'v6pgm' || a === 'v6pgp' || a === 'v6up') { const P = st.ed === 'eco' ? st.ecoEd : st.notaEd; if (!P) return; if (a === 'v6up') { P.up = !!b.checked; return; } const { total } = v4Info(e); P.pg = Math.max(1, Math.min(total || 99999, (P.pg || s.pg) + (a === 'v6pgp' ? 1 : -1))); return v4PgPaint(P); }
-  if (a === 'ecoed') { st.ed = st.ed === 'eco' ? null : 'eco'; st.ecoEd = st.ed ? { t: '', rec: false, pg: v4EstPg(e, s), up: true } : null; if (v4Rec) v4Dictate(); return redraw(); }
+  if (a === 'ecoed') { st.ed = st.ed === 'eco' ? null : 'eco'; st.ecoEd = st.ed ? { t: '', rec: false, pg: (s && s.pg) || v4Info(e).now || 1, up: false } : null; if (v4Rec) v4Dictate(); return redraw(); }
   if (a === 'ecomic') { const E = st.ecoEd; return v4Dictate((t) => { E.t = (E.t ? E.t + ' ' : '') + t; E.t = E.t.slice(0, 80); const ta = V4.querySelector('#v4ecot'); if (ta) ta.value = E.t; const c = V4.querySelector('#v4ecoc'); if (c) c.textContent = E.t.length + '/80'; }, (on) => { E.rec = on; const bx = V4.querySelector('.ebox'); if (bx) bx.classList.toggle('rec', on); const m = V4.querySelector('.ebox .mic'); if (m) m.innerHTML = on ? '<i></i><i></i><i></i>' : v4ic('mic', 22); }); }
   if (a === 'ecook') { const t = (st.ecoEd.t || '').trim(); if (!t) return toast('Escreva ou fale o seu eco'); if (!connected() || !socialProfile) return toast('Entre na sua conta e crie seu @usuário para deixar ecos');
     const { total } = v4Info(e); b.disabled = true;
     sapi('POST', '/v1/echoes', { title: e.title, author: e.author || null, page: st.ecoEd.pg || s.pg, total: total || null, text: t }).then((r) => {
       if (r.status === 201) { const pgE = (st.ecoEd && st.ecoEd.pg) || s.pg; if (st.ecoEd && st.ecoEd.up && pgE !== s.pg) { s.pg = pgE; s.pgSet = true; v2SesPut(s); } const E = V4ECO.get(e.id) || { seen: [], ahead: [], aheadTotal: 0, aheadFriends: 0 }; E.seen = [...(E.seen || []), { ...r.data, mine: true, friend: false, handle: socialProfile.handle, displayName: socialProfile.displayName }]; V4ECO.set(e.id, E); S.v4myEcos = undefined; st.ed = null; st.ecoEd = null; if (v4Rec) v4Dictate(); redraw(); toast(`Eco deixado na pág. ${pgE}`); }
       else { b.disabled = false; toast(r.status === 403 ? ((r.data && r.data.message) || 'Sua conta não pode publicar agora') : 'Não deu para deixar o eco agora'); } }).catch(() => { b.disabled = false; toast('Sem conexão: tente de novo'); }); return; }
-  if (a === 'notaed') { st.ed = st.ed === 'nota' ? null : 'nota'; st.notaEd = st.ed ? { t: '', rec: false, ocr: '', pg: v4EstPg(e, s), up: true } : null; if (v4Rec) v4Dictate(); return redraw(); }
+  if (a === 'notaed') { st.ed = st.ed === 'nota' ? null : 'nota'; st.notaEd = st.ed ? { t: '', rec: false, ocr: '', pg: (s && s.pg) || v4Info(e).now || 1, up: false } : null; if (v4Rec) v4Dictate(); return redraw(); }
   if (a === 'nmic') { const N = st.notaEd; return v4Dictate((t) => { N.t = (N.t ? N.t + ' ' : '') + t; const ta = V4.querySelector('#v4notat'); if (ta) ta.value = N.t; }, (on) => { N.rec = on; const x = V4.querySelector('.ntools [data-a=nmic]'); if (x) { x.classList.toggle('on', on); x.querySelector('span').textContent = on ? 'Ouvindo…' : 'Ditar'; } }); }
   if (a === 'nfoto') { const N = st.notaEd; return v4PickPhoto(async (f) => { const w = (m) => { let o = V4.querySelector('.eced .ocrw'); if (!o) { o = document.createElement('div'); o.className = 'ocrw'; V4.querySelector('.ntools').after(o); } o.textContent = m; };
     const t = await v4Ocr(f, w); w(t ? 'Pronto: o texto da foto entrou na anotação.' : ''); if (t) { N.t = (N.t ? N.t + ' ' : '') + t; const ta = V4.querySelector('#v4notat'); if (ta) ta.value = N.t; } }); }
@@ -532,7 +532,7 @@ async function v4AtivEcos(d, host) {
       : '<p class="v4me-empty">Você ainda não deixou ecos. Na leitura, toque em Deixar um eco.</p>');
   wire();
   host.querySelectorAll('[data-bk]').forEach((b) => b.addEventListener('click', () => { S.v4ecoBk = b.dataset.bk; v4AtivEcos(d, host); }));
-  host.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => { if (!confirm('Apagar este eco? Quem ainda não chegou na página não vai mais ver.')) return;
+  host.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => v9Ask(b, 'Apagar este eco', async () => {
     const r = await sapi('DELETE', '/v1/echoes/' + encodeURIComponent(b.dataset.del)).catch(() => null);
-    if (r && r.status === 200) { S.v4myEcos = (S.v4myEcos || []).filter((x) => x.id !== b.dataset.del); V4ECO.clear(); v4AtivEcos(d, host); toast('Eco apagado'); } else toast('Não deu para apagar agora'); }));
+    if (r && r.status === 200) { S.v4myEcos = (S.v4myEcos || []).filter((x) => x.id !== b.dataset.del); V4ECO.clear(); v4AtivEcos(d, host); toast('Eco apagado'); } else toast('Não deu para apagar agora'); })));
 }

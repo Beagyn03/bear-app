@@ -74,7 +74,7 @@
       host.querySelectorAll('[data-bk]').forEach((b) => b.addEventListener('click', () => { const x = V[+b.dataset.bk]; const e = (x && x.e) || byTitle(x && x.t); if (e) try { openBookPage(e); } catch {} }));
       host.querySelectorAll('[data-mo]').forEach((b) => b.addEventListener('click', async () => { const x = V[+b.dataset.mo]; if (!x) return;
         if (x.it) { try { return v6Sheet('v6my', { it: x.it }); } catch {} return; }
-        if (x.eco) { if (!confirm('Apagar este eco?')) return; try { const r = await sapi('DELETE', '/v1/echoes/' + encodeURIComponent(x.eco.id)); if (r.status < 300) { S.v4myEcos = null; const c2 = await load(true); paint(c2); } } catch { toast('Não consegui apagar agora'); } return; }
+        if (x.eco) { return v9Ask(b, 'Apagar este eco', async () => { try { const r = await sapi('DELETE', '/v1/echoes/' + encodeURIComponent(x.eco.id)); if (r.status < 300) { S.v4myEcos = null; try { V4ECO.clear(); } catch {} toast('Eco apagado'); const c2 = await load(true); paint(c2); } else toast('Não consegui apagar agora'); } catch { toast('Não consegui apagar agora'); } }); }
         if (x.e) { try { v5Menu(x.e); } catch { try { bookMenu(x.e); } catch {} } } }));
     };
     if (f === 'ecos' && typeof v4AtivEcos === 'function') { delete host.dataset.v8; return v4AtivEcos(d, host); }

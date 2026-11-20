@@ -192,7 +192,7 @@ function rdCardHTML(it, i, opts = {}) {
   const reHide = it.spoiler && !it.mine && S.rdOpen && S.rdOpen.has(it.type + it.id) ? '<button type="button" class="rd-rehide"><i class="rd-eye" aria-hidden="true"></i>Esconder o spoiler de novo</button>' : '';
   return `<article class="rd-card rd2${it.paws ? ' has-nota' : ''}" data-i="${i}">
     <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
-      <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
+      <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amizades' : ''}</small></button>
       <span class="rd-kc">${isRev && it.paws ? `<span class="rd-tag rv rd-nt" title="${revLbl} · nota ${String(it.paws).replace('.', ',')}">${esc(revLbl)} <i>${'★'.repeat(Math.round(Number(it.paws)))}<u>${'★'.repeat(5 - Math.round(Number(it.paws)))}</u></i></span>` : `<span class="rd-tag${isRev || isAch || (isAct && it.act === 'FINISHED') ? ' rv' : ''}${kind === 'Lendo' ? ' le' : ''}"${pct != null ? ` title="${esc(readerPctTxt(it.readerPct))}"` : ''}>${esc(kind)}${pct != null ? ' · ' + pct + '%' : ''}</span>`}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
     ${isAch ? `<div class="rd-ach">${it.reward && typeof DECO_IMG !== 'undefined' && DECO_IMG[it.reward] ? `<img src="${DECO_IMG[it.reward]}" alt="">` : '<span></span>'}<span><b>${esc(it.name || '')}</b><small>ganhou esta conquista</small></span></div>` : ''}
     ${it.book && !it.book2 ? `<div class="rd-main"><div class="rd-lc"><button type="button" class="rd-book rd-bcv" aria-label="Ver o livro">${cvh(it.book.title, it.book.cover)}</button></div><div class="rd-col"><button type="button" class="rd-book rd-bt"><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small>${it.paws && fr ? `<span class="rd-ntx">${esc(fr)}</span>` : ''}${isAct ? `<em>${it.act === 'STARTED' ? 'começou a ler' : it.act === 'FINISHED' ? 'terminou o livro' : it.pages ? 'chegou na pág. ' + it.pages : 'avançou na leitura'}</em>` : ''}${fim ? `<em>${esc(fim)}</em>` : ''}</button>${(it.text || it.quote || it.hasImage || (it.feelings || []).length) ? `<div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}${reHide}` : ''}</div></div>` : `<div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}${reHide}`}
@@ -230,7 +230,7 @@ function rdPostToken(it) {
 }
 function rdSendToFriend(it) {
   const fr = (SOC.fr && SOC.fr.friends) || [];
-  if (!fr.length) return toast('Adicione amigos para enviar posts');
+  if (!fr.length) return toast('Adicione amizades para enviar posts');
   sheet('Enviar para', fr.slice(0, 40).map((f) => [f.displayName || '@' + f.handle, async () => {
     const body = rdShareText(it) + '\n' + rdPostToken(it);
     if (body.length > 1000) return toast('Post grande demais para enviar');
@@ -387,8 +387,8 @@ function openRdThread(it) {
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
     rdBind(v, [it], draw);
     $$('[data-ro]', v).forEach((b) => b.addEventListener('click', () => { (S.rdOpen = S.rdOpen || new Set()).add('reply' + reps[+b.dataset.ro].id); draw(); }));
-    $$('[data-del]', v).forEach((b) => b.addEventListener('click', async () => { const x = reps[+b.dataset.del]; if (!confirm('Apagar esta resposta?')) return;
-      const r = await sapi('DELETE', isRev ? `/v1/comments/${x.id}` : `/v1/posts/${x.id}`); if (r.status < 300) { reps.splice(+b.dataset.del, 1); it.replies = Math.max(0, (it.replies || 1) - 1); draw(); } }));
+    $$('[data-del]', v).forEach((b) => { b.setAttribute('aria-label', 'Apagar resposta'); b.addEventListener('click', () => { const x = reps[+b.dataset.del]; v9Ask(b, 'Apagar resposta', async () => {
+      const r = await sapi('DELETE', isRev ? `/v1/comments/${x.id}` : `/v1/posts/${x.id}`); if (r.status < 300) { reps.splice(reps.indexOf(x), 1); it.replies = Math.max(0, (it.replies || 1) - 1); draw(); toast('Resposta apagada'); } else toast('Não consegui apagar agora'); }); }); });
     $('#rd-f', v).addEventListener('submit', async (ev) => {
       ev.preventDefault(); if (busy) return; const t = $('#rd-t', v).value.trim(); if (!t) return;
       busy = true; const sp = !isRev && $('#rd-sp', v).checked;
