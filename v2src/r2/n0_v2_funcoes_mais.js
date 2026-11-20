@@ -16,7 +16,7 @@ function vFn(k) { try { const m = v2Mods(); if (V6SUB[k] && m[V6SUB[k]] === fals
   const st = document.createElement('style'); st.textContent = `
 :host(.v2off-pv) #pv-host,:host(.v2off-pv) [data-in=pv]{display:none!important}
 :host(.v2off-junto) .v3-bud,:host(.v2off-junto) #v3-bud-inv{display:none!important}
-.v4fn.sub{padding-left:1.4rem}.v4fn.sub b::before{content:"↳ ";color:var(--ink-2);font-weight:700}
+.v4fn.sub{padding-left:1.4rem}.v4fn.sub b::before{content:"";display:inline-block;width:.5em;height:.45em;border-left:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);border-bottom-left-radius:2px;margin:0 .4em .2em 0;vertical-align:middle}
 .v4fn.dis{opacity:.45}.v4fn.dis small::after{content:" · precisa da Comunidade"}
 `; TR.append(st);
   // página: subitens recuados; sem Comunidade, ficam cinza e não mudam
