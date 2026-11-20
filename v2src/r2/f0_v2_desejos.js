@@ -27,6 +27,7 @@
 .v2wg.on{background:color-mix(in srgb,#c2569a 14%,var(--panel));border-color:transparent;color:#a53d80}
 .v2wg.taken{border-style:dashed;color:var(--ink-2);cursor:default;background:none}
 .v2wdt{font-size:.66rem!important;color:#a53d80!important;font-weight:800}
+.v2wlk{border:0;background:none;padding:0;margin-top:.1rem;font:inherit;font-size:.68rem;font-weight:800;color:var(--acc);text-decoration:underline;cursor:pointer}
 .v2wadd{display:grid;place-items:center;align-content:center;gap:.25rem;width:84px;height:126px;border:2px dashed var(--line);border-radius:8px;background:none;color:var(--acc);font:inherit;font-size:.78rem;font-weight:900;cursor:pointer}
 .v2wadd i{font-style:normal;font-size:1.5rem;line-height:1}
 .v2wfoot{display:flex;justify-content:space-between;align-items:center;gap:.6rem;margin-top:1rem;font-size:.76rem;color:var(--ink-2)}
@@ -207,12 +208,18 @@ async function v2WishPaint(v, d) {
     p.innerHTML = (L.length ? tip('tipWf', 'ao tocar em “Vou dar”, o livro fica reservado para você até a data que escolher. As outras amizades veem só “Alguém já vai dar”, e ' + esc(who) + ' não vê nada.') : '')
       + (L.length ? '<div class="v2wgrid">' + L.map((b, i) => { const c = claims.get(exKey(b.title));
           const st = c && c.mine ? '<button type="button" class="v2wg on" data-g="' + i + '">🎁 Você vai dar</button>' + (c.due ? '<small class="v2wdt">até ' + exD(c.due) + '</small>' : '')
-            : c ? '<span class="v2wg taken">🎁 Alguém já vai dar</span>' : '<button type="button" class="v2wg" data-g="' + i + '">🎁 Vou dar</button>';
+            : c ? '<span class="v2wg taken">🎁 Alguém já vai dar</span>' + (c.watching ? '<button type="button" class="v2wlk" data-w="' + i + '" data-on="1">aviso pedido · cancelar</button>' : '<button type="button" class="v2wlk" data-w="' + i + '">Me avise se liberar</button>')
+            : '<button type="button" class="v2wg" data-g="' + i + '">🎁 Vou dar</button>';
           return '<div class="v2wi"><button type="button" class="cvb" data-i="' + i + '">' + cvh(b.title, b.cover, '') + '</button><b>' + esc(b.title) + '</b><small>' + esc(String(b.author || '').split(',')[0]) + '</small>' + st + '</div>'; }).join('') + '</div>'
         : '<p class="v2wempty">' + esc(who) + ' ainda não marcou livros em “Quero ter”.</p>');
     p.querySelectorAll('[data-g]').forEach((bt) => bt.addEventListener('click', () => { const b = L[+bt.dataset.g], c = claims.get(exKey(b.title)), redo = () => { if (S.fpData === d) v2WishPaint(v, d); };
       if (c && c.mine) gfManage({ h: d.handle, name: d.displayName || d.handle, title: b.title, author: b.author, cover: b.cover, due: c.due || null }, redo);
       else gfReserve(d.handle, d.displayName, b, redo); }));
+    // me avise se liberar: quem reservou não fica sabendo; se várias pessoas pedirem, todas recebem, e quem reservar primeiro leva
+    p.querySelectorAll('[data-w]').forEach((bt) => bt.addEventListener('click', async () => { const b = L[+bt.dataset.w], off = !!bt.dataset.on;
+      const r = await sapi(off ? 'DELETE' : 'POST', gfPath(d.handle) + '/watch' + (off ? '?title=' + encodeURIComponent(b.title) : ''), off ? undefined : { title: String(b.title).slice(0, 300) }).catch(() => null);
+      if (!r || r.status >= 300) return toast('Não consegui agora');
+      toast(off ? 'Aviso cancelado' : 'Combinado: se a reserva cair, você recebe um aviso. Quem reservar primeiro leva.'); if (S.fpData === d) v2WishPaint(v, d); }));
     p.querySelectorAll('.cvb[data-i]').forEach((bt) => bt.addEventListener('click', () => { const b = L[+bt.dataset.i]; try { openAnyBook(b.title, b.author, b.cover); } catch {} }));
   }
   try { paintCv(p); } catch {}

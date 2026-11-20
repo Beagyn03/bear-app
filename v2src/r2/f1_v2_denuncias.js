@@ -62,6 +62,7 @@ function v2ReportSheet(d) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'v2pxm'; b.setAttribute('aria-label', 'Mais opções do perfil'); b.textContent = '•••';
     b.addEventListener('click', (ev) => { ev.stopPropagation(); const dd = S.fpData; if (!dd) return; popMenu(b, [
       { label: 'Copiar link do perfil', fn: () => { const u = location.origin + location.pathname + '#@' + dd.handle; try { navigator.clipboard.writeText(u).then(() => toast('Link do perfil copiado'), () => toast(u)); } catch { toast(u); } } },
+      { label: dd.muted ? 'Deixar de silenciar' : 'Silenciar', fn: () => { if (!connected()) return toast('Entre na sua conta para silenciar'); v2MuteToggle(dd); } },
       { label: 'Denunciar', fn: () => { if (!connected()) return toast('Entre na sua conta para denunciar'); v2ReportSheet(dd); } },
       0,
       { label: 'Bloquear', danger: true, fn: () => v2BlockSheet(dd) },
@@ -80,6 +81,12 @@ function v2BlockSheet(d) {
     close(); if (r && r.status < 300) { toast('Bloqueio feito: vocês deixam de se ver'); try { const v = $('#shelflist'); v.hidden = true; syncTopTitle(); } catch {} } else toast('Não consegui agora'); });
   TR.append(sh);
 }
+// escada da moderação (só conta o que é confirmado): 1ª tira frase e foto e avisa; 2ª 7 dias; 3ª 15; 4ª 30; 5ª bane
+const modStepLabel = (n) => n <= 1 ? 'tira frase e foto e avisa' : n === 2 ? 'suspende 7 dias' : n === 3 ? 'suspende 15 dias' : n === 4 ? 'suspende 30 dias' : 'bane a conta';
+const modHist = (it) => { const H = (it.history || []).filter((x) => !x.revoked);
+  return '<p class="mod-why"><b>Histórico:</b> ' + (H.length ? H.length + (H.length === 1 ? ' confirmada' : ' confirmadas') + ' (' + H.map((x) => new Date(x.at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) + ' ' + (x.action === 'clear' ? 'aviso' : x.action === 'ban' ? 'banida' : x.days + ' dias')).join(', ') + ')' : 'nenhuma confirmada') + '</p>'; };
+async function modPullActive(redraw) { try { const r = await sapi('GET', '/v1/admin/moderation'); S.modActive = r && r.status === 200 && r.data ? r.data.items || [] : []; } catch { S.modActive = []; } redraw && redraw(); }
+{ const st = document.createElement('style'); st.textContent = `.mod-act{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.55rem .75rem;margin:0 0 .8rem;font-size:.84rem}.mod-act summary{cursor:pointer}`; TR.append(st); }
 // tela Denúncias da moderação, com o prazo de 48 h
 const modSla = (due) => { if (!due) return { late: false, txt: '' }; const h = Math.round((Date.parse(due) - Date.now()) / 36e5);
   return h < 0 ? { late: true, txt: 'vencida há ' + (-h < 48 ? (-h || 1) + ' h' : Math.round(-h / 24) + ' dias') } : { late: false, txt: 'faltam ' + (h < 1 ? 'menos de 1 h' : h + ' h') }; };
@@ -88,7 +95,10 @@ openRdMod = async function () {
   const why = (rs) => rs.map((r) => esc(RP_LABEL[r.reason] || r.reason) + (r.n > 1 ? ' (' + r.n + ')' : '')).join(', ');
   const draw = () => {
     const late = (L || []).filter((x) => modSla(x.dueAt).late).length;
+    const A = S.modActive || [];
     v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Denúncias</b><span></span></div>'
+      + (A.length ? '<details class="mod-act"><summary><b>' + A.length + '</b> ' + (A.length === 1 ? 'conta com medida em vigor' : 'contas com medida em vigor') + '</summary>'
+        + A.map((x, k) => '<div class="v2mu"><span><b>' + esc(x.displayName || '@' + x.handle) + '</b><small>' + (x.action === 'ban' ? 'banida' : 'suspensa até ' + new Date(x.until).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })) + ' · ' + esc(RP_LABEL[x.reason] || x.reason) + '</small></span><button type="button" data-rv="' + k + '">Desfazer</button></div>').join('') + '</details>' : '')
       + (L === null ? '<p class="rd-empty">Carregando…</p>' : !L.length ? '<p class="rd-empty">Nenhuma denúncia para revisar.</p>'
         : '<div class="mod-sum"><span><b>' + L.length + '</b> para revisar</span>' + (late ? '<span style="color:#c0392b"><b>' + late + '</b> fora do prazo de 48 h</span>' : '<span>todas dentro do prazo de 48 h</span>') + '</div>'
           + L.map((it, i) => { const s = modSla(it.dueAt), kind = it.type === 'profile' ? 'Perfil' : it.type === 'review' ? 'Avaliação' : 'Post';
@@ -97,7 +107,8 @@ openRdMod = async function () {
               + '<div class="mod-pf"><span class="av">' + esc(String(it.displayName || it.handle || '?').charAt(0).toUpperCase()) + '</span><span><b>' + esc(it.displayName || '@' + it.handle) + '</b><small>@' + esc(it.handle) + (it.hasAvatar ? ' · tem foto' : '') + '</small></span></div>'
               + (it.bio ? '<p class="mod-bio">“' + esc(it.bio) + '”</p>' : '')
               + '<p class="mod-why"><b>Motivo:</b> ' + why(it.reports) + '</p>' + (it.details || []).map((t) => '<p class="mod-det">' + esc(t) + '</p>').join('')
-              + '<div class="mod-ac"><button type="button" data-p="' + i + '" data-a="see">Ver perfil</button><button type="button" data-p="' + i + '" data-a="keep">Manter</button><button type="button" class="dng" data-p="' + i + '" data-a="clear">Tirar frase e foto</button></div></div>';
+              + modHist(it)
+              + '<div class="mod-ac"><button type="button" data-p="' + i + '" data-a="see">Ver perfil</button><button type="button" data-p="' + i + '" data-a="keep">Manter (não conta)</button><button type="button" class="dng" data-p="' + i + '" data-a="confirm">Confirmar · ' + modStepLabel((it.confirmed || 0) + 1) + '</button></div></div>';
             return '<div class="mod-it' + (s.late ? ' late' : '') + '">' + head + rdCardHTML({ ...it, spoiler: null }, i, { noFoot: true })
               + '<p class="mod-why"><b>Motivo:</b> ' + why(it.reports || []) + (it.hidden ? ' · fora do ar' : '') + '</p>'
               + '<div class="mod-ac"><button type="button" data-p="' + i + '" data-a="keep">Manter</button><button type="button" class="dng" data-p="' + i + '" data-a="remove">Remover</button></div></div>'; }).join(''));
@@ -106,11 +117,14 @@ openRdMod = async function () {
       if (a === 'see') return friendPage(it.handle);
       const path = it.type === 'profile' ? '/v1/admin/profile/' + encodeURIComponent(it.handle) + '/' + a : '/v1/admin/' + (it.type === 'review' ? 'review' : 'post') + '/' + it.id + '/' + a;
       const r = await sapi('POST', path).catch(() => null);
-      if (r && r.status < 300) { L.splice(+b.dataset.p, 1); draw(); toast(a === 'keep' ? 'Mantido' : a === 'clear' ? 'Frase e foto retiradas' : 'Removido'); } else toast('Não consegui agora'); }));
+      if (r && r.status < 300) { L.splice(+b.dataset.p, 1); draw(); toast(a === 'keep' ? 'Mantido: não conta para a pessoa' : a === 'confirm' ? 'Confirmado · ' + modStepLabel(r.data && r.data.step || 1) : 'Removido'); if (a === 'confirm') modPullActive(draw); } else toast('Não consegui agora'); }));
+    $$('.mod-act [data-rv]', v).forEach((b) => b.addEventListener('click', async () => { const x = (S.modActive || [])[+b.dataset.rv]; if (!x) return;
+      const r = await sapi('POST', '/v1/admin/strikes/' + x.id + '/revoke').catch(() => null);
+      if (r && r.status < 300) { toast('Desfeito: a conta de ' + String(x.displayName || '@' + x.handle).split(' ')[0] + ' está liberada'); modPullActive(draw); } else toast('Não consegui agora'); }));
     try { paintCv(v); rdLoadImages(v); } catch {}
   };
   S.listRedraw = draw; S.navView = { t: 'rdmod', a: [] }; try { closeEd(); } catch {} v.classList.remove('feedview', 'tabroot', 'mine-page', 'v2des'); draw(); v.hidden = false; v.scrollTop = 0; try { syncTopTitle(); } catch {}
   try { const r = await sapi('GET', '/v1/admin/reports'); const d = r && r.status === 200 && r.data ? r.data : {};
     L = [...(d.profiles || []), ...(d.items || [])].sort((a, b) => String(a.dueAt || '9').localeCompare(String(b.dueAt || '9'))); } catch { L = []; }
-  draw();
+  draw(); modPullActive(() => { if (S.listRedraw === draw && !v.hidden) draw(); });
 };
