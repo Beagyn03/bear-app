@@ -45,7 +45,7 @@ Object.assign(V3EMO, {
     try { const F = v6Feed(sc); if (!more && F.at > 1 && !F.err && socialProfile && socialProfile.handle) localStorage.setItem(key(sc), JSON.stringify({ t: Date.now(), items: F.items.slice(0, 30) })); } catch {}
     return r; }; }
 // Buscar capas: avisos curtos, numa linha (teste 20/11 item 44: quebrava em duas linhas e cobria "Ver o tour")
-{ const _t = toast; toast = function (m) { let s = String(m == null ? '' : m);
-    s = s.replace(/^Procurando capas para (\d+) livros?…$/, 'Buscando $1 capas…').replace(/^(\d+ capas? encontradas?) · \d+ sem capa em português$/, '$1')
-      .replace(/^Não encontrei capas em português para esses livros$/, 'Nenhuma capa nova').replace(/^Todos os seus livros já têm capa$/, 'Todos têm capa');
-    return _t.call(this, s, ...[].slice.call(arguments, 1)); }; }
+{ const short = (s) => s.replace(/^Procurando capas para (\d+) livros?…$/, 'Buscando $1 capas…').replace(/^(\d+ capas? encontradas?) · \d+ sem capa em português$/, '$1')
+    .replace(/^Não encontrei capas em português para esses livros$/, 'Nenhuma capa nova').replace(/^Todos os seus livros já têm capa$/, 'Todos têm capa');
+  const fix = () => { const t = TR.querySelector('#toast'); if (!t) return; const n = t.firstChild; if (n && n.nodeType === 3) { const v = short(n.nodeValue || ''); if (v !== n.nodeValue) n.nodeValue = v; } };
+  const t0 = TR.querySelector('#toast'); if (t0) new MutationObserver(fix).observe(t0, { childList: true }); }
