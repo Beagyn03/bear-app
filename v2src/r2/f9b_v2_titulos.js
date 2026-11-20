@@ -7,15 +7,20 @@ const v4Busca = () => { const v = TR.querySelector('#shelflist'); return !!(v &&
 const v4Avisos = () => { const ed = TR.querySelector('#editor'), v = TR.querySelector('#shelflist'); return !!((ed && !ed.hidden && ed.classList.contains('ntpage')) || (v && !v.hidden && v.querySelector('.sl-body > .av-tabs'))); };
 const v4PageTitle = () => (v4Avisos() ? 'Avisos' : v4Busca() ? 'Buscar' : '');
 { const td = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
-  const hook = (t) => { if (!t || t.dataset.v4t) return; t.dataset.v4t = '1'; const cl = t.classList, tog = cl.toggle;
-    Object.defineProperty(t, 'textContent', { configurable: true, get() { return td.get.call(this); }, set(x) { const p = v4PageTitle(), y = p || x; if (td.get.call(this) === String(y == null ? '' : y)) return; td.set.call(this, y); } });
-    cl.toggle = function (c, f) { if (c === 'g-brand' && v4PageTitle()) f = false; return tog.call(this, c, f); }; t.__tog = tog; };
+  // 'was' = uma página com título próprio está aberta; enquanto isso, a escrita antiga da marca (syncTopTitle a cada 1,5 s,
+  // às vezes num instante em que a página ainda não foi reconhecida) é ignorada. Só o fix() decide quando a página fechou.
   let was = false;
+  // outro bloco (guarda do h0, mais abaixo no arquivo) também redefine o textContent do #g-t e apagava este gancho: por isso
+  // o gancho é conferido pelo próprio setter (marca __v4) e reposto sempre que outro tomar o lugar.
+  const hook = (t) => { if (!t) return; const d0 = Object.getOwnPropertyDescriptor(t, 'textContent'); if (d0 && d0.set && d0.set.__v4) return; t.dataset.v4t = '1'; const cl = t.classList, tog = t.__tog || cl.toggle;
+    const setter = function (x) { const p = v4PageTitle() || (was ? td.get.call(this) : ''), y = p || x; if (td.get.call(this) === String(y == null ? '' : y)) return; td.set.call(this, y); }; setter.__v4 = true;
+    Object.defineProperty(t, 'textContent', { configurable: true, get() { return td.get.call(this); }, set: setter });
+    cl.toggle = function (c, f) { if (c === 'g-brand' && (was || v4PageTitle())) f = false; return tog.call(this, c, f); }; t.__tog = tog; };
   const fix = () => { const t = TR.querySelector('#g-t'); if (!t) return; hook(t); const p = v4PageTitle();
     if (p) { was = true; if (td.get.call(t) !== p) td.set.call(t, p); (t.__tog || DOMTokenList.prototype.toggle).call(t.classList, 'g-brand', false); }
     else if (was) { was = false; try { syncTopTitle(); } catch {} } };
   let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; fix(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
-  fix(); }
+  fix(); setTimeout(fix, 2000); }
 // Voltar no topo para páginas abertas como aba ou com abas internas (Estatísticas, Busca, Avisos) quando o Voltar geral não aparece
 { const st = document.createElement('style'); st.textContent = '.v4back2{display:inline-grid;place-items:center;width:36px;height:36px;border:0;background:none;color:var(--ink);margin-right:.15rem}.v4back2 svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'; TR.append(st);
   const need = () => { if (TR.querySelector('.gtop .v4back:not([hidden])')) return false; const v = TR.querySelector('#shelflist');

@@ -66,7 +66,7 @@ const v4State = () => (S.v4 = S.v4 || { view: null, sheet: null });
 const v4Ses = () => v2SesGet();
 const v4Books = () => { const L = lib().filter((x) => x.status === 'LENDO'); const R = (() => { try { return reading(); } catch { return null; } })(); if (R && R.e) L.sort((a, b) => (a.id === R.e.id ? -1 : b.id === R.e.id ? 1 : 0)); return L; };
 const v4Info = (e) => { const i = readingInfo(e) || {}; return { now: Number(i.now) || 0, total: Number(i.total) || Number(e.totalPages) || 0, g: i.g, gb: i.gb }; };
-const v4Due = (e) => { if (!e || !e.dueAt) return null; try { const d = dueToday(e); return d && !d.todayOff ? { target: d.target, done: d.done } : null; } catch { return null; } };
+const v4Due = (e) => { if (!e || !e.dueAt) return null; try { if (typeof vFn === 'function' && !vFn('prazos')) return null; } catch {} try { const d = dueToday(e); return d && !d.todayOff ? { target: d.target, done: d.done } : null; } catch { return null; } };
 
 // ---------- ecos: GET/POST /v1/echoes (só texto do que você já alcançou) ----------
 const V4ECO = new Map(); // libId -> { seen, ahead, aheadTotal, aheadFriends, pg }

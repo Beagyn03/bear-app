@@ -20,10 +20,12 @@
   const _vs = v5Sheet; v5Sheet = function () { const r = _vs.apply(this, arguments); try { const R = v4Root(); if (R && !R.dataset.v6pv) { R.dataset.v6pv = 1; R.addEventListener('click', (ev) => { const b = ev.target.closest('[data-a]'); if (b && /^v5(priv|shdel|arch|unarch)/.test(b.dataset.a)) setTimeout(() => { try { sync(); save(); publishSnapshotSoon(); } catch {} }, 200); }, true); } } catch {} return r; };
   // tela "O que aparece no meu perfil": marcar estante = pública; sem Conquistas; toggles do protótipo
   const st = document.createElement('style'); st.textContent = `
-body > .sheet form.pv2 input[type=checkbox]{appearance:none;-webkit-appearance:none;width:38px;height:22px;border-radius:99px;background:#cfc6bb;position:relative;flex:none;cursor:pointer;transition:background .15s;margin:0}
+body > .sheet form.pv2 input[type=checkbox]{appearance:none;-webkit-appearance:none;width:38px;height:22px;border-radius:99px;background:color-mix(in srgb,var(--ink,#2a2233) 22%,transparent);position:relative;flex:none;cursor:pointer;transition:background .15s;margin:0 12px 0 0!important}
 body > .sheet form.pv2 input[type=checkbox]::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
-body > .sheet form.pv2 input[type=checkbox]:checked{background:#c46f2e}body > .sheet form.pv2 input[type=checkbox]:checked::after{left:19px}
-body > .sheet form.pv2 .v6hide{display:none!important}`; document.head.append(st);
+body > .sheet form.pv2 input[type=checkbox]:checked{background:var(--acc,#c46f2e)}body > .sheet form.pv2 input[type=checkbox]:checked::after{left:19px}
+body > .sheet form.pv2 .v6hide{display:none!important}
+body > .sheet form.pv2 label:has(> input[type=checkbox]){display:flex!important;align-items:center;gap:0}
+body > .sheet form.pv2 input[type=checkbox]::before{display:none!important}`; document.head.append(st);
   const _ss = socialSettingsSheet; socialSettingsSheet = async function () { try { migrate(); sync(); } catch {} const r = await _ss.apply(this, arguments);
     const form = document.querySelector('body > .sheet form.pv2'); if (!form) return r;
     [...form.querySelectorAll('.ck-row, .pv2-shr, label')].forEach((x) => { if (/^\s*Conquistas/.test(x.textContent)) x.classList.add('v6hide'); });

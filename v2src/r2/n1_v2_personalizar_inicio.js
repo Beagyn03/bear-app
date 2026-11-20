@@ -12,7 +12,7 @@ var V6H = [['dia', 'Linha do dia', 'Órbita e Meta, logo abaixo do livro'], ['de
   // aplicar no Hoje: esconder e ordenar (o livro e a Linha do dia ficam sempre em cima)
   const st = document.createElement('style'); st.textContent = `
 :host(.v6h-dia) .v3day,:host(.v6h-dest) .v3-colA.v3h > .v3mom,:host(.v6h-seguir) .v3-colA.v3h > .v3x-b,:host(.v6h-pv) .v3-colA.v3h > #pv-host{display:none!important}
-.v6hp .v4fn .ud{display:flex;gap:2px;margin-right:6px}.v6hp .v4fn .ud button{width:28px;height:28px;border:0;background:none;color:var(--ink-2);font-size:15px}.v6hp .v4fn .ud button:disabled{opacity:.25}
+.v6hp .v4fn{grid-template-columns:1fr auto auto}.v6hp .v4fn .ud{display:flex;gap:2px;margin-right:6px}.v6hp .v4fn .ud button{width:28px;height:28px;border:0;background:none;color:var(--ink-2);font-size:15px}.v6hp .v4fn .ud button:disabled{opacity:.25}
 .v6hp .v4fn.dis{opacity:.5}.v6hp .v4fn.dis small::after{content:" · desligado em Funções do app"}
 .v6hp .v4pg-top{font-size:.8rem;color:var(--ink-2);margin:0 0 .6rem}`; TR.append(st);
   const apply = () => { const h = TR.host; if (!h) return; const p = P(); V6H.forEach(([k]) => h.classList.toggle('v6h-' + k, p.off.includes(k)));
