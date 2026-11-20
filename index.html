@@ -9925,6 +9925,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -22290,8 +22291,8 @@ new MutationObserver(() => { const c = TR.querySelector('#lista:not(.lista-snap)
 // uma constelação e abre uma sequência de telas (stories): revelação, evolução (quando atualizou), estantes (Venn
 // proporcional), Top 3, gêneros (radar), notas, emoções, ecos, coincidências e o cartão 9:16 para compartilhar.
 // Dados: o resumo publicado da pessoa (lidos com nota, Top, gêneros) + GET /v1/users/:h/match (só o que o par tem em
-// comum: abandonos, ressaca, Pergunta do dia, ecos, data da amizade). Foco, abandonos e ressaca de cada pessoa NÃO são
-// publicados (decisão da Bia). Mínimo de 5 lidos visíveis de cada lado; estante privada não insiste. Resultado guardado
+// comum: abandonos, ressaca, Pergunta do dia, ecos, data da amizade e, com a migração 037, o resumo do foco das duas,
+// lado a lado). Foco, abandonos e ressaca de cada pessoa NÃO são publicados no perfil (decisão da Bia). Mínimo de 5 lidos visíveis de cada lado; estante privada não insiste. Resultado guardado
 // no aparelho por par; se alguma estante mudou, vira "Atualizar" e a sequência ganha a tela de evolução.
 // Desempenho: tudo em shadow root próprio, anima só transform/opacity, SVG inline, telas montadas uma de cada vez,
 // nada em laço; prefers-reduced-motion vira só fade. O aviso para a outra pessoa ficou de fora (não aprovado).
@@ -22376,6 +22377,20 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .ecq{display:grid;gap:10px;width:100%}.ecq .eqw{border-radius:14px;padding:12px 14px;animation:blUp .45s var(--d) both}.ecq .eqw.qme{background:rgba(240,176,112,.16)}.ecq .eqw.qel{background:rgba(195,176,255,.16)}.ecq .eqw q{display:block;font-family:var(--f-disp);font-size:17px;line-height:1.3}.ecq .eqw small{display:block;margin-top:4px;font-size:11.5px;font-weight:800;opacity:.75}
 .coi{display:grid;gap:10px;width:100%}.coi span{display:flex;align-items:center;gap:12px;text-align:left;background:rgba(255,255,255,.07);border-radius:14px;padding:12px 14px;animation:blUp .45s var(--d) both}.coi b{font-size:15px;line-height:1.3}.coi svg{flex:none;color:#ffd6a3}
 @media (prefers-reduced-motion: reduce){.bl *,.blc *{animation:none!important}.bl{animation:blFade .2s both}.bls{animation:blFade .3s both!important}.bl .comet{display:none}}
+.fco{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
+.fco > span{display:grid;justify-items:center;gap:3px;background:rgba(255,255,255,.07);border-radius:14px;padding:12px 6px}
+.fco .blav{width:28px;height:28px;font-size:12px;border-width:2px}
+.fco b{font-size:28px;font-weight:900}
+.fco small{font-size:12px;font-weight:700;opacity:.8;text-align:center}
+.dia24{width:100%;display:grid;gap:6px;margin-top:14px}
+.dia24 .trk{position:relative;height:28px;border-radius:10px;background:linear-gradient(90deg,#1b1640 0%,#3a2d6b 25%,#c98a4a 50%,#3a2d6b 75%,#1b1640 100%);overflow:hidden}
+.dia24 .trk i{position:absolute;height:10px;border-radius:99px;transform-origin:left;animation:blGrow .7s .3s both}
+.dia24 .trk i.me{top:3px;background:#f0b070}
+.dia24 .trk i.el{bottom:3px;background:#c3b0ff}
+.dia24 .hrs{display:flex;justify-content:space-between;font-size:11px;font-weight:800;opacity:.6}
+.dia24 .hrs em{font-style:normal}
+@keyframes blGrow{from{transform:scaleX(0)}}
+@media (prefers-reduced-motion:reduce){.dia24 .trk i{animation:none}}
 `;
 const V9IC = { chev: '<path d="M9 5l7 7-7 7"/>', x: '<path d="M6 6l12 12M18 6 6 18"/>', reply: '<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-5 4z"/>',
   plus: '<path d="M12 5v14M5 12h14"/>', friends: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.5 5.2"/>',
@@ -22424,6 +22439,15 @@ function v9Data(d, M) {
   D.coinc = [...(M.abandonaram || []).slice(0, 1).map((t) => ['stop', 'As duas abandonaram ' + t]), ...(M.ressaca || []).slice(0, 1).map((t) => ['wave', t + ' deu ressaca nas duas']),
     ...(M.qday || []).slice(0, 1).map((q) => ['vote', 'Votaram em ' + q.title + ' na Pergunta do dia de ' + String(q.day).slice(8, 10) + '/' + String(q.day).slice(5, 7)])];
   D.since = M.since || null;
+  // foco (migração 037): só quando as duas mandaram o resumo do mesmo ano; janela de 2 h a partir da hora mais comum
+  const FO = M.focus;
+  if (FO && FO.me && FO.them && (FO.me.minutes > 0 || FO.them.minutes > 0)) {
+    const jan = (h) => h == null ? null : [Math.max(0, Math.min(22, Number(h))), Math.max(0, Math.min(22, Number(h))) + 2];
+    const faixa = (h) => h == null ? '' : h < 6 ? 'de madrugada' : h < 12 ? 'de manhã' : h < 18 ? 'à tarde' : 'à noite';
+    const hm = FO.me.peakHour, he = FO.them.peakHour, fm = faixa(hm), fe = faixa(he);
+    D.foco = { year: FO.year, min: [Number(FO.me.minutes) || 0, Number(FO.them.minutes) || 0], ses: [Number(FO.me.sessions) || 0, Number(FO.them.sessions) || 0], h: [jan(hm), jan(he)],
+      fm, fe, hm, he };
+  } else D.foco = null;
   // afinidade e persona
   const ts = b / Math.max(8, Math.min(mine.length || 1, theirK.size || 1)), gs = D.temDna ? (() => { let mn = 0, mx = 0; new Set([...A.keys(), ...B.keys()]).forEach((k) => { mn += Math.min(A.get(k) || 0, B.get(k) || 0); mx += Math.max(A.get(k) || 0, B.get(k) || 0); }); return mx ? mn / mx : 0; })() : 0;
   const score = D.temDna ? 0.55 * Math.min(1, ts * 1.6) + 0.45 * gs : Math.min(1, ts * 1.6); D.lo = score < 0.35;
@@ -22436,8 +22460,8 @@ function v9Data(d, M) {
   D.nx = (sh.potinho || []).find((x) => !mineK.has(normT(x.title)) && !lib().some((e) => normT(e.title) === normT(x.title))) || null;
   return D;
 }
-const V9PESO = { rev: 99, fim: 99, evo: 90, venn: 80, top: 75, rg: 70, ecos: 60, coinc: 58, em: 55, gen: 45 };
-const v9Telas = (D, evo) => { const T = ['rev', evo && 'evo', 'venn', D.top && 'top', D.temDna && 'gen', D.rg.length && 'rg', D.em[0].length && D.em[1].length && 'em', (D.ecos.me || D.ecos.el) && 'ecos', D.coinc.length && 'coinc', 'fim'].filter(Boolean);
+const V9PESO = { rev: 99, fim: 99, evo: 90, venn: 80, top: 75, rg: 70, ecos: 60, coinc: 58, em: 55, foco: 50, gen: 45 };
+const v9Telas = (D, evo) => { const T = ['rev', evo && 'evo', 'venn', D.top && 'top', D.temDna && 'gen', D.rg.length && 'rg', D.em[0].length && D.em[1].length && 'em', D.foco && 'foco', (D.ecos.me || D.ecos.el) && 'ecos', D.coinc.length && 'coinc', 'fim'].filter(Boolean);
   while (T.length > 9) { const lo = T.reduce((m, k) => V9PESO[k] < V9PESO[m] ? k : m, T[0]); T.splice(T.indexOf(lo), 1); } return T; };
 // guardado por par no aparelho: a última combinação (para "Ver de novo" e para a evolução)
 const v9Key = (h) => 'lv.combo.' + ((typeof socialProfile !== 'undefined' && socialProfile && socialProfile.handle) || 'eu') + '.' + h;
@@ -22482,7 +22506,7 @@ const v9Z = (k, h, chart, q, act) => '<div class="bls"><header class="bz-h"><spa
 function v9Act(D, k) {
   const disc = '<button class="btn s blbt" data-v9="disc">' + v9ic('reply', 16) + 'Discutir</button>';
   if (!D.am) return k === 'rg' || k === 'em' ? '<button class="btn s blbt" data-v9="add">' + v9ic('plus', 16) + 'Adicionar amizade para conversar</button>' : '';
-  return { venn: D.venn[1] ? '<button class="btn s blbt" data-v9="comum">' + v9ic('estante', 16) + 'Ver os ' + D.venn[1] + ' em comum</button>' : '', ecos: disc, rg: disc, em: disc }[k] || '';
+  return { venn: D.venn[1] ? '<button class="btn s blbt" data-v9="comum">' + v9ic('estante', 16) + 'Ver os ' + D.venn[1] + ' em comum</button>' : '', ecos: disc, rg: disc, em: disc, foco: disc }[k] || '';
 }
 function v9Screen(D, k, prev) {
   const n = esc(D.n), lg = '<div class="rlg"><span>' + D.avMe.replace('blav ', 'blav ') + 'Você</span><span>' + D.avEl + n + '</span></div>';
@@ -22505,6 +22529,13 @@ function v9Screen(D, k, prev) {
   if (k === 'em') { const ec = (L) => L.map((e) => '<span class="' + (D.ec.includes(e) ? 'cm' : '') + '">' + esc(e) + '</span>').join('');
     return v9Z('O que sentem', D.ec.length ? esc(D.ec.join(' e ')) : 'Cada uma sente diferente', (D.ec.length ? '<div class="emc">' + D.ec.map((e, j) => '<b style="--d:' + (0.2 + j * 0.2).toFixed(2) + 's">' + esc(e) + '</b>').join('') + '</div>' : '') + '<div class="emo2"><div>' + D.avMe + '<small>Você</small>' + ec(D.em[0]) + '</div><div>' + D.avEl + '<small>' + n + '</small>' + ec(D.em[1]) + '</div></div>',
       D.ec.length ? 'As duas vivem pelo mesmo tipo de cena.' : 'Troquem de lugar por um livro.', v9Act(D, 'em')); }
+  if (k === 'foco') { const F = D.foco, hr = (h) => h ? h[0] + 'h–' + (h[1] === 24 ? '0' : h[1]) + 'h' : 'horário variado';
+    const seg = (h, c) => h ? '<i class="' + c + '" style="left:' + (h[0] / 24 * 100).toFixed(1) + '%;width:' + ((h[1] - h[0]) / 24 * 100).toFixed(1) + '%"></i>' : '';
+    const hh = (m) => m >= 60 ? Math.round(m / 60) + ' h' : m + ' min';
+    const q = F.fm && F.fe ? (F.fm === F.fe ? 'As duas leem ' + F.fm + (Math.abs(F.hm - F.he) <= 1 ? ', quase na mesma hora.' : '.') : 'Você lê ' + F.fm + ', ' + n + ' ' + F.fe + '.') : 'Quem lê mais com cronômetro?';
+    return v9Z('Foco', q, '<div class="fco">' + [0, 1].map((j) => '<span>' + (j ? D.avEl : D.avMe) + '<b>' + hh(F.min[j]) + '</b><small>' + F.ses[j] + (F.ses[j] === 1 ? ' sessão' : ' sessões') + ' · ' + hr(F.h[j]) + '</small></span>').join('') + '</div>'
+      + '<div class="dia24"><span class="trk">' + seg(F.h[0], 'me') + seg(F.h[1], 'el') + '</span><span class="hrs"><em>0h</em><em>6h</em><em>12h</em><em>18h</em><em>24h</em></span></div>',
+      'Minutos com cronômetro em ' + F.year + '.', v9Act(D, 'foco')); }
   if (k === 'ecos') { const E = D.ecos;
     return v9Z('Ecos', E.livro ? 'Um eco de cada em ' + esc(E.livro.title) : E.me + ' ecos seus, ' + E.el + ' de ' + n, '<div class="eco2"><span><b>' + E.me + '</b><small>ecos seus</small></span><span><b>' + E.el + '</b><small>ecos de ' + n + '</small></span></div>'
       + (E.livro ? '<div class="ecq"><div class="eqw qme" style="--d:.4s"><q>' + esc(E.livro.me.body) + '</q><small>você · pág. ' + E.livro.me.page + '</small></div><div class="eqw qel" style="--d:.65s"><q>' + esc(E.livro.them.body) + '</q><small>' + n + ' · pág. ' + E.livro.them.page + '</small></div></div>' : ''),
@@ -22612,6 +22643,30 @@ async function v9Share(D) {
   try { if (navigator.canShare && navigator.canShare({ files: [file] })) return await navigator.share({ files: [file], title: 'Nossa combinação no Livroverso' }); } catch {}
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.append(a); a.click(); a.remove(); toast('Imagem salva');
 }
+// --- s1_v2_foco_resumo.js ---
+// Resumo do foco para o "Vocês combinam" (Bia, 20/11; API 037): só o RESUMO do ano vai para o servidor — minutos com
+// cronômetro, quantas sessões e a hora mais comum (pelo início de cada sessão, pesando os minutos). Nunca as sessões.
+// O resumo não aparece em perfil nenhum; o servidor só o usa na comparação do par (GET /v1/users/:h/match).
+// Manda só quando muda (hash guardado no aparelho) e só com conta conectada.
+{ const resumo = () => {
+    const y = todayISO().slice(0, 4), F = (db.focus || []).filter((x) => x && Number(x.minutes) > 0 && String(x.date || '').startsWith(y));
+    if (!F.length) return null;
+    const H = new Array(24).fill(0); let min = 0;
+    F.forEach((x) => { const m = Number(x.minutes) || 0; min += m; const d = x.start ? new Date(x.start) : null; if (d && !isNaN(d)) H[d.getHours()] += m; });
+    const top = Math.max(...H), peak = top > 0 ? H.indexOf(top) : null;
+    return { year: Number(y), minutes: Math.min(600000, Math.round(min)), sessions: Math.min(100000, F.length), peakHour: peak };
+  };
+  let busy = false;
+  const push = async () => {
+    if (busy || document.visibilityState === 'hidden') return; try { if (!connected()) return; } catch { return; }
+    let r = null; try { r = resumo(); } catch { return; } if (!r) return;
+    const who = (typeof socialProfile !== 'undefined' && socialProfile && socialProfile.handle) || 'eu', k = 'v9fo:' + who, h = JSON.stringify(r);
+    let last = null; try { last = localStorage.getItem(k); } catch {} if (last === h) return;
+    busy = true;
+    try { const res = await sapi('PUT', '/v1/me/focus-summary', r); if (res && res.status === 200) { try { localStorage.setItem(k, h); } catch {} } } catch {} finally { busy = false; }
+  };
+  setTimeout(push, 8000); setInterval(push, 30000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') push(); }); }
 // --- t0_v2_alinhar_a.js ---
 // Alinhamento com o protótipo v3, parte A (Bia, 20/11: "revisa tudo que falta pra subir pra dev").
 // 1) Trecho: todos os atalhos (Hoje, menu do livro, Ler) abrem a folha "Novo trecho" do protótipo (livro, foto, categoria,
