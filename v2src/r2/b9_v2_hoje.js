@@ -14,6 +14,7 @@
 .v2-qd{grid-column:1/-1;width:100%;box-sizing:border-box;margin:0 0 1rem;padding:16px;border:1px solid var(--line);border-radius:var(--v2-r,20px);background:linear-gradient(135deg,color-mix(in srgb,#7e63c9 16%,var(--panel)),var(--panel))}
 .v2-qd .qpicks{display:flex;gap:10px}.v2-qd .qpicks button{display:grid;gap:5px;justify-items:center;align-content:start;border:0;background:none;padding:0;font:inherit;font-size:11.5px;font-weight:800;color:var(--ink-2);width:78px;text-align:center;cursor:pointer}
 .v2-qd .qpicks button span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.v2-qd .cv.rt{box-shadow:0 4px 10px rgba(0,0,0,.22)!important}.v2-qd .cv::before,.v2-qd .cv::after{display:none!important}.v2-qd .rt-sp{display:none!important}
 .v2-qd .qcv{width:64px;height:96px;border-radius:3px 7px 7px 3px;object-fit:cover;box-shadow:0 4px 10px rgba(0,0,0,.22);font-size:.55rem}
 .v2-qd .qo{display:grid;place-items:center;background:color-mix(in srgb,var(--ink) 6%,var(--panel));border:1.5px dashed var(--line);box-shadow:none;color:var(--ink-2)}.v2-qd .qo svg{width:22px;height:22px}
 .v2-qd .qft{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--ink-2);font-weight:700}.v2-qd .qft button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;padding:0;cursor:pointer}
@@ -120,8 +121,9 @@ function v2HojeEnsure() {
   // Pergunta do dia: no lugar escolhido em Personalizar Início
   const { order, off } = homePrefs(); let qd = box.querySelector('[data-v2qd]');
   if (off.includes('qday')) { qd && qd.remove(); return; }
-  const html = v2QdayHTML(), want = html.replace(/\s+/g, ' ');
-  if (!qd || qd.dataset.k !== want) { const tmp = document.createElement('div'); tmp.innerHTML = html; const neu = tmp.firstElementChild; neu.dataset.k = want; if (qd) qd.replaceWith(neu); else box.append(neu); qd = neu; }
+  // a chave ignora o id da capa (data-cvk muda a cada desenho): antes o cartão era trocado sem parar e piscava com o "A seguir"
+  const html = v2QdayHTML(), want = html.replace(/ data-cvk="c\d+"/g, '').replace(/\s+/g, ' ');
+  if (!qd || qd.dataset.k !== want) { const tmp = document.createElement('div'); tmp.innerHTML = html; const neu = tmp.firstElementChild; neu.dataset.k = want; if (qd) qd.replaceWith(neu); else box.append(neu); qd = neu; try { paintCv(neu); } catch {} }
   // posição: depois da última seção visível que vem antes dela na ordem; se nenhuma, logo depois da linha "Qual leio agora?"
   let ref = (qn && qn.isConnected ? qn : null) || now; const i = order.indexOf('qday');
   for (let j = i - 1; j >= 0; j--) { const k = order[j]; if (off.includes(k) || !V2_SEC_EL[k]) continue; const els = V2_SEC_EL[k](box).filter((x) => x && x.isConnected && x.offsetParent !== null); if (els.length) { ref = els[els.length - 1]; break; } }
