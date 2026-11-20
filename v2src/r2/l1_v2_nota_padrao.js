@@ -7,6 +7,7 @@
 .cv.rt::before,.cv.rt-5::before,.cv.rt-ouro::before,.cv.rt-prata::before{display:none!important}
 .rt-sp.rt-sp.rt-sp.rt-sp,#shelflist .rt-sp.rt-sp.rt-sp.rt-sp,#lista .rt-sp.rt-sp.rt-sp.rt-sp,#editor .rt-sp.rt-sp.rt-sp.rt-sp,.ys-sp.ys-sp.ys-sp.ys-sp,#shelflist .ys-sp.ys-sp.ys-sp.ys-sp,#lista .ys-sp.ys-sp.ys-sp.ys-sp,#editor .ys-sp.ys-sp.ys-sp.ys-sp,.mk-bear.mk-bear.mk-bear.mk-bear,#shelflist .mk-bear.mk-bear.mk-bear.mk-bear,#lista .mk-bear.mk-bear.mk-bear.mk-bear,#editor .mk-bear.mk-bear.mk-bear.mk-bear,.ys-mk.ys-mk.ys-mk.ys-mk,#shelflist .ys-mk.ys-mk.ys-mk.ys-mk,#lista .ys-mk.ys-mk.ys-mk.ys-mk,#editor .ys-mk.ys-mk.ys-mk.ys-mk,.es4-done.es4-done.es4-done.es4-done,#shelflist .es4-done.es4-done.es4-done.es4-done,#lista .es4-done.es4-done.es4-done.es4-done,#editor .es4-done.es4-done.es4-done.es4-done{display:none!important}
 .v6st{display:block;color:var(--acc);letter-spacing:1px;font-size:12px;line-height:1.2;margin-top:2px;font-weight:400;white-space:nowrap}
+.rd-tag.rd-nt.rd-nt{white-space:nowrap;background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc)}.rd-tag.rd-nt i{font-style:normal;letter-spacing:1px;margin-left:.15rem}.rd-tag.rd-nt u{text-decoration:none;opacity:.3}
 .v6st i{font-style:normal;color:color-mix(in srgb,var(--ink) 18%,transparent)}
 .v6st.t{display:inline;letter-spacing:0;font-size:.72rem;font-weight:800;color:var(--ink-2)}
 .es4-st.v6host.v6host{display:block!important}.es4-st.v6host .v6st{margin-top:0}
@@ -24,7 +25,7 @@
   };
   const stars = (p) => { const n = Math.round(p); return '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i>'; };
   const fmt = (p) => String(p).replace('.', ',');
-  const SKIP = '.v3at, .v3tp3, .v3tp, .rd-post, .fd-post, .v3x, .v3hero, .ys-g, .ys-row, .yv-tb';
+  const SKIP = '.v3at, .rd-card, .v3tp3, .v3tp, .rd-post, .fd-post, .v3x, .v3hero, .ys-g, .ys-row, .yv-tb';
   const place = (cv) => {
     cv.dataset.v6 = '1'; const p = Number(cv.dataset.rt) || 0; if (!p) return;
     if (!cv.closest('#shelflist') || cv.closest(SKIP)) return;
