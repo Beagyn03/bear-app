@@ -14,6 +14,15 @@
 #shelflist .sl-body .bp-tabs > button{flex:0 0 auto!important;height:auto!important;padding:.55rem 0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--ink-2)!important;font-size:.9rem!important;font-weight:800!important;border-bottom:2.5px solid transparent!important;margin-bottom:-1px!important}
 #shelflist .sl-body .bp-tabs > button.on{color:var(--ink)!important;border-bottom-color:var(--acc)!important}
 #shelflist .bp-hero .v5hdots{border:0!important;background:none!important;width:34px!important;height:34px!important;font-size:1rem!important}
+/* topo do livro centralizado como no protótipo (Bia, 20/11): capa no centro, título, autor e ficha embaixo, sem cartão */
+#shelflist .sl-body > .bp-hero{grid-template-columns:1fr!important;justify-items:center!important;text-align:center!important;align-items:start!important;gap:.15rem!important;padding:.6rem 0 0!important;margin:.2rem 0 .9rem!important;border:0!important;background:none!important;box-shadow:none!important}
+#shelflist .sl-body > .bp-hero::before,#shelflist .sl-body > .bp-hero::after{display:none!important}
+#shelflist .sl-body > .bp-hero .bp-cv{width:120px!important;height:180px!important;margin:0 0 .7rem!important;transform:none!important}
+#shelflist .sl-body > .bp-hero .bp-ht{display:grid;justify-items:center;text-align:center}
+#shelflist .sl-body > .bp-hero .bp-ht h2{font-size:1.45rem!important;text-wrap:balance}
+#shelflist .sl-body > .bp-hero .bp-ht > small{color:var(--ink-2)!important;font-weight:700!important}
+#shelflist .sl-body > .bp-hero .bp-chips{justify-content:center!important;margin-top:.55rem!important}
+#shelflist .sl-body > .bp-hero .v5hdots{top:.2rem!important;right:0!important}
 #shelflist .v8nc .r1 b{font-family:var(--v2-disp,Georgia,serif)!important;font-weight:700!important;font-size:1.1rem!important}
 #shelflist .v8nc .r1 b i{font-style:normal;color:var(--acc)}
 #shelflist .v8nc .r1 small{display:block;font-size:.66rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
