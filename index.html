@@ -9922,6 +9922,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -22131,6 +22132,12 @@ function v8BjPut() { const v = $('#shelflist');
 #shelflist .v8nc .r1 > span:last-child{border-right:0}
 #shelflist .v8nc .r1 b{display:block;font-size:1.05rem;font-weight:900;color:var(--ink);white-space:nowrap}
 #shelflist .bp-chips[data-v8] .bp-chip:not(.gold){background:color-mix(in srgb,var(--ink) 7%,transparent)!important;color:var(--ink)!important;border-color:transparent!important}
+/* página do livro igual ao protótipo (Bia, 20/11): abas sublinhadas, ••• sem moldura, números na fonte de títulos */
+#shelflist .sl-body .bp-tabs{gap:1.1rem!important;padding:0!important;border-radius:0!important;background:none!important;border-bottom:1px solid var(--line)!important;margin:.3rem 0 .8rem!important;justify-content:flex-start}
+#shelflist .sl-body .bp-tabs > button{flex:0 0 auto!important;height:auto!important;padding:.55rem 0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:var(--ink-2)!important;font-size:.9rem!important;font-weight:800!important;border-bottom:2.5px solid transparent!important;margin-bottom:-1px!important}
+#shelflist .sl-body .bp-tabs > button.on{color:var(--ink)!important;border-bottom-color:var(--acc)!important}
+#shelflist .bp-hero .v5hdots{border:0!important;background:none!important;width:34px!important;height:34px!important;font-size:1rem!important}
+#shelflist .v8nc .r1 b{font-family:var(--v2-disp,Georgia,serif)!important;font-weight:700!important;font-size:1.1rem!important}
 #shelflist .v8nc .r1 b i{font-style:normal;color:var(--acc)}
 #shelflist .v8nc .r1 small{display:block;font-size:.66rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 `; TR.append(st); }
