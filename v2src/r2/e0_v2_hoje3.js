@@ -148,7 +148,7 @@ function v3Bind(n) {
     if (k === 'qt') return saveQuote(e);
     if (k === 'more') return bookMenuOpen(b, { e, title: e.title });
     if (k === 'prazo') return dueSheet(e);
-    if (k === 'junto') { const bud = v3Buddy(e); if (bud && bud.on) return openBuddyPage(e); if (bud) return toast('Convite enviado. A leitura conjunta começa quando aceitarem.'); return inviteBuddy(e); }
+    if (k === 'junto') { const bud = v3Buddy(e); if (bud && bud.on) return openBuddyPage(e); if (bud) return inviteBuddy(e); return inviteBuddy(e); }
   });
 }
 { let tm = 0, busy = false;

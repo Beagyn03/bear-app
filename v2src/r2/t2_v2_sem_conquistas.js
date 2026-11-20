@@ -25,7 +25,7 @@ Object.assign(V3EMO, {
   eyeoff: '<path d="M3 3l18 18M10.6 6a9.6 9.6 0 0 1 1.4-.1C18 5.9 21.5 12 21.5 12a17 17 0 0 1-3 3.7M6.6 6.7C4 8.4 2.5 12 2.5 12S6 18.5 12 18.5c1.7 0 3.2-.5 4.4-1.2M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
   book: '<path d="M12 6.5C10 5 7.5 4.5 4 4.8v13c3.5-.3 6 .2 8 1.7 2-1.5 4.5-2 8-1.7v-13c-3.5-.3-6 .2-8 1.7zM12 6.5v13"/>',
   pen2: '<path d="M4 20l1-4L16 5l3 3L8 19z"/>' });
-{ const ICO = [[/^(Apagar|Excluir)/i, 'trash', 1], [/^Bloquear/i, 'block', 1], [/^Denunciar/i, 'alert', 1], [/^(Silenciar|Deixar de silenciar)/i, 'mute'], [/^Ocultar/i, 'eyeoff'],
+{ const ICO = [[/^(Apagar|Excluir)/i, 'trash', 1], [/^Bloquear/i, 'block', 1], [/^Denunciar/i, 'alert', 1], [/^(Silenciar|Deixar de silenciar|Tirar silêncio)/i, 'mute'], [/^Ocultar/i, 'eyeoff'],
     [/^Copiar link/i, 'link'], [/^Ver o livro|^Abrir o livro/i, 'book'], [/^Editar/i, 'pen2'], [/^Quem vê|^Visibilidade/i, 'globe'], [/spoiler/i, 'alert'], [/^Responder/i, 'reply'], [/^Compartilhar/i, 'swap'], [/^Salvar/i, 'heart']];
   const _pm = popMenu; popMenu = function (anchor, items) {
     const L = (items || []).map((x) => { if (!x || typeof x !== 'object' || typeof x.label !== 'string' || /<(i|svg)\b/.test(x.label)) return x;

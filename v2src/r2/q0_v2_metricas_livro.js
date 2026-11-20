@@ -38,12 +38,15 @@
     const h = hashOf(JSON.stringify(L)); let last = null; try { last = localStorage.getItem(k); } catch {}
     if (last === h) return;
     busy = true;
-    try { const r = await sapi('PUT', '/v1/me/books', { books: L.slice(0, 5000) }); if (r && r.status === 200) { try { localStorage.setItem(k, h); } catch {} } } catch {} finally { busy = false; }
+    try { const r = await sapi('PUT', '/v1/me/books', { books: L.slice(0, 5000) }); if (r && r.status === 200) { try { localStorage.setItem(k, h); } catch {} try { v8Bust(); } catch {} } } catch {} finally { busy = false; }
   };
-  setTimeout(push, 6000); setInterval(push, 20000);
+  // a estante muda (Terminei, Não terminei, novo livro): sobe em poucos segundos e os números do livro se refazem (teste 14)
+  setTimeout(push, 6000); setInterval(push, 5000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') push(); }); }
 // ---------- números do livro, abaixo do topo (perfil do livro; Bia, 20/11) ----------
+var v8Bust = () => {};
 { const cache = new Map(), asked = new Map();
+  v8Bust = () => { cache.clear(); asked.clear(); try { put(); } catch {} };
   const fmt = (n) => Number(n).toLocaleString('pt-BR');
   const html = (s) => {
     const n = (x) => Number(x) || 0, av = n(s.avaliacoes), r = s.ressaca || {};

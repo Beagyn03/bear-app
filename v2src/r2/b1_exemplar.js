@@ -1,3 +1,4 @@
+// Emprestar não muda o exemplar (teste 26, 20/11): o formato vem do livro; "Voltou" devolve o exemplar como estava.
 // Meu exemplar (Bia, 19/11): separado da situação de leitura. e.ex = { own: 'tenho'|'quero'|'pegou', fmt, tags, loan, borrow, log }.
 // Tenho (com formato e detalhes) e emprestar (para quem, quando, até quando); Quero ter (aparece no perfil para presentes);
 // Peguei emprestado (de quem, quando, até quando). Lembrete de devolução no Início. A amiga ainda não vê o empréstimo do lado
@@ -72,14 +73,14 @@ function exSheet(e, view) {
       if (a === 'ok') return close();
       if (a === 'loan' || a === 'borrow') { mode = a; who = null; return paint(); }
       if (a === 'cancel') { mode = 'main'; return paint(); }
-      if (a === 'back') return set((x) => { exLog(e, { t: 'devolveram', to: x.loan.to, at: x.loan.at }); delete x.loan; toast('Devolução registrada'); });
+      if (a === 'back') return set((x) => { exLog(e, { t: 'devolveram', to: x.loan.to, at: x.loan.at }); delete x.loan; if (x.loanPrev) { if (x.loanPrev.own) x.own = x.loanPrev.own; else delete x.own; if (x.loanPrev.fmt) x.fmt = x.loanPrev.fmt; else delete x.fmt; delete x.loanPrev; } toast('Devolução registrada'); });
       if (a === 'gaveback') return set((x) => { exLog(e, { t: 'devolvi', from: x.borrow && x.borrow.from }); delete x.borrow; delete x.own; toast('Devolução registrada'); });
       if (a === 'save') { const at = (sh.querySelector('.ex-at') || {}).value || todayISO(), due = (sh.querySelector('.ex-due') || {}).value || '';
         const L = mode === 'loan' ? exOf(e).loan : exOf(e).borrow, p = who || (L ? (mode === 'loan' ? L.to : L.from) : null);
         if (!p || !exName(p)) return toast(mode === 'loan' ? 'Escolha para quem' : 'Escolha de quem');
         if (due && due < at) return toast('A devolução precisa ser depois da data');
         const m0 = mode; mode = 'main';
-        return set((x) => { if (m0 === 'loan') { x.own = 'tenho'; x.loan = { to: p, at, ...(due ? { due } : {}) }; exLog(e, { t: 'emprestei', to: p, at }); toast('Empréstimo registrado'); } else { x.own = 'pegou'; x.borrow = { from: p, at, ...(due ? { due } : {}) }; } }); }
+        return set((x) => { if (m0 === 'loan') { if (!x.loanPrev) x.loanPrev = { own: x.own || null, fmt: x.fmt || null }; if (!x.own) x.own = 'tenho'; if (!x.fmt && e.format) x.fmt = e.format === 'FISICO' ? 'PAPER' : e.format; x.loan = { to: p, at, ...(due ? { due } : {}) }; exLog(e, { t: 'emprestei', to: p, at }); toast('Empréstimo registrado'); } else { x.own = 'pegou'; x.borrow = { from: p, at, ...(due ? { due } : {}) }; } }); }
     };
     sh.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
   };

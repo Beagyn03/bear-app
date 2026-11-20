@@ -44,7 +44,7 @@ async function v2MuteToggle(d) {
   const on = !d.muted, who = String(d.displayName || '@' + d.handle).split(' ')[0];
   const r = await sapi(on ? 'POST' : 'DELETE', '/v1/mutes/' + encodeURIComponent(d.handle)).catch(() => null);
   if (!r || r.status >= 300) return toast('Não consegui agora');
-  d.muted = on; toast(on ? 'Silenciado. Os posts e comentários de ' + who + ' não aparecem mais para você. Ninguém fica sabendo.' : 'Você voltou a ver o que ' + who + ' publica');
+  d.muted = on; try { if (S.fpData && S.fpData.handle === d.handle) S.fpData.muted = on; } catch {} toast(on ? 'Silêncio ativado. Ninguém fica sabendo.' : 'Você voltou a ver ' + who);
 }
 function v2MutesSheet() {
   const ed = $('#editor'); ed.classList.add('compact'); let L = null;

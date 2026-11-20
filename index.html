@@ -9932,6 +9932,8 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11893,7 +11895,7 @@ function rdCardHTML(it, i, opts = {}) {
   return `<article class="rd-card rd2${it.paws ? ' has-nota' : ''}" data-i="${i}">
     <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
       <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amizades' : ''}</small></button>
-      <span class="rd-kc">${isRev && it.paws ? `<span class="rd-tag rv rd-nt" title="${revLbl} · nota ${String(it.paws).replace('.', ',')}">${esc(revLbl)} <i>${'★'.repeat(Math.round(Number(it.paws)))}<u>${'★'.repeat(5 - Math.round(Number(it.paws)))}</u></i></span>` : `<span class="rd-tag${isRev || isAch || (isAct && it.act === 'FINISHED') ? ' rv' : ''}${kind === 'Lendo' ? ' le' : ''}"${pct != null ? ` title="${esc(readerPctTxt(it.readerPct))}"` : ''}>${esc(kind)}${pct != null ? ' · ' + pct + '%' : ''}</span>`}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
+      <span class="rd-kc">${isRev && it.paws ? `<span class="rd-tag rv rd-nt" title="${revLbl} · nota ${String(it.paws).replace('.', ',')}">${esc(revLbl)} <i>★ ${String(it.paws).replace('.', ',')}</i></span>` : `<span class="rd-tag${isRev || isAch || (isAct && it.act === 'FINISHED') ? ' rv' : ''}${kind === 'Lendo' ? ' le' : ''}"${pct != null ? ` title="${esc(readerPctTxt(it.readerPct))}"` : ''}>${esc(kind)}${pct != null ? ' · ' + pct + '%' : ''}</span>`}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
     ${isAch ? `<div class="rd-ach">${it.reward && typeof DECO_IMG !== 'undefined' && DECO_IMG[it.reward] ? `<img src="${DECO_IMG[it.reward]}" alt="">` : '<span></span>'}<span><b>${esc(it.name || '')}</b><small>ganhou esta conquista</small></span></div>` : ''}
     ${it.book && !it.book2 ? `<div class="rd-main"><div class="rd-lc"><button type="button" class="rd-book rd-bcv" aria-label="Ver o livro">${cvh(it.book.title, it.book.cover)}</button></div><div class="rd-col"><button type="button" class="rd-book rd-bt"><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small>${it.paws && fr ? `<span class="rd-ntx">${esc(fr)}</span>` : ''}${isAct ? `<em>${it.act === 'STARTED' ? 'começou a ler' : it.act === 'FINISHED' ? 'terminou o livro' : it.pages ? 'chegou na pág. ' + it.pages : 'avançou na leitura'}</em>` : ''}${fim ? `<em>${esc(fim)}</em>` : ''}</button>${(it.text || it.quote || it.hasImage || (it.feelings || []).length) ? `<div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}${reHide}` : ''}</div></div>` : `<div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}${reHide}`}
     ${opts.noFoot || isAch ? '' : isAct ? `<footer><span class="rd-sp"></span><button type="button" class="rd-save${saved ? ' on' : ''}" aria-pressed="${saved}" aria-label="Salvar"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></button>${rdShelfBtn(it)}</footer>` : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" data-ic2="1" aria-label="Curtir" aria-pressed="${!!it.liked}"><img class="rd-hi" src="img/bt_curtir.webp" alt="">${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button>
@@ -16602,6 +16604,7 @@ function esnFilterSheet(redraw) {
   sh.addEventListener('click', (ev) => { if (ev.target === sh) sh.remove(); }); paint(); TR.append(sh);
 }
 // --- b1_exemplar.js ---
+// Emprestar não muda o exemplar (teste 26, 20/11): o formato vem do livro; "Voltou" devolve o exemplar como estava.
 // Meu exemplar (Bia, 19/11): separado da situação de leitura. e.ex = { own: 'tenho'|'quero'|'pegou', fmt, tags, loan, borrow, log }.
 // Tenho (com formato e detalhes) e emprestar (para quem, quando, até quando); Quero ter (aparece no perfil para presentes);
 // Peguei emprestado (de quem, quando, até quando). Lembrete de devolução no Início. A amiga ainda não vê o empréstimo do lado
@@ -16676,14 +16679,14 @@ function exSheet(e, view) {
       if (a === 'ok') return close();
       if (a === 'loan' || a === 'borrow') { mode = a; who = null; return paint(); }
       if (a === 'cancel') { mode = 'main'; return paint(); }
-      if (a === 'back') return set((x) => { exLog(e, { t: 'devolveram', to: x.loan.to, at: x.loan.at }); delete x.loan; toast('Devolução registrada'); });
+      if (a === 'back') return set((x) => { exLog(e, { t: 'devolveram', to: x.loan.to, at: x.loan.at }); delete x.loan; if (x.loanPrev) { if (x.loanPrev.own) x.own = x.loanPrev.own; else delete x.own; if (x.loanPrev.fmt) x.fmt = x.loanPrev.fmt; else delete x.fmt; delete x.loanPrev; } toast('Devolução registrada'); });
       if (a === 'gaveback') return set((x) => { exLog(e, { t: 'devolvi', from: x.borrow && x.borrow.from }); delete x.borrow; delete x.own; toast('Devolução registrada'); });
       if (a === 'save') { const at = (sh.querySelector('.ex-at') || {}).value || todayISO(), due = (sh.querySelector('.ex-due') || {}).value || '';
         const L = mode === 'loan' ? exOf(e).loan : exOf(e).borrow, p = who || (L ? (mode === 'loan' ? L.to : L.from) : null);
         if (!p || !exName(p)) return toast(mode === 'loan' ? 'Escolha para quem' : 'Escolha de quem');
         if (due && due < at) return toast('A devolução precisa ser depois da data');
         const m0 = mode; mode = 'main';
-        return set((x) => { if (m0 === 'loan') { x.own = 'tenho'; x.loan = { to: p, at, ...(due ? { due } : {}) }; exLog(e, { t: 'emprestei', to: p, at }); toast('Empréstimo registrado'); } else { x.own = 'pegou'; x.borrow = { from: p, at, ...(due ? { due } : {}) }; } }); }
+        return set((x) => { if (m0 === 'loan') { if (!x.loanPrev) x.loanPrev = { own: x.own || null, fmt: x.fmt || null }; if (!x.own) x.own = 'tenho'; if (!x.fmt && e.format) x.fmt = e.format === 'FISICO' ? 'PAPER' : e.format; x.loan = { to: p, at, ...(due ? { due } : {}) }; exLog(e, { t: 'emprestei', to: p, at }); toast('Empréstimo registrado'); } else { x.own = 'pegou'; x.borrow = { from: p, at, ...(due ? { due } : {}) }; } }); }
     };
     sh.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
   };
@@ -18639,7 +18642,7 @@ function v3Bind(n) {
     if (k === 'qt') return saveQuote(e);
     if (k === 'more') return bookMenuOpen(b, { e, title: e.title });
     if (k === 'prazo') return dueSheet(e);
-    if (k === 'junto') { const bud = v3Buddy(e); if (bud && bud.on) return openBuddyPage(e); if (bud) return toast('Convite enviado. A leitura conjunta começa quando aceitarem.'); return inviteBuddy(e); }
+    if (k === 'junto') { const bud = v3Buddy(e); if (bud && bud.on) return openBuddyPage(e); if (bud) return inviteBuddy(e); return inviteBuddy(e); }
   });
 }
 { let tm = 0, busy = false;
@@ -18994,7 +18997,7 @@ function v2ReportSheet(d) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'v2pxm'; b.setAttribute('aria-label', 'Mais opções do perfil'); b.textContent = '•••';
     b.addEventListener('click', (ev) => { ev.stopPropagation(); const dd = S.fpData; if (!dd) return; popMenu(b, [
       { label: 'Copiar link do perfil', fn: () => { const u = location.origin + location.pathname + '#@' + dd.handle; try { navigator.clipboard.writeText(u).then(() => toast('Link do perfil copiado'), () => toast(u)); } catch { toast(u); } } },
-      { label: dd.muted ? 'Deixar de silenciar' : 'Silenciar', fn: () => { if (!connected()) return toast('Entre na sua conta para silenciar'); v2MuteToggle(dd); } },
+      { label: dd.muted ? 'Tirar silêncio' : 'Silenciar', fn: () => { if (!connected()) return toast('Entre na sua conta para silenciar'); v2MuteToggle(dd); } },
       { label: 'Denunciar', fn: () => { if (!connected()) return toast('Entre na sua conta para denunciar'); v2ReportSheet(dd); } },
       0,
       { label: 'Bloquear', danger: true, fn: () => v2BlockSheet(dd) },
@@ -19107,7 +19110,7 @@ async function v2MuteToggle(d) {
   const on = !d.muted, who = String(d.displayName || '@' + d.handle).split(' ')[0];
   const r = await sapi(on ? 'POST' : 'DELETE', '/v1/mutes/' + encodeURIComponent(d.handle)).catch(() => null);
   if (!r || r.status >= 300) return toast('Não consegui agora');
-  d.muted = on; toast(on ? 'Silenciado. Os posts e comentários de ' + who + ' não aparecem mais para você. Ninguém fica sabendo.' : 'Você voltou a ver o que ' + who + ' publica');
+  d.muted = on; try { if (S.fpData && S.fpData.handle === d.handle) S.fpData.muted = on; } catch {} toast(on ? 'Silêncio ativado. Ninguém fica sabendo.' : 'Você voltou a ver ' + who);
 }
 function v2MutesSheet() {
   const ed = $('#editor'); ed.classList.add('compact'); let L = null;
@@ -21988,7 +21991,11 @@ const ljMine = (t) => lib().find((x) => normT(x.title) === normT(t || ''));
     const meus = lib().filter((x) => x.status === 'LENDO');
     const dela = (P.reading || []).filter((b) => !meus.some((m) => normT(m.title) === normT(b.title)));
     const tb = (x) => (P.reading || []).find((b) => normT(b.title) === normT(x.title));
-    const row = (x, sm, act, a, extra) => `<button class="li" data-a="${a}" ${extra || ''}>${v4cv(x)}<span class="t">${esc(x.title || '')}<small>${sm}</small></span><span class="ljact">${act}</span></button>`;
+    const row0 = (x, sm, act, a, extra) => `<button class="li" data-a="${a}" ${extra || ''}>${v4cv(x)}<span class="t">${esc(x.title || '')}<small>${sm}</small></span><span class="ljact">${act}</span></button>`;
+    // convite já feito para esta pessoa neste livro: mostra o estado e deixa cancelar (Bia, 20/11)
+    const row = (x, sm, act, a, extra) => { if (!['ljme', 'ljher', 'ljcat'].includes(a)) return row0(x, sm, act, a, extra); const st = ljSt(x.title, P.h);
+      if (st === 'busy') return row0(x, sm, 'Enviando…', 'ljnop', ''); if (st === 'member') return row0(x, sm, v4ic('friends', 15) + 'Vocês já leem juntas', 'ljnop', '');
+      if (st === 'invited') return row0(x, sm + ' · toque para cancelar', v4ic('ok', 15) + 'Convite enviado', 'ljuninv', `data-t="${esc(x.title || '')}"`); return row0(x, sm, act, a, extra); };
     const pg = (x) => { try { const i = readingInfo(x); return i.total ? 'você na pág. ' + i.now : 'você em ' + Math.round(i.pct || 0) + '%'; } catch { return 'você está lendo'; } };
     const q = String(c.q || '').trim(), nq = normT(q);
     const locais = nq ? lib().filter((x) => normT(x.title + ' ' + (x.author || '')).includes(nq)).slice(0, 4) : [];
@@ -22022,9 +22029,10 @@ function ljAdd(item, status) { // põe o livro na estante e devolve a entrada
 function ljClick(ev) {
   const b = ev.target.closest('[data-a]'); const a = b && b.dataset.a; if (!a || !a.startsWith('lj')) return;
   ev.stopPropagation(); const c = ljCtx(), P = c.lj || {};
-  if (a === 'ljme') return ljSend(lib().find((x) => x.id === b.dataset.id));
-  if (a === 'ljher') { const r = (P.reading || [])[+b.dataset.i]; if (!r) return; const had = ljMine(r.title); const e = ljAdd(r, 'LENDO');
-    if (!e) return toast('Não consegui colocar o livro na sua estante'); return ljSend(e, (had ? '' : 'O livro entrou no seu Lendo. ') + 'Quando ' + P.n + ' aceitar, a leitura conjunta começa'); }
+  if (a === 'ljnop') return;
+  if (a === 'ljme') { const e = lib().find((x) => x.id === b.dataset.id); return e && ljDo(e, P, false); }
+  if (a === 'ljuninv') return ljUndo(b.dataset.t, P);
+  if (a === 'ljher') { const r = (P.reading || [])[+b.dataset.i]; if (!r) return; return ljDo(r, P, true); }
   const g = b.dataset.g != null ? (P.groups || [])[+b.dataset.g] : null;
   if (a === 'ljjoin' && g) { if (b.dataset.busy) return; b.dataset.busy = 1;
     (async () => {
@@ -22032,14 +22040,14 @@ function ljClick(ev) {
       delete b.dataset.busy;
       if (!r) return toast('Não consegui enviar agora. Tente de novo em instantes.');
       if (r.status === 200 || r.status === 201) {
-        const src = (P.reading || [])[+b.dataset.i] || { title: g.title }; const had = ljMine(g.title); ljAdd(src, 'LENDO');
+        const src = (P.reading || [])[+b.dataset.i] || { title: g.title }; const had = ljMine(g.title); if (!had) ljAdd(src, 'QUERO');
         g.me = 'asked'; v4Draw(); try { syncSocial3(true); } catch {}
-        return toast((had ? '' : 'O livro entrou no seu Lendo. ') + 'Pedido enviado. Quando alguém do grupo aceitar, você entra.'); }
+        return toast('Pedido enviado. Quando alguém do grupo aceitar, você entra.' + (had ? '' : ' O livro ficou no seu Quero ler.')); }
       const er = r.data && r.data.error;
       if (er === 'FULL') { g.full = true; v4Draw(); return toast('Este grupo já está cheio'); }
       if (er === 'ALREADY_MEMBER') { g.me = 'member'; v4Draw(); return toast('Você já está nesta leitura'); }
       if (er === 'ALREADY_INVITED') { g.me = 'invited'; v4Draw(); return toast('Você já tem um convite: aceite em Avisos'); }
-      if (r.status === 404) { const src = (P.reading || [])[+b.dataset.i] || { title: g.title }; const e = ljAdd(src, 'LENDO'); return ljSend(e, 'Quando ' + P.n + ' aceitar, a leitura conjunta começa'); }
+      if (r.status === 404) { const src = (P.reading || [])[+b.dataset.i] || { title: g.title }; return ljDo(src, P, true); }
       toast('Não consegui enviar agora. Tente de novo em instantes.');
     })(); return; }
   if (a === 'ljcancel' && g) { (async () => { let r = null; try { r = await sapi('DELETE', `/v1/buddies/${g.id}/join-requests`); } catch {}
@@ -22047,7 +22055,7 @@ function ljClick(ev) {
   if (a === 'ljfull') return toast('Este grupo já está com 12 pessoas');
   if (a === 'ljinv') { v7Close(); try { closeEd(); } catch {} return toast('O convite está no Hoje e em Avisos: toque em Aceitar'); }
   if (a === 'ljopen' && g) { const e = ljMine(g.title); v7Close(); if (e) { try { return openBuddyPage(e); } catch {} } return toast('Abra o livro no Hoje para ver a leitura conjunta'); }
-  if (a === 'ljcat') { const it = (c.res || [])[+b.dataset.i]; if (!it) return; const e = ljAdd(it, 'QUERO'); if (!e) return toast('Não consegui colocar o livro na sua estante'); return ljSend(e, 'Convite enviado para ' + P.n + ' · o livro está no seu Quero ler'); }
+  if (a === 'ljcat') { const it = (c.res || [])[+b.dataset.i]; if (!it) return; return ljDo(it, P, true); }
 }
 let ljT = 0;
 function ljInput(ev) { const t = ev.target; if (!t || t.id !== 'ljq') return; const c = ljCtx(); c.q = t.value; c.res = null; const pos = t.selectionStart;
@@ -22055,6 +22063,53 @@ function ljInput(ev) { const t = ev.target; if (!t || t.id !== 'ljq') return; co
   redraw(); clearTimeout(ljT); const q = c.q.trim(); if (q.length < 2) { c.res = []; return; }
   ljT = setTimeout(async () => { let L = []; try { L = await searchBooks(q); } catch {} const c2 = ljCtx(); if (c2.q.trim() !== q || v4State().sheet !== 'v7lj') return; c2.res = (L || []).filter((x) => x && x.title); const n = v4Root().querySelector('#ljq'), p2 = n ? n.selectionStart : q.length; v4Draw(); const m = v4Root().querySelector('#ljq'); if (m) { m.focus(); try { m.setSelectionRange(p2, p2); } catch {} } }, 450);
 }
+// ---------- convite com estado e cancelar (Bia, 20/11; teste do navegador 22–24) ----------
+// O convite vai direto ao servidor (não fica só no aparelho): se você já tem uma leitura conjunta desse livro, a pessoa entra
+// nela (POST /v1/buddies/:id/invites); senão nasce uma nova. A linha mostra "Convite enviado" e tocar cancela
+// (DELETE /v1/buddies/:id/invites/:handle). Livro que não está com você só entra no seu Quero ler depois do convite enviado.
+const LJS = {};
+const ljRead = (t) => (SOC.buddies || []).find((b) => !b.closedAt && b.myStatus === 'ACCEPTED' && normT(b.title || '') === normT(t || ''));
+function ljSt(t, h) { const k = normT(t || '') + '|' + h; if (LJS[k]) return LJS[k].st;
+  const rd = (SOC.buddies || []).find((b) => !b.closedAt && b.myStatus === 'ACCEPTED' && normT(b.title || '') === normT(t || '') && (b.members || []).some((m) => m.handle === h && (m.status === 'INVITED' || m.status === 'ACCEPTED')));
+  if (!rd) return null; const m = rd.members.find((x) => x.handle === h); return m.status === 'INVITED' ? 'invited' : 'member'; }
+const ljResync = () => { try { const p = syncSocial3(true); if (p && p.then) p.then(() => { if (v4State().sheet) v4Draw(); }).catch(() => {}); } catch {} };
+async function ljDo(item, P, addQuero) {
+  if (!item || !P || !P.h) return; const k = normT(item.title || '') + '|' + P.h; if (LJS[k] && LJS[k].st === 'busy') return;
+  LJS[k] = { st: 'busy' }; v4Draw();
+  const rd = ljRead(item.title); let r = null;
+  try { r = rd ? await sapi('POST', `/v1/buddies/${rd.id}/invites`, { handles: [P.h] })
+    : await sapi('POST', '/v1/buddies', { bookKey: bookKey(item), title: String(item.title).slice(0, 200), author: item.author || null, totalPages: Number(item.totalPages || item.pages) || null, handles: [P.h] }); } catch {}
+  if (r && (r.status === 201 || r.status === 200)) {
+    LJS[k] = { st: 'invited', id: rd ? rd.id : r.data && r.data.id }; let added = false;
+    if (addQuero && !ljMine(item.title)) { ljAdd(item, 'QUERO'); added = !!ljMine(item.title); }
+    v4Draw(); toast('Convite enviado para ' + P.n + (added ? '. O livro ficou no seu Quero ler.' : '')); ljResync(); return; }
+  delete LJS[k]; v4Draw();
+  if (r && r.status === 404) return toast('Só dá para convidar amizades');
+  if (r && r.data && r.data.error === 'FULL') return toast('Este grupo já está cheio');
+  toast('Não consegui enviar agora. Tente de novo em instantes.');
+}
+async function ljUndo(t, P) {
+  if (!P || !P.h) return; const k = normT(t || '') + '|' + P.h; const id = (LJS[k] && LJS[k].id) || (ljRead(t) || {}).id; if (!id) return;
+  let r = null; try { r = await sapi('DELETE', `/v1/buddies/${id}/invites/${encodeURIComponent(P.h)}`); } catch {}
+  if (!r || r.status >= 300) return toast('Não consegui cancelar agora');
+  LJS[k] = { st: null }; v4Draw(); toast('Convite cancelado'); ljResync();
+}
+// "Ler junto" do Hoje e do menu do livro: escolher amizades com o estado de cada convite (no lugar da folha antiga)
+inviteBuddy = function (e) {
+  if (needAccount() || !e) return; const fr = (SOC.fr && SOC.fr.friends) || [];
+  if (!fr.length) { toast('Adicione amizades para ler junto'); try { return addFriendSheet(); } catch { return; } }
+  v7Sheet('v7ljb', { e, ljb: 1 }); ljArm(); };
+{ const _sh = v4SheetHTML; v4SheetHTML = function (k) {
+    if (k !== 'v7ljb') return _sh.apply(this, arguments);
+    const c = ljCtx(), e = c.e; if (!e) return ''; const fr = (SOC.fr && SOC.fr.friends) || [];
+    const rows = fr.map((f) => { const n = String(f.displayName || f.handle || '').split(' ')[0] || '@' + f.handle, st = ljSt(e.title, f.handle);
+      const act = st === 'busy' ? ['Enviando…', 'ljnop'] : st === 'member' ? [v4ic('friends', 15) + 'Lendo junto', 'ljnop'] : st === 'invited' ? [v4ic('ok', 15) + 'Convite enviado', 'ljbun'] : [v4ic('send', 15) + 'Convidar', 'ljbinv'];
+      return `<button class="li" data-a="${act[1]}" data-h="${esc(f.handle)}" data-n="${esc(n)}"><span class="av" style="background:${friendColor(f.handle)}">${esc(initial(f.displayName || f.handle))}</span><span class="t">${esc(f.displayName || '@' + f.handle)}<small>@${esc(f.handle)}${st === 'invited' ? ' · toque para cancelar' : ''}</small></span><span class="ljact">${act[0]}</span></button>`; }).join('');
+    return `<h3>Ler junto: ${esc(e.title)}</h3><p class="mut" style="margin:0 0 4px">Vocês veem a página uma da outra e conversam sem spoiler.</p><div class="list v7l">${rows}</div>`; }; }
+{ const _lc = ljClick; ljClick = function (ev) {
+    const b = ev.target.closest && ev.target.closest('[data-a]'), a = b && b.dataset.a;
+    if (a === 'ljbinv' || a === 'ljbun') { ev.stopPropagation(); const c = ljCtx(), P = { h: b.dataset.h, n: b.dataset.n }; return a === 'ljbinv' ? ljDo(c.e, P, false) : ljUndo(c.e && c.e.title, P); }
+    return _lc.apply(this, arguments); }; }
 // --- p1_v2_ler_junto_pedidos.js ---
 // Pedidos para entrar no grupo de leitura conjunta (Bia, 20/11; API 036; protótipo: Avisos com Recusar / Aceitar no alto).
 // Quem já está no grupo vê cada pedido com Recusar / Aceitar em três lugares: Avisos (no alto, junto com os convites de
@@ -22224,12 +22279,15 @@ function v8BjPut() { const v = $('#shelflist');
     const h = hashOf(JSON.stringify(L)); let last = null; try { last = localStorage.getItem(k); } catch {}
     if (last === h) return;
     busy = true;
-    try { const r = await sapi('PUT', '/v1/me/books', { books: L.slice(0, 5000) }); if (r && r.status === 200) { try { localStorage.setItem(k, h); } catch {} } } catch {} finally { busy = false; }
+    try { const r = await sapi('PUT', '/v1/me/books', { books: L.slice(0, 5000) }); if (r && r.status === 200) { try { localStorage.setItem(k, h); } catch {} try { v8Bust(); } catch {} } } catch {} finally { busy = false; }
   };
-  setTimeout(push, 6000); setInterval(push, 20000);
+  // a estante muda (Terminei, Não terminei, novo livro): sobe em poucos segundos e os números do livro se refazem (teste 14)
+  setTimeout(push, 6000); setInterval(push, 5000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') push(); }); }
 // ---------- números do livro, abaixo do topo (perfil do livro; Bia, 20/11) ----------
+var v8Bust = () => {};
 { const cache = new Map(), asked = new Map();
+  v8Bust = () => { cache.clear(); asked.clear(); try { put(); } catch {} };
   const fmt = (n) => Number(n).toLocaleString('pt-BR');
   const html = (s) => {
     const n = (x) => Number(x) || 0, av = n(s.avaliacoes), r = s.ressaca || {};
@@ -22424,7 +22482,7 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .sav{display:flex}.sav .blav{width:34px;height:34px;font-size:13px;border-width:2px}.sav .blav + .blav{margin-left:-8px}
 .story .sp{font-family:var(--f-disp);font-size:21px;line-height:1.1}.story .stg{font-size:11px;font-weight:700;opacity:.8}
 .smi{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:100%;margin-top:4px}.smi span{background:rgba(255,255,255,.12);border-radius:10px;padding:6px 2px;display:grid}.smi b{font-size:15px;font-weight:900}.smi small{font-size:9.5px;font-weight:800;opacity:.85;line-height:1.15}
-.b6a{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.b6a .btn.s{background:#fff!important;color:#2a1a4a!important;border:0!important}
+.b6a{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.b6a .btn{white-space:normal;max-width:100%;text-align:center;line-height:1.25}.b6a .btn.s{background:#fff!important;color:#2a1a4a!important;border:0!important}
 .blselo{font-style:normal;justify-self:start;margin-top:3px;font-size:11px;font-weight:800;color:#2a1a4a;background:#ffd6a3;border-radius:99px;padding:2px 8px}
 .evo{position:relative;height:150px;width:100%;display:grid;place-items:center}.evo .blcst{position:absolute;width:210px;height:168px}.blcst.dim{opacity:.28}.blcst.grow{animation:blPop 1s .2s cubic-bezier(.2,.8,.2,1) both}
 .evs{display:grid;gap:10px;justify-items:center}.evs > span{animation:blUp .45s var(--d) both}.evn{display:flex;flex-direction:column;align-items:center;gap:2px}.evn b{font-size:34px;font-weight:900;color:#ffd6a3}.evn small{font-size:13px;font-weight:700;opacity:.9;line-height:1.3}
@@ -22608,7 +22666,7 @@ function v9Screen(D, k, prev) {
   const nx = D.nx;
   return v9Z('Para compartilhar', '', '<div class="story"><span class="bl-sky">' + V9SKY.slice(0, 18).join('') + '</span><span class="lg">Livroverso ✦</span>' + v9Const(D.venn[1], 'still')
     + '<span class="sav">' + D.avMe + D.avEl + '</span><b class="sp">' + esc(D.pers) + '</b><small class="stg">' + esc(D.meName) + ' + ' + n + ' · ' + esc(D.tag) + '</small><span class="smi">' + D.mini.map(([v, l]) => '<span><b>' + esc(v) + '</b><small>' + esc(l) + '</small></span>').join('') + '</span></div>', '',
-    '<div class="b6a">' + (D.am ? '<button class="btn p" data-v9="junto">' + v9ic('friends', 16) + 'Ler junto</button>' + (nx ? '<button class="btn s" data-v9="quero">' + v9ic('plus', 16) + 'Quero ler: ' + esc(String(nx.title).slice(0, 22)) + '</button>' : '') : '<button class="btn p" data-v9="add">' + v9ic('plus', 16) + 'Adicionar amizade</button>') + '<button class="btn s" data-v9="share">' + v9ic('send', 16) + 'Compartilhar</button></div>');
+    '<div class="b6a">' + (D.am ? '<button class="btn p" data-v9="junto">' + v9ic('friends', 16) + 'Ler junto</button>' + (nx ? '<button class="btn s" data-v9="quero">' + v9ic('plus', 16) + 'Quero ler: ' + esc(String(nx.title).length > 40 ? String(nx.title).slice(0, 39) + '…' : String(nx.title)) + '</button>' : '') : '<button class="btn p" data-v9="add">' + v9ic('plus', 16) + 'Adicionar amizade</button>') + '<button class="btn s" data-v9="share">' + v9ic('send', 16) + 'Compartilhar</button><button class="btn s blbt" data-v9="again">Ver de novo</button></div>');
 }
 // ---------- cartão do perfil e sequência ----------
 { let host = null, ov = null, tmr = 0, cur = null;
@@ -22645,12 +22703,12 @@ function v9Screen(D, k, prev) {
   const open = async (d, mode) => {
     if (ov) close(); const saved = v9Get(d.handle);
     const mk = () => { ov = document.createElement('div'); ov.className = 'v9ov'; TR.append(ov); ov.attachShadow({ mode: 'open' }).addEventListener('click', (ev) => { ev.stopPropagation(); onOv(ev); }); ov.addEventListener('click', (ev) => ev.stopPropagation()); };
-    let M = {}; const pM = sapi('GET', '/v1/users/' + encodeURIComponent(d.handle) + '/match').then((r) => { if (r && r.status === 200 && r.data) M = r.data; }).catch(() => {});
+    let M = {}; const pM = v9Match(d.handle).then((x) => { if (x) M = x; });
     const D = v9Data(d, M); D.meName = String((typeof socialProfile !== 'undefined' && socialProfile && socialProfile.displayName) || 'Você').split(' ')[0];
     D.avMe = v9Av('me', d); D.avEl = v9Av('el', d); D.avMeBig = v9Av('me', d, 'big'); D.avElBig = v9Av('el', d, 'big');
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (mode === 'view' && saved) { await Promise.race([pM, new Promise((r) => setTimeout(r, 1500))]); mk(); cur = { D, T: [], i: 0, prev: null, calc: false }; }
-    else { mk(); cur = { D, T: [], i: 0, prev: null, calc: true }; draw(); await Promise.all([pM, new Promise((r) => setTimeout(r, reduce ? 300 : 2600))]); }
+    if (mode === 'view' && saved) { await Promise.race([pM, new Promise((r) => setTimeout(r, 4000))]); mk(); cur = { D, T: [], i: 0, prev: null, calc: false }; }
+    else { mk(); cur = { D, T: [], i: 0, prev: null, calc: true }; draw(); await Promise.all([Promise.race([pM, new Promise((r) => setTimeout(r, 4000))]), new Promise((r) => setTimeout(r, reduce ? 300 : 1600))]); }
     if (!ov || !cur) return;
     const D2 = v9Data(d, M); Object.assign(D2, { meName: D.meName, avMe: D.avMe, avEl: D.avEl, avMeBig: D.avMeBig, avElBig: D.avElBig });
     const evo = mode === 'upd' && saved ? { comum: saved.comum, pers: saved.pers, at: saved.at } : (mode === 'view' && saved && saved.prevV) || null;
@@ -22660,12 +22718,13 @@ function v9Screen(D, k, prev) {
   const onClick = (ev, h) => { const b = ev.target.closest('[data-v9]'); if (!b) return; const d = S.fpData; if (!d || d.handle !== h.dataset.h) return; act(b.dataset.v9, d); };
   const onOv = (ev) => { const b = ev.target.closest('[data-v9]'); if (!b || !cur) return; const k = b.dataset.v9;
     if (k === 'x') return close(); if (cur.calc) return;
-    if (k === 'next') { if (cur.i >= cur.T.length - 1) return close(); cur.i++; return draw(); }
+    if (k === 'next') { if (cur.i >= cur.T.length - 1) return; cur.i++; return draw(); }
+    if (k === 'again') { cur.i = 0; return draw(); }
     if (k === 'prev') { cur.i = Math.max(0, cur.i - 1); return draw(); }
     act(k, cur.d || S.fpData); };
   const act = (k, d) => {
     if (k === 'calc' || k === 'upd' || k === 'view') return open(d, k);
-    if (k === 'disc') { close(); try { openChat(d.handle); } catch {} return; }
+    if (k === 'disc') { const txt = v9Assunto(cur, d); close(); try { openChat(d.handle); } catch {} if (txt) { let n = 0; const put = () => { const ta = TR.querySelector('#shelflist textarea'); if (ta && !ta.value) { ta.value = txt; ta.dispatchEvent(new Event('input', { bubbles: true })); return; } if (++n < 20) setTimeout(put, 150); }; setTimeout(put, 200); } return; }
     if (k === 'add') { if (needAccount()) return; sapi('POST', '/v1/friends/requests', { handle: d.handle }).then((r) => toast(r && r.status < 300 ? 'Pedido de amizade enviado' : 'Não consegui enviar o pedido agora')).catch(() => toast('Não consegui enviar o pedido agora')); return; }
     if (k === 'junto') { close(); try { ljOpen(d); } catch {} return; }
     if (k === 'quero' && cur && cur.D.nx) { const x = cur.D.nx; try { addToLibrary({ title: x.title, author: x.author || '', cover: x.cover || null }, null, 'QUERO'); toast('Foi para o seu Quero ler'); b9Done(); } catch { toast('Não consegui agora'); } return; }
@@ -22677,7 +22736,7 @@ function v9Screen(D, k, prev) {
   };
   const b9Done = () => { const b = ov && ov.shadowRoot.querySelector('[data-v9=quero]'); if (b) b.remove(); };
   // o cartão antigo dá lugar ao novo: v2Afi devolve só o lugar (o desenho é feito no shadow root, sem cálculo)
-  v2Afi = function (d) { return d && !d.self && d.handle ? '<section class="v2afi v9h" data-h="' + esc(d.handle) + '"></section>' : ''; };
+  v2Afi = function (d) { if (d && !d.self && d.handle) setTimeout(() => { v9Match(d.handle); }, 400); return d && !d.self && d.handle ? '<section class="v2afi v9h" data-h="' + esc(d.handle) + '"></section>' : ''; };
   { const s = document.createElement('style'); s.textContent = '.v2afi.v9h{background:none!important;padding:0!important;box-shadow:none!important;margin:.9rem 0 .4rem!important;color:inherit}.v9ov{position:fixed;inset:0;z-index:2147483000}'; TR.append(s); }
   let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; mount(); }, 80); }).observe(TR, { childList: true, subtree: true });
   // voltar do celular fecha a sequência primeiro
@@ -22706,6 +22765,20 @@ async function v9Share(D) {
   try { if (navigator.canShare && navigator.canShare({ files: [file] })) return await navigator.share({ files: [file], title: 'Nossa combinação no Livroverso' }); } catch {}
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.append(a); a.click(); a.remove(); toast('Imagem salva');
 }
+
+// /match por pessoa: guardado 5 min e pedido já ao abrir o perfil, para a sequência abrir rápido e sempre com as mesmas telas (teste 27 e 31)
+const V9M = {};
+function v9Match(h) { const c = V9M[h]; if (c && (c.p || Date.now() - c.t < 300000)) return c.p || Promise.resolve(c.M);
+  const p = sapi('GET', '/v1/users/' + encodeURIComponent(h) + '/match').then((r) => { const M = r && r.status === 200 && r.data ? r.data : null; V9M[h] = M ? { t: Date.now(), M } : { t: 0 }; return M; }).catch(() => { V9M[h] = { t: 0 }; return null; });
+  V9M[h] = { t: 0, p }; return p; }
+// assunto do Discutir: o que a tela mostrava (teste 28)
+function v9Assunto(cur, d) { try { const D = cur && cur.D, k = cur && cur.T[cur.i]; const f = (x) => String(x).replace('.', ',');
+    if (k === 'rg' && D.rg.length) { const t = D.rg.slice().sort((a, b) => Math.abs(b.m - b.e) - Math.abs(a.m - a.e))[0];
+      return t.m === t.e ? 'Sobre ' + t.title + ': nós duas demos ★' + f(t.m) + '. O que mais te pegou?' : 'Sobre ' + t.title + ': eu dei ★' + f(t.m) + ' e você ★' + f(t.e) + '. Bora discutir?'; }
+    if (k === 'em' && D.ec && D.ec.length) return 'Vi na nossa combinação que ' + D.ec.slice(0, 2).join(' e ').toLowerCase() + ' marca as duas. Qual livro te deixou assim?';
+    if (k === 'ecos' && D.ecos.livro) return 'Vi seu eco em ' + D.ecos.livro.title + '. Em que parte você deixou?';
+    if (k === 'foco') return 'Vi na nossa combinação os nossos horários de leitura. Qual é seu momento favorito para ler?';
+    return 'Vi nossa combinação no Livroverso: ' + (D.pers || '') + '!'; } catch { return ''; } }
 // --- s1_v2_foco_resumo.js ---
 // Resumo do foco para o "Vocês combinam" (Bia, 20/11; API 037): só o RESUMO do ano vai para o servidor — minutos com
 // cronômetro, quantas sessões e a hora mais comum (pelo início de cada sessão, pesando os minutos). Nunca as sessões.
@@ -23058,7 +23131,7 @@ Object.assign(V3EMO, {
   eyeoff: '<path d="M3 3l18 18M10.6 6a9.6 9.6 0 0 1 1.4-.1C18 5.9 21.5 12 21.5 12a17 17 0 0 1-3 3.7M6.6 6.7C4 8.4 2.5 12 2.5 12S6 18.5 12 18.5c1.7 0 3.2-.5 4.4-1.2M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
   book: '<path d="M12 6.5C10 5 7.5 4.5 4 4.8v13c3.5-.3 6 .2 8 1.7 2-1.5 4.5-2 8-1.7v-13c-3.5-.3-6 .2-8 1.7zM12 6.5v13"/>',
   pen2: '<path d="M4 20l1-4L16 5l3 3L8 19z"/>' });
-{ const ICO = [[/^(Apagar|Excluir)/i, 'trash', 1], [/^Bloquear/i, 'block', 1], [/^Denunciar/i, 'alert', 1], [/^(Silenciar|Deixar de silenciar)/i, 'mute'], [/^Ocultar/i, 'eyeoff'],
+{ const ICO = [[/^(Apagar|Excluir)/i, 'trash', 1], [/^Bloquear/i, 'block', 1], [/^Denunciar/i, 'alert', 1], [/^(Silenciar|Deixar de silenciar|Tirar silêncio)/i, 'mute'], [/^Ocultar/i, 'eyeoff'],
     [/^Copiar link/i, 'link'], [/^Ver o livro|^Abrir o livro/i, 'book'], [/^Editar/i, 'pen2'], [/^Quem vê|^Visibilidade/i, 'globe'], [/spoiler/i, 'alert'], [/^Responder/i, 'reply'], [/^Compartilhar/i, 'swap'], [/^Salvar/i, 'heart']];
   const _pm = popMenu; popMenu = function (anchor, items) {
     const L = (items || []).map((x) => { if (!x || typeof x !== 'object' || typeof x.label !== 'string' || /<(i|svg)\b/.test(x.label)) return x;
@@ -23181,6 +23254,51 @@ TR.addEventListener('click', (ev) => {
 // pílula da Atividade: sem nota para abandonado/pausado
 v3Pill = function (st, paws, pg, pct) { const n = paws ? ' ★ ' + String(paws).replace('.', ',') : '', at = pg ? ' · pág. ' + pg : pct != null && pct < 100 ? ' · ' + Math.round(pct) + '%' : '';
   if (st === 'ABANDONEI') return 'Abandonou' + at; if (st === 'HIBERNANDO') return 'Pausou' + at; return 'Avaliou' + n; };
+// "minha nota" no topo do livro também some fora de livro lido (o teste mostrou Quero ler com "minha nota ★ 4")
+{ const st = document.createElement('style'); st.textContent = `#shelflist.v9nolido .bp-hero .bp-chip.gold{display:none!important}`; TR.append(st);
+  let tm = 0; const v = $('#shelflist');
+  const fix = () => { tm = 0; if (!v || v.hidden) return; const t = ((v.querySelector('.bp-ht h2') || {}).textContent || '').trim(); let e = null; try { e = t && lib().find((x) => normT(x.title) === normT(t)); } catch {}
+    const off = !!e && e.status !== 'LIDO'; if (v.classList.contains('v9nolido') !== off) v.classList.toggle('v9nolido', off); };
+  if (v) new MutationObserver(() => { if (!tm) tm = setTimeout(fix, 60); }).observe(v, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+// avaliação publicada sai da Comunidade quando o livro deixa de estar lido ("Não terminei", voltar status); a nota fica
+// guardada no aparelho e volta a ser publicada se o livro for terminado de novo
+{ const _pr = publishReview; publishReview = async function (b) {
+    const e = b && b.status ? b : null;
+    if (e && e.status !== 'LIDO' && e.review) { try { if (connected()) await sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`); } catch {} return; }
+    const out = await _pr.apply(this, arguments);
+    // a avaliação nova aparece logo: Atividade, feed e números do livro sem esperar o cache (teste 12 e 14)
+    try { S.v8atv = null; Object.values(S.v6f || {}).forEach((x) => { x.at = 0; }); v8Bust(); } catch {}
+    return out; };
+  const sweep = async () => { if (document.visibilityState === 'hidden') return; try { if (!connected()) return; } catch { return; } let ch = false;
+    for (const e of lib()) { if (!e.review) continue; const off = e.status !== 'LIDO';
+      if (off && !e.rvOff) { try { const r = await sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`); if (r && r.status < 300) { e.rvOff = 1; ch = true; } } catch {} }
+      else if (!off && e.rvOff) { delete e.rvOff; ch = true; try { await publishReview(e); } catch {} } }
+    if (ch) try { save(); } catch {} };
+  setTimeout(sweep, 7000); setInterval(sweep, 30000); }
+// apagar a avaliação (Minha avaliação › Apagar avaliação, com segundo toque para confirmar)
+{ const _fp = v4FimPage; v4FimPage = function (e) { let h = _fp.apply(this, arguments); const r = (e && reviewOfLib(e)) || {};
+    if (e && e.status === 'LIDO' && (r.paws || String(r.texto || '').trim())) h = h.replace(/<\/div><\/section>$/, '<button class="btn s w" data-a="fimdel" style="margin-top:8px;color:var(--red,#d9534f)">Apagar avaliação</button></div></section>');
+    return h; };
+  let armT = 0;
+  TR.addEventListener('click', (ev) => { const p = ev.composedPath ? ev.composedPath() : []; const b = p.find((n) => n && n.dataset && n.dataset.a === 'fimdel'); if (!b) return;
+    ev.stopPropagation(); ev.preventDefault();
+    if (!b.dataset.armed) { b.dataset.armed = 1; b.textContent = 'Toque de novo para apagar'; clearTimeout(armT); armT = setTimeout(() => { delete b.dataset.armed; b.textContent = 'Apagar avaliação'; }, 3500); return; }
+    const e = lib().find((x) => x.id === v4State().fim); if (!e) return; v9DelReview(e);
+    const x = (b.getRootNode && b.getRootNode().querySelector('[data-a=fimx]')); if (x) x.click(); toast('Avaliação apagada'); }, true); }
+function v9DelReview(e) {
+  if (e.link) { try { const g = db.goals.find((x) => x.id === e.link.goalId), gb = g && g.books.find((x) => x.id === e.link.bookId); if (gb) gb.review = null; } catch {} }
+  e.review = null; delete e.rvOff; try { save(); refresh(); } catch {}
+  const after = () => { try { S.v8atv = null; Object.values(S.v6f || {}).forEach((x) => { x.at = 0; }); S.bkRede = {}; v8Bust(); const sec = TR.querySelector('#shelflist .bp-rede'); if (sec) sec.remove(); } catch {} };
+  try { if (connected()) sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`).then(after).catch(() => {}); else after(); } catch {}
+}
+// "•••" da sua avaliação na Comunidade do livro: Editar e Apagar (antes não abria nada dentro da página do livro)
+{ const _rm = rdMenu; rdMenu = function (it, after, anchor) {
+    const inBook = !!(anchor && anchor.closest && anchor.closest('.bp-rede'));
+    if (inBook && it && it.mine && it.type === 'review') {
+      const le = lib().find((x) => x.id === it.libId) || (it.book ? lib().find((x) => normT(x.title) === normT(it.book.title)) : null); if (!le) return _rm.apply(this, arguments);
+      return popMenu(anchor, [{ label: 'Editar avaliação', fn: () => { try { v4FimOpen(le); } catch { rateForm(le, { logs: [] }, () => {}); } } },
+        { label: 'Apagar avaliação', fn: () => sheet('Apagar sua avaliação de “' + le.title + '”?', [['Apagar avaliação', () => { v9DelReview(le); toast('Avaliação apagada'); }]]) }]); }
+    return _rm.apply(this, arguments); }; }
 // --- u3_v2_capa_segurar.js ---
 // Segurar qualquer capa abre opções (Bia, 20/11; regra do protótipo: tocar abre a página, segurar abre o menu).
 // Antes só valia na Estante. Agora vale em toda capa do app (Hoje, perfis, Top 3, Comunidade, Busca, Metas, páginas):

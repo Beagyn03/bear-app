@@ -28,7 +28,11 @@ const ljMine = (t) => lib().find((x) => normT(x.title) === normT(t || ''));
     const meus = lib().filter((x) => x.status === 'LENDO');
     const dela = (P.reading || []).filter((b) => !meus.some((m) => normT(m.title) === normT(b.title)));
     const tb = (x) => (P.reading || []).find((b) => normT(b.title) === normT(x.title));
-    const row = (x, sm, act, a, extra) => `<button class="li" data-a="${a}" ${extra || ''}>${v4cv(x)}<span class="t">${esc(x.title || '')}<small>${sm}</small></span><span class="ljact">${act}</span></button>`;
+    const row0 = (x, sm, act, a, extra) => `<button class="li" data-a="${a}" ${extra || ''}>${v4cv(x)}<span class="t">${esc(x.title || '')}<small>${sm}</small></span><span class="ljact">${act}</span></button>`;
+    // convite já feito para esta pessoa neste livro: mostra o estado e deixa cancelar (Bia, 20/11)
+    const row = (x, sm, act, a, extra) => { if (!['ljme', 'ljher', 'ljcat'].includes(a)) return row0(x, sm, act, a, extra); const st = ljSt(x.title, P.h);
+      if (st === 'busy') return row0(x, sm, 'Enviando…', 'ljnop', ''); if (st === 'member') return row0(x, sm, v4ic('friends', 15) + 'Vocês já leem juntas', 'ljnop', '');
+      if (st === 'invited') return row0(x, sm + ' · toque para cancelar', v4ic('ok', 15) + 'Convite enviado', 'ljuninv', `data-t="${esc(x.title || '')}"`); return row0(x, sm, act, a, extra); };
     const pg = (x) => { try { const i = readingInfo(x); return i.total ? 'você na pág. ' + i.now : 'você em ' + Math.round(i.pct || 0) + '%'; } catch { return 'você está lendo'; } };
     const q = String(c.q || '').trim(), nq = normT(q);
     const locais = nq ? lib().filter((x) => normT(x.title + ' ' + (x.author || '')).includes(nq)).slice(0, 4) : [];
@@ -62,9 +66,10 @@ function ljAdd(item, status) { // põe o livro na estante e devolve a entrada
 function ljClick(ev) {
   const b = ev.target.closest('[data-a]'); const a = b && b.dataset.a; if (!a || !a.startsWith('lj')) return;
   ev.stopPropagation(); const c = ljCtx(), P = c.lj || {};
-  if (a === 'ljme') return ljSend(lib().find((x) => x.id === b.dataset.id));
-  if (a === 'ljher') { const r = (P.reading || [])[+b.dataset.i]; if (!r) return; const had = ljMine(r.title); const e = ljAdd(r, 'LENDO');
-    if (!e) return toast('Não consegui colocar o livro na sua estante'); return ljSend(e, (had ? '' : 'O livro entrou no seu Lendo. ') + 'Quando ' + P.n + ' aceitar, a leitura conjunta começa'); }
+  if (a === 'ljnop') return;
+  if (a === 'ljme') { const e = lib().find((x) => x.id === b.dataset.id); return e && ljDo(e, P, false); }
+  if (a === 'ljuninv') return ljUndo(b.dataset.t, P);
+  if (a === 'ljher') { const r = (P.reading || [])[+b.dataset.i]; if (!r) return; return ljDo(r, P, true); }
   const g = b.dataset.g != null ? (P.groups || [])[+b.dataset.g] : null;
   if (a === 'ljjoin' && g) { if (b.dataset.busy) return; b.dataset.busy = 1;
     (async () => {
@@ -72,14 +77,14 @@ function ljClick(ev) {
       delete b.dataset.busy;
       if (!r) return toast('Não consegui enviar agora. Tente de novo em instantes.');
       if (r.status === 200 || r.status === 201) {
-        const src = (P.reading || [])[+b.dataset.i] || { title: g.title }; const had = ljMine(g.title); ljAdd(src, 'LENDO');
+        const src = (P.reading || [])[+b.dataset.i] || { title: g.title }; const had = ljMine(g.title); if (!had) ljAdd(src, 'QUERO');
         g.me = 'asked'; v4Draw(); try { syncSocial3(true); } catch {}
-        return toast((had ? '' : 'O livro entrou no seu Lendo. ') + 'Pedido enviado. Quando alguém do grupo aceitar, você entra.'); }
+        return toast('Pedido enviado. Quando alguém do grupo aceitar, você entra.' + (had ? '' : ' O livro ficou no seu Quero ler.')); }
       const er = r.data && r.data.error;
       if (er === 'FULL') { g.full = true; v4Draw(); return toast('Este grupo já está cheio'); }
       if (er === 'ALREADY_MEMBER') { g.me = 'member'; v4Draw(); return toast('Você já está nesta leitura'); }
       if (er === 'ALREADY_INVITED') { g.me = 'invited'; v4Draw(); return toast('Você já tem um convite: aceite em Avisos'); }
-      if (r.status === 404) { const src = (P.reading || [])[+b.dataset.i] || { title: g.title }; const e = ljAdd(src, 'LENDO'); return ljSend(e, 'Quando ' + P.n + ' aceitar, a leitura conjunta começa'); }
+      if (r.status === 404) { const src = (P.reading || [])[+b.dataset.i] || { title: g.title }; return ljDo(src, P, true); }
       toast('Não consegui enviar agora. Tente de novo em instantes.');
     })(); return; }
   if (a === 'ljcancel' && g) { (async () => { let r = null; try { r = await sapi('DELETE', `/v1/buddies/${g.id}/join-requests`); } catch {}
@@ -87,7 +92,7 @@ function ljClick(ev) {
   if (a === 'ljfull') return toast('Este grupo já está com 12 pessoas');
   if (a === 'ljinv') { v7Close(); try { closeEd(); } catch {} return toast('O convite está no Hoje e em Avisos: toque em Aceitar'); }
   if (a === 'ljopen' && g) { const e = ljMine(g.title); v7Close(); if (e) { try { return openBuddyPage(e); } catch {} } return toast('Abra o livro no Hoje para ver a leitura conjunta'); }
-  if (a === 'ljcat') { const it = (c.res || [])[+b.dataset.i]; if (!it) return; const e = ljAdd(it, 'QUERO'); if (!e) return toast('Não consegui colocar o livro na sua estante'); return ljSend(e, 'Convite enviado para ' + P.n + ' · o livro está no seu Quero ler'); }
+  if (a === 'ljcat') { const it = (c.res || [])[+b.dataset.i]; if (!it) return; return ljDo(it, P, true); }
 }
 let ljT = 0;
 function ljInput(ev) { const t = ev.target; if (!t || t.id !== 'ljq') return; const c = ljCtx(); c.q = t.value; c.res = null; const pos = t.selectionStart;
@@ -95,3 +100,50 @@ function ljInput(ev) { const t = ev.target; if (!t || t.id !== 'ljq') return; co
   redraw(); clearTimeout(ljT); const q = c.q.trim(); if (q.length < 2) { c.res = []; return; }
   ljT = setTimeout(async () => { let L = []; try { L = await searchBooks(q); } catch {} const c2 = ljCtx(); if (c2.q.trim() !== q || v4State().sheet !== 'v7lj') return; c2.res = (L || []).filter((x) => x && x.title); const n = v4Root().querySelector('#ljq'), p2 = n ? n.selectionStart : q.length; v4Draw(); const m = v4Root().querySelector('#ljq'); if (m) { m.focus(); try { m.setSelectionRange(p2, p2); } catch {} } }, 450);
 }
+// ---------- convite com estado e cancelar (Bia, 20/11; teste do navegador 22–24) ----------
+// O convite vai direto ao servidor (não fica só no aparelho): se você já tem uma leitura conjunta desse livro, a pessoa entra
+// nela (POST /v1/buddies/:id/invites); senão nasce uma nova. A linha mostra "Convite enviado" e tocar cancela
+// (DELETE /v1/buddies/:id/invites/:handle). Livro que não está com você só entra no seu Quero ler depois do convite enviado.
+const LJS = {};
+const ljRead = (t) => (SOC.buddies || []).find((b) => !b.closedAt && b.myStatus === 'ACCEPTED' && normT(b.title || '') === normT(t || ''));
+function ljSt(t, h) { const k = normT(t || '') + '|' + h; if (LJS[k]) return LJS[k].st;
+  const rd = (SOC.buddies || []).find((b) => !b.closedAt && b.myStatus === 'ACCEPTED' && normT(b.title || '') === normT(t || '') && (b.members || []).some((m) => m.handle === h && (m.status === 'INVITED' || m.status === 'ACCEPTED')));
+  if (!rd) return null; const m = rd.members.find((x) => x.handle === h); return m.status === 'INVITED' ? 'invited' : 'member'; }
+const ljResync = () => { try { const p = syncSocial3(true); if (p && p.then) p.then(() => { if (v4State().sheet) v4Draw(); }).catch(() => {}); } catch {} };
+async function ljDo(item, P, addQuero) {
+  if (!item || !P || !P.h) return; const k = normT(item.title || '') + '|' + P.h; if (LJS[k] && LJS[k].st === 'busy') return;
+  LJS[k] = { st: 'busy' }; v4Draw();
+  const rd = ljRead(item.title); let r = null;
+  try { r = rd ? await sapi('POST', `/v1/buddies/${rd.id}/invites`, { handles: [P.h] })
+    : await sapi('POST', '/v1/buddies', { bookKey: bookKey(item), title: String(item.title).slice(0, 200), author: item.author || null, totalPages: Number(item.totalPages || item.pages) || null, handles: [P.h] }); } catch {}
+  if (r && (r.status === 201 || r.status === 200)) {
+    LJS[k] = { st: 'invited', id: rd ? rd.id : r.data && r.data.id }; let added = false;
+    if (addQuero && !ljMine(item.title)) { ljAdd(item, 'QUERO'); added = !!ljMine(item.title); }
+    v4Draw(); toast('Convite enviado para ' + P.n + (added ? '. O livro ficou no seu Quero ler.' : '')); ljResync(); return; }
+  delete LJS[k]; v4Draw();
+  if (r && r.status === 404) return toast('Só dá para convidar amizades');
+  if (r && r.data && r.data.error === 'FULL') return toast('Este grupo já está cheio');
+  toast('Não consegui enviar agora. Tente de novo em instantes.');
+}
+async function ljUndo(t, P) {
+  if (!P || !P.h) return; const k = normT(t || '') + '|' + P.h; const id = (LJS[k] && LJS[k].id) || (ljRead(t) || {}).id; if (!id) return;
+  let r = null; try { r = await sapi('DELETE', `/v1/buddies/${id}/invites/${encodeURIComponent(P.h)}`); } catch {}
+  if (!r || r.status >= 300) return toast('Não consegui cancelar agora');
+  LJS[k] = { st: null }; v4Draw(); toast('Convite cancelado'); ljResync();
+}
+// "Ler junto" do Hoje e do menu do livro: escolher amizades com o estado de cada convite (no lugar da folha antiga)
+inviteBuddy = function (e) {
+  if (needAccount() || !e) return; const fr = (SOC.fr && SOC.fr.friends) || [];
+  if (!fr.length) { toast('Adicione amizades para ler junto'); try { return addFriendSheet(); } catch { return; } }
+  v7Sheet('v7ljb', { e, ljb: 1 }); ljArm(); };
+{ const _sh = v4SheetHTML; v4SheetHTML = function (k) {
+    if (k !== 'v7ljb') return _sh.apply(this, arguments);
+    const c = ljCtx(), e = c.e; if (!e) return ''; const fr = (SOC.fr && SOC.fr.friends) || [];
+    const rows = fr.map((f) => { const n = String(f.displayName || f.handle || '').split(' ')[0] || '@' + f.handle, st = ljSt(e.title, f.handle);
+      const act = st === 'busy' ? ['Enviando…', 'ljnop'] : st === 'member' ? [v4ic('friends', 15) + 'Lendo junto', 'ljnop'] : st === 'invited' ? [v4ic('ok', 15) + 'Convite enviado', 'ljbun'] : [v4ic('send', 15) + 'Convidar', 'ljbinv'];
+      return `<button class="li" data-a="${act[1]}" data-h="${esc(f.handle)}" data-n="${esc(n)}"><span class="av" style="background:${friendColor(f.handle)}">${esc(initial(f.displayName || f.handle))}</span><span class="t">${esc(f.displayName || '@' + f.handle)}<small>@${esc(f.handle)}${st === 'invited' ? ' · toque para cancelar' : ''}</small></span><span class="ljact">${act[0]}</span></button>`; }).join('');
+    return `<h3>Ler junto: ${esc(e.title)}</h3><p class="mut" style="margin:0 0 4px">Vocês veem a página uma da outra e conversam sem spoiler.</p><div class="list v7l">${rows}</div>`; }; }
+{ const _lc = ljClick; ljClick = function (ev) {
+    const b = ev.target.closest && ev.target.closest('[data-a]'), a = b && b.dataset.a;
+    if (a === 'ljbinv' || a === 'ljbun') { ev.stopPropagation(); const c = ljCtx(), P = { h: b.dataset.h, n: b.dataset.n }; return a === 'ljbinv' ? ljDo(c.e, P, false) : ljUndo(c.e && c.e.title, P); }
+    return _lc.apply(this, arguments); }; }

@@ -73,7 +73,7 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .sav{display:flex}.sav .blav{width:34px;height:34px;font-size:13px;border-width:2px}.sav .blav + .blav{margin-left:-8px}
 .story .sp{font-family:var(--f-disp);font-size:21px;line-height:1.1}.story .stg{font-size:11px;font-weight:700;opacity:.8}
 .smi{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:100%;margin-top:4px}.smi span{background:rgba(255,255,255,.12);border-radius:10px;padding:6px 2px;display:grid}.smi b{font-size:15px;font-weight:900}.smi small{font-size:9.5px;font-weight:800;opacity:.85;line-height:1.15}
-.b6a{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.b6a .btn.s{background:#fff!important;color:#2a1a4a!important;border:0!important}
+.b6a{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.b6a .btn{white-space:normal;max-width:100%;text-align:center;line-height:1.25}.b6a .btn.s{background:#fff!important;color:#2a1a4a!important;border:0!important}
 .blselo{font-style:normal;justify-self:start;margin-top:3px;font-size:11px;font-weight:800;color:#2a1a4a;background:#ffd6a3;border-radius:99px;padding:2px 8px}
 .evo{position:relative;height:150px;width:100%;display:grid;place-items:center}.evo .blcst{position:absolute;width:210px;height:168px}.blcst.dim{opacity:.28}.blcst.grow{animation:blPop 1s .2s cubic-bezier(.2,.8,.2,1) both}
 .evs{display:grid;gap:10px;justify-items:center}.evs > span{animation:blUp .45s var(--d) both}.evn{display:flex;flex-direction:column;align-items:center;gap:2px}.evn b{font-size:34px;font-weight:900;color:#ffd6a3}.evn small{font-size:13px;font-weight:700;opacity:.9;line-height:1.3}
@@ -257,7 +257,7 @@ function v9Screen(D, k, prev) {
   const nx = D.nx;
   return v9Z('Para compartilhar', '', '<div class="story"><span class="bl-sky">' + V9SKY.slice(0, 18).join('') + '</span><span class="lg">Livroverso ✦</span>' + v9Const(D.venn[1], 'still')
     + '<span class="sav">' + D.avMe + D.avEl + '</span><b class="sp">' + esc(D.pers) + '</b><small class="stg">' + esc(D.meName) + ' + ' + n + ' · ' + esc(D.tag) + '</small><span class="smi">' + D.mini.map(([v, l]) => '<span><b>' + esc(v) + '</b><small>' + esc(l) + '</small></span>').join('') + '</span></div>', '',
-    '<div class="b6a">' + (D.am ? '<button class="btn p" data-v9="junto">' + v9ic('friends', 16) + 'Ler junto</button>' + (nx ? '<button class="btn s" data-v9="quero">' + v9ic('plus', 16) + 'Quero ler: ' + esc(String(nx.title).slice(0, 22)) + '</button>' : '') : '<button class="btn p" data-v9="add">' + v9ic('plus', 16) + 'Adicionar amizade</button>') + '<button class="btn s" data-v9="share">' + v9ic('send', 16) + 'Compartilhar</button></div>');
+    '<div class="b6a">' + (D.am ? '<button class="btn p" data-v9="junto">' + v9ic('friends', 16) + 'Ler junto</button>' + (nx ? '<button class="btn s" data-v9="quero">' + v9ic('plus', 16) + 'Quero ler: ' + esc(String(nx.title).length > 40 ? String(nx.title).slice(0, 39) + '…' : String(nx.title)) + '</button>' : '') : '<button class="btn p" data-v9="add">' + v9ic('plus', 16) + 'Adicionar amizade</button>') + '<button class="btn s" data-v9="share">' + v9ic('send', 16) + 'Compartilhar</button><button class="btn s blbt" data-v9="again">Ver de novo</button></div>');
 }
 // ---------- cartão do perfil e sequência ----------
 { let host = null, ov = null, tmr = 0, cur = null;
@@ -294,12 +294,12 @@ function v9Screen(D, k, prev) {
   const open = async (d, mode) => {
     if (ov) close(); const saved = v9Get(d.handle);
     const mk = () => { ov = document.createElement('div'); ov.className = 'v9ov'; TR.append(ov); ov.attachShadow({ mode: 'open' }).addEventListener('click', (ev) => { ev.stopPropagation(); onOv(ev); }); ov.addEventListener('click', (ev) => ev.stopPropagation()); };
-    let M = {}; const pM = sapi('GET', '/v1/users/' + encodeURIComponent(d.handle) + '/match').then((r) => { if (r && r.status === 200 && r.data) M = r.data; }).catch(() => {});
+    let M = {}; const pM = v9Match(d.handle).then((x) => { if (x) M = x; });
     const D = v9Data(d, M); D.meName = String((typeof socialProfile !== 'undefined' && socialProfile && socialProfile.displayName) || 'Você').split(' ')[0];
     D.avMe = v9Av('me', d); D.avEl = v9Av('el', d); D.avMeBig = v9Av('me', d, 'big'); D.avElBig = v9Av('el', d, 'big');
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (mode === 'view' && saved) { await Promise.race([pM, new Promise((r) => setTimeout(r, 1500))]); mk(); cur = { D, T: [], i: 0, prev: null, calc: false }; }
-    else { mk(); cur = { D, T: [], i: 0, prev: null, calc: true }; draw(); await Promise.all([pM, new Promise((r) => setTimeout(r, reduce ? 300 : 2600))]); }
+    if (mode === 'view' && saved) { await Promise.race([pM, new Promise((r) => setTimeout(r, 4000))]); mk(); cur = { D, T: [], i: 0, prev: null, calc: false }; }
+    else { mk(); cur = { D, T: [], i: 0, prev: null, calc: true }; draw(); await Promise.all([Promise.race([pM, new Promise((r) => setTimeout(r, 4000))]), new Promise((r) => setTimeout(r, reduce ? 300 : 1600))]); }
     if (!ov || !cur) return;
     const D2 = v9Data(d, M); Object.assign(D2, { meName: D.meName, avMe: D.avMe, avEl: D.avEl, avMeBig: D.avMeBig, avElBig: D.avElBig });
     const evo = mode === 'upd' && saved ? { comum: saved.comum, pers: saved.pers, at: saved.at } : (mode === 'view' && saved && saved.prevV) || null;
@@ -309,12 +309,13 @@ function v9Screen(D, k, prev) {
   const onClick = (ev, h) => { const b = ev.target.closest('[data-v9]'); if (!b) return; const d = S.fpData; if (!d || d.handle !== h.dataset.h) return; act(b.dataset.v9, d); };
   const onOv = (ev) => { const b = ev.target.closest('[data-v9]'); if (!b || !cur) return; const k = b.dataset.v9;
     if (k === 'x') return close(); if (cur.calc) return;
-    if (k === 'next') { if (cur.i >= cur.T.length - 1) return close(); cur.i++; return draw(); }
+    if (k === 'next') { if (cur.i >= cur.T.length - 1) return; cur.i++; return draw(); }
+    if (k === 'again') { cur.i = 0; return draw(); }
     if (k === 'prev') { cur.i = Math.max(0, cur.i - 1); return draw(); }
     act(k, cur.d || S.fpData); };
   const act = (k, d) => {
     if (k === 'calc' || k === 'upd' || k === 'view') return open(d, k);
-    if (k === 'disc') { close(); try { openChat(d.handle); } catch {} return; }
+    if (k === 'disc') { const txt = v9Assunto(cur, d); close(); try { openChat(d.handle); } catch {} if (txt) { let n = 0; const put = () => { const ta = TR.querySelector('#shelflist textarea'); if (ta && !ta.value) { ta.value = txt; ta.dispatchEvent(new Event('input', { bubbles: true })); return; } if (++n < 20) setTimeout(put, 150); }; setTimeout(put, 200); } return; }
     if (k === 'add') { if (needAccount()) return; sapi('POST', '/v1/friends/requests', { handle: d.handle }).then((r) => toast(r && r.status < 300 ? 'Pedido de amizade enviado' : 'Não consegui enviar o pedido agora')).catch(() => toast('Não consegui enviar o pedido agora')); return; }
     if (k === 'junto') { close(); try { ljOpen(d); } catch {} return; }
     if (k === 'quero' && cur && cur.D.nx) { const x = cur.D.nx; try { addToLibrary({ title: x.title, author: x.author || '', cover: x.cover || null }, null, 'QUERO'); toast('Foi para o seu Quero ler'); b9Done(); } catch { toast('Não consegui agora'); } return; }
@@ -326,7 +327,7 @@ function v9Screen(D, k, prev) {
   };
   const b9Done = () => { const b = ov && ov.shadowRoot.querySelector('[data-v9=quero]'); if (b) b.remove(); };
   // o cartão antigo dá lugar ao novo: v2Afi devolve só o lugar (o desenho é feito no shadow root, sem cálculo)
-  v2Afi = function (d) { return d && !d.self && d.handle ? '<section class="v2afi v9h" data-h="' + esc(d.handle) + '"></section>' : ''; };
+  v2Afi = function (d) { if (d && !d.self && d.handle) setTimeout(() => { v9Match(d.handle); }, 400); return d && !d.self && d.handle ? '<section class="v2afi v9h" data-h="' + esc(d.handle) + '"></section>' : ''; };
   { const s = document.createElement('style'); s.textContent = '.v2afi.v9h{background:none!important;padding:0!important;box-shadow:none!important;margin:.9rem 0 .4rem!important;color:inherit}.v9ov{position:fixed;inset:0;z-index:2147483000}'; TR.append(s); }
   let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; mount(); }, 80); }).observe(TR, { childList: true, subtree: true });
   // voltar do celular fecha a sequência primeiro
@@ -355,3 +356,17 @@ async function v9Share(D) {
   try { if (navigator.canShare && navigator.canShare({ files: [file] })) return await navigator.share({ files: [file], title: 'Nossa combinação no Livroverso' }); } catch {}
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.append(a); a.click(); a.remove(); toast('Imagem salva');
 }
+
+// /match por pessoa: guardado 5 min e pedido já ao abrir o perfil, para a sequência abrir rápido e sempre com as mesmas telas (teste 27 e 31)
+const V9M = {};
+function v9Match(h) { const c = V9M[h]; if (c && (c.p || Date.now() - c.t < 300000)) return c.p || Promise.resolve(c.M);
+  const p = sapi('GET', '/v1/users/' + encodeURIComponent(h) + '/match').then((r) => { const M = r && r.status === 200 && r.data ? r.data : null; V9M[h] = M ? { t: Date.now(), M } : { t: 0 }; return M; }).catch(() => { V9M[h] = { t: 0 }; return null; });
+  V9M[h] = { t: 0, p }; return p; }
+// assunto do Discutir: o que a tela mostrava (teste 28)
+function v9Assunto(cur, d) { try { const D = cur && cur.D, k = cur && cur.T[cur.i]; const f = (x) => String(x).replace('.', ',');
+    if (k === 'rg' && D.rg.length) { const t = D.rg.slice().sort((a, b) => Math.abs(b.m - b.e) - Math.abs(a.m - a.e))[0];
+      return t.m === t.e ? 'Sobre ' + t.title + ': nós duas demos ★' + f(t.m) + '. O que mais te pegou?' : 'Sobre ' + t.title + ': eu dei ★' + f(t.m) + ' e você ★' + f(t.e) + '. Bora discutir?'; }
+    if (k === 'em' && D.ec && D.ec.length) return 'Vi na nossa combinação que ' + D.ec.slice(0, 2).join(' e ').toLowerCase() + ' marca as duas. Qual livro te deixou assim?';
+    if (k === 'ecos' && D.ecos.livro) return 'Vi seu eco em ' + D.ecos.livro.title + '. Em que parte você deixou?';
+    if (k === 'foco') return 'Vi na nossa combinação os nossos horários de leitura. Qual é seu momento favorito para ler?';
+    return 'Vi nossa combinação no Livroverso: ' + (D.pers || '') + '!'; } catch { return ''; } }
