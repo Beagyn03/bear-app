@@ -22,7 +22,7 @@ const v4PageTitle = () => (v4Avisos() ? 'Avisos' : v4Busca() ? 'Buscar' : '');
   let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; fix(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
   fix(); setTimeout(fix, 2000); }
 // Voltar no topo para páginas abertas como aba ou com abas internas (Estatísticas, Busca, Avisos) quando o Voltar geral não aparece
-{ const st = document.createElement('style'); st.textContent = '.v4back2{display:inline-grid;place-items:center;width:36px;height:36px;border:0;background:none;color:var(--ink);margin-right:.15rem}.v4back2 svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'; TR.append(st);
+{ const st = document.createElement('style'); st.textContent = '.sx-yr .sx-back{display:none!important}.v4back2{display:inline-grid;place-items:center;width:36px;height:36px;border:0;background:none;color:var(--ink);margin-right:.15rem}.v4back2 svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'; TR.append(st);
   const need = () => { if (TR.querySelector('.gtop .v4back:not([hidden])')) return false; const v = TR.querySelector('#shelflist');
     if (v4Avisos() || v4Busca()) return true; return S.tab === 'progresso' && (!v || v.hidden); };
   const back = () => { if (v4Avisos()) { const ed = TR.querySelector('#editor'); if (ed && !ed.hidden && ed.classList.contains('ntpage')) { try { closeEd(); } catch {} return; } }

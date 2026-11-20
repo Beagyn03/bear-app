@@ -239,7 +239,10 @@ function v3Wire(v, d, hd, x) {
     const y = todayISO().slice(0, 4), card = document.createElement('section'); card.className = 'v3com'; box.append(card);
     const loc = (() => { try { return lib().filter((e) => { const r = reviewOfLib(e); return r && r.share !== false && String(r.texto || '').trim() && String(e.finishedAt || '').slice(0, 4) === y; }).length; } catch { return 0; } })();
     const paint = (s) => { card.innerHTML = '<h4>Na comunidade</h4><small>em ' + y + ' · só você vê</small><div class="g">'
-      + [[s ? s.reviews : loc, 'avaliações'], [s ? s.posts : null, 'posts'], [s ? s.comments : null, 'comentários'], [s ? s.ecos : null, 'ecos']].map(([n, l]) => '<div><b>' + (n == null ? '–' : v3Fmt(n)) + '</b><span>' + l + '</span></div>').join('') + '</div>'; };
+      + [[s ? s.reviews : loc, 'avaliação', 'avaliações'], [s ? s.posts : null, 'post', 'posts'], [s ? s.comments : null, 'comentário', 'comentários'], [s ? s.ecos : null, 'eco', 'ecos']].map(([n, l1, l]) => [n, n === 1 ? l1 : l]).map(([n, l]) => '<div><b>' + (n == null ? '–' : v3Fmt(n)) + '</b><span>' + l + '</span></div>').join('') + '</div>'; };
     paint(cache);
-    if (!cache || Date.now() - at > 120e3) { try { const r = await sapi('GET', '/v1/me/community-stats'); if (r && r.status === 200 && r.data) { cache = r.data; at = Date.now(); if (card.isConnected) paint(cache); } } catch {} } };
+    if (!cache || Date.now() - at > 120e3) { try { const r = await sapi('GET', '/v1/me/community-stats'); if (r && r.status === 200 && r.data) { cache = { ...r.data }; at = Date.now();
+        // o servidor não conta ecos (vem null): conta a lista dos seus ecos do ano (teste 20/11 item 39)
+        if (cache.ecos == null) { try { const e = await sapi('GET', '/v1/me/echoes'); if (e && e.status === 200 && e.data && Array.isArray(e.data.items)) cache.ecos = e.data.items.filter((x) => String(x.createdAt || '').slice(0, 4) === y).length; } catch {} }
+        if (card.isConnected) paint(cache); } } catch {} } };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 200); }).observe(TR, { childList: true, subtree: true }); }

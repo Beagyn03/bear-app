@@ -84,11 +84,11 @@ drawProgresso = function (box) {
       const F = (db.focus || []).filter((f) => String(f.date || '').startsWith(String(y))), fm = F.reduce((a2, f) => a2 + (Number(f.minutes) || 0), 0), fp = F.reduce((a2, f) => a2 + (Number(f.pages) || 0), 0);
       const semP = Math.max(0, tot - fp), hh = Math.floor(fm / 60), mn = fm % 60, tt = fm ? (hh ? hh + ' h' + (mn ? ' ' + mn + ' min' : '') : mn + ' min') : '';
       const fpm = F.filter((f) => Number(f.minutes) > 0 && Number(f.pages) > 0), rm = fpm.reduce((a2, f) => a2 + Number(f.minutes), 0), rp = fpm.reduce((a2, f) => a2 + Number(f.pages), 0);
-      const rit = rm >= 10 && rp ? Math.round((rp / rm) * 60) : 0;
-      if (fm || semP) hab += '<section class="v3c sx-c"><h3>Tempo de leitura</h3><div class="sx-two">'
+      let rit = rm >= 30 && rp ? Math.round((rp / rm) * 60) : 0; if (rit > 150) rit = 0; // ritmo só com 30 min de cronômetro e sem valor impossível (teste 20/11 item 38: 219 pág./h)
+      if (fm || semP) hab += '<section class="v3c sx-c"><h3>Tempo de leitura</h3><div class="sx-two"' + (fm && semP ? '' : ' style="grid-template-columns:1fr"') + '>'
         + (fm ? stat(tt + (rit ? ' · ' + rit + ' pág./h' : ''), 'com cronômetro · das sessões no Ler') : '')
         + (semP ? stat(semP.toLocaleString('pt-BR') + ' páginas', 'sem cronômetro · atualizações fora do Ler') : '')
-        + '</div><small class="sx-note">Total de páginas do ano: ' + tot.toLocaleString('pt-BR') + '</small></section>';
+        + '</div><small class="sx-note">' + tot.toLocaleString('pt-BR') + ' páginas registradas em atualizações no ano. As ' + 'páginas lidas lá em cima somam os livros terminados.</small></section>';
     }
   } catch {}
   const yi = years.indexOf(y);

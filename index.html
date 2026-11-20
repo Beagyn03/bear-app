@@ -11163,11 +11163,11 @@ drawProgresso = function (box) {
       const F = (db.focus || []).filter((f) => String(f.date || '').startsWith(String(y))), fm = F.reduce((a2, f) => a2 + (Number(f.minutes) || 0), 0), fp = F.reduce((a2, f) => a2 + (Number(f.pages) || 0), 0);
       const semP = Math.max(0, tot - fp), hh = Math.floor(fm / 60), mn = fm % 60, tt = fm ? (hh ? hh + ' h' + (mn ? ' ' + mn + ' min' : '') : mn + ' min') : '';
       const fpm = F.filter((f) => Number(f.minutes) > 0 && Number(f.pages) > 0), rm = fpm.reduce((a2, f) => a2 + Number(f.minutes), 0), rp = fpm.reduce((a2, f) => a2 + Number(f.pages), 0);
-      const rit = rm >= 10 && rp ? Math.round((rp / rm) * 60) : 0;
-      if (fm || semP) hab += '<section class="v3c sx-c"><h3>Tempo de leitura</h3><div class="sx-two">'
+      let rit = rm >= 30 && rp ? Math.round((rp / rm) * 60) : 0; if (rit > 150) rit = 0; // ritmo só com 30 min de cronômetro e sem valor impossível (teste 20/11 item 38: 219 pág./h)
+      if (fm || semP) hab += '<section class="v3c sx-c"><h3>Tempo de leitura</h3><div class="sx-two"' + (fm && semP ? '' : ' style="grid-template-columns:1fr"') + '>'
         + (fm ? stat(tt + (rit ? ' · ' + rit + ' pág./h' : ''), 'com cronômetro · das sessões no Ler') : '')
         + (semP ? stat(semP.toLocaleString('pt-BR') + ' páginas', 'sem cronômetro · atualizações fora do Ler') : '')
-        + '</div><small class="sx-note">Total de páginas do ano: ' + tot.toLocaleString('pt-BR') + '</small></section>';
+        + '</div><small class="sx-note">' + tot.toLocaleString('pt-BR') + ' páginas registradas em atualizações no ano. As ' + 'páginas lidas lá em cima somam os livros terminados.</small></section>';
     }
   } catch {}
   const yi = years.indexOf(y);
@@ -19361,9 +19361,12 @@ function v3Wire(v, d, hd, x) {
     const y = todayISO().slice(0, 4), card = document.createElement('section'); card.className = 'v3com'; box.append(card);
     const loc = (() => { try { return lib().filter((e) => { const r = reviewOfLib(e); return r && r.share !== false && String(r.texto || '').trim() && String(e.finishedAt || '').slice(0, 4) === y; }).length; } catch { return 0; } })();
     const paint = (s) => { card.innerHTML = '<h4>Na comunidade</h4><small>em ' + y + ' · só você vê</small><div class="g">'
-      + [[s ? s.reviews : loc, 'avaliações'], [s ? s.posts : null, 'posts'], [s ? s.comments : null, 'comentários'], [s ? s.ecos : null, 'ecos']].map(([n, l]) => '<div><b>' + (n == null ? '–' : v3Fmt(n)) + '</b><span>' + l + '</span></div>').join('') + '</div>'; };
+      + [[s ? s.reviews : loc, 'avaliação', 'avaliações'], [s ? s.posts : null, 'post', 'posts'], [s ? s.comments : null, 'comentário', 'comentários'], [s ? s.ecos : null, 'eco', 'ecos']].map(([n, l1, l]) => [n, n === 1 ? l1 : l]).map(([n, l]) => '<div><b>' + (n == null ? '–' : v3Fmt(n)) + '</b><span>' + l + '</span></div>').join('') + '</div>'; };
     paint(cache);
-    if (!cache || Date.now() - at > 120e3) { try { const r = await sapi('GET', '/v1/me/community-stats'); if (r && r.status === 200 && r.data) { cache = r.data; at = Date.now(); if (card.isConnected) paint(cache); } } catch {} } };
+    if (!cache || Date.now() - at > 120e3) { try { const r = await sapi('GET', '/v1/me/community-stats'); if (r && r.status === 200 && r.data) { cache = { ...r.data }; at = Date.now();
+        // o servidor não conta ecos (vem null): conta a lista dos seus ecos do ano (teste 20/11 item 39)
+        if (cache.ecos == null) { try { const e = await sapi('GET', '/v1/me/echoes'); if (e && e.status === 200 && e.data && Array.isArray(e.data.items)) cache.ecos = e.data.items.filter((x) => String(x.createdAt || '').slice(0, 4) === y).length; } catch {} }
+        if (card.isConnected) paint(cache); } } catch {} } };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 200); }).observe(TR, { childList: true, subtree: true }); }
 // --- f4_v2_perfil_carrega.js ---
 // Perfil ao carregar (Bia, 20/11): recarregando o app na aba Você aparecia por um instante a tela antiga "Editar perfil ·
@@ -19579,7 +19582,7 @@ const v4PageTitle = () => (v4Avisos() ? 'Avisos' : v4Busca() ? 'Buscar' : '');
   let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; fix(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
   fix(); setTimeout(fix, 2000); }
 // Voltar no topo para páginas abertas como aba ou com abas internas (Estatísticas, Busca, Avisos) quando o Voltar geral não aparece
-{ const st = document.createElement('style'); st.textContent = '.v4back2{display:inline-grid;place-items:center;width:36px;height:36px;border:0;background:none;color:var(--ink);margin-right:.15rem}.v4back2 svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'; TR.append(st);
+{ const st = document.createElement('style'); st.textContent = '.sx-yr .sx-back{display:none!important}.v4back2{display:inline-grid;place-items:center;width:36px;height:36px;border:0;background:none;color:var(--ink);margin-right:.15rem}.v4back2 svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'; TR.append(st);
   const need = () => { if (TR.querySelector('.gtop .v4back:not([hidden])')) return false; const v = TR.querySelector('#shelflist');
     if (v4Avisos() || v4Busca()) return true; return S.tab === 'progresso' && (!v || v.hidden); };
   const back = () => { if (v4Avisos()) { const ed = TR.querySelector('#editor'); if (ed && !ed.hidden && ed.classList.contains('ntpage')) { try { closeEd(); } catch {} return; } }
