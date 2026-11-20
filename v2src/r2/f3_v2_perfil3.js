@@ -181,7 +181,8 @@ function v3Build(v, d) {
   const jl = body.querySelector(':scope > .v2jl') || body.querySelector('.v3pane > .v2jl'); if (jl && jl.parentElement !== pTop) pTop.prepend(jl);
   let t3 = body.querySelector('.v3pane .v3t3w'); if (!t3) { t3 = document.createElement('div'); t3.className = 'v3t3w'; } if (t3.parentElement !== pTop) pTop.append(t3);
   const t3s = JSON.stringify([x.top, self, S.v3prev, ro]); if (t3.dataset.sig !== t3s) { t3.dataset.sig = t3s;
-    t3.innerHTML = '<div class="v3h2"><b>Top 3</b>' + (self && !S.v3prev && x.top.length ? '<button type="button" data-v3="top5">Editar</button>' : '') + '</div>' + v3Top3(x, self);
+    // título só na aba Sobre do seu perfil; no perfil de outra pessoa (e na prévia) a aba já se chama Top 3 (teste 20/11 item 31)
+    t3.innerHTML = (self && !ro ? '<div class="v3h2"><b>Top 3</b>' + (!S.v3prev && x.top.length ? '<button type="button" data-v3="top5">Editar</button>' : '') + '</div>' : '') + v3Top3(x, self);
     try { paintCv(t3); } catch {}
     t3.querySelectorAll('[data-top]').forEach((b) => b.addEventListener('click', () => { const t = x.top[+b.dataset.top]; if (!t) return; const e = self && lib().find((y) => normT(y.title) === normT(t.title)); if (e) openBookPage(e); else openAnyBook(t.title, t.author, t.cover); }));
     t3.querySelectorAll('[data-v3=top5]').forEach((b) => b.addEventListener('click', () => { try { editTop5(); } catch { try { openTaste(); } catch {} } })); }

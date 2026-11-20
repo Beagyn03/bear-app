@@ -33,3 +33,5 @@ Object.assign(V3EMO, {
       return { ...x, label: '<i class=v3e data-i=' + m[1] + '></i>' + x.label, danger: x.danger || !!m[2] }; });
     return _pm.call(this, anchor, L); }; }
 { const st = document.createElement('style'); st.textContent = '.pop-it > span{display:inline-flex;align-items:center;gap:.55rem}.pop-it svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.pop-it.danger{color:#d4573d!important}'; TR.append(st); }
+// Avisos: as abas Notificações/Mensagens ficam na mesma altura nas duas telas (teste 20/11 item 23: pulava 9 px)
+{ const st = document.createElement('style'); st.textContent = '#shelflist .sl-body > .av-tabs:first-child,#shelflist .sl-body > .av-tabs{margin-top:12px!important}'; TR.append(st); }
