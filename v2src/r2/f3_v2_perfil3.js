@@ -25,6 +25,10 @@
 .v3pb button.p{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}.v3pb button.ic{padding:.45rem .6rem}
 .v3prev{display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:800;color:var(--acc)}
 .v3pf .v2pxm{top:.2rem;right:.2rem}
+#shelflist .sl-top{position:relative}#shelflist .sl-top .v2pxm{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+#shelflist:not(.mine-page) .v2afi{background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:var(--v2-sh);cursor:pointer}
+#shelflist:not(.mine-page) .v2afi .t small,#shelflist:not(.mine-page) .v2afi .cm{color:var(--ink-2)}#shelflist:not(.mine-page) .v2afi .pc{font-size:1.5rem;color:var(--acc)}#shelflist:not(.mine-page) .v2afi .cm b{color:var(--acc)}
+#shelflist:not(.mine-page) .v2afi .row .v2a-cv{box-shadow:0 2px 6px rgba(0,0,0,.18)}#shelflist:not(.mine-page) .v2afi .vs div{color:var(--ink-2)}#shelflist:not(.mine-page) .v2afi .vs .bar2{background:color-mix(in srgb,var(--ink) 10%,var(--panel))}
 .v3num{display:grid;grid-template-columns:1fr 1.1fr 1.1fr 1.6fr;border:1px solid var(--line);background:var(--panel);border-radius:16px;margin:.8rem 0 .2rem;overflow:hidden}
 .v3num > button{border:0;border-right:1px solid var(--line);background:none;padding:.55rem .3rem;font:inherit;color:var(--ink);cursor:pointer;min-width:0;text-align:center}
 .v3num > button:last-child{border-right:0}.v3num b{display:block;font-size:1.05rem;font-weight:900;white-space:nowrap}
@@ -128,9 +132,10 @@ function v3Ativ(d, host) {
 function v3Build(v, d) {
   const body = v.querySelector('.sl-body'); if (!body) return;
   const m = v2Mods(), self = !!d.self, x = v3Data(d), key = d.handle + '|' + (self ? 1 : 0);
-  if (S.v3pfH !== d.handle) { S.v3pfH = d.handle; S.v3tab = 'sobre'; S.v3prev = false; }
-  const tabsOk = [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']].filter(([k]) => k !== 'des' || m.emprest);
-  if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = 'sobre';
+  if (S.v3pfH !== d.handle) { S.v3pfH = d.handle; S.v3tab = self ? 'sobre' : 'est'; S.v3prev = false; }
+  // perfil de outra pessoa (protótipo perfilx): Estantes · Top 3 · Desejos · Atividade; o seu: Sobre · Estantes · Desejos · Atividade
+  const tabsOk = (self ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || m.emprest);
+  if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self ? 'sobre' : 'est';
   v.classList.add('v3pf-on');
   // cabeçalho
   let hd = body.querySelector(':scope > .v3pf');
@@ -160,11 +165,12 @@ function v3Build(v, d) {
   tb.querySelectorAll('[data-t]').forEach((b) => { const on = b.dataset.t === S.v3tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
   // painéis
   const pane = (k) => { let p = body.querySelector(':scope > .v3pane[data-k=' + k + ']'); if (!p) { p = document.createElement('section'); p.className = 'v3pane'; p.dataset.k = k; body.append(p); } p.hidden = S.v3tab !== k; return p; };
-  const pS = pane('sobre'), pE = pane('est'), pD = pane('des'), pA = pane('ativ');
-  let last = tb; [pS, pE, pD, pA].forEach((p) => { if (last.nextElementSibling !== p) last.after(p); last = p; });
+  const pS = pane('sobre'), pE = pane('est'), pT = pane('top'), pD = pane('des'), pA = pane('ativ');
+  const pTop = self ? pS : pT; // Top 3 (e o jeito de ler): no seu perfil fica em Sobre; no de outra pessoa, na aba Top 3
+  let last = tb; [pS, pE, pT, pD, pA].forEach((p) => { if (last.nextElementSibling !== p) last.after(p); last = p; });
   // Sobre: jeito de ler + Top 3
-  const jl = body.querySelector(':scope > .v2jl'); if (jl && jl.parentElement !== pS) pS.prepend(jl);
-  let t3 = pS.querySelector('.v3t3w'); if (!t3) { t3 = document.createElement('div'); t3.className = 'v3t3w'; pS.append(t3); }
+  const jl = body.querySelector(':scope > .v2jl') || body.querySelector('.v3pane > .v2jl'); if (jl && jl.parentElement !== pTop) pTop.prepend(jl);
+  let t3 = body.querySelector('.v3pane .v3t3w'); if (!t3) { t3 = document.createElement('div'); t3.className = 'v3t3w'; } if (t3.parentElement !== pTop) pTop.append(t3);
   const t3s = JSON.stringify([x.top, self, S.v3prev]); if (t3.dataset.sig !== t3s) { t3.dataset.sig = t3s;
     t3.innerHTML = '<div class="v3h2"><b>Top 3</b>' + (self && !S.v3prev && x.top.length ? '<button type="button" data-v3="top5">Editar</button>' : '') + '</div>' + v3Top3(x, self);
     try { paintCv(t3); } catch {}
@@ -179,6 +185,8 @@ function v3Build(v, d) {
   if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle)) { pD.dataset.h = d.handle; pD.innerHTML = ''; v2WishPaint(v, d, pD); }
   // Atividade
   if (S.v3tab === 'ativ' && pA.dataset.h !== d.handle + '|' + (S.v3atf || '')) { pA.dataset.h = d.handle + '|' + (S.v3atf || ''); v3Ativ(d, pA); }
+  if (!self) { const pm = body.querySelector('.v2pxm'), st = body.querySelector(':scope > .sl-top'); if (pm && st && pm.parentElement !== st) st.append(pm);
+    const cm = body.querySelector(':scope > .cm-btn'), af = body.querySelector(':scope > .v2afi'); if (cm && af) { cm.hidden = true; if (!af.dataset.cm) { af.dataset.cm = 1; af.setAttribute('role', 'button'); af.addEventListener('click', () => cm.click()); } } }
   // a faixa de conta suspensa fica logo abaixo do cabeçalho
   const sus = body.querySelector(':scope > .v2sus'); if (sus && hd.nextElementSibling !== sus) hd.after(sus); if (sus) sus.hidden = !!S.v3prev;
 }
