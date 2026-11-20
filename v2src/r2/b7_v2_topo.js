@@ -90,7 +90,7 @@ TR.addEventListener('click', (ev) => {
 //    a linha de título da lista, embaixo das abas;
 //  - a bolinha da aba Comunidade não acende mais só por mensagem (o 🔔 já conta).
 { const st = document.createElement('style'); st.textContent = `
-.gtop #g-avt{display:none;flex:1;min-width:0;font-size:1.05rem;font-weight:900;color:var(--ink)}
+.gtop #g-avt{display:none;flex:1;min-width:0;font-family:var(--v2-disp);font-size:1.25rem;font-weight:700;color:var(--ink)}
 .gtop.av-on #g-t{display:none!important}.gtop.av-on #g-avt{display:block}
 #editor.ntpage .nt-top{display:none!important}
 #shelflist.av-msg .sl-body > .sl-top{display:none!important}

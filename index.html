@@ -17205,7 +17205,7 @@ TR.addEventListener('click', (ev) => {
 //    a linha de título da lista, embaixo das abas;
 //  - a bolinha da aba Comunidade não acende mais só por mensagem (o 🔔 já conta).
 { const st = document.createElement('style'); st.textContent = `
-.gtop #g-avt{display:none;flex:1;min-width:0;font-size:1.05rem;font-weight:900;color:var(--ink)}
+.gtop #g-avt{display:none;flex:1;min-width:0;font-family:var(--v2-disp);font-size:1.25rem;font-weight:700;color:var(--ink)}
 .gtop.av-on #g-t{display:none!important}.gtop.av-on #g-avt{display:block}
 #editor.ntpage .nt-top{display:none!important}
 #shelflist.av-msg .sl-body > .sl-top{display:none!important}
@@ -20999,7 +20999,8 @@ Object.assign(V3EMO, { x: '<path d="M6 6l12 12M18 6 6 18"/>', sino: '<path d="M6
 .v4pg-foot{font-size:.74rem;color:var(--ink-2);margin:.7rem .1rem 0;line-height:1.4}
 .v4seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:14px;background:var(--panel);border:1px solid var(--line);margin:.2rem 0 .8rem}
 .v4seg button{border:0;background:none;border-radius:10px;padding:.5rem .2rem;font:inherit;font-size:.78rem;font-weight:800;color:var(--ink-2);line-height:1.15;cursor:pointer}
-.v4seg button small{display:block;font-size:.7rem;font-weight:700;opacity:.8}
+.v4seg button small{display:inline;margin-left:.15rem;font-size:.72rem;font-weight:800;opacity:.85}
+.v4seg{grid-auto-columns:auto!important}.v4seg button{white-space:nowrap;padding-left:.35rem!important;padding-right:.35rem!important}
 .v4seg button.on{background:var(--bg);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .v4btn-w{display:flex;align-items:center;justify-content:center;gap:.4rem;width:100%;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:14px;padding:.75rem;font:inherit;font-weight:800;font-size:.86rem;cursor:pointer;margin-bottom:.8rem}
 .v4fx{display:grid;grid-template-columns:40px minmax(0,1fr);gap:.7rem;align-items:start;padding:.65rem 0;border-top:1px solid var(--line)}
@@ -21384,7 +21385,7 @@ function openLembretes() {
   };
   const stars = (p) => { const n = Math.round(p); return '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i>'; };
   const fmt = (p) => String(p).replace('.', ',');
-  const SKIP = '.v4psh, .v3at, .rd-card, .bp-hero, .v3tp3, .v3tp, .rd-post, .fd-post, .v3x, .v3hero, .ys-g, .ys-row, .yv-tb';
+  const SKIP = '.v4psh, .v4fx, .v2gc, .v3at, .rd-card, .bp-hero, .v3tp3, .v3tp, .rd-post, .fd-post, .v3x, .v3hero, .ys-g, .ys-row, .yv-tb';
   const place = (cv) => {
     cv.dataset.v6 = '1'; const p = Number(cv.dataset.rt) || 0; if (!p) return;
     if (!cv.closest('#shelflist') || cv.closest(SKIP)) return;
