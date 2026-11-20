@@ -21159,14 +21159,17 @@ v2FuncoesSheet = function () {
     const fix = mk('aj-v4fix', 'Completar histórico', (() => { try { const L = lib().filter((e) => e.status === 'LIDO' && Object.values(fxMiss(e)).some(Boolean)).length; return L ? L + ' livros com dados faltando' : 'datas, páginas e notas dos lidos'; } catch { return ''; } })(), () => openFixReads());
     const del = connected() ? mk('aj-v4del', 'Excluir conta', 'apaga tudo, não tem volta', () => { try { deleteAccountSheet(); } catch {} }) : null; if (del) del.classList.add('danger');
     const tema = rowByText(/^Tema/), sons = get('aj-sound') ? get('aj-sound').closest('.aj-row, label, div') : rowByText(/^Sons/);
+    const thn = () => { const n = tema && tema.querySelector('#aj-thn'); return n ? n.textContent : ''; };
+    const apar = tema ? mk('aj-v4apar', 'Aparência', 'tema' + (thn() ? ' · ' + thn() : ''), () => { const open = tema.hidden; tema.hidden = !open; apar.classList.toggle('on', open); }) : null;
+    if (tema) { tema.hidden = true; tema.classList.add('v4throw'); const b0 = tema.querySelector('b'); if (b0) b0.textContent = 'Escolha o tema'; tema.addEventListener('click', () => setTimeout(() => { const sm = apar && apar.querySelector('small'); if (sm) sm.textContent = 'tema' + (thn() ? ' · ' + thn() : ''); }, 50)); }
     const G = [
       ['Seu perfil', [get('aj-priv'), get('aj-mu')]],
-      ['Seu app', [get('aj-home'), get('aj-fn'), tema, sons, spoiler, get('aj-v5rm')]], // Trechos e anotações saiu (Bia, 20/11): é conteúdo, mora na Estante › Trechos
+      ['Seu app', [get('aj-home'), get('aj-fn'), apar, tema, spoiler, get('aj-v5rm')]], // Sons saiu dos Ajustes; Tema virou "Aparência", que abre a escolha (Bia, 20/11, item 41) // Trechos e anotações saiu (Bia, 20/11): é conteúdo, mora na Estante › Trechos
       ['Conta e dados', [get('aj-sync'), get('aj-install'), hl, fix, get('aj-cv'), get('aj-exp'), get('aj-imp')]],
       ['Moderação', [get('aj-mod')]],
       ['Ajuda', [get('aj-tour')]],
     ];
-    const sS = sons && sons.querySelector('small'); if (sS) sS.textContent = 'Página virada e foco'; // conquistas saíram da v2
+    if (sons) sons.remove(); // Sons saiu dos Ajustes (Bia, 20/11); sons de ambiente da sessão continuam na tela Ler
     const fnS = get('aj-fn') && get('aj-fn').querySelector('small'); if (fnS) fnS.textContent = 'o que aparece no seu app · ' + V2MODS.filter(([k]) => v4Mod(k)).length + ' de ' + V2MODS.length + ' ligadas';
     const keep = [...box.children].filter((x) => x.matches && x.matches('header, .v3-top, .aj-me'));
     const out = get('aj-out'), login = get('aj-login');
