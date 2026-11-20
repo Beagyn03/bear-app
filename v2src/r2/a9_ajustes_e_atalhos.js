@@ -29,7 +29,7 @@
 // 3) Ajustes mais enxuto; Excluir conta em Editar perfil
 { const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
   try {
-    ['#aj-home', '#aj-feed', '#aj-out'].forEach((s) => box.querySelector(s)?.remove());
+    ['#aj-feed'].forEach((s) => box.querySelector(s)?.remove()); // Personalizar Início e Sair voltam para Ajustes: o topo não tem mais menu lateral nem ••• (Bia, 20/11)
     const del = box.querySelector('#aj-del'); const delCard = del && del.closest('.aj-card');
     if (S.ajMode === 'perfil') { if (!del && connected()) { box.insertAdjacentHTML('beforeend', '<div class="aj-g">Conta</div><div class="aj-card"><button type="button" class="aj-row danger" id="aj-del"><span><b>Excluir conta</b><small>Apaga a conta e todos os dados dela, para sempre</small></span>›</button></div>'); box.querySelector('#aj-del').addEventListener('click', deleteAccountSheet); } }
     else if (delCard) delCard.remove();

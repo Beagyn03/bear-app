@@ -5394,7 +5394,7 @@ function askWake() {
 // acordar o Bear: volta para a poltrona e abre a leitura atual (ou a busca)
 function wakeBear(a) {
   setAwake(true); drawAll(); go(1);
-  setTimeout(() => { toast('Bom dia! ☀️'); if (a === 'upd' && reading()) editLeitura(); else findBook('Escolher a próxima leitura', (it) => addToLibrary(it, null, 'LENDO')); }, 500);
+  setTimeout(() => { toast('Bom dia!'); if (a === 'upd' && reading()) editLeitura(); else findBook('Escolher a próxima leitura', (it) => addToLibrary(it, null, 'LENDO')); }, 500);
 }
 function editSleep() {
   const ed = $('#editor'); ed.classList.toggle('compact', true);
@@ -8561,6 +8561,7 @@ const BI = {
   folder: '<path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/>',
   send: '<path d="M21 3 10 14"/><path d="m21 3-7 18-4-7-7-4z"/>', chat: '<path d="M20.5 11.5a8 8 0 0 1-11.8 7.1L3.5 20l1.4-4.6A8 8 0 1 1 20.5 11.5z"/>', x: '<path d="m6 6 12 12M18 6 6 18"/>',
 };
+BI.cal = '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>';
 const bsv = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${BI[k]}</svg>`;
 function bqClose() { TR.querySelectorAll('.bkm').forEach((n) => n.remove()); }
 document.addEventListener('scroll', bqClose, true);
@@ -8958,6 +8959,7 @@ function bookMenuOpen(anchor, b) {
       ...(lendo > 1 ? [isCur ? ['swap', 'Trocar leitura do Início', () => swapReading()] : ['swap', 'Ler agora no Início', () => { readNow(e); reload(); }]] : []), ...resetIt] },
     e && (st === 'HIBERNANDO' || st === 'ABANDONEI') && (resetIt.length ? { id: 'st', ic: 'flag', label: 'Status', items: [['flag', 'Mudar status', () => statusSheet(e, st), 'lendo, lido, fila…'], ...resetIt] } : { row: ['flag', 'Mudar status', () => statusSheet(e, st), 'lendo, lido, fila…'] }),
     e && st === 'LIDO' && (resetIt.length ? { id: 'st', ic: 'flag', label: 'Corrigir status', items: [['flag', 'Mudar status', () => statusSheet(e, st), 'marquei errado'], ...resetIt] } : { row: ['flag', 'Corrigir status', () => statusSheet(e, st), 'marquei errado'] }),
+    e && st === 'LENDO' && { row: ['cal', e.dueAt ? 'Prazo' : 'Definir prazo', () => dueSheet(e), e.dueAt ? 'até ' + dueLabel(e.dueAt) : 'quando quer terminar?'] }, // o prazo saiu da linha do Hoje (Bia, 20/11)
     e && st !== 'QUERO' && { id: 'tr', ic: 'quote', label: 'Trechos e anotação', items: [['quote', 'Salvar trecho', () => saveQuote(e)], ['note', 'Anotação', () => editNote(e), e.note || ''],
       ...((e.quotes || []).length ? [['book', `Ver trechos (${e.quotes.length})`, () => openBookPage(e, 'trechos')]] : [])] },
     { id: 'dt', ic: 'book', label: 'Detalhes do livro', items: [['book', 'Ver no catálogo', () => (e ? openBookPage(e) : openAnyBook(b.title, b.author, b.cover)), 'sinopse e ficha'],
@@ -10680,13 +10682,13 @@ TR.addEventListener('click', (ev) => {
 // Lista única de emoções (Bia, 20/11; a mesma do protótipo em Atualizar, Terminei, sessão, trechos, posts e Top 3).
 // Chaves antigas que coincidem foram mantidas (naoparo, tensao, euforia...). As outras antigas continuam nos dados salvos e
 // contam pela tabela EMO_OLD (null = não é emoção, fica fora do ranking).
-const QT_GROUPS = [['Principais', [['naoparo', 'Não paro'], ['tensao', 'Tensão'], ['reviravolta', 'Reviravolta'], ['chorei', 'Chorei'], ['ri', 'Ri alto'], ['arrastado', 'Arrastado']]],
-  ['Mais', [['apaixonei', 'Me apaixonei'], ['emocionei', 'Me emocionei'], ['surpreendente', 'Surpreendente'], ['encanto', 'Encanto'], ['euforia', 'Euforia'], ['esperanca', 'Esperança'], ['ansiedade', 'Ansiedade'], ['medo', 'Medo'], ['angustia', 'Angústia'], ['arrepio', 'Arrepio'], ['confusao', 'Confusão'], ['doeu', 'Doeu'], ['raiva', 'Raiva'], ['identifiquei', 'Me identifiquei'], ['tedio', 'Tédio'], ['cringe', 'Cringe']]]];
+const QT_GROUPS = [['Principais', [['naoparo', 'Me prendeu'], ['tensao', 'Tensão'], ['reviravolta', 'Reviravolta'], ['chorei', 'Chorei'], ['ri', 'Ri alto'], ['arrastado', 'Arrastado']]],
+  ['Mais', [['apaixonei', 'Me apaixonei'], ['emocionei', 'Me emocionei'], ['surpreendente', 'Surpreendente'], ['encanto', 'Encanto'], ['euforia', 'Euforia'], ['ansiedade', 'Ansiedade'], ['medo', 'Medo'], ['angustia', 'Angústia'], ['arrepio', 'Arrepio'], ['confusao', 'Confusão'], ['doeu', 'Doeu'], ['raiva', 'Raiva'], ['identifiquei', 'Me identifiquei'], ['tedio', 'Tédio'], ['cringe', 'Vergonha alheia'], ['ressaca', 'Ressaca'], ['frustracao', 'Frustração'], ['nojo', 'Nojo']]]];
 const QT_PICK = QT_GROUPS.flatMap((g) => g[1]); // o que se escolhe hoje
 const EMO_OLD = { alegria: 'euforia', paixao: 'apaixonei', excitacao: 'euforia', borboletas: 'apaixonei', shippando: 'apaixonei', rindo: 'ri', conforto: null,
   curiosidade: 'naoparo', intensidade: 'tensao', arrepios: 'arrepio', plot_surpresa: 'surpreendente', plot_previsivel: 'tedio', plot_fraco: 'tedio',
-  coracao_partido: 'doeu', chorei_litros: 'chorei', ressaca: 'emocionei', frustracao: 'raiva', raiva_personagem: 'raiva', nojo: 'cringe',
-  amei: 'apaixonei', choque: 'surpreendente', arrepiei: 'arrepio', pensando: 'emocionei', inspirou: 'esperanca', saudade: 'doeu',
+  coracao_partido: 'doeu', chorei_litros: 'chorei', raiva_personagem: 'raiva',
+  amei: 'apaixonei', choque: 'surpreendente', arrepiei: 'arrepio', pensando: 'emocionei', inspirou: null, saudade: 'doeu',
   // rótulos antigos da sessão de leitura (db.focus[].feel) e da primeira versão da lista única
   '😱 Chocante': 'surpreendente', '🥹 Emocionante': 'emocionei', '😍 Apaixonante': 'apaixonei', '😴 Arrastado': 'arrastado', '🤯 Reviravolta': 'reviravolta', '😌 Tranquilo': null };
 // qualquer valor salvo (chave nova, chave antiga, rótulo) → chave da lista única, ou null
@@ -16397,7 +16399,7 @@ function rtCalSVG(D, w, anim) {
 // 3) Ajustes mais enxuto; Excluir conta em Editar perfil
 { const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
   try {
-    ['#aj-home', '#aj-feed', '#aj-out'].forEach((s) => box.querySelector(s)?.remove());
+    ['#aj-feed'].forEach((s) => box.querySelector(s)?.remove()); // Personalizar Início e Sair voltam para Ajustes: o topo não tem mais menu lateral nem ••• (Bia, 20/11)
     const del = box.querySelector('#aj-del'); const delCard = del && del.closest('.aj-card');
     if (S.ajMode === 'perfil') { if (!del && connected()) { box.insertAdjacentHTML('beforeend', '<div class="aj-g">Conta</div><div class="aj-card"><button type="button" class="aj-row danger" id="aj-del"><span><b>Excluir conta</b><small>Apaga a conta e todos os dados dela, para sempre</small></span>›</button></div>'); box.querySelector('#aj-del').addEventListener('click', deleteAccountSheet); } }
     else if (delCard) delCard.remove();
@@ -17275,9 +17277,15 @@ document.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape') return;
 .v2-qn{display:flex;align-items:center;justify-content:space-between;gap:.6rem;width:100%;margin:0 0 .9rem;padding:.65rem .85rem;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .v2-qn span{display:flex;flex-direction:column;min-width:0}.v2-qn b{font-size:.9rem}.v2-qn small{font-size:.74rem;color:var(--ink-2);font-weight:700}
 .v2-qn em{font-style:normal;color:var(--acc);font-weight:900;font-size:.84rem;white-space:nowrap}
-.v2-qd{grid-column:1/-1;width:100%;box-sizing:border-box;margin:0 0 1rem;padding:.8rem .9rem;border:1px solid var(--line);border-radius:18px;background:var(--panel)}
-.v2-qd .k{font-size:.66rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--acc)}
-.v2-qd .q{font-family:Georgia,'Times New Roman',serif;font-size:1.06rem;font-weight:700;line-height:1.3;margin:.25rem 0 .6rem;color:var(--ink)}
+.v2-qd{grid-column:1/-1;width:100%;box-sizing:border-box;margin:0 0 1rem;padding:16px;border:1px solid var(--line);border-radius:var(--v2-r,20px);background:linear-gradient(135deg,color-mix(in srgb,#7e63c9 16%,var(--panel)),var(--panel))}
+.v2-qd .qpicks{display:flex;gap:10px}.v2-qd .qpicks button{display:grid;gap:5px;justify-items:center;align-content:start;border:0;background:none;padding:0;font:inherit;font-size:11.5px;font-weight:800;color:var(--ink-2);width:78px;text-align:center;cursor:pointer}
+.v2-qd .qpicks button span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.v2-qd .qcv{width:64px;height:96px;border-radius:3px 7px 7px 3px;object-fit:cover;box-shadow:0 4px 10px rgba(0,0,0,.22);font-size:.55rem}
+.v2-qd .qo{display:grid;place-items:center;background:color-mix(in srgb,var(--ink) 6%,var(--panel));border:1.5px dashed var(--line);box-shadow:none;color:var(--ink-2)}.v2-qd .qo svg{width:22px;height:22px}
+.v2-qd .qft{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--ink-2);font-weight:700}.v2-qd .qft button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;padding:0;cursor:pointer}
+.v2-qd .done{display:flex;gap:10px;align-items:center}.v2-qd .done .qcv{width:44px;height:66px}.v2-qd .done span{display:grid;font-size:12px}.v2-qd .done b{font-size:14px;margin-top:2px}
+.v2-qd .k{font-size:10.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--acc)}
+.v2-qd .q{font-family:var(--v2-disp,Georgia,serif);font-size:18px;font-weight:700;line-height:1.25;margin:4px 0 12px;color:var(--ink)}
 .v2-qd .ch{display:flex;flex-wrap:wrap;gap:.4rem}
 .v2-qd .ch button{max-width:100%;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:99px;padding:.4rem .75rem;font:inherit;font-size:.8rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .v2-qd .ch button.o{border-style:dashed;color:var(--ink-2)}
@@ -17343,10 +17351,10 @@ function v2QBooks(from) {
 }
 function v2QdayHTML() {
   const [q, from] = v2QOfDay(), d = v2Today(), a = (db.prefs || {}).qday;
-  if (a && a.date === d) return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div><div class="done">Você respondeu: <b>${esc(a.answer)}</b></div></section>`;
+  if (a && a.date === d) { const e = lib().find((x) => x.title === a.answer); return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div><div class="done">${e ? cvh(e.title, e.cover, 'qcv') : ''}<span>Você respondeu<b>${esc(a.answer)}</b></span></div><div class="qft"><span>Respostas aparecem na Comunidade</span><button type="button" data-qgo="1">Ver respostas ›</button></div></section>`; }
   const bks = v2QBooks(from);
   return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div>
-    <div class="ch">${bks.map((e) => `<button type="button" data-qb="${esc(e.id)}">${esc(e.title)}</button>`).join('')}<button type="button" class="o" data-qb="">Outro…</button></div></section>`;
+    <div class="qpicks">${bks.map((e) => `<button type="button" data-qb="${esc(e.id)}">${cvh(e.title, e.cover, 'qcv')}<span>${esc(e.title)}</span></button>`).join('')}<button type="button" class="o" data-qb=""><span class="qcv qo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span><span>Outro livro</span></button></div><div class="qft"><span>Escolha e conte por quê</span></div></section>`;
 }
 function v2QAnswer(id) {
   const [q] = v2QOfDay(), e = id ? byId(id) : null;
@@ -17385,6 +17393,7 @@ function v2HojeEnsure() {
   for (let j = i - 1; j >= 0; j--) { const k = order[j]; if (off.includes(k) || !V2_SEC_EL[k]) continue; const els = V2_SEC_EL[k](box).filter((x) => x && x.isConnected && x.offsetParent !== null); if (els.length) { ref = els[els.length - 1]; break; } }
   if (ref.nextElementSibling !== qd) ref.after(qd);
 }
+TR.addEventListener('click', (ev) => { const g = ev.target.closest && ev.target.closest('[data-v2qd] [data-qgo]'); if (!g) return; ev.stopPropagation(); S.comSeg = 'rede'; goTab('comunidade'); });
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('[data-v2qd] [data-qb]'); if (!b) return; ev.stopPropagation(); v2QAnswer(b.dataset.qb); setTimeout(v2HojeEnsure, 50); });
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(v2HojeEnsure, 180); }).observe(TR, { childList: true, subtree: true }); setTimeout(v2HojeEnsure, 1700); }
 // --- c0_v2_visual.js ---
@@ -18463,19 +18472,30 @@ Object.assign(V2I, { qt: '<path class="d" d="M5 17c-1.5-1-2-2.5-2-4.5C3 9 5 7 8 
 .v3-colA.v3h > .v3x,.v3-colA.v3h > .v3mom,.v3-colA.v3h > #rc-host,.v3-colA.v3h > #pv-host,.v3-colA.v3h > .v3show{align-self:stretch!important;width:auto!important;max-width:none!important;box-sizing:border-box}
 .v3-colA.v3h > .orb-row{display:block!important} /* orb-row usa display:contents: os filhos invisíveis viravam itens da coluna e abriam um buraco */
 .v3-colA.v3h > .v3x-a{order:1}.v3-colA.v3h > .v3show{order:2}.v3-colA.v3h > .v3mom{order:3;margin-top:.9rem!important}.v3-colA.v3h > .v3x-b{order:4}.v3-colA.v3h > #rc-host{order:5;margin-top:1rem}.v3-colA.v3h > #pv-host{order:6;margin-top:1rem}
-.v3x .hello{margin:.1rem 0 .9rem}.v3x .hello small{display:block;font-size:.66rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-2)}
-.v3x .hello b{display:block;font-family:var(--v2-disp);font-size:1.65rem;line-height:1.15;color:var(--ink);margin-top:.15rem}
-.v3hero{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:.9rem 1rem;padding:1rem;border:1px solid var(--line);border-radius:var(--v2-r);background:var(--panel);box-shadow:var(--v2-sh)}
+.v3x .hello{margin:.1rem 0 14px}.v3x .hello small{display:block;font-size:10.5px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-2)}
+.v3x .hello b{display:block;font-family:var(--v2-disp);font-size:27px;line-height:1.15;letter-spacing:-.01em;color:var(--ink);margin-top:.15rem}
+.v3hero{position:relative;z-index:1;touch-action:pan-y;user-select:none;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:14px 16px;padding:16px;border:1px solid var(--line);border-radius:var(--v2-r);background:var(--panel);box-shadow:var(--v2-sh)}
 .v3ring{position:relative;width:150px;height:150px;border:0;background:none;padding:0;display:grid;place-items:center;-webkit-touch-callout:none;user-select:none;cursor:pointer}
 .v3ring svg{position:absolute;inset:0;width:100%;height:100%}
 .v3ring .v3cv{width:64px;height:96px;border-radius:4px 7px 7px 4px;object-fit:cover;box-shadow:0 6px 14px rgba(0,0,0,.25);position:relative;z-index:1;font-size:.6rem}
 .v3ring .moon{position:absolute;z-index:2;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3c4,#f0b84a 60%,#c98a1c);box-shadow:0 0 0 3px var(--panel),0 0 12px rgba(240,184,74,.7)}
-.v3hero .inf{display:grid;justify-items:start;gap:.1rem;min-width:0}
-.v3hero .pct{font-family:var(--v2-disp);font-size:2.1rem;line-height:1;font-weight:700;color:var(--ink)}
-.v3hero .pg{font-size:.8rem;font-weight:800;color:var(--ink-2)}
-.v3hero .eta{font-size:.76rem;font-weight:800;color:var(--acc);margin-top:.35rem;line-height:1.3}
-.v3hero .acts{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
-.v3qa{border:0;display:grid;justify-items:center;align-content:center;gap:.25rem;padding:.55rem .1rem .45rem;border-radius:14px;background:color-mix(in srgb,var(--ink) 6%,var(--panel));color:var(--ink);font:inherit;font-size:.7rem;font-weight:800;min-height:58px}
+.v3hero .inf{display:grid;justify-items:start;gap:2px;min-width:0}
+.v3hero .pct{font-family:var(--v2-disp);font-size:34px;line-height:1;font-weight:700;color:var(--ink)}
+.v3hero .pg{font-size:13px;font-weight:800;color:var(--ink-2)}
+.v3hero .eta{font-size:12px;font-weight:800;color:var(--acc);margin-top:6px;line-height:1.3}
+.v3hero .eta.due{display:grid;gap:5px;width:100%;border:0;background:color-mix(in srgb,var(--acc) 14%,transparent);border-radius:12px;padding:7px 10px;font:inherit;font-size:12.5px;font-weight:800;color:var(--ink-2);text-align:left;cursor:pointer}
+.v3hero .eta.due b{color:var(--acc);font-weight:900}.v3hero .eta.due.ok .dt{color:var(--acc)}
+.v3hero .eta.due small{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--ink-2)}.v3hero .eta.due small svg{width:12px;height:12px;flex:none}
+.v3herow{position:relative}
+.v3herow.multi::after{content:"";position:absolute;z-index:0;right:-7px;top:16px;bottom:16px;width:14px;border-radius:0 var(--v2-r) var(--v2-r) 0;background:var(--panel);border:1px solid var(--line);border-left:0;opacity:.55}
+.v3hero.sl-l{animation:v3slL .28s ease-out}.v3hero.sl-r{animation:v3slR .28s ease-out}
+@keyframes v3slL{from{transform:translateX(26px);opacity:.4}to{transform:none;opacity:1}}@keyframes v3slR{from{transform:translateX(-26px);opacity:.4}to{transform:none;opacity:1}}
+.v3dots{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding:0 2px}
+.v3dots .pp{display:flex;gap:6px}.v3dots .pp button{width:7px;height:7px;padding:0;border:0;border-radius:9px;background:color-mix(in srgb,var(--ink) 18%,transparent);transition:width .2s;cursor:pointer}.v3dots .pp button.on{width:20px;background:var(--acc)}
+.v3dots .nx{display:flex;align-items:center;gap:4px;border:0;background:none;padding:4px 0;font:inherit;font-size:12px;font-weight:800;color:var(--ink-2);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.v3dots .nx svg{width:13px;height:13px;flex:none}.v3dots .cdue{display:inline-flex;align-items:center;gap:3px;margin-left:4px;font-size:11px;font-weight:900;color:var(--acc)}
+.v3hero .acts{grid-column:1/-1;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;width:100%}
+.v3qa{border:0;display:grid;justify-items:center;align-content:center;gap:4px;padding:9px 2px 7px;border-radius:14px;background:color-mix(in srgb,var(--ink) 6%,var(--panel));color:var(--ink);font:inherit;font-size:11.5px;font-weight:800;min-height:58px}
 .v3qa .v2i{width:20px;height:20px;color:var(--acc)}
 .v3qa.p{background:linear-gradient(135deg,#e9a35c,#c46f2e);color:#fff;box-shadow:0 5px 12px rgba(196,111,46,.28)}.v3qa.p .v2i{color:#fff}
 .v3qa.hi{box-shadow:inset 0 0 0 2px var(--acc)}
@@ -18485,13 +18505,13 @@ Object.assign(V2I, { qt: '<path class="d" d="M5 17c-1.5-1-2-2.5-2-4.5C3 9 5 7 8 
 .v3tb{display:flex;gap:.4rem;align-items:center;overflow-x:auto;scrollbar-width:none;margin:.65rem 0 0}.v3tb::-webkit-scrollbar{display:none}
 .v3tb small{flex:none;font-size:.74rem;font-weight:800;color:var(--ink-2)}
 .v3tb button{flex:none;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.4rem .8rem;font:inherit;font-size:.78rem;font-weight:800;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v3day{display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:.5rem;margin-top:.65rem}
-.v3day button{border:1px solid var(--line);background:var(--panel);border-radius:var(--v2-r-s,14px);padding:.65rem .6rem;text-align:left;display:grid;gap:.05rem;font:inherit;color:var(--ink);min-width:0}
-.v3day small{font-size:.6rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
-.v3day b{font-family:var(--v2-disp);font-size:1.15rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v3day span{font-size:.7rem;color:var(--ink-2);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v3day{display:grid;grid-template-columns:repeat(var(--n,2),1fr);gap:8px;margin-top:10px}
+.v3day button{border:1px solid var(--line);background:var(--panel);border-radius:var(--v2-r-s,14px);padding:11px 10px;text-align:left;display:grid;gap:2px;font:inherit;color:var(--ink);min-width:0}
+.v3day small{font-size:10.5px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.v3day b{font-family:var(--v2-disp);font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v3day span{font-size:11.5px;color:var(--ink-2);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .v3day .off b{color:var(--acc)}
-.v3sh{display:flex;align-items:baseline;gap:.5rem;margin:1.3rem 0 .55rem}.v3sh b{font-family:var(--v2-disp);font-size:1.12rem;font-weight:700;color:var(--ink)}
+.v3sh{display:flex;align-items:baseline;gap:.5rem;margin:22px 0 10px}.v3sh b{font-family:var(--v2-disp);font-size:20px;font-weight:700;color:var(--ink)}
 .v3sh button{margin-left:auto;border:0;background:none;color:var(--acc);font:inherit;font-size:.78rem;font-weight:800;padding:0}
 .v3next{display:flex!important;gap:.75rem;align-items:center;width:100%!important;max-width:none!important;box-sizing:border-box;text-align:left;padding:.7rem;border:1px solid var(--line);border-radius:var(--v2-r);background:var(--panel);box-shadow:var(--v2-sh);font:inherit;color:var(--ink)}
 .v3next .v3cv{width:46px;height:69px;border-radius:3px 6px 6px 3px;object-fit:cover;flex:none;font-size:.5rem}
@@ -18518,10 +18538,18 @@ function v3HeroHTML(col) {
   const bud = v3Buddy(e);
   const jt = bud && bud.on ? `<span class="v3av">${bud.ppl.slice(0, 2).map((x) => `<b>${esc(x.n.charAt(0).toUpperCase())}</b>`).join('')}${bud.ppl.length > 2 ? `<i>+${bud.ppl.length - 2}</i>` : bud.ppl.length === 1 && bud.pg != null ? `<i>${bud.pg}</i>` : ''}</span>` : V2SVG('junto', 20);
   const jl = bud && bud.on ? `Lendo junto com ${bud.ppl.map((x) => x.n.split(' ')[0]).join(', ')}` + (bud.ppl.length === 1 && bud.pg != null ? `, na página ${bud.pg}` : '') : bud ? `Convite enviado${bud.names ? ' para ' + bud.names : ''}` : 'Convidar alguém para ler junto';
-  const others = off.includes('tambem') ? [] : lib().filter((x) => x.status === 'LENDO' && x.id !== e.id).slice(0, 6);
+  const L = off.includes('tambem') ? [e] : [e, ...lib().filter((x) => x.status === 'LENDO' && x.id !== e.id).slice(0, 6)];
+  const nx = L.length > 1 ? L[1] : null; S.v3L = L.map((x) => x.id);
+  // prazo: fica no cartão do livro (caixa "Hoje, leia até a pág. N"); sem prazo, o "Definir prazo" fica no Mais (menu do livro)
+  let due = null; if (e.dueAt) { try { const d = dueToday(e), dd = new Date(e.dueAt + 'T12:00:00Z'), dow = V2H_DOW[dd.getUTCDay()].slice(0, 3).toLowerCase(); due = d ? { ok: d.done, off: d.todayOff, target: d.target, falta: Math.max(0, d.target - d.now), dow } : { late: true, dow }; } catch {} }
+  const CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
+  const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+  const dueBox = due ? `<button type="button" class="eta due${due.ok ? ' ok' : ''}" data-h3="prazo"><span class="dt">${due.late ? 'O prazo passou' : due.ok ? 'Leitura de hoje feita' : due.off ? 'Hoje é folga' : `Hoje, leia até a <b>pág. ${due.target}</b>`}</span><small>${CAL}${due.late ? 'escolha uma data nova' : due.ok || due.off ? 'prazo ' + due.dow : 'faltam ' + due.falta + ' pág. · prazo ' + due.dow}</small></button>` : '';
+  // arco pontilhado: da página atual até a meta de hoje
+  let goalArc = ''; if (due && !due.ok && !due.off && !due.late && total && due.target > now) { const q1 = now / total, q2 = Math.min(1, due.target / total); goalArc = `<circle cx="88" cy="88" r="72" fill="none" stroke="#c46f2e" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="0.1 7" stroke-dashoffset="${(-q1 * 452.4).toFixed(1)}" pathLength="452.4" transform="rotate(-90 88 88)" opacity=".9" style="stroke-dasharray:0.1 7;clip-path:none" data-q2="${q2}"/>`; goalArc = `<path d="${(() => { const P = (q) => { const a = q * 2 * Math.PI - Math.PI / 2; return [(88 + 72 * Math.cos(a)).toFixed(2), (88 + 72 * Math.sin(a)).toFixed(2)]; }; const [x1, y1] = P(q1), [x2, y2] = P(q2); return 'M' + x1 + ' ' + y1 + ' A72 72 0 ' + (q2 - q1 > 0.5 ? 1 : 0) + ' 1 ' + x2 + ' ' + y2; })()}" fill="none" stroke="#c46f2e" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="0.1 7" opacity=".9"/>`; }
   // linha do dia: Prazo · Órbita · Meta (some o que estiver desligado em Funções do app / Personalizar Início)
   const tiles = [];
-  if (!H.classList.contains('v2off-metas')) {
+  if (false) {
     let pz = { b: '+ Prazo', s: 'quando terminar', off: false };
     if (e.dueAt) { try { const d = dueToday(e), dd = new Date(e.dueAt + 'T12:00:00Z'); pz = d ? { b: d.todayOff ? 'Folga' : d.per + ' pág.', s: 'hoje · até ' + V2H_DOW[dd.getUTCDay()].slice(0, 3), off: false } : { b: 'Encerrado', s: 'prazo passou', off: true }; } catch {} }
     tiles.push(`<button type="button" data-h3="prazo"><small>Prazo</small><b>${esc(pz.b)}</b><span>${esc(pz.s)}</span></button>`);
@@ -18530,17 +18558,17 @@ function v3HeroHTML(col) {
     tiles.push(`<button type="button" data-h3="orb" class="${s.today ? '' : 'off'}"><small>Órbita</small><b>${s.cur} ${s.cur === 1 ? 'dia' : 'dias'}</b><span>${s.today ? 'hoje já conta' : s.cur ? 'leia hoje' : 'leia 1 página'}</span></button>`); }
   if (!H.classList.contains('v2off-metas') && !off.includes('meta')) { const m = v3Meta(col);
     tiles.push(`<button type="button" data-h3="meta"><small>Meta ${v3Year()}</small><b>${m ? m.n + '/' + m.goal : 'Definir'}</b><span>${m ? (m.n >= m.goal ? 'meta batida' : 'faltam ' + (m.goal - m.n)) : 'livros no ano'}</span></button>`); }
-  return head + `<section class="v3hero">
-    <button type="button" class="v3ring" data-h3="book" aria-label="Abrir a página de ${esc(e.title)}. Segure para o menu do livro"><svg viewBox="0 0 176 176" aria-hidden="true"><circle cx="88" cy="88" r="72" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="88" cy="88" r="72" fill="none" stroke="#c46f2e" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(p * 452.4).toFixed(1)} 453" transform="rotate(-90 88 88)"/></svg>${cvh(e.title, e.cover, 'v3cv')}<span class="moon" style="left:${((88 + 72 * Math.cos(a)) / 1.76).toFixed(2)}%;top:${((88 + 72 * Math.sin(a)) / 1.76).toFixed(2)}%"></span></button>
-    <div class="inf">${total ? `<b class="pct">${pct}%</b><span class="pg">pág. ${now} de ${total}</span>` : `<b class="pct" style="font-size:1.3rem">pág. ${now}</b><span class="pg">total de páginas a definir</span>`}${eta ? `<span class="eta">${esc(eta)}</span>` : ''}</div>
+  return head + `<div class="v3herow${L.length > 1 ? ' multi' : ''}"><section class="v3hero">
+    <button type="button" class="v3ring" data-h3="book" aria-label="Abrir a página de ${esc(e.title)}. Segure para o menu do livro"><svg viewBox="0 0 176 176" aria-hidden="true"><circle cx="88" cy="88" r="72" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="88" cy="88" r="72" fill="none" stroke="#c46f2e" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(p * 452.4).toFixed(1)} 453" transform="rotate(-90 88 88)"/>${goalArc}</svg>${cvh(e.title, e.cover, 'v3cv')}<span class="moon" style="left:${((88 + 72 * Math.cos(a)) / 1.76).toFixed(2)}%;top:${((88 + 72 * Math.sin(a)) / 1.76).toFixed(2)}%"></span></button>
+    <div class="inf">${total ? `<b class="pct">${pct}%</b><span class="pg">pág. ${now} de ${total}</span>` : `<b class="pct" style="font-size:1.3rem">pág. ${now}</b><span class="pg">total de páginas a definir</span>`}${dueBox || (eta ? `<span class="eta">${esc(eta)}</span>` : '')}</div>
     <div class="acts">
-      <button type="button" class="v3qa p" data-h3="upd" aria-label="Atualizar página">${V2SVG('pag', 20)}Página</button>
+      <button type="button" class="v3qa p" data-h3="upd" aria-label="Atualizar página">${V2SVG('pag', 20)}Atualizar</button>
       <button type="button" class="v3qa${near ? ' hi' : ''}" data-h3="fim" aria-label="Terminei o livro">${V2SVG('ok', 20)}Terminei</button>
       <button type="button" class="v3qa" data-h3="qt" aria-label="Salvar um trecho">${V2SVG('qt', 20)}Trecho</button>
       <button type="button" class="v3qa" data-h3="junto" aria-label="${esc(jl)}">${jt}Ler junto</button>
       <button type="button" class="v3qa" data-h3="more" aria-label="Mais opções do livro">${V2SVG('dots', 20)}Mais</button>
-    </div></section>
-    ${others.length ? `<div class="v3tb"><small>Também lendo</small>${others.map((x) => `<button type="button" data-h3="sw" data-id="${esc(x.id)}">${esc(x.title)}</button>`).join('')}</div>` : ''}
+    </div></section></div>
+    ${nx ? `<div class="v3dots"><span class="pp">${L.map((x) => `<button type="button" data-h3="sw" data-id="${esc(x.id)}" class="${x.id === e.id ? 'on' : ''}" aria-label="${esc(x.title)}"></button>`).join('')}</span><button type="button" class="nx" data-h3="sw" data-id="${esc(nx.id)}" data-d="l">${esc(nx.title)}${(() => { try { if (!nx.dueAt) return ''; const d = dueToday(nx); return d && !d.done && !d.todayOff ? ` <small class="cdue">${CAL}até pág. ${d.target}</small>` : ''; } catch { return ''; } })()} ${CHEV}</button></div>` : ''}
     ${tiles.length ? `<div class="v3day" style="--n:${tiles.length}">${tiles.join('')}</div>` : ''}`;
 }
 function v3NextHTML() {
@@ -18553,6 +18581,10 @@ function v3NextHTML() {
 }
 function v3Bind(n) {
   let lp = 0, fired = false;
+  // deslizar o cartão troca de livro (como no protótipo); os pontinhos mostram quantos são
+  { let x0 = null, y0 = 0; n.addEventListener('pointerdown', (ev) => { if (ev.target.closest('.v3hero')) { x0 = ev.clientX; y0 = ev.clientY; } });
+    n.addEventListener('pointerup', (ev) => { if (x0 == null) return; const dx = ev.clientX - x0, dy = ev.clientY - y0; x0 = null; const L = S.v3L || []; if (L.length < 2 || Math.abs(dx) < 50 || Math.abs(dy) > 60) return;
+      const R = reading(); const i = Math.max(0, L.indexOf(R && R.e.id)), j = (i + (dx < 0 ? 1 : -1) + L.length) % L.length; clearTimeout(lp); fired = true; S.v3slide = dx < 0 ? 'sl-l' : 'sl-r'; setCurrent(L[j]); try { renderHome(todayISO()); } catch {} }); }
   n.addEventListener('pointerdown', (ev) => { const r = ev.target.closest('[data-h3=book]'); if (!r) return; fired = false; lp = setTimeout(() => { fired = true; const R = reading(); if (R) { try { navigator.vibrate && navigator.vibrate(12); } catch {} bookMenuOpen(r, { e: R.e, title: R.e.title }); } }, 480); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((t) => n.addEventListener(t, () => clearTimeout(lp)));
   n.addEventListener('contextmenu', (ev) => { if (ev.target.closest('[data-h3=book]')) ev.preventDefault(); });
@@ -18561,7 +18593,7 @@ function v3Bind(n) {
     if (k === 'pick') { if (lib().some((x) => x.status === 'QUERO')) return v2QualLeio(); return typeof openCatalog === 'function' ? openCatalog() : goTab('estante'); }
     if (k === 'qual') return v2QualLeio();
     if (k === 'nx') { const x = lib().find((y) => y.id === b.dataset.id); return x && openBookPage(x); }
-    if (k === 'sw') { setCurrent(b.dataset.id); try { renderHome(todayISO()); } catch {} return; }
+    if (k === 'sw') { S.v3slide = b.dataset.d === 'r' ? 'sl-r' : 'sl-l'; setCurrent(b.dataset.id); try { renderHome(todayISO()); } catch {} return; }
     if (k === 'orb') return openOrbita();
     if (k === 'meta') { const m = TR.querySelector('.v3-colA #ini-meta'); if (m) return m.click(); return openGoalPage(+v3Year()); }
     if (!e) return;
@@ -18581,6 +18613,7 @@ function v3Bind(n) {
       const R = reading(), keyA = v3HeroHTML(col), keyB = v3NextHTML();
       const slot = (cls, html) => { const key = html.replace(/ data-cvk="c\d+"/g, ''); let n = col.querySelector(':scope > .' + cls); if (n && n.dataset.k === key) return; const w = document.createElement('div'); w.className = 'v3x ' + cls; w.innerHTML = html; w.dataset.k = key; v3Bind(w); if (n) n.replaceWith(w); else col.prepend(w); try { paintCv(w); } catch {} };
       slot('v3x-a', keyA); slot('v3x-b', keyB);
+      if (S.v3slide) { const h = col.querySelector(':scope > .v3x-a .v3hero'); if (h) h.classList.add(S.v3slide); S.v3slide = null; }
       // destaque do dia: um cartão só
       const cands = [col.querySelector(':scope > .ex-alert'), col.querySelector(':scope > .v2rs-card'), col.querySelector(':scope > [data-v2qd]')].filter(Boolean);
       const pick = cands[0] || null; col.querySelectorAll(':scope > .v3mom').forEach((x) => { if (x !== pick) x.classList.remove('v3mom'); }); if (pick && !pick.classList.contains('v3mom')) pick.classList.add('v3mom');
@@ -19385,6 +19418,69 @@ const V3EMO = {"swap":"<path d=\"M4 8h14l-3-3M20 16H6l3 3\"/>","friends":"<circl
   scan(TR); }
 // o seletor agrupado (anotação/trecho no Lendo) mostra os dois grupos; o título do grupo "Mais" some junto com as escondidas
 { const st = document.createElement('style'); st.textContent = '.fe-gt:nth-of-type(n+2){display:none}'; TR.append(st); }
+// --- f7_v2_topo_sem_menu.js ---
+// Topo como no protótipo (Bia, 20/11): só a marca, a lupa e o sino. Saem o menu lateral (☰) e o "•••" do Início/Estante.
+// O que só existia neles mudou de lugar:
+//  - Personalizar Início, Sair da conta → Ajustes (voltaram; ver a9);
+//  - Trechos e anotações → aba "Trechos" na Estante (como no protótipo);
+//  - Histórico de leituras, Buscar capas que faltam, Denúncias (moderação) → Ajustes › "Seus livros" / "Moderação";
+//  - Estatísticas, Resumo, Órbita, Metas, Presentes → Você › Minha leitura; Amigos → "N amizades" no perfil;
+//    Posts salvos → Comunidade › Salvos; Instalar o app → Ajustes (e o aviso de instalar).
+{ const st = document.createElement('style'); st.textContent = `
+#g-av,#g-imore,.g-imore{display:none!important}
+.gtop .g-brand,.gtop #g-t{margin-left:0!important}
+`; TR.append(st); }
+// Estante: aba Trechos (abre Meus trechos)
+{ let tm = 0; const add = () => { const tabs = TR.querySelector('#lista .esn-tabs'); if (!tabs || tabs.querySelector('[data-tq]')) return; if (!v2Mods().trechos) return;
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.tq = '1'; b.textContent = 'Trechos'; b.addEventListener('click', (ev) => { ev.stopPropagation(); openAllQuotes(); }); tabs.append(b); };
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; add(); }, 40); }).observe(TR, { childList: true, subtree: true }); }
+// Ajustes: Seus livros e Moderação
+{ const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
+  try { if (S.ajMode === 'perfil' || box.querySelector('#aj-hl')) return r;
+    const row = (id, t, sm) => '<button type="button" class="aj-row" id="' + id + '"><span><b>' + t + '</b>' + (sm ? '<small>' + sm + '</small>' : '') + '</span>›</button>';
+    const adm = (S.rd && S.rd.admin) || (typeof COVM !== 'undefined' && COVM.admin);
+    const html = '<div class="aj-g">Seus livros</div><div class="aj-card">' + row('aj-hl', 'Histórico de leituras', 'trazer livros já lidos; completar datas, páginas e notas') + row('aj-tq', 'Trechos e anotações', 'tudo o que você guardou dos livros') + row('aj-cv', 'Buscar capas que faltam', '') + '</div>'
+      + (adm ? '<div class="aj-g">Moderação</div><div class="aj-card">' + row('aj-mod', 'Denúncias', 'perfis, posts e avaliações') + '</div>' : '');
+    const first = box.querySelector('.aj-g'); if (first) first.insertAdjacentHTML('beforebegin', html); else box.insertAdjacentHTML('beforeend', html);
+    const on = (id, fn) => box.querySelector('#' + id)?.addEventListener('click', fn);
+    on('aj-hl', () => openHistLeituras()); on('aj-tq', () => openAllQuotes()); on('aj-cv', () => fillMissingCovers(true)); on('aj-mod', () => openRdMod());
+    if (!v2Mods().trechos) box.querySelector('#aj-tq')?.remove();
+  } catch (err) { console.warn('ajustes v2', err); }
+  return r; }; }
+// --- f8_v2_capa_tocar_segurar.js ---
+// Capa de livro como no protótipo (Bia, 20/11): TOCAR abre a página do livro; SEGURAR (~450 ms) abre o menu rápido do livro
+// (no computador, clique direito também). Vale para as capas da Estante, listas, Comunidade, perfil e "Para você".
+// Antes, tocar abria o menu. Segurar não dispara o toque, não abre o menu do navegador nem seleciona texto, e rolar a tela
+// (dedo andou mais de 10 px) não abre nada. O anel do livro no Hoje já tinha esse comportamento (e0) e fica de fora daqui.
+{ const SEL = '.es-bk, .v3-hb, .cs-bk, .tr-bk, .fd-post .nv-cv, .rc-it .cv, .fr-read, .fl-bk, .pv-bk';
+  const st = document.createElement('style'); st.textContent = (SEL.split(',').map((x) => x.trim()).join(',') + '{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}'); TR.append(st);
+  const hit = (ev) => { const p = ev.composedPath ? ev.composedPath() : [ev.target]; const t = p.find((n) => n && n.nodeType === 1 && n.closest); if (!t || !TR.contains(t)) return null; if (t.closest('#editor, .bkm, .bp-tabs, .es-more, [data-h3=book]')) return null; return t.closest(SEL); };
+  const bookOf = (n) => {
+    if (n.dataset.id) { const e = byId(n.dataset.id); if (e) return { e, title: e.title, author: e.author, cover: e.cover }; }
+    if (n.dataset.book) return { title: n.dataset.book, author: n.dataset.author || null };
+    if (n.classList.contains('tr-bk')) { const x = ((S.trends || {})[S.trTab] || [])[+n.dataset.i]; if (x) return { title: x.title, author: x.author, cover: x.cover }; }
+    if (n.classList.contains('nv-cv')) { const t = n.closest('.fd-post').querySelector('header p b'); if (t) return { title: t.textContent }; }
+    if (n.closest('.rc-it')) { const x = (S.recs || []).find((y) => y.id === n.closest('.rc-it').dataset.rc); if (x) return { title: x.title, author: x.author, cover: x.cover }; }
+    if (n.classList.contains('pv-bk')) { const title = (n.querySelector('b') || {}).textContent || '', author = (n.querySelector('small') || {}).textContent || ''; const c = n.querySelector('.cv'), m = c && String(c.style.backgroundImage || '').match(/url\(["']?(.*?)["']?\)/); return title ? { title, author: author || null, cover: m ? m[1] : null } : null; }
+    return null; };
+  const openPage = (b) => { try { if (b.e && lib().includes(b.e)) return openBookPage(b.e); return openAnyBook(b.title, b.author || null, b.cover || null); } catch (err) { console.warn('capa', err); } };
+  const openMenu = (n, b) => { try { navigator.vibrate && navigator.vibrate(12); } catch {} try { bookQuickMenu(n.querySelector('.cv, .es-cv') || n, b); } catch (err) { console.warn('menu da capa', err); } };
+  let lp = 0, start = null, fired = 0;
+  document.addEventListener('pointerdown', (ev) => { const n = hit(ev); clearTimeout(lp); start = null; if (!n || (ev.pointerType === 'mouse' && ev.button !== 0)) return;
+    start = { n, x: ev.clientX, y: ev.clientY }; lp = setTimeout(() => { if (!start) return; const b = bookOf(start.n); if (!b) return; fired = Date.now(); openMenu(start.n, b); start = null; }, 450); }, true);
+  document.addEventListener('pointermove', (ev) => { if (start && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) > 10) { clearTimeout(lp); start = null; } }, true);
+  ['pointerup', 'pointercancel'].forEach((t) => document.addEventListener(t, () => { clearTimeout(lp); }, true));
+  document.addEventListener('contextmenu', (ev) => { const n = hit(ev); if (!n) return; ev.preventDefault(); ev.stopPropagation(); clearTimeout(lp); start = null;
+    if (Date.now() - fired < 900) return; const b = bookOf(n); if (b) { fired = Date.now(); openMenu(n, b); } }, true);
+  document.addEventListener('click', (ev) => { if (Date.now() - fired < 900) { fired = 0; ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); return; } // o clique que o celular solta ao levantar o dedo (cairia num item do menu que acabou de abrir)
+    const n = hit(ev); if (!n) return; ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+    const b = bookOf(n); if (b) openPage(b); }, true); }
+// Dica no topo da Estante (como no protótipo), some ao tocar no X e não volta
+{ const st = document.createElement('style'); st.textContent = '.v3tip{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin:0 0 12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,#7e63c9 14%,var(--panel));border:1px solid color-mix(in srgb,#7e63c9 30%,var(--line));font-size:12.5px;line-height:1.4;color:var(--ink-2)}.v3tip b{color:var(--ink)}.v3tip button{flex:none;border:0;background:none;color:var(--ink-2);font:inherit;font-size:16px;line-height:1;padding:0 2px;cursor:pointer}'; TR.append(st);
+  let tm = 0; const put = () => { if (S.tab !== 'estante' || ((db.prefs || {}).tipCapa)) return; const seg = TR.querySelector('#lista .esn-seg'); if (!seg || seg.parentElement.querySelector('.v3tip')) return;
+    seg.insertAdjacentHTML('afterend', '<div class="v3tip"><span><b>Dica:</b> toque na capa para abrir o livro; segure para atualizar, terminar ou mudar o status sem abrir.</span><button type="button" aria-label="Entendi">×</button></div>');
+    seg.parentElement.querySelector('.v3tip button').addEventListener('click', (ev) => { ev.stopPropagation(); db.prefs = { ...(db.prefs || {}), tipCapa: 1 }; save(); ev.currentTarget.closest('.v3tip').remove(); }); };
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 

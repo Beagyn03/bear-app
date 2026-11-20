@@ -23,13 +23,13 @@
 // Lista única de emoções (Bia, 20/11; a mesma do protótipo em Atualizar, Terminei, sessão, trechos, posts e Top 3).
 // Chaves antigas que coincidem foram mantidas (naoparo, tensao, euforia...). As outras antigas continuam nos dados salvos e
 // contam pela tabela EMO_OLD (null = não é emoção, fica fora do ranking).
-const QT_GROUPS = [['Principais', [['naoparo', 'Não paro'], ['tensao', 'Tensão'], ['reviravolta', 'Reviravolta'], ['chorei', 'Chorei'], ['ri', 'Ri alto'], ['arrastado', 'Arrastado']]],
-  ['Mais', [['apaixonei', 'Me apaixonei'], ['emocionei', 'Me emocionei'], ['surpreendente', 'Surpreendente'], ['encanto', 'Encanto'], ['euforia', 'Euforia'], ['esperanca', 'Esperança'], ['ansiedade', 'Ansiedade'], ['medo', 'Medo'], ['angustia', 'Angústia'], ['arrepio', 'Arrepio'], ['confusao', 'Confusão'], ['doeu', 'Doeu'], ['raiva', 'Raiva'], ['identifiquei', 'Me identifiquei'], ['tedio', 'Tédio'], ['cringe', 'Cringe']]]];
+const QT_GROUPS = [['Principais', [['naoparo', 'Me prendeu'], ['tensao', 'Tensão'], ['reviravolta', 'Reviravolta'], ['chorei', 'Chorei'], ['ri', 'Ri alto'], ['arrastado', 'Arrastado']]],
+  ['Mais', [['apaixonei', 'Me apaixonei'], ['emocionei', 'Me emocionei'], ['surpreendente', 'Surpreendente'], ['encanto', 'Encanto'], ['euforia', 'Euforia'], ['ansiedade', 'Ansiedade'], ['medo', 'Medo'], ['angustia', 'Angústia'], ['arrepio', 'Arrepio'], ['confusao', 'Confusão'], ['doeu', 'Doeu'], ['raiva', 'Raiva'], ['identifiquei', 'Me identifiquei'], ['tedio', 'Tédio'], ['cringe', 'Vergonha alheia'], ['ressaca', 'Ressaca'], ['frustracao', 'Frustração'], ['nojo', 'Nojo']]]];
 const QT_PICK = QT_GROUPS.flatMap((g) => g[1]); // o que se escolhe hoje
 const EMO_OLD = { alegria: 'euforia', paixao: 'apaixonei', excitacao: 'euforia', borboletas: 'apaixonei', shippando: 'apaixonei', rindo: 'ri', conforto: null,
   curiosidade: 'naoparo', intensidade: 'tensao', arrepios: 'arrepio', plot_surpresa: 'surpreendente', plot_previsivel: 'tedio', plot_fraco: 'tedio',
-  coracao_partido: 'doeu', chorei_litros: 'chorei', ressaca: 'emocionei', frustracao: 'raiva', raiva_personagem: 'raiva', nojo: 'cringe',
-  amei: 'apaixonei', choque: 'surpreendente', arrepiei: 'arrepio', pensando: 'emocionei', inspirou: 'esperanca', saudade: 'doeu',
+  coracao_partido: 'doeu', chorei_litros: 'chorei', raiva_personagem: 'raiva',
+  amei: 'apaixonei', choque: 'surpreendente', arrepiei: 'arrepio', pensando: 'emocionei', inspirou: null, saudade: 'doeu',
   // rótulos antigos da sessão de leitura (db.focus[].feel) e da primeira versão da lista única
   '😱 Chocante': 'surpreendente', '🥹 Emocionante': 'emocionei', '😍 Apaixonante': 'apaixonei', '😴 Arrastado': 'arrastado', '🤯 Reviravolta': 'reviravolta', '😌 Tranquilo': null };
 // qualquer valor salvo (chave nova, chave antiga, rótulo) → chave da lista única, ou null

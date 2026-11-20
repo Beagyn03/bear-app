@@ -11,9 +11,15 @@
 .v2-qn{display:flex;align-items:center;justify-content:space-between;gap:.6rem;width:100%;margin:0 0 .9rem;padding:.65rem .85rem;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .v2-qn span{display:flex;flex-direction:column;min-width:0}.v2-qn b{font-size:.9rem}.v2-qn small{font-size:.74rem;color:var(--ink-2);font-weight:700}
 .v2-qn em{font-style:normal;color:var(--acc);font-weight:900;font-size:.84rem;white-space:nowrap}
-.v2-qd{grid-column:1/-1;width:100%;box-sizing:border-box;margin:0 0 1rem;padding:.8rem .9rem;border:1px solid var(--line);border-radius:18px;background:var(--panel)}
-.v2-qd .k{font-size:.66rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--acc)}
-.v2-qd .q{font-family:Georgia,'Times New Roman',serif;font-size:1.06rem;font-weight:700;line-height:1.3;margin:.25rem 0 .6rem;color:var(--ink)}
+.v2-qd{grid-column:1/-1;width:100%;box-sizing:border-box;margin:0 0 1rem;padding:16px;border:1px solid var(--line);border-radius:var(--v2-r,20px);background:linear-gradient(135deg,color-mix(in srgb,#7e63c9 16%,var(--panel)),var(--panel))}
+.v2-qd .qpicks{display:flex;gap:10px}.v2-qd .qpicks button{display:grid;gap:5px;justify-items:center;align-content:start;border:0;background:none;padding:0;font:inherit;font-size:11.5px;font-weight:800;color:var(--ink-2);width:78px;text-align:center;cursor:pointer}
+.v2-qd .qpicks button span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.v2-qd .qcv{width:64px;height:96px;border-radius:3px 7px 7px 3px;object-fit:cover;box-shadow:0 4px 10px rgba(0,0,0,.22);font-size:.55rem}
+.v2-qd .qo{display:grid;place-items:center;background:color-mix(in srgb,var(--ink) 6%,var(--panel));border:1.5px dashed var(--line);box-shadow:none;color:var(--ink-2)}.v2-qd .qo svg{width:22px;height:22px}
+.v2-qd .qft{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--ink-2);font-weight:700}.v2-qd .qft button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;padding:0;cursor:pointer}
+.v2-qd .done{display:flex;gap:10px;align-items:center}.v2-qd .done .qcv{width:44px;height:66px}.v2-qd .done span{display:grid;font-size:12px}.v2-qd .done b{font-size:14px;margin-top:2px}
+.v2-qd .k{font-size:10.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--acc)}
+.v2-qd .q{font-family:var(--v2-disp,Georgia,serif);font-size:18px;font-weight:700;line-height:1.25;margin:4px 0 12px;color:var(--ink)}
 .v2-qd .ch{display:flex;flex-wrap:wrap;gap:.4rem}
 .v2-qd .ch button{max-width:100%;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:99px;padding:.4rem .75rem;font:inherit;font-size:.8rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .v2-qd .ch button.o{border-style:dashed;color:var(--ink-2)}
@@ -79,10 +85,10 @@ function v2QBooks(from) {
 }
 function v2QdayHTML() {
   const [q, from] = v2QOfDay(), d = v2Today(), a = (db.prefs || {}).qday;
-  if (a && a.date === d) return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div><div class="done">Você respondeu: <b>${esc(a.answer)}</b></div></section>`;
+  if (a && a.date === d) { const e = lib().find((x) => x.title === a.answer); return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div><div class="done">${e ? cvh(e.title, e.cover, 'qcv') : ''}<span>Você respondeu<b>${esc(a.answer)}</b></span></div><div class="qft"><span>Respostas aparecem na Comunidade</span><button type="button" data-qgo="1">Ver respostas ›</button></div></section>`; }
   const bks = v2QBooks(from);
   return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div>
-    <div class="ch">${bks.map((e) => `<button type="button" data-qb="${esc(e.id)}">${esc(e.title)}</button>`).join('')}<button type="button" class="o" data-qb="">Outro…</button></div></section>`;
+    <div class="qpicks">${bks.map((e) => `<button type="button" data-qb="${esc(e.id)}">${cvh(e.title, e.cover, 'qcv')}<span>${esc(e.title)}</span></button>`).join('')}<button type="button" class="o" data-qb=""><span class="qcv qo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span><span>Outro livro</span></button></div><div class="qft"><span>Escolha e conte por quê</span></div></section>`;
 }
 function v2QAnswer(id) {
   const [q] = v2QOfDay(), e = id ? byId(id) : null;
@@ -121,5 +127,6 @@ function v2HojeEnsure() {
   for (let j = i - 1; j >= 0; j--) { const k = order[j]; if (off.includes(k) || !V2_SEC_EL[k]) continue; const els = V2_SEC_EL[k](box).filter((x) => x && x.isConnected && x.offsetParent !== null); if (els.length) { ref = els[els.length - 1]; break; } }
   if (ref.nextElementSibling !== qd) ref.after(qd);
 }
+TR.addEventListener('click', (ev) => { const g = ev.target.closest && ev.target.closest('[data-v2qd] [data-qgo]'); if (!g) return; ev.stopPropagation(); S.comSeg = 'rede'; goTab('comunidade'); });
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('[data-v2qd] [data-qb]'); if (!b) return; ev.stopPropagation(); v2QAnswer(b.dataset.qb); setTimeout(v2HojeEnsure, 50); });
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(v2HojeEnsure, 180); }).observe(TR, { childList: true, subtree: true }); setTimeout(v2HojeEnsure, 1700); }
