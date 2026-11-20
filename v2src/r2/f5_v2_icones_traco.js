@@ -21,3 +21,7 @@ const V3EMO = {"swap":"<path d=\"M4 8h14l-3-3M20 16H6l3 3\"/>","friends":"<circl
 { const st = document.createElement('style'); st.textContent = '.drw [data-go=ach]{display:none!important}'; TR.append(st); }
 // Curtir com o coração de traço: curtido fica preenchido na cor de destaque.
 { const st = document.createElement('style'); st.textContent = '.rd-like .v3ico{width:20px!important;height:20px!important}.rd-like.on .v3ico{color:var(--acc)}.rd-like.on .v3ico svg{fill:currentColor}'; TR.append(st); }
+
+// ícones de traço que faltavam no Novo post (Bia, teste 20/11 item 25: ❝ ? ➜ ★ eram símbolos de texto)
+Object.assign(V3EMO, { quote: '<path d="M10 7H6a2 2 0 0 0-2 2v3h5v5H4M20 7h-4a2 2 0 0 0-2 2v3h5v5h-5"/>', ask: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.5"/><circle cx="12" cy="16.6" r=".6" fill="currentColor"/>', arrow: '<path d="M4 12h15M14 7l5 5-5 5"/>', star: '<path d="M12 3.8l2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z"/>' });
+{ const st = document.createElement('style'); st.textContent = '.rdc2-foot{display:flex;gap:.5rem;align-items:center}.rdc2-foot .rdc2-vis{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rdc2-foot .rdc-go{flex:1 0 auto}'; TR.append(st); }

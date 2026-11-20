@@ -394,7 +394,7 @@ function openRdThread(it) {
       busy = true; const sp = !isRev && $('#rd-sp', v).checked;
       try {
         const r = await sapi('POST', isRev ? `/v1/reviews/${it.id}/comments` : `/v1/posts/${it.id}/replies`, isRev ? { text: t } : { text: t, ...(sp ? { spoiler: { kind: it.spoiler && it.spoiler.kind !== 'yes' ? it.spoiler.kind === 'end' ? 'end' : 'yes' : 'yes' } } : {}) });
-        if (r.status === 403) toast('Só amigos podem responder avaliações'); else if (r.status >= 300) toast('Não consegui enviar agora');
+        if (r.status === 403) toast('Só amizades podem responder avaliações'); else if (r.status >= 300) toast('Não consegui enviar agora');
         else { it.replies = (it.replies || 0) + 1; await load(); }
       } catch { toast('Não consegui enviar agora'); } finally { busy = false; }
     });
@@ -452,8 +452,8 @@ function openRdComposer(pre = {}) {
         ${R.image ? `<div class="rdc2-ph"><img src="${R.image}" alt="Foto escolhida"><button type="button" id="rdc-rmph" aria-label="Tirar a foto">×</button></div>` : ''}
         <div class="rdc2-l">Acrescentar</div>
         <div class="rdc2-tools">
-          ${tool('quote', '❝', 'Trecho', R.kind === 'quote')}${tool('question', '?', 'Pergunta', R.kind === 'question')}${tool('rec', '➜', 'Indicar outro livro', R.kind === 'rec')}
-          ${tool('fe', '<i class=v3e data-i=heart></i>', R.feelings.length ? 'Sentimentos · ' + R.feelings.length : 'Sentimentos', OPEN.fe || R.feelings.length > 0, R.kind === 'question')}${tool('pw', '★', 'Nota', OPEN.pw || !!R.paws, R.kind !== 'comment')}
+          ${tool('quote', '<i class=v3e data-i=quote></i>', 'Trecho', R.kind === 'quote')}${tool('question', '<i class=v3e data-i=ask></i>', 'Pergunta', R.kind === 'question')}${tool('rec', '<i class=v3e data-i=arrow></i>', 'Indicar outro livro', R.kind === 'rec')}
+          ${tool('fe', '<i class=v3e data-i=heart></i>', R.feelings.length ? 'Sentimentos · ' + R.feelings.length : 'Sentimentos', OPEN.fe || R.feelings.length > 0, R.kind === 'question')}${tool('pw', '<i class=v3e data-i=star></i>', 'Nota', OPEN.pw || !!R.paws, R.kind !== 'comment')}
           ${tool('ph', '<i class=v3e data-i=scan></i>', 'Foto', !!R.image)}${tool('sp', '<i class=v3e data-i=alert></i>', 'Spoiler', R.sp)}
         </div>
         <p class="rdc2-hint">${HINT[R.kind]}</p>
@@ -466,7 +466,7 @@ function openRdComposer(pre = {}) {
             <label><input type="radio" name="spk" value="end"${R.spk === 'end' ? ' checked' : ''}> Conta o final</label>
             <label><input type="radio" name="spk" value="yes"${R.spk === 'yes' ? ' checked' : ''}> Tem spoiler, não sei dizer até onde</label>
             <small>Quem ainda não chegou nesse ponto vê o post embaçado. Quem já leu vê normal.</small></div>` : '<input type="checkbox" id="rdc-sp" hidden>'}
-        <div class="rdc2-foot"><button type="button" class="rdc2-vis" id="rdc-vis">${R.vis === 'friends' ? '<i class=v3e data-i=friends></i>Só amigos' : '<i class=v3e data-i=globe></i>Toda a comunidade'} <i>▾</i></button><button type="button" class="rdc-go" id="rdc-go">Publicar</button></div>
+        <div class="rdc2-foot"><button type="button" class="rdc2-vis" id="rdc-vis">${R.vis === 'friends' ? '<i class=v3e data-i=friends></i>Amizades' : '<i class=v3e data-i=globe></i>Todos'} <i>▾</i></button><button type="button" class="rdc-go" id="rdc-go">Publicar</button></div>
         ${me ? `<p class="rdc2-me">Publicando como ${esc(me)}</p>` : ''}
       </div>`;
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
@@ -482,7 +482,7 @@ function openRdComposer(pre = {}) {
     $$('[data-pick]', v).forEach((b) => b.addEventListener('click', () => rdPickBook(b.dataset.pick === '2' ? 'Livro indicado' : 'Escolha o livro', (bk) => { if (b.dataset.pick === '2') R.book2 = bk; else R.book = bk; draw(); })));
     $$('#rdc-fe [data-fe]', v).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.fe; if (R.feelings.includes(k)) R.feelings = R.feelings.filter((x) => x !== k); else if (R.feelings.length < 3) R.feelings.push(k); else return toast('Até 3 sentimentos'); draw(); }));
     $$('[data-pw]', v).forEach((b) => b.addEventListener('click', () => { const n = +b.dataset.pw; R.paws = R.paws === n ? null : n; draw(); }));
-    $('#rdc-vis', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [{ label: '<i class=v3e data-i=globe></i>Toda a comunidade', fn: () => { R.vis = 'public'; draw(); } }, { label: '<i class=v3e data-i=friends></i>Só amigos', fn: () => { R.vis = 'friends'; draw(); } }]));
+    $('#rdc-vis', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [{ label: '<i class=v3e data-i=globe></i>Toda a comunidade', fn: () => { R.vis = 'public'; draw(); } }, { label: '<i class=v3e data-i=friends></i>Só amizades', fn: () => { R.vis = 'friends'; draw(); } }]));
     $$('input[name=spk]', v).forEach((b) => b.addEventListener('change', () => { R.spk = b.value; R.spat = ''; draw(); }));
     $('#rdc-spat2', v)?.addEventListener('input', (ev) => { R.spat = ev.target.value; });
     $('#rdc-rmph', v)?.addEventListener('click', () => { R.image = null; draw(); });
