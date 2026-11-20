@@ -23,7 +23,7 @@
 .v3pb{display:flex;gap:.4rem;justify-content:center;flex-wrap:wrap;margin-top:.65rem}
 .v3pb button{display:inline-flex;align-items:center;gap:.35rem;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.45rem .85rem;font:inherit;font-size:.82rem;font-weight:800;cursor:pointer}
 .v3pb button.p{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}.v3pb button.ic{padding:.45rem .6rem}
-.v3prev{display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:800;color:var(--acc)}
+.v3prev{display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:800;color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);border-radius:99px;padding:.5rem .85rem}
 .v3pf .v2pxm{top:.2rem;right:.2rem}
 #shelflist .sl-top{position:relative}#shelflist .sl-top .v2pxm{position:absolute;right:0;top:50%;transform:translateY(-50%)}
 /* perfil de outra pessoa: a linha antiga do topo só tinha o •••; ela some e o ••• fica no canto, sem moldura, como no protótipo (Bia, 20/11) */
