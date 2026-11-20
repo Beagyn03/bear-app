@@ -26,6 +26,8 @@ function v8Ritmo() { // páginas por minuto das últimas sessões com cronômetr
   const m = F.reduce((a, f) => a + Number(f.minutes), 0), p = F.reduce((a, f) => a + Number(f.pages), 0); return m >= 20 && p > 0 ? p / m : 0; }
 function v8DiaMsg() {
   const t = todayISO(), hr = v8Hora(), R = (() => { try { return reading(); } catch { return null; } })(), on = (k) => { try { return vFn(k); } catch { return true; } };
+  // 0. sessão de leitura aberta (ex.: depois de recarregar a página): avisa e leva de volta (Bia, 20/11). Hora de início fixa, para a chave do cartão não mudar a cada minuto
+  try { const ss = v2SesGet(); const se = ss && lib().find((x) => x.id === ss.libId); if (se) { const h = new Date(ss.start); return ['sessao', 'ler', 'Sessão aberta', `Você está lendo ${se.title}`, `desde as ${String(h.getHours()).padStart(2, '0')}:${String(h.getMinutes()).padStart(2, '0')}`, 'Voltar à sessão', se.id]; } } catch {}
   // 1. prazo (só enquanto a leitura de hoje não foi feita)
   if (R && R.e.dueAt && on('prazos')) { try { const d = dueToday(R.e);
     if (d && !d.done && !d.todayOff) { const left = Math.max(0, d.total - d.now), hoje = Math.max(0, d.target - d.now), dd = new Date(R.e.dueAt + 'T12:00:00Z'), dia = R.e.dueAt === t ? 'hoje' : 'até ' + V8DOW[dd.getUTCDay()];
@@ -67,6 +69,7 @@ TR.addEventListener('click', (ev) => {
   const b = ev.target.closest && ev.target.closest('.v8dia[data-v8k]'); if (!b) return; ev.stopPropagation();
   const k = b.dataset.v8k, e = b.dataset.v8id ? byId(b.dataset.v8id) : null, R = (() => { try { return reading(); } catch { return null; } })();
   try {
+    if (k === 'sessao') { if (e) v4Open(e); return; }
     if (k === 'prazo' || k === 'orbita') { if (R) v4Open(R.e); return; }
     if (k === 'junto') { if (e) openBuddyPage(e); return; }
     if (k === 'meta') { openGoalPage(Number(todayISO().slice(0, 4))); return; }

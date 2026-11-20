@@ -36,7 +36,7 @@
   const paint = (ses) => { let dim = ses.querySelector(':scope > .v6dim'); const v = getLuz(); if (!v) { dim && dim.remove(); return; } if (!dim) { dim = document.createElement('div'); dim.className = 'v6dim'; ses.append(dim); } dim.style.opacity = String(v / 100); };
   let tm = 0;
   const check = () => { tm = 0; const sr = root(); const ses = sr && sr.querySelector('.v4ler .ses'); if (ses) { if (!on) enter(); decorate(sr); } else if (on) leave(); };
-  const watch = () => { const sr = root(); if (!sr || sr.v6luzw) return; sr.v6luzw = 1; new MutationObserver(() => { if (!tm) tm = setTimeout(check, 50); }).observe(sr, { childList: true, subtree: true }); check(); };
+  const watch = () => { const sr = root(); if (!sr || sr.v6luzw) return; sr.v6luzw = 1; new MutationObserver(() => { try { check(); } catch {} }).observe(sr, { childList: true, subtree: true }); check(); }; // sem espera: o botão Luz entra junto com o topo da sessão (antes surgia depois e o topo pulava)
   new MutationObserver(() => watch()).observe(TR, { childList: true }); watch();
   document.addEventListener('visibilitychange', () => { if (on && document.visibilityState === 'visible') wake(); });
 }

@@ -231,7 +231,7 @@ const V4MAIN = () => QT_GROUPS[0][1], V4ALL = () => QT_PICK;
 function v4UpdInit() {
   const st = v4State(), e = lib().find((x) => x.id === (st.sheetE || st.e)) || v4Books()[0]; if (!e) return; const s = v4Ses(), { now } = v4Info(e);
   const vis = (() => { try { return localStorage.getItem('lv.upVis') === 'friends' ? 'friends' : 'public'; } catch { return 'public'; } })();
-  st.upd = { u: 'pg', pg: st.sheet === 'end' && s && s.libId === e.id ? s.pg : now, fe: [], more: false, text: '', rec: false, pub: v4On('comunidade'), vis, sp: false, cap: (s && s.cap) || '' };
+  st.upd = { u: 'pg', pg: st.sheet === 'end' && s && s.libId === e.id ? s.pg : now, fe: [], more: false, text: '', rec: false, pub: false, vis, sp: false, cap: (s && s.cap) || '' };
 }
 const v4Fmt = (e, pg, u) => { const { total } = v4Info(e); if (u === 'pct') return String(total ? Math.round(pg / total * 100) : 0); if (u === 'min') { const m = Math.round(pg / total * e.audioMin); return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); } return String(pg); };
 const v4Parse = (e, raw, u) => { const { total } = v4Info(e); raw = String(raw || ''); let v; if (u === 'pct') v = Math.round(parseFloat(raw.replace(',', '.')) / 100 * total); else if (u === 'min') { const [h, m] = raw.split(':').map(Number); v = Math.round(((h || 0) * 60 + (m || 0)) / e.audioMin * total); } else v = parseInt(raw, 10); return isFinite(v) ? Math.max(0, total ? Math.min(total, v) : v) : null; };
@@ -243,6 +243,7 @@ function v4UpdHTML(k, e, s) {
   const secs = s ? v4Clock(s).secs : 0;
   return `<div class="sh-bk">${v4cv(e)}<div><h3>${k === 'end' ? 'Em que página você parou?' : 'Atualizar página'}</h3><span class="mut">${esc(e.title)} · estava na pág. ${k === 'end' && s ? s.pg0 : now}</span></div></div>
     ${k === 'end' && s ? `<button class="btn s w v6cont" data-a="close" style="margin-top:10px">${v4ic('ler', 16)}Continuar lendo</button>` : ''}
+    ${k === 'end' && s ? `<button class="btn s w v6disc" data-a="sesdisc" style="margin-top:8px">${v4ic('x', 16)}${st.discAsk ? 'Tocar de novo para descartar' : 'Descartar sessão'}</button>` : ''}
     ${k === 'end' && s ? `<p class="mut" style="margin:6px 0 0">Sessão de ${Math.max(1, Math.round(secs / 60))} min · ${Math.max(0, s.pg - s.pg0)} páginas. Confira a página e salve.</p>` : ''}
     <div class="pgin"><input id="v4pgv" inputmode="${U.u === 'min' ? 'text' : 'numeric'}" value="${v4Fmt(e, U.pg, U.u)}" aria-label="Posição"><span id="v4pgvu">${v4UnitTail(e, U.u)}</span></div>
     <div class="pgsl up"><button data-a="ust" data-n="-1" aria-label="Voltar">−</button><input type="range" id="v4upr" min="0" max="${total || Math.max(500, U.pg + 100)}" value="${U.pg}" aria-label="Deslizar até a página"><button data-a="ust" data-n="1" aria-label="Avançar">+</button></div>
@@ -303,7 +304,7 @@ async function v4UpdSave(k) {
 const V4NL = { 0.5: 'Socorro, o que foi isso?', 1: 'Não foi pra mim', 1.5: 'Quase abandonei', 2: 'Fraquinho', 2.5: 'Teve seus momentos', 3: 'Bom, mas não marcou', 3.5: 'Gostei bastante', 4: 'Muito bom!', 4.5: 'Quase perfeito', 5: 'Favorito da vida!' };
 const v4Stars = (n) => [1, 2, 3, 4, 5].map((i) => `<span class="st5">★<b style="width:${n >= i ? 100 : n >= i - 0.5 ? 50 : 0}%">★</b><button data-a="fimn" data-v="${i - 0.5}" aria-label="${String(i - 0.5).replace('.', ',')} estrelas"></button><button class="r" data-a="fimn" data-v="${i}" aria-label="${i} estrelas"></button></span>`).join('');
 function v4FimOpen(e) { if (!e) return; const st = v4State(); st.view = 'fim'; st.fim = e.id; st.sheet = null;
-  const r = e.review || {}; st.F = { n: Number(r.paws) || 0, fe: [...(((e.fin || {}).fe) || [])].map((k) => emoKey(k)).filter(Boolean).slice(0, 3), more: false, ress: r.ressaca === 'deu' || r.ressaca === 'curou' ? r.ressaca : '', niv: { ...(r.niveis || {}) }, sp: !!r.spoiler, spk: r.spoilerKind || 'end', spAt: r.spoilerAt || '', fav: !!r.favVida, share: r.share !== false, rec: false };
+  const r = e.review || {}; st.F = { n: Number(r.paws) || 0, fe: [...(((e.fin || {}).fe) || [])].map((k) => emoKey(k)).filter(Boolean).slice(0, 3), more: false, ress: r.ressaca === 'deu' || r.ressaca === 'curou' ? r.ressaca : '', niv: { ...(r.niveis || {}) }, sp: !!r.spoiler, spk: r.spoilerKind || 'end', spAt: r.spoilerAt || '', fav: !!r.favVida, share: (r.paws || r.texto) ? r.share !== false : false, rec: false }; // nova avaliação: não publica sem a pessoa ligar (Bia, 20/11)
   v4Root(); v4Draw(); }
 function v4FimPage(e) {
   if (!e) return ''; const F = v4State().F, lido = e.status === 'LIDO', { total } = v4Info(e), r = e.review || {};
@@ -404,6 +405,9 @@ function v4Click(ev) {
   const e = lib().find((x) => x.id === (st.sheet ? (st.sheetE || st.e) : st.view === 'fim' ? st.fim : st.e)), s = v4Ses();
   const redraw = () => v4Draw();
   if (a === 'x') return v4Close();
+  // descartar a sessão: sem salvar páginas nem tempo; pede um segundo toque (Bia, 20/11)
+  if (a === 'sesdisc') { if (!st.discAsk) { st.discAsk = 1; clearTimeout(st.discT); st.discT = setTimeout(() => { st.discAsk = 0; if (V4 && st.sheet === 'end') v4Draw(); }, 4000); return redraw(); }
+    st.discAsk = 0; clearTimeout(st.discT); v2SesPut(null); v4Stop(); try { v4AmbPlay(''); } catch {} st.upd = null; st.sheet = null; toast('Sessão descartada'); if (st.view) return redraw(); return v4Close(); }
   if (a === 'close') { if (st.sheet === 'sum') return v4SumOk(); st.sheet = null; if (!st.view) return v4Close(); return redraw(); }
   if (a === 'sheet') { if (d.s !== 'pick' && d.s !== 'ecohelp' && d.s !== 'amb') st.sheetE = st.e || st.sheetE; st.sheet = d.s; if (d.s === 'upd' || d.s === 'end') v4UpdInit(); return redraw(); }
   if (a === 'lerfoco') { const x = lib().find((y) => y.id === st.sheetE) || v4Books()[0]; st.sheet = null; return v4Open(x); }
