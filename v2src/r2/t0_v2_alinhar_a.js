@@ -73,7 +73,7 @@ saveQuote = function (e) {
     const title = ((v.querySelector('.bp-ht h2') || {}).textContent || '').trim(); if (!title || !connected()) return;
     if (S.v4myEcos === undefined || S.v4myEcos === null) { if (Date.now() - asked > 60000) { asked = Date.now(); sapi('GET', '/v1/me/echoes').then((r) => { S.v4myEcos = r.status === 200 && r.data ? r.data.items || [] : null; put(); }).catch(() => {}); } return; }
     const L = S.v4myEcos.filter((x) => normT(x.title || '') === normT(title)).sort((a, z) => (a.page || 0) - (z.page || 0));
-    const html = `<h3>Meus ecos <small>${L.length || ''}</small></h3>` + (L.length ? '<div class="l">' + L.map((x) => `<div class="it"><i></i><span><q>${esc(x.text || '')}</q><small>pág. ${x.page || '?'}</small></span></div>`).join('') + '</div>' : '<p>Você ainda não deixou ecos neste livro. Na leitura, toque em Deixar um eco.</p>');
+    const html = `<h3>Meus ecos <small>${L.length || ''}</small></h3>` + (L.length ? '<div class="l">' + L.map((x) => `<div class="it"><i></i><span><q>${esc(x.text || '')}</q><small>pág. ${x.page || '?'}${(typeof v9EcoStat === 'function' && v9EcoStat(x)) ? ' · ' + v9EcoStat(x) : ''}</small></span></div>`).join('') + '</div>' : '<p>Você ainda não deixou ecos neste livro. Na leitura, toque em Deixar um eco.</p>');
     let sec = body.querySelector(':scope > .v9ecos');
     if (sec && sec.dataset.h === html) { if (body.lastElementChild !== sec) body.append(sec); return; }
     if (!sec) { sec = document.createElement('section'); sec.className = 'v9ecos'; } sec.innerHTML = html; sec.dataset.h = html; body.append(sec);

@@ -9935,6 +9935,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -20139,7 +20140,7 @@ async function v4AtivEcos(d, host) {
   const all = S.v4myEcos, books = [...new Set(all.map((x) => x.title))], f = books.includes(S.v4ecoBk) ? S.v4ecoBk : '';
   const L = f ? all.filter((x) => x.title === f) : all;
   host.innerHTML = chips + (books.length > 1 ? '<div class="v4me-bk"><button type="button" data-bk="" class="' + (f ? '' : 'on') + '">Todos os livros</button>' + books.map((t) => '<button type="button" data-bk="' + esc(t) + '" class="' + (f === t ? 'on' : '') + '">' + esc(t) + '</button>').join('') + '</div>' : '')
-    + (L.length ? L.map((x) => '<div class="v4me"><span class="mst"></span><span class="t"><q>' + esc(x.text) + '</q><small>' + esc(x.title) + ' · pág. ' + x.page + ' · ' + esc(String(x.createdAt || '').slice(8, 10) + '/' + String(x.createdAt || '').slice(5, 7)) + '</small></span><button type="button" class="del" data-del="' + esc(x.id) + '">Apagar</button></div>').join('')
+    + (L.length ? L.map((x) => '<div class="v4me"><span class="mst"></span><span class="t"><q>' + esc(x.text) + '</q><small>' + esc(x.title) + ' · pág. ' + x.page + ' · ' + esc(String(x.createdAt || '').slice(8, 10) + '/' + String(x.createdAt || '').slice(5, 7)) + ((typeof v9EcoStat === 'function' && v9EcoStat(x)) ? ' · ' + v9EcoStat(x) : '') + '</small></span><button type="button" class="del" data-del="' + esc(x.id) + '">Apagar</button></div>').join('')
       : '<p class="v4me-empty">Você ainda não deixou ecos. Na leitura, toque em Deixar um eco.</p>');
   wire();
   host.querySelectorAll('[data-bk]').forEach((b) => b.addEventListener('click', () => { S.v4ecoBk = b.dataset.bk; v4AtivEcos(d, host); }));
@@ -22880,7 +22881,7 @@ saveQuote = function (e) {
     const title = ((v.querySelector('.bp-ht h2') || {}).textContent || '').trim(); if (!title || !connected()) return;
     if (S.v4myEcos === undefined || S.v4myEcos === null) { if (Date.now() - asked > 60000) { asked = Date.now(); sapi('GET', '/v1/me/echoes').then((r) => { S.v4myEcos = r.status === 200 && r.data ? r.data.items || [] : null; put(); }).catch(() => {}); } return; }
     const L = S.v4myEcos.filter((x) => normT(x.title || '') === normT(title)).sort((a, z) => (a.page || 0) - (z.page || 0));
-    const html = `<h3>Meus ecos <small>${L.length || ''}</small></h3>` + (L.length ? '<div class="l">' + L.map((x) => `<div class="it"><i></i><span><q>${esc(x.text || '')}</q><small>pág. ${x.page || '?'}</small></span></div>`).join('') + '</div>' : '<p>Você ainda não deixou ecos neste livro. Na leitura, toque em Deixar um eco.</p>');
+    const html = `<h3>Meus ecos <small>${L.length || ''}</small></h3>` + (L.length ? '<div class="l">' + L.map((x) => `<div class="it"><i></i><span><q>${esc(x.text || '')}</q><small>pág. ${x.page || '?'}${(typeof v9EcoStat === 'function' && v9EcoStat(x)) ? ' · ' + v9EcoStat(x) : ''}</small></span></div>`).join('') + '</div>' : '<p>Você ainda não deixou ecos neste livro. Na leitura, toque em Deixar um eco.</p>');
     let sec = body.querySelector(':scope > .v9ecos');
     if (sec && sec.dataset.h === html) { if (body.lastElementChild !== sec) body.append(sec); return; }
     if (!sec) { sec = document.createElement('section'); sec.className = 'v9ecos'; } sec.innerHTML = html; sec.dataset.h = html; body.append(sec);
@@ -22953,7 +22954,7 @@ saveQuote = function (e) {
       let L = local(); if (c && c.api) L = L.concat(c.api.map(fromApi));
       else { // sem resposta da API: as avaliações da estante (como antes), para a aba não ficar vazia
         try { lib().forEach((e) => { const r = reviewOfLib(e); if (r && (r.paws || String(r.texto || '').trim()) && r.share !== false) L.push({ f: 'aval', c: 'av2', a: 'Avaliou ' + (r.paws ? stars(r.paws) : ''), t: e.title, cv: e.cover, tx: String(r.texto || '').trim(), at: e.finishedAt || e.statusAt || '', v: 'local', e }); }); } catch {} }
-      if (c) L = L.concat((c.ecos || []).map((x) => { const e = byTitle(x.title); return { f: 'ecos', c: 'eco', a: '<span class="mst2"></span>Eco · pág. ' + x.page, t: x.title, cv: e && e.cover, tx: '“' + (x.text || '') + '”', at: x.createdAt, v: 'rede', eco: x }; }));
+      if (c) L = L.concat((c.ecos || []).map((x) => { const e = byTitle(x.title); return { f: 'ecos', c: 'eco', a: '<span class="mst2"></span>Eco · pág. ' + x.page + ((typeof v9EcoStat === 'function' && v9EcoStat(x)) ? ' · ' + v9EcoStat(x) : ''), t: x.title, cv: e && e.cover, tx: '“' + (x.text || '') + '”', at: x.createdAt, v: 'rede', eco: x }; }));
       if (ro) { const pv = (socialProfile && socialProfile.privacy) || {}; L = L.filter((x) => x.v !== 'local' || (x.f === 'prog' && pv.reading !== false)); }
       L.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
       const V = L.filter((x) => f === 'tudo' || x.f === f).slice(0, 40);
@@ -23355,6 +23356,36 @@ function v9DelReview(e) {
   TR.addEventListener('click', (ev) => { if (Date.now() - longAt < 700 && capa(ev)) { ev.preventDefault(); ev.stopPropagation(); } }, true);
   // sem a lupa de seleção de texto/imagem do celular ao segurar a capa
   const st = document.createElement('style'); st.textContent = '.cv{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}'; TR.append(st); }
+// --- u4_v2_eco_curtir.js ---
+// Ecos: quem chegou e curtidas (Bia, 20/11; API 038). Na leitura, os ecos de outras pessoas que você alcança ganham um
+// coração (curtir/descurtir, com a contagem); nos seus ecos (Minha leitura › Meus ecos e Você › Atividade) aparece
+// "N pessoas chegaram aqui · ♥ M" (sem nomes; zero não aparece).
+function v9EcoStat(x) { const r = Number(x && x.reached) || 0, l = Number(x && x.likes) || 0; if (!r && !l) return '';
+  return (r ? r + (r === 1 ? ' pessoa chegou aqui' : ' pessoas chegaram aqui') : '') + (l ? (r ? ' · ' : '') + '♥ ' + l : ''); }
+const V9HEART = '<svg viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
+function v9LikeBtn(x) { if (!x || x.mine || !x.id) return '';
+  return '<button type="button" data-eco-like="' + esc(x.id) + '" aria-pressed="' + !!x.liked + '" aria-label="' + (x.liked ? 'Descurtir eco' : 'Curtir eco') + '" style="pointer-events:auto;flex:none;display:inline-flex;align-items:center;gap:4px;margin-left:auto;border:0;background:none;font:inherit;font-weight:800;font-size:12px;cursor:pointer;color:' + (x.liked ? '#ff8fa3' : 'inherit') + '">' + V9HEART.replace('fill:none', 'fill:' + (x.liked ? 'currentColor' : 'none')) + (x.likes ? '<span>' + x.likes + '</span>' : '') + '</button>'; }
+// todos os ecos já carregados com este id (o mesmo eco pode estar em mais de um livro aberto no cache)
+const v9EcoFind = (id) => { const out = []; try { V4ECO.forEach((o) => (o.seen || []).forEach((x) => { if (x.id === id) out.push(x); })); } catch {} try { ((v4State().sum || {}).hits || []).forEach((x) => { if (x.id === id) out.push(x); }); } catch {} return out; };
+// bolhas que sobem na sessão: o coração entra em cada uma
+{ const _f = v4Float; v4Float = function (list) { const r = _f.apply(this, arguments);
+    try { const fl = V4 && V4.querySelector('.ses .ecofl'); if (fl && list && list.length) { const bs = [...fl.querySelectorAll(':scope > .ecob')].slice(-list.length);
+      bs.forEach((d, k) => { const x = list[k]; if (!x || x.mine || d.querySelector('[data-eco-like]')) return; d.insertAdjacentHTML('beforeend', v9LikeBtn(x)); }); } } catch {}
+    return r; }; }
+// resumo da sessão ("ecos revelados"): coração no fim de cada linha
+{ const _h = v4SheetHTML; v4SheetHTML = function (k) { let h = _h.apply(this, arguments);
+    try { if (k === 'sum') { const hits = (v4State().sum || {}).hits || []; let i = 0; h = h.replace(/<\/small><\/span><\/div>/g, (m) => { const x = hits[i++]; return x && !x.mine ? '</small></span>' + v9LikeBtn(x) + '</div>' : m; }); } } catch {}
+    return h; }; }
+// toque no coração (em qualquer camada: o clique atravessa as raízes)
+document.addEventListener('click', async (ev) => {
+  const b = (ev.composedPath ? ev.composedPath() : [ev.target]).find((n) => n && n.dataset && n.dataset.ecoLike); if (!b) return;
+  ev.preventDefault(); ev.stopPropagation(); if (b.dataset.busy) return; b.dataset.busy = '1';
+  const id = b.dataset.ecoLike, on = b.getAttribute('aria-pressed') !== 'true';
+  try { const r = await sapi(on ? 'POST' : 'DELETE', '/v1/echoes/' + encodeURIComponent(id) + '/like');
+    if (r && r.status === 200 && r.data) { v9EcoFind(id).forEach((x) => { x.liked = !!r.data.liked; x.likes = r.data.likes; });
+      const tmp = document.createElement('div'); tmp.innerHTML = v9LikeBtn({ id, liked: !!r.data.liked, likes: r.data.likes }); b.replaceWith(tmp.firstElementChild); }
+    else toast(r && r.status === 403 ? 'Chegue nesta página para curtir' : 'Não deu para curtir agora'); }
+  catch { toast('Não deu para curtir agora'); } finally { delete b.dataset.busy; } }, true);
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 

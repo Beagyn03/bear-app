@@ -528,7 +528,7 @@ async function v4AtivEcos(d, host) {
   const all = S.v4myEcos, books = [...new Set(all.map((x) => x.title))], f = books.includes(S.v4ecoBk) ? S.v4ecoBk : '';
   const L = f ? all.filter((x) => x.title === f) : all;
   host.innerHTML = chips + (books.length > 1 ? '<div class="v4me-bk"><button type="button" data-bk="" class="' + (f ? '' : 'on') + '">Todos os livros</button>' + books.map((t) => '<button type="button" data-bk="' + esc(t) + '" class="' + (f === t ? 'on' : '') + '">' + esc(t) + '</button>').join('') + '</div>' : '')
-    + (L.length ? L.map((x) => '<div class="v4me"><span class="mst"></span><span class="t"><q>' + esc(x.text) + '</q><small>' + esc(x.title) + ' · pág. ' + x.page + ' · ' + esc(String(x.createdAt || '').slice(8, 10) + '/' + String(x.createdAt || '').slice(5, 7)) + '</small></span><button type="button" class="del" data-del="' + esc(x.id) + '">Apagar</button></div>').join('')
+    + (L.length ? L.map((x) => '<div class="v4me"><span class="mst"></span><span class="t"><q>' + esc(x.text) + '</q><small>' + esc(x.title) + ' · pág. ' + x.page + ' · ' + esc(String(x.createdAt || '').slice(8, 10) + '/' + String(x.createdAt || '').slice(5, 7)) + ((typeof v9EcoStat === 'function' && v9EcoStat(x)) ? ' · ' + v9EcoStat(x) : '') + '</small></span><button type="button" class="del" data-del="' + esc(x.id) + '">Apagar</button></div>').join('')
       : '<p class="v4me-empty">Você ainda não deixou ecos. Na leitura, toque em Deixar um eco.</p>');
   wire();
   host.querySelectorAll('[data-bk]').forEach((b) => b.addEventListener('click', () => { S.v4ecoBk = b.dataset.bk; v4AtivEcos(d, host); }));

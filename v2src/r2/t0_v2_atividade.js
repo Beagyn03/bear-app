@@ -62,7 +62,7 @@
       let L = local(); if (c && c.api) L = L.concat(c.api.map(fromApi));
       else { // sem resposta da API: as avaliações da estante (como antes), para a aba não ficar vazia
         try { lib().forEach((e) => { const r = reviewOfLib(e); if (r && (r.paws || String(r.texto || '').trim()) && r.share !== false) L.push({ f: 'aval', c: 'av2', a: 'Avaliou ' + (r.paws ? stars(r.paws) : ''), t: e.title, cv: e.cover, tx: String(r.texto || '').trim(), at: e.finishedAt || e.statusAt || '', v: 'local', e }); }); } catch {} }
-      if (c) L = L.concat((c.ecos || []).map((x) => { const e = byTitle(x.title); return { f: 'ecos', c: 'eco', a: '<span class="mst2"></span>Eco · pág. ' + x.page, t: x.title, cv: e && e.cover, tx: '“' + (x.text || '') + '”', at: x.createdAt, v: 'rede', eco: x }; }));
+      if (c) L = L.concat((c.ecos || []).map((x) => { const e = byTitle(x.title); return { f: 'ecos', c: 'eco', a: '<span class="mst2"></span>Eco · pág. ' + x.page + ((typeof v9EcoStat === 'function' && v9EcoStat(x)) ? ' · ' + v9EcoStat(x) : ''), t: x.title, cv: e && e.cover, tx: '“' + (x.text || '') + '”', at: x.createdAt, v: 'rede', eco: x }; }));
       if (ro) { const pv = (socialProfile && socialProfile.privacy) || {}; L = L.filter((x) => x.v !== 'local' || (x.f === 'prog' && pv.reading !== false)); }
       L.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
       const V = L.filter((x) => f === 'tudo' || x.f === f).slice(0, 40);
