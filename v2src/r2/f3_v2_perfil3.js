@@ -219,7 +219,7 @@ function v3Wire(v, d, hd, x) {
   on('maior', () => { if (!x.maior) return; const e = d.self && lib().find((y) => normT(y.title) === normT(x.maior.t)); if (e) openBookPage(e); else openAnyBook(x.maior.t); });
   hd.querySelectorAll('[data-lag]').forEach((b) => b.addEventListener('click', () => { const t = x.lendo[+b.dataset.lag]; if (!t) return; const e = t.id && byId(t.id); if (e) openBookPage(e); else openAnyBook(t.title, t.author, t.cover); }));
   on('msg', () => { try { openChat(d.handle); } catch { toast('Mensagens: abra pelo menu'); } });
-  on('junto', () => { const f = ((SOC.fr && SOC.fr.friends) || []).find((y) => y.handle === d.handle); if (f) friendReadTogether(f); });
+  on('junto', () => { if (typeof ljOpen === 'function') return ljOpen(d); const f = ((SOC.fr && SOC.fr.friends) || []).find((y) => y.handle === d.handle); if (f) friendReadTogether(f); });
   on('amz', () => { const f = ((SOC.fr && SOC.fr.friends) || []).find((y) => y.handle === d.handle); if (!f) return; popMenu(hd.querySelector('[data-v3=amz]'), [{ label: 'Desfazer amizade', danger: true, fn: () => friendUnfriend(f, () => { v.hidden = true; }) }]); });
   on('add', async () => { const r = await sapi('POST', '/v1/friends/requests', { handle: d.handle }).catch(() => null); toast(r && r.status < 300 ? 'Pedido de amizade enviado' : 'Não consegui agora'); });
 }
