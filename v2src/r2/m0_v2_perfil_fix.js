@@ -1,3 +1,5 @@
+// ícone de traço que faltava (Organizar)
+try { Object.assign(V3EMO, { sort: '<path d="M4 7h10M4 12h7M4 17h4M18 5v14M15 16l3 3 3-3"/>' }); } catch {}
 // Correções do perfil (Bia, 20/11, prints do celular):
 // 1. Aba Estantes do SEU perfil mostrava sobras do perfil antigo ("Conquistas · 4 de 39", "Leituras 2026"). Agora tem só as suas
 //    estantes, como no protótipo: "+ Nova estante" primeiro, "Organizar" e um cartão por estante (capas, contagem, cadeado se
@@ -6,9 +8,9 @@
 // 3. Comunidade: avaliação sua de livro abandonado/pausado sem status vindo da API usa o status da sua estante.
 { const st = document.createElement('style'); st.textContent = `
 .yo-ach,.lx-card:has(#v3-achs),.cantinho.mini,section:has(> .v3-sh #yo-achs){display:none!important}
-.v4mysh-bar{display:flex;gap:.5rem;align-items:center;margin:.2rem 0 .7rem}
-.v4mysh-bar button{display:inline-flex;align-items:center;gap:.35rem;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.45rem .85rem;font:inherit;font-size:.82rem;font-weight:800;cursor:pointer}
-.v4mysh-bar button.p{border-color:var(--acc);color:var(--acc)}
+.v4mysh-bar{display:flex;gap:.5rem;align-items:center;justify-content:space-between;margin:.2rem 0 .7rem}
+.v4mysh-bar button{display:inline-flex;align-items:center;gap:.35rem;border:0;background:none;color:var(--ink-2);padding:.35rem 0;font:inherit;font-size:.84rem;font-weight:800;cursor:pointer}.v4mysh-bar button svg{width:16px;height:16px}
+.v4mysh-bar button.p{color:var(--acc);margin-left:auto}
 .v4psh .pshelf .lk{font-size:11px;color:var(--ink-2);margin-left:.35rem}
 `; TR.append(st); }
 { const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments);
@@ -18,10 +20,11 @@
       const sig = JSON.stringify(L.map((s) => [s.id, s.name, s.priv, (s.bookIds || []).slice(0, 7), (s.bookIds || []).length]));
       if (pE.dataset.mysig === sig && pE.querySelector(':scope > .v4mysh-bar')) return r;
       pE.dataset.mysig = sig;
-      const card = (s) => { const B = v5ShBooks(s), lid = B.filter((e) => e.status === 'LIDO').length;
-        return '<button type="button" class="pshelf" data-sh="' + esc(String(s.id)) + '"><div class="hd"><b>' + esc(s.name) + (s.priv ? '<span class="lk">só você</span>' : '') + '</b><small>' + plural(B.length, 'livro', 'livros') + (lid ? ' · ' + plural(lid, 'lido', 'lidos') : '') + '</small></div><div class="covers">'
-          + B.slice(0, 7).map((e) => '<span class="scv">' + cvh(e.title, e.cover, '') + '</span>').join('') + '</div></button>'; };
-      pE.innerHTML = '<div class="v4mysh-bar"><button type="button" class="p" data-a="new"><i class=v3e data-i=plus></i>Nova estante</button>' + (L.length > 1 ? '<button type="button" data-a="org"><i class=v3e data-i=sort></i>Organizar</button>' : '') + '</div>'
+      const st = (e) => { const ST = { LIDO: 'lido', LENDO: 'lendo', QUERO: 'quero', HIBERNANDO: 'pausado' }; let pct = 0, nota = 0; try { pct = readingInfo(e).pct || 0; } catch {} try { nota = Number((reviewOfLib(e) || {}).paws) || 0; } catch {} return { st: ST[e.status] || '', pct, nota }; };
+      const card = (s) => { const B = v5ShBooks(s), X = B.map(st), cnt = (() => { try { return v4ShCount(X); } catch { return ''; } })();
+        return '<button type="button" class="pshelf" data-sh="' + esc(String(s.id)) + '"><div class="hd"><b>' + esc(s.name) + '</b><small>' + plural(B.length, 'livro', 'livros') + ' · ' + (s.priv ? '<i class=v3e data-i=lock></i> só você' : 'pública') + '</small></div><div class="covers">'
+          + B.slice(0, 7).map((e, i) => '<span class="scv">' + cvh(e.title, e.cover, '') + (() => { try { return v4ShBadge(X[i]); } catch { return ''; } })() + '</span>').join('') + '</div>' + (cnt ? '<small class="scount">' + cnt + '</small>' : '') + '</button>'; };
+      pE.innerHTML = '<div class="v4mysh-bar">' + (L.length > 1 ? '<button type="button" data-a="org"><i class=v3e data-i=sort></i>Organizar</button>' : '') + '<button type="button" class="p" data-a="new"><i class=v3e data-i=plus></i>Nova estante</button></div>'
         + (L.length ? '<div class="v4psh">' + L.map(card).join('') + '</div>' : '<p class="v2wempty">Crie estantes para organizar seus livros do seu jeito (ex.: Clássicos, Para reler).</p>');
       try { paintCv(pE); } catch {}
       pE.querySelector('[data-a=new]')?.addEventListener('click', () => { try { shelfEditForm(); } catch { try { newEstante(); } catch {} } });

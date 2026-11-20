@@ -19,13 +19,16 @@
 .v3pf .v3h{font-size:.84rem;color:var(--ink-2)}.v3pf .v3h button{border:0;background:none;padding:0;font:inherit;color:var(--ink);cursor:pointer}.v3pf .v3h button b{font-weight:900}
 .v3pf q{display:block;font-family:var(--v2-disp,serif);font-style:italic;font-size:.95rem;color:var(--ink);margin:.25rem 1rem 0;quotes:'“' '”'}
 .v3lag{display:flex;flex-wrap:wrap;justify-content:center;gap:.15rem .4rem;font-size:.8rem;color:var(--ink-2);margin-top:.25rem}
-.v3lag button{border:0;background:none;padding:0;font:inherit;color:var(--ink);font-weight:800;cursor:pointer}.v3lag i{font-style:normal;color:var(--acc);font-weight:900}.v3lag em{font-style:normal;color:var(--line)}
+.v3lag button{border:0;background:none;padding:0;font:inherit;color:var(--ink);font-weight:800;cursor:pointer}.v3lag i{font-style:normal;color:var(--acc);font-weight:900}.v3lag em{font-style:normal;color:var(--ink-2)}.v3lag > span{display:inline-flex;align-items:center;gap:.3rem}.v3lag > span svg{width:14px;height:14px;color:var(--acc)}
 .v3pb{display:flex;gap:.4rem;justify-content:center;flex-wrap:wrap;margin-top:.65rem}
 .v3pb button{display:inline-flex;align-items:center;gap:.35rem;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.45rem .85rem;font:inherit;font-size:.82rem;font-weight:800;cursor:pointer}
 .v3pb button.p{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}.v3pb button.ic{padding:.45rem .6rem}
 .v3prev{display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:800;color:var(--acc)}
 .v3pf .v2pxm{top:.2rem;right:.2rem}
 #shelflist .sl-top{position:relative}#shelflist .sl-top .v2pxm{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+/* perfil de outra pessoa: a linha antiga do topo só tinha o •••; ela some e o ••• fica no canto, sem moldura, como no protótipo (Bia, 20/11) */
+#shelflist.v3pf-on .sl-body > .sl-top:has(> .v2pxm){height:0!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;overflow:visible}
+#shelflist.v3pf-on .sl-body > .sl-top > .v2pxm{top:.9rem!important;transform:none!important;border:0!important;background:none!important;width:36px!important;height:36px!important}
 #shelflist:not(.mine-page) .v2afi{background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:var(--v2-sh);cursor:pointer}
 #shelflist:not(.mine-page) .v2afi .t small,#shelflist:not(.mine-page) .v2afi .cm{color:var(--ink-2)}#shelflist:not(.mine-page) .v2afi .pc{font-size:1.5rem;color:var(--acc)}#shelflist:not(.mine-page) .v2afi .cm b{color:var(--acc)}
 #shelflist:not(.mine-page) .v2afi .row .v2a-cv{box-shadow:0 2px 6px rgba(0,0,0,.18)}#shelflist:not(.mine-page) .v2afi .vs div{color:var(--ink-2)}#shelflist:not(.mine-page) .v2afi .vs .bar2{background:color-mix(in srgb,var(--ink) 10%,var(--panel))}
@@ -33,7 +36,7 @@
 .v3num > button{border:0;border-right:1px solid var(--line);background:none;padding:.55rem .3rem;font:inherit;color:var(--ink);cursor:pointer;min-width:0;text-align:center}
 .v3num > button:last-child{border-right:0}.v3num b{display:block;font-size:1.05rem;font-weight:900;white-space:nowrap}
 .v3num small{display:block;font-size:.66rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v3hubh{display:flex;align-items:baseline;gap:.4rem;margin:1rem 0 .45rem}.v3hubh b{font-family:var(--v2-disp,inherit);font-size:1.05rem}.v3hubh small{font-size:.74rem;color:var(--ink-2)}
+.v3hubh{display:flex;align-items:baseline;justify-content:space-between;gap:.4rem;margin:1rem 0 .55rem}.v3hubh b{font-family:var(--v2-disp,inherit);font-size:1.2rem}.v3hubh small{font-size:.76rem;font-weight:800;color:var(--acc)}
 .v3hub{display:grid;grid-template-columns:repeat(6,1fr);gap:.45rem}
 .v3hub button{grid-column:span 2;display:grid;justify-items:center;gap:.1rem;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.6rem .3rem;font:inherit;color:var(--ink);cursor:pointer;min-width:0}
 .v3pi{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}.v3hub .v3pi{color:var(--acc)}.v3pb .v3pi{color:currentColor}.v3prev{display:inline-flex;align-items:center;gap:.35rem}.v3hub button b{font-size:.78rem}.v3hub button small{font-size:.68rem;color:var(--ink-2)}
@@ -93,7 +96,7 @@ function v3Head(v, d, x) {
   const bio = d.bio || (self ? String((T().bio || (db.prefs || {}).bio) || '') : '') || (S.v3bio || {})[d.handle] || ''; // frase: a sua fica em T().bio; a de outra pessoa vem de /v1/users/:h/bio
   const isFr = !self && (d.isFriend || ((SOC.fr && SOC.fr.friends) || []).some((f) => f.handle === d.handle));
   const amz = m.comunidade && x.am != null ? ' · <button type="button" data-v3="amigos"><b>' + x.am + '</b> ' + (x.am === 1 ? 'amizade' : 'amizades') + '</button>' : '';
-  const lag = x.lendo.length ? '<div class="v3lag"><span>Lendo</span>' + x.lendo.map((b, i) => (i ? '<em>·</em>' : '') + '<button type="button" data-lag="' + i + '">' + esc(b.title) + ' <i>' + Math.round(Number(b.pct) || 0) + '%</i></button>').join('') + '</div>' : '';
+  const lag = x.lendo.length ? '<div class="v3lag"><span><i class=v3e data-i=ler></i>Lendo</span>' + x.lendo.map((b, i) => (i ? '<em>·</em>' : '') + '<button type="button" data-lag="' + i + '">' + esc(b.title) + ' <i>' + Math.round(Number(b.pct) || 0) + '%</i></button>').join('') + '</div>' : '';
   const btns = self ? (prev ? '<span class="v3prev">' + v3pi('eye', 15) + 'Vendo como as amizades veem</span><button type="button" data-v3="prev">Sair</button>'
       : '<button type="button" data-v3="edit">' + v3pi('pen', 15) + 'Editar</button>' + (m.comunidade ? '<button type="button" data-v3="share">' + v3pi('send', 15) + 'Compartilhar</button><button type="button" class="ic" data-v3="prev" aria-label="Ver como as amizades veem" title="Ver como as amizades veem">' + v3pi('eye', 17) + '</button>' : '') + '<button type="button" class="ic" data-v3="aj" aria-label="Ajustes" title="Ajustes">' + v3pi('gear', 17) + '</button>')
     : (isFr ? '<button type="button" data-v3="amz">' + v3pi('ok', 15) + 'Amizade</button>' : '<button type="button" class="p" data-v3="add">' + v3pi('plus', 15) + 'Adicionar</button>') + (m.comunidade ? '<button type="button" data-v3="msg">' + v3pi('reply', 15) + 'Mensagem</button>' : '') + (isFr ? '<button type="button" data-v3="junto">' + v3pi('friends', 15) + 'Ler junto</button>' : '');
