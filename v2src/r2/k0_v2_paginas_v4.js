@@ -133,7 +133,7 @@ v2FuncoesSheet = function () {
   };
   S.listRedraw = draw; draw();
 };
-setTimeout(() => { try { v2ModsApply(); } catch {} }, 0);
+[0, 450, 1500, 4000].forEach((ms) => setTimeout(() => { try { v2ModsApply(); } catch {} }, ms)); // o bloco antigo agenda a versão dele em 300 ms (referência guardada antes desta)
 
 // ---------- Ajustes nos grupos do protótipo ----------
 { const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
@@ -180,8 +180,11 @@ setTimeout(() => { try { v2ModsApply(); } catch {} }, 0);
     const meNow = !!(v && !v.hidden && !inner && v.querySelector('.v3pb [data-v3=aj]')); if (meNow) S.v4fromMe = true; else if (!inner) S.v4fromMe = false;
     if (inner) { const st = back.parentElement; st.classList.toggle('v4empty', ![...st.children].some((x) => x !== back && x.tagName !== 'B' && (x.children.length || (x.textContent || '').trim()))); }
     const lb = (!v || v.hidden) ? TR.querySelector('#lista > header.v3-top .sl-back, #lista > .v3-top .sl-back') : null; const L = TR.querySelector('#lista'); if (L) L.classList.toggle('v4inner-l', !!lb);
+    if (['inicio', 'estante', 'comunidade', 'eu'].includes(S.tab)) S.v4lastTab = S.tab;
+    const ed = $('#editor'), nt = !!(ed && !ed.hidden && ed.classList.contains('ntpage'));
     let b = top.querySelector('.v4back'); const t = top.querySelector('#g-t');
-    if (inner || lb) { if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'v4back'; b.setAttribute('aria-label', 'Voltar'); b.innerHTML = BK; b.addEventListener('click', () => { const me = !!S.v4fromMe, sv = $('#shelflist'), bb = (sv && !sv.hidden && sv.querySelector('.sl-body > .sl-top > .sl-back')) || TR.querySelector('#lista > header.v3-top .sl-back, #lista > .v3-top .sl-back'); if (bb) bb.click(); setTimeout(() => { const v = $('#shelflist'); if (me && v && v.hidden) { try { goTab('eu'); } catch {} } }, 30); }); (t || top.firstElementChild).before(b); } b.hidden = false; }
+    if (inner || lb || nt) { if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'v4back'; b.setAttribute('aria-label', 'Voltar'); b.innerHTML = BK; b.addEventListener('click', () => { const e2 = $('#editor'); if (e2 && !e2.hidden && e2.classList.contains('ntpage')) { try { closeEd(); } catch {} return; } const wasBusca = S.tab === 'buscar';
+      const me = !!S.v4fromMe, sv = $('#shelflist'), bb = (sv && !sv.hidden && sv.querySelector('.sl-body > .sl-top > .sl-back')) || TR.querySelector('#lista > header.v3-top .sl-back, #lista > .v3-top .sl-back'); if (bb) bb.click(); setTimeout(() => { const v = $('#shelflist'); if (v && v.hidden && (me || wasBusca)) { try { goTab(me ? 'eu' : (S.v4lastTab || 'inicio')); } catch {} } }, 30); }); (t || top.firstElementChild).before(b); } b.hidden = false; }
     else if (b) b.hidden = true; };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; sync(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] }); }
 
