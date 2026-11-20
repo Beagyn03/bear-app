@@ -14,6 +14,7 @@ Object.assign(V2I, { qt: '<path class="d" d="M5 17c-1.5-1-2-2.5-2-4.5C3 9 5 7 8 
 .v3-colA.v3h > *:not(.v3x):not(.v3mom):not(#rc-host):not(#pv-host):not(.v3show){position:absolute!important;left:-9999px!important;top:0!important;width:300px!important;visibility:hidden!important;pointer-events:none!important}
 .v3-colA.v3h > .v3x,.v3-colA.v3h > .v3mom,.v3-colA.v3h > #rc-host:not(:empty),.v3-colA.v3h > #pv-host,.v3-colA.v3h > .v3show{display:block!important}
 .v3-colA.v3h > .v3x,.v3-colA.v3h > .v3mom,.v3-colA.v3h > #rc-host,.v3-colA.v3h > #pv-host,.v3-colA.v3h > .v3show{align-self:stretch!important;width:auto!important;max-width:none!important;box-sizing:border-box}
+.v3-colA.v3h > .orb-row{display:block!important} /* orb-row usa display:contents: os filhos invisíveis viravam itens da coluna e abriam um buraco */
 .v3-colA.v3h > .v3x-a{order:1}.v3-colA.v3h > .v3show{order:2}.v3-colA.v3h > .v3mom{order:3;margin-top:.9rem!important}.v3-colA.v3h > .v3x-b{order:4}.v3-colA.v3h > #rc-host{order:5;margin-top:1rem}.v3-colA.v3h > #pv-host{order:6;margin-top:1rem}
 .v3x .hello{margin:.1rem 0 .9rem}.v3x .hello small{display:block;font-size:.66rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-2)}
 .v3x .hello b{display:block;font-family:var(--v2-disp);font-size:1.65rem;line-height:1.15;color:var(--ink);margin-top:.15rem}
