@@ -10246,9 +10246,9 @@ TR.addEventListener('click', (ev) => {
   const decorate = () => {
     if (!ed.classList.contains('ntpage') || ed.hidden) return;
     const body = ed.querySelector('.ed-body'); if (!body || body.querySelector('.nt-top')) return;
-    body.insertAdjacentHTML('afterbegin', '<div class="nt-top"><button type="button" class="sl-back" id="nt-back">‹ Voltar</button><b>Notificações</b></div>');
+    body.insertAdjacentHTML('afterbegin', '<div class="nt-top"><button type="button" class="sl-back" id="nt-back">‹ Voltar</button><b>Avisos</b></div>');
     $('#nt-back', body).addEventListener('click', closeEd);
-    const gt = $('#g-t'); if (gt) gt.textContent = 'Notificações';
+    const gt = $('#g-t'); if (gt) gt.textContent = 'Avisos';
     body.querySelector('#nt-close')?.remove();
     const items = ((SOC.feed && SOC.feed.items) || SOC.feed || []).filter((x) => x && !x.mine).slice(0, 15);
     if (Array.isArray(items) && items.length) {
@@ -10266,7 +10266,7 @@ TR.addEventListener('click', (ev) => {
   const _on = openNotif;
   openNotif = function () { ed.classList.add('ntpage'); const r = _on.apply(this, arguments); decorate(); return r; };
 }
-{ const gt = $('#g-t'); if (gt) new MutationObserver(() => { const ed = $('#editor'); if (ed && !ed.hidden && ed.classList.contains('ntpage') && gt.textContent !== 'Notificações') gt.textContent = 'Notificações'; }).observe(gt, { childList: true, characterData: true, subtree: true }); }
+{ const gt = $('#g-t'); if (gt) new MutationObserver(() => { const ed = $('#editor'); if (ed && !ed.hidden && ed.classList.contains('ntpage') && gt.textContent !== 'Avisos') gt.textContent = 'Avisos'; }).observe(gt, { childList: true, characterData: true, subtree: true }); }
 // --- 10_avaliar.js ---
 // Ficha de avaliação mais compacta: título curto, patas em destaque no topo, datas numa linha (toque para alterar),
 // spoiler e compartilhar lado a lado, ressaca literária numa linha, Agora não e Salvar lado a lado.
@@ -21294,6 +21294,254 @@ function openLembretes() {
     b.addEventListener('click', () => openLembretes()); fn.after(b);
   } catch (err) { console.warn('lembretes', err); }
   return r; }; }
+// --- l1_v2_nota_padrao.js ---
+// Nota padronizada no app todo (Bia, 20/11; modelo do protótipo): estrelas embaixo da capa, ou "★ 3,5" pequeno onde a capa é
+// pequena. Saem os contornos dourado/prata/bronze por nota, os brilhos, as moedas/marcadores com número (mk-bear, ys-mk) e o ✓.
+// As estrelas só aparecem nas listas dos SEUS livros (páginas de estante, listas por situação, Leituras do ano, busca); no feed,
+// no Hoje e no Top 3 o contorno sai e nada entra no lugar (lá a nota de cada post já vem no texto/etiqueta).
+{ const st = document.createElement('style'); st.textContent = `
+.cv.rt,.cv.rt-5,.cv.rt-ouro,.cv.rt-prata,.cv.rt-bronze,.cv.rt-ferro,.ys-cv{box-shadow:0 4px 10px rgba(0,0,0,.18)!important}
+.cv.rt::before,.cv.rt-5::before,.cv.rt-ouro::before,.cv.rt-prata::before{display:none!important}
+.rt-sp.rt-sp.rt-sp.rt-sp,#shelflist .rt-sp.rt-sp.rt-sp.rt-sp,#lista .rt-sp.rt-sp.rt-sp.rt-sp,#editor .rt-sp.rt-sp.rt-sp.rt-sp,.ys-sp.ys-sp.ys-sp.ys-sp,#shelflist .ys-sp.ys-sp.ys-sp.ys-sp,#lista .ys-sp.ys-sp.ys-sp.ys-sp,#editor .ys-sp.ys-sp.ys-sp.ys-sp,.mk-bear.mk-bear.mk-bear.mk-bear,#shelflist .mk-bear.mk-bear.mk-bear.mk-bear,#lista .mk-bear.mk-bear.mk-bear.mk-bear,#editor .mk-bear.mk-bear.mk-bear.mk-bear,.ys-mk.ys-mk.ys-mk.ys-mk,#shelflist .ys-mk.ys-mk.ys-mk.ys-mk,#lista .ys-mk.ys-mk.ys-mk.ys-mk,#editor .ys-mk.ys-mk.ys-mk.ys-mk,.es4-done.es4-done.es4-done.es4-done,#shelflist .es4-done.es4-done.es4-done.es4-done,#lista .es4-done.es4-done.es4-done.es4-done,#editor .es4-done.es4-done.es4-done.es4-done{display:none!important}
+.v6st{display:block;color:var(--acc);letter-spacing:1px;font-size:12px;line-height:1.2;margin-top:2px;font-weight:400;white-space:nowrap}
+.v6st i{font-style:normal;color:color-mix(in srgb,var(--ink) 18%,transparent)}
+.v6st.t{display:inline;letter-spacing:0;font-size:.72rem;font-weight:800;color:var(--ink-2)}
+.es4-st.v6host.v6host{display:block!important}.es4-st.v6host .v6st{margin-top:0}
+`; TR.append(st); }
+{
+  let map = null, at = 0;
+  const rates = () => { if (map && Date.now() - at < 1500) return map; map = new Map(); at = Date.now();
+    try { for (const e of lib()) { if (e.status !== 'LIDO') continue; const p = Number((reviewOfLib(e) || {}).paws) || 0; if (p) map.set(normT(e.title), p); } } catch {} return map; };
+  const _cvh = cvh;
+  cvh = function (title) {
+    let h = _cvh.apply(this, arguments);
+    h = h.replace(/ rt rt-(5|ouro rt-45|ouro|prata|bronze|ferro)/, '').replace(/<span class="rt-sp [abc]">✦<\/span>/g, '');
+    const p = rates().get(normT(title || '')); if (p) h = h.replace('<span class="cv ', `<span data-rt="${p}" class="cv `);
+    return h;
+  };
+  const stars = (p) => { const n = Math.round(p); return '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i>'; };
+  const fmt = (p) => String(p).replace('.', ',');
+  const SKIP = '.v3tp3, .v3tp, .rd-post, .fd-post, .v3x, .v3hero, .ys-g, .ys-row, .yv-tb';
+  const place = (cv) => {
+    cv.dataset.v6 = '1'; const p = Number(cv.dataset.rt) || 0; if (!p) return;
+    if (!cv.closest('#shelflist') || cv.closest(SKIP)) return;
+    const card = cv.closest('.es-bk, .es4-bk, button, a, li, article') || cv.parentElement; if (!card || card.querySelector('.v6st')) return;
+    const host = card.querySelector('.es4-st'); if (host) { host.classList.add('v6host'); host.innerHTML = '<span class="v6st" aria-label="nota ' + fmt(p) + '">' + stars(p) + '</span>'; return; }
+    const w = cv.getBoundingClientRect().width, cs = getComputedStyle(card), row = cs.display.includes('flex') && !cs.flexDirection.startsWith('column');
+    if (!row && w >= 44) { const cap = [...card.children].find((x) => x !== cv && /^(SMALL|B|SPAN)$/.test(x.tagName) && !x.classList.contains('cv') && x.offsetParent !== null && (x.textContent || '').trim()); const s = document.createElement('span'); s.className = 'v6st'; s.setAttribute('aria-label', 'nota ' + fmt(p)); s.innerHTML = stars(p); (cap || cv).after(s); return; }
+    const txt = cv.nextElementSibling; const s = document.createElement('small'); s.className = 'v6st t'; s.textContent = '★ ' + fmt(p);
+    if (txt && txt !== cv) { const br = document.createElement('br'); txt.append(br, s); }
+  };
+  let tm = 0; const scan = () => { tm = 0; TR.querySelectorAll('.cv[data-rt]:not([data-v6])').forEach((cv) => { try { place(cv); } catch {} }); };
+  new MutationObserver(() => { if (!tm) tm = setTimeout(scan, 60); }).observe(TR, { childList: true, subtree: true });
+}
+// --- l2_v2_estante_pagina.js ---
+// Página de uma estante (Bia, 20/11; print "leituras 2026"): sem a faixa vazia e sem a linha antiga "‹ … •••". Voltar e
+// título ficam no topo do app (k0); logo abaixo, "N livros" com o "•••" à direita. O "•••" abre o MESMO menu de estante da
+// aba Estantes (v5shm, protótipo) + "Ordenar livros"; nunca "Abrir estante" com ela aberta. Listas que não são estante da
+// pessoa (Lidos, Quero ler...) ganham só "Ordenar livros".
+{ const st = document.createElement('style'); st.textContent = `
+#shelflist.v6shp .sl-body > .sl-top{height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;border:0!important}
+#shelflist.v6shp .esv-bar{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:.2rem 0 .7rem;min-height:40px}
+#shelflist.v6shp .esv-bar > span{font-weight:800;color:var(--ink-2);font-size:.86rem}
+#shelflist.v6shp .esv-bar .v6dots{margin-left:auto;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:900 1rem/1 inherit;letter-spacing:1px;display:grid;place-items:center}
+#shelflist.v6shp .esv-bar [data-lot]{display:none!important}
+`; TR.append(st); }
+{ const ORD = () => (typeof ES_SORTS !== 'undefined' ? ES_SORTS : [['recentes', 'Adicionados recentemente'], ['conclusao', 'Data de conclusão'], ['nota', 'Maior nota'], ['titulo', 'Título (A–Z)']]);
+  const fix = (key) => {
+    const v = $('#shelflist'); if (!v || v.hidden) return; const bar = v.querySelector('.sl-body > .esv-bar'); if (!bar) return;
+    v.classList.add('v6shp');
+    if (bar.querySelector('.v6dots')) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'v6dots'; b.setAttribute('aria-label', 'Opções da estante'); b.textContent = '•••';
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); const id = String(key).startsWith('sh:') ? String(key).slice(3) : null;
+      if (id && (db.shelves || []).some((s) => s.id === id)) v5Sheet('v5shm', { sh: id, page: key }); else v5Sheet('v6ord', { page: key }); });
+    bar.append(b);
+  };
+  const _os = openShelfV3; openShelfV3 = function (key) { const r = _os.apply(this, arguments); fix(key); setTimeout(() => fix(key), 0); setTimeout(() => fix(key), 250); return r; };
+  // sair da página tira a marca
+  new MutationObserver(() => { const v = $('#shelflist'); if (v && v.classList.contains('v6shp') && (v.hidden || !v.querySelector('.sl-body > .esv-bar'))) v.classList.remove('v6shp'); })
+    .observe($('#shelflist') || TR, { attributes: true, attributeFilter: ['hidden'], childList: true });
+  // folhas: v5shm aberto de dentro da página ganha "Ordenar livros"; v6ord = só a ordem
+  const _sh = v4SheetHTML; v4SheetHTML = function (k) {
+    const st = v4State(), c = st.v5 || {};
+    if (k === 'v6ord') { const cur = (T().shelfSort || {})[c.page] || sortKey(c.page);
+      return `<h3>Ordenar livros</h3><div class="list">${ORD().map(([kk, n]) => `<button class="li rp${kk === cur ? ' on' : ''}" data-a="v6sort" data-k="${kk}"><span class="rd2"></span><span class="t">${esc(n)}</span></button>`).join('')}</div>`; }
+    let h = _sh.apply(this, arguments);
+    if (k === 'v5shm' && c.page && typeof h === 'string' && h) { const cur = (ORD().find((x) => x[0] === ((T().shelfSort || {})[c.page] || sortKey(c.page))) || [])[1] || '';
+      h = h.replace('<div class="list">', `<div class="list"><button class="li" data-a="sheet" data-s="v6ord">${v4ic('sort', 20)}<span class="t">Ordenar livros<small>${esc(cur)}</small></span><span class="r">${v4ic('chev', 16)}</span></button>`); }
+    return h;
+  };
+  // cliques das folhas novas (o v5V4Click só trata "v5…")
+  const arm = () => { const R = v4Root(); if (!R || R.dataset.v6) return; R.dataset.v6 = 1;
+    R.addEventListener('click', (ev) => { const b = ev.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a, st = v4State(), c = st.v5 || {};
+      if (a === 'v6sort') { ev.stopPropagation(); T().shelfSort = T().shelfSort || {}; T().shelfSort[c.page] = b.dataset.k; save(); try { refresh(); } catch {} v5SheetClose(); try { S.listRedraw && S.listRedraw(); } catch {} setTimeout(() => fix(c.page), 30); const n = (ORD().find((x) => x[0] === b.dataset.k) || [])[1]; if (n) toast('Ordenado por ' + n.toLowerCase()); return; }
+      // ações da estante feitas de dentro da página: a página acompanha (excluída/arquivada fecha; resto redesenha)
+      if (c.page && /^v5(shdel|arch|shedit|priv|shgrp|ungrp|unarch|shadd)/.test(a)) setTimeout(() => { const id = String(c.page).slice(3), s = (db.shelves || []).find((x) => x.id === id), v = $('#shelflist');
+        if (!s || s.arch) { if (v && !v.hidden && v.classList.contains('v6shp')) { v.hidden = true; try { goTab('estante'); } catch {} } } else { try { S.listRedraw && S.listRedraw(); } catch {} setTimeout(() => fix(c.page), 30); } }, 400);
+    }, true); };
+  const _vs = v5Sheet; v5Sheet = function () { const r = _vs.apply(this, arguments); try { arm(); } catch {} return r; };
+}
+// --- l3_v2_filtrar.js ---
+// Estante › Filtrar (Bia, 20/11; protótipo v132, folha 'sort'): a folha é SÓ de filtro. Sai a Situação (já está nos chips de
+// fora), saem Ordenar (fica no "Data de conclusão ▾") e Ver como (fica no ícone grade/lista) e sai o chip "Qualquer" de cada
+// grupo: nada marcado = mostra tudo; tocar de novo desmarca. Rodapé "Limpar" + "Ver N livros" com N ao vivo.
+// O botão de filtro ganha um ponto quando há filtro ativo.
+{ const G = () => [...new Set(lib().map((e) => e.genre).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt'));
+  const GROUPS = () => [['nota', 'Nota', [['5', '★ 5'], ['4', '★ 4 ou mais'], ['3', '★ 3 ou mais'], ['none', 'Sem nota']]], ['own', 'Meu exemplar', [['tenho', 'Tenho'], ['emp', 'Emprestados'], ['peg', 'Peguei emprestado']]],
+    ['fmt', 'Formato', [['PAPER', 'Físico'], ['EBOOK', 'E-book'], ['AUDIO', 'Audiolivro']]], ...(G().length ? [['gen', 'Gênero', G().map((g) => [g, g])]] : [])];
+  const KEYS = ['nota', 'own', 'fmt', 'gen'];
+  const count = (W) => { try { const P = ESN(); return esnFilter(shelfBooks('ALL'), { ...P, ...W, st: P.st || 'ALL' }, '').length; } catch { return null; } };
+  const active = () => { const P = ESN(); return KEYS.some((k) => P[k]); };
+  esnFilterSheet = function (redraw) {
+    const P = ESN(), st = v4State(); st.v6W = Object.fromEntries(KEYS.map((k) => [k, P[k] || ''])); st.v6redraw = redraw;
+    v5Sheet('v6filt', {});
+  };
+  const _sh = v4SheetHTML; v4SheetHTML = function (k) {
+    if (k !== 'v6filt') return _sh.apply(this, arguments);
+    const W = v4State().v6W || {}, n = count(W);
+    return `<h3>Filtrar</h3><p class="mut" style="margin:0 0 6px">Nada marcado mostra tudo. A ordem fica na barra acima dos livros.</p>`
+      + GROUPS().map(([g, t, opts]) => `<div class="lbl">${t}</div><div class="chips" style="flex-wrap:wrap;margin:0;padding:4px 0">${opts.map(([v, l]) => `<button class="chip${W[g] === v ? ' on' : ''}" data-a="v6fchip" data-g="${g}" data-v="${esc(v)}">${esc(l)}</button>`).join('')}</div>`).join('')
+      + `<div class="row" style="gap:8px;margin-top:14px"><button class="btn s" style="flex:1" data-a="v6fclr">Limpar</button><button class="btn p" style="flex:2" data-a="v6fok">${n == null ? 'Ver livros' : n === 1 ? 'Ver 1 livro' : `Ver ${n} livros`}</button></div>`;
+  };
+  const arm = () => { const R = v4Root(); if (!R || R.dataset.v6f) return; R.dataset.v6f = 1;
+    R.addEventListener('click', (ev) => { const b = ev.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a, st = v4State(); if (!/^v6f/.test(a)) return; ev.stopPropagation();
+      const W = st.v6W || (st.v6W = {});
+      if (a === 'v6fchip') { const g = b.dataset.g; W[g] = W[g] === b.dataset.v ? '' : b.dataset.v; return v4Draw(); }
+      if (a === 'v6fclr') { KEYS.forEach((k) => { W[k] = ''; }); return v4Draw(); }
+      if (a === 'v6fok') { Object.assign(ESN(), W, { tab: 'bib' }); save(); v5SheetClose(); try { st.v6redraw && st.v6redraw(); } catch {} dot(); }
+    }, true); };
+  const _vs = v5Sheet; v5Sheet = function () { const r = _vs.apply(this, arguments); try { arm(); } catch {} return r; };
+  // ponto no botão de filtro (a Estante v4 vive numa raiz própria)
+  const dot = () => { const host = [...TR.querySelectorAll('*')].find((e) => e.shadowRoot && e.shadowRoot.querySelector('.v5est')); const sr = host && host.shadowRoot; if (!sr) return;
+    if (!sr.querySelector('style[data-v6f]')) { const s = document.createElement('style'); s.dataset.v6f = 1; s.textContent = '[data-a=v5filt]{position:relative}[data-a=v5filt].v6on::after{content:"";position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px var(--bg)}'; sr.append(s); }
+    const on = active(); sr.querySelectorAll('[data-a=v5filt]').forEach((b) => b.classList.toggle('v6on', on)); };
+  const _de = drawEstante; drawEstante = function () { const r = _de.apply(this, arguments); try { dot(); } catch {} return r; };
+}
+// Ordem fica numa barra própria acima da grade ("N livros · Data de conclusão ▾"), fora da folha de filtro;
+// o botão da barra de chips vira só "Filtrar" (ícone de funil).
+{ const FUN = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"/></svg>';
+  const _lh = v5LivrosHTML; v5LivrosHTML = function () {
+    let h = _lh.apply(this, arguments); const P = ESN();
+    h = h.replace(/<button class="tool" data-a="v5filt" aria-label="Ordenar e filtrar">[\s\S]*?<\/button>/, `<button class="tool" data-a="v5filt" aria-label="Filtrar">${FUN}</button>`);
+    let n = 0; try { n = esnFilter(shelfBooks('ALL'), P, '').length; } catch {}
+    const cur = (ESN_SORT.find((x) => x[0] === (P.sort || 'conclusao')) || ESN_SORT[0]);
+    const bar = `<div class="v6sbar"><span>${n === 1 ? '1 livro' : n + ' livros'}</span><label class="v6sel"><span>${esc(cur[1])} ▾</span><select data-v6s aria-label="Ordenar">${ESN_SORT.map(([k, l]) => `<option value="${k}"${k === cur[0] ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label></div>`;
+    return h.replace('<div class="grid">', bar + '<div class="grid">');
+  };
+  const arm = () => { const host = [...TR.querySelectorAll('*')].find((e) => e.shadowRoot && e.shadowRoot.querySelector('.v5est')); const sr = host && host.shadowRoot; if (!sr || sr.v6s) return; sr.v6s = 1;
+    const s = document.createElement('style'); s.textContent = '.v6sbar{display:flex;align-items:center;justify-content:space-between;margin:10px 2px 8px;font-size:13px;font-weight:800;color:var(--ink2)}.v6sel{position:relative;color:var(--ink);cursor:pointer}.v6sel select{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer;font-size:16px}'; sr.append(s);
+    sr.addEventListener('change', (ev) => { const sel = ev.target.closest && ev.target.closest('[data-v6s]'); if (!sel) return; ESN().sort = sel.value; save(); v5Redraw(); }, true); };
+  const _de = drawEstante; drawEstante = function () { const r = _de.apply(this, arguments); try { arm(); } catch {} return r; };
+}
+// --- l4_v2_top3_editor.js ---
+// Editor do Top 3 (Bia, 20/11): sai o "Seu top 5" antigo (setas e ×, sem como trocar). Três posições com capa, título e emoções;
+// tocar numa posição abre "Trocar" (seus lidos, com filtro, ou qualquer livro pela busca) e o escolhido entra no lugar;
+// posição vazia = "+ Escolher livro"; ↑↓ discretos para reordenar; Salvar/Cancelar. Quem tinha 5 vê os 3 primeiros e os
+// outros 2 continuam guardados (o app usa a lista para indicar leituras).
+{ const st0 = document.createElement('style'); st0.textContent = '.v6t3 .pos{width:30px;flex:none;font-family:var(--f-disp,serif);font-weight:900;color:var(--acc);font-size:18px}.v6t3 .li{align-items:center}.v6t3 .emo{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}.v6t3 .emo em{font-style:normal;font-size:11px;font-weight:800;border:1px solid var(--line);border-radius:99px;padding:1px 7px;color:var(--ink2)}.v6t3 .ud{display:flex;flex-direction:column;gap:2px;margin-left:auto}.v6t3 .ud button{width:30px;height:24px;border:0;background:none;color:var(--ink3);font-size:15px;line-height:1}.v6t3 .ud button:disabled{opacity:.25}.v6t3 .empty3{border:1.5px dashed var(--line);border-radius:14px;padding:16px 12px;text-align:center;font-weight:800;color:var(--acc);width:100%;background:none}.v6pk .li .cv,.v6t3 .li .cv{width:34px!important;height:51px!important;font-size:0!important;padding:0!important;flex:none}';
+  TR.append(st0); }
+{ const emoOf = (b) => { try { const e = lib().find((x) => normT(x.title) === normT(b.title)); return e && typeof v3Emo === 'function' ? (v3Emo(e) || []).slice(0, 3) : []; } catch { return []; } };
+  const cover = (b) => { try { const e = lib().find((x) => normT(x.title) === normT(b.title)); return v4cv(e || { title: b.title, cover: b.cover || null }, '', 'width:34px;height:51px;font-size:0;padding:0;'); } catch { return ''; } };
+  const reopen = () => { const st = v4State(); st.v5 = st.v5 || {}; v5Sheet('v6top', st.v5); };
+  editTop5 = function () {
+    const st = v4State(), all = top5Books(); st.v6T = all.slice(0, 3).map((b) => ({ title: b.title, author: b.author || null, cover: b.cover || null })); st.v6X = all.slice(3).map((b) => ({ title: b.title, author: b.author || null, cover: b.cover || null }));
+    v5Sheet('v6top', {});
+  };
+  const _sh = v4SheetHTML; v4SheetHTML = function (k) {
+    const st = v4State(), T = st.v6T || [];
+    if (k === 'v6top') {
+      const rows = [0, 1, 2].map((i) => { const b = T[i];
+        if (!b) return `<div class="li"><span class="pos">${i + 1}º</span><button class="empty3" data-a="v6tpick" data-i="${i}">+ Escolher livro</button></div>`;
+        const em = emoOf(b);
+        return `<div class="li"><span class="pos">${i + 1}º</span><button class="li" style="flex:1;border:0;padding:0;background:none;min-width:0;gap:10px;display:flex;text-align:left" data-a="v6tpick" data-i="${i}">${cover(b)}<span class="t" style="min-width:0">${esc(b.title)}<small>${esc(b.author || '')} · tocar para trocar</small>${em.length ? `<span class="emo">${em.map((n) => '<em>' + esc(n) + '</em>').join('')}</span>` : ''}</span></button><span class="ud"><button data-a="v6tmv" data-i="${i}" data-d="-1" aria-label="Subir" ${i === 0 ? 'disabled' : ''}>↑</button><button data-a="v6tmv" data-i="${i}" data-d="1" aria-label="Descer" ${i >= T.length - 1 ? 'disabled' : ''}>↓</button></span></div>`; }).join('');
+      return `<h3>Seu Top 3</h3><p class="mut" style="margin:0 0 8px">Os 3 livros que mais marcaram você. Aparecem no seu perfil e o app usa para indicar leituras.</p><div class="list v6t3">${rows}</div>
+        <div class="row" style="gap:8px;margin-top:14px"><button class="btn s" style="flex:1" data-a="v6tcancel">Cancelar</button><button class="btn p" style="flex:2" data-a="v6tsave">Salvar</button></div>`;
+    }
+    if (k === 'v6toppick') {
+      const i = st.v6Ti || 0, q = normT(st.v6Tq || ''), used = new Set(T.filter((b, j) => b && j !== i).map((b) => normT(b.title)));
+      const L = lib().filter((e) => e.status === 'LIDO' && !used.has(normT(e.title)) && (!q || normT(e.title + ' ' + (e.author || '')).includes(q)))
+        .sort((a, b) => ((reviewOfLib(b) || {}).paws || 0) - ((reviewOfLib(a) || {}).paws || 0) || String(b.finishedAt || '').localeCompare(String(a.finishedAt || ''))).slice(0, 40);
+      const list = L.map((e) => { const p = (reviewOfLib(e) || {}).paws; return `<button class="li" data-a="v6tset" data-id="${esc(e.id)}">${cover(e)}<span class="t">${esc(e.title)}<small>${esc(e.author || '')}${p ? ' · ★ ' + String(p).replace('.', ',') : ''}</small></span></button>`; }).join('');
+      return `<h3>${T[i] ? 'Trocar o ' + (i + 1) + 'º lugar' : 'Escolher o ' + (i + 1) + 'º lugar'}</h3>
+        <label class="srch" style="display:flex;gap:8px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:6px"><input data-v6tq value="${esc(st.v6Tq || '')}" placeholder="Filtrar seus lidos" style="border:0;background:none;outline:0;font:inherit;flex:1;color:var(--ink)"></label>
+        <div class="list v6pk" data-v6tl>${list || '<p class="mut" style="padding:8px 4px">Nenhum lido com esse nome.</p>'}</div>
+        <div class="row" style="gap:8px;margin-top:10px"><button class="btn s" style="flex:1" data-a="v6tback">Voltar</button><button class="btn s" style="flex:2" data-a="v6tsearch">Buscar outro livro</button></div>`;
+    }
+    return _sh.apply(this, arguments);
+  };
+  const arm = () => { const R = v4Root(); if (!R || R.dataset.v6t) return; R.dataset.v6t = 1;
+    R.addEventListener('input', (ev) => { const inp = ev.target.closest && ev.target.closest('[data-v6tq]'); if (!inp) return; ev.stopPropagation(); const st = v4State(); st.v6Tq = inp.value;
+      const box = R.querySelector('[data-v6tl]'); if (!box) return; const tmp = document.createElement('div'); tmp.innerHTML = v4SheetHTML('v6toppick'); const nb = tmp.querySelector('[data-v6tl]'); if (nb) { box.innerHTML = nb.innerHTML;  } }, true);
+    R.addEventListener('click', (ev) => { const b = ev.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a; if (!/^v6t/.test(a)) return; ev.stopPropagation();
+      const st = v4State(), T = st.v6T || (st.v6T = []);
+      if (a === 'v6tpick') { st.v6Ti = +b.dataset.i; st.v6Tq = ''; st.sheet = 'v6toppick'; return v4Draw(); }
+      if (a === 'v6tback') { st.sheet = 'v6top'; return v4Draw(); }
+      if (a === 'v6tmv') { const i = +b.dataset.i, j = i + +b.dataset.d; if (j < 0 || j >= T.length) return; [T[i], T[j]] = [T[j], T[i]]; return v4Draw(); }
+      if (a === 'v6tset') { const e = lib().find((x) => x.id === b.dataset.id); if (e) { const i = Math.min(st.v6Ti || 0, T.length); T[i] = { title: e.title, author: e.author || null, cover: e.cover || null }; } st.sheet = 'v6top'; return v4Draw(); }
+      if (a === 'v6tsearch') { const i = st.v6Ti || 0; v5SheetClose(); setTimeout(() => { try { searchSheet({ title: 'Um livro do seu Top 3', onPick: (it) => { if (it && it.title) { const T2 = v4State().v6T || []; T2[Math.min(i, T2.length)] = { title: String(it.title).slice(0, 200), author: it.author || null, cover: it.cover || null }; v4State().v6T = T2; } setTimeout(reopen, 60); } }); } catch { reopen(); } }, 40); return; }
+      if (a === 'v6tcancel') return v5SheetClose();
+      if (a === 'v6tsave') { const keep = T.filter(Boolean), X = (st.v6X || []).filter((b) => !keep.some((k) => normT(k.title) === normT(b.title)));
+        setTop5([...keep, ...X]); try { publishSnapshot(); } catch {} v5SheetClose(); toast('Top 3 salvo');
+        const v = $('#shelflist'); if (v && !v.hidden && v.classList.contains('mine-page')) { try { openMyProfile(); } catch {} } }
+    }, true); };
+  const _vs = v5Sheet; v5Sheet = function () { const r = _vs.apply(this, arguments); try { arm(); } catch {} return r; };
+}
+// --- l5_v2_avisos_limpar.js ---
+// Avisos › Notificações (Bia, 20/11): "Limpar tudo" no alto (com Desfazer), apagar uma (deslizar para a esquerda revela
+// "Apagar"; segurar abre Apagar / Marcar como lida), tocar continua abrindo. Novidades dos amigos não são notificações:
+// segurar = "Ocultar" (fica oculta neste aparelho) e, no fim, "Não mostrar novidades aqui" leva ao ajuste que já existe.
+{ const st = document.createElement('style'); st.textContent = `
+#editor.ntpage .nt-list{display:grid;gap:.45rem}
+#editor.ntpage .row.end #nt-clear{display:none!important}
+.v6ntbar{display:flex;justify-content:flex-end;margin:.2rem 0 .1rem}
+.v6ntbar button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.84rem;min-height:36px}
+.nt-it.v6sw{position:relative;overflow:hidden;touch-action:pan-y}
+.nt-it.v6sw > *:not(.v6del){transition:transform .18s ease}
+.nt-it.v6sw.v6open > *:not(.v6del){transform:translateX(-84px)}
+.v6del{position:absolute;right:0;top:0;bottom:0;width:80px;border:0;background:#c0392b;color:#fff;font:inherit;font-weight:900;font-size:.84rem;transform:translateX(100%);transition:transform .18s ease}
+.nt-it.v6open .v6del{transform:none}
+.nt-it .nt-x{display:none!important}
+.nt-fd.v6hid{display:none!important}
+.v6nofd{border:0;background:none;color:var(--ink-2);font:inherit;font-weight:700;font-size:.8rem;text-decoration:underline;min-height:40px;justify-self:start}
+`; TR.append(st); }
+{ const ed = $('#editor');
+  const HID = () => (L.fdHidden = L.fdHidden || []);
+  const redraw = () => { try { openNotif(); } catch {} };
+  const del = (id) => { if (String(id).startsWith('req:')) L.reqHidden = [...(L.reqHidden || []), String(id).slice(4)]; else L.list = L.list.filter((x) => x.id !== id); saveL(); };
+  const longPress = (el, fn) => { let t = 0, x0 = 0, y0 = 0, fired = false;
+    el.addEventListener('pointerdown', (ev) => { fired = false; x0 = ev.clientX; y0 = ev.clientY; clearTimeout(t); t = setTimeout(() => { fired = true; fn(el); }, 480); });
+    el.addEventListener('pointermove', (ev) => { if (Math.abs(ev.clientX - x0) > 8 || Math.abs(ev.clientY - y0) > 8) clearTimeout(t); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((n) => el.addEventListener(n, () => clearTimeout(t)));
+    el.addEventListener('click', (ev) => { if (fired) { ev.stopImmediatePropagation(); ev.preventDefault(); fired = false; } }, true);
+    el.addEventListener('contextmenu', (ev) => { ev.preventDefault(); fired = true; fn(el); }); };
+  const swipe = (el) => { let x0 = 0, y0 = 0, on = false;
+    el.addEventListener('pointerdown', (ev) => { x0 = ev.clientX; y0 = ev.clientY; on = true; });
+    el.addEventListener('pointerup', (ev) => { if (!on) return; on = false; const dx = ev.clientX - x0, dy = Math.abs(ev.clientY - y0); if (dy > 30) return;
+      if (dx < -40) { el.classList.add('v6open'); el.dataset.v6sw = Date.now(); } else if (dx > 30) el.classList.remove('v6open'); });
+    el.addEventListener('click', (ev) => { if (Date.now() - (+el.dataset.v6sw || 0) < 400) { ev.stopImmediatePropagation(); ev.preventDefault(); } else if (el.classList.contains('v6open') && !ev.target.closest('.v6del')) { el.classList.remove('v6open'); ev.stopImmediatePropagation(); ev.preventDefault(); } }, true); };
+  const enhance = () => {
+    if (!ed || ed.hidden || !ed.classList.contains('ntpage')) return; const body = ed.querySelector('.ed-body'); if (!body || body.dataset.v6) return; body.dataset.v6 = '1';
+    const list = body.querySelector('.nt-list'), items = [...body.querySelectorAll('.nt-it[data-id]')];
+    if (list && items.length && !body.querySelector('.v6ntbar')) {
+      list.insertAdjacentHTML('beforebegin', '<div class="v6ntbar"><button type="button" id="v6-clear">Limpar tudo</button></div>');
+      body.querySelector('#v6-clear').addEventListener('click', () => { const snap = JSON.stringify({ list: L.list, reqHidden: L.reqHidden || [] });
+        L.reqHidden = [...new Set([...(L.reqHidden || []), ...items.filter((n) => n.dataset.id.startsWith('req:')).map((n) => n.dataset.id.slice(4))])]; L.list = []; saveL(); redraw();
+        toast('Notificações apagadas', { label: 'Desfazer', fn: () => { const b = JSON.parse(snap); L.list = b.list; L.reqHidden = b.reqHidden; saveL(); redraw(); } }); });
+    }
+    items.forEach((n) => { if (n.dataset.v6) return; n.dataset.v6 = '1'; const id = n.dataset.id;
+      if (!id.startsWith('req:')) { n.classList.add('v6sw'); const d = document.createElement('button'); d.type = 'button'; d.className = 'v6del'; d.textContent = 'Apagar';
+        d.addEventListener('click', (ev) => { ev.stopPropagation(); del(id); redraw(); }); n.append(d); swipe(n); }
+      longPress(n, () => { try { popMenu(n, [{ label: 'Apagar', danger: true, fn: () => { del(id); redraw(); } }, ...(id.startsWith('req:') ? [] : [{ label: 'Marcar como lida', fn: () => { const x = L.list.find((y) => y.id === id); if (x) { x.read = true; saveL(); } toast('Marcada como lida'); } }])]); } catch {} });
+    });
+    // Novidades dos amigos
+    const fds = [...body.querySelectorAll('.nt-fd[data-fid]')];
+    fds.forEach((b) => { if (HID().includes(b.dataset.fid)) b.classList.add('v6hid'); if (b.dataset.v6) return; b.dataset.v6 = '1';
+      longPress(b, () => { try { popMenu(b, [{ label: 'Ocultar', fn: () => { HID().push(b.dataset.fid); L.fdHidden = HID().slice(-200); saveL(); b.classList.add('v6hid'); toast('Novidade oculta'); } }]); } catch {} }); });
+    if (fds.length && !body.querySelector('.v6nofd')) { const all = body.querySelector('#nt-all'), x = document.createElement('button'); x.type = 'button'; x.className = 'v6nofd'; x.textContent = 'Não mostrar novidades aqui';
+      x.addEventListener('click', () => { try { closeEd(); } catch {} setTimeout(() => { try { feedPrefsSheet(); } catch { toast('Ajustes › Novidades no feed'); } }, 60); }); (all || fds[fds.length - 1]).after(x); }
+  };
+  const _on = openNotif; openNotif = function () { const r = _on.apply(this, arguments); const b = ed && ed.querySelector('.ed-body'); if (b) delete b.dataset.v6; setTimeout(enhance, 0); setTimeout(enhance, 120); return r; };
+}
 // --- m0_v2_perfil_fix.js ---
 // Correções do perfil (Bia, 20/11, prints do celular):
 // 1. Aba Estantes do SEU perfil mostrava sobras do perfil antigo ("Conquistas · 4 de 39", "Leituras 2026"). Agora tem só as suas

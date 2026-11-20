@@ -15,9 +15,9 @@
   const decorate = () => {
     if (!ed.classList.contains('ntpage') || ed.hidden) return;
     const body = ed.querySelector('.ed-body'); if (!body || body.querySelector('.nt-top')) return;
-    body.insertAdjacentHTML('afterbegin', '<div class="nt-top"><button type="button" class="sl-back" id="nt-back">‹ Voltar</button><b>Notificações</b></div>');
+    body.insertAdjacentHTML('afterbegin', '<div class="nt-top"><button type="button" class="sl-back" id="nt-back">‹ Voltar</button><b>Avisos</b></div>');
     $('#nt-back', body).addEventListener('click', closeEd);
-    const gt = $('#g-t'); if (gt) gt.textContent = 'Notificações';
+    const gt = $('#g-t'); if (gt) gt.textContent = 'Avisos';
     body.querySelector('#nt-close')?.remove();
     const items = ((SOC.feed && SOC.feed.items) || SOC.feed || []).filter((x) => x && !x.mine).slice(0, 15);
     if (Array.isArray(items) && items.length) {
@@ -35,4 +35,4 @@
   const _on = openNotif;
   openNotif = function () { ed.classList.add('ntpage'); const r = _on.apply(this, arguments); decorate(); return r; };
 }
-{ const gt = $('#g-t'); if (gt) new MutationObserver(() => { const ed = $('#editor'); if (ed && !ed.hidden && ed.classList.contains('ntpage') && gt.textContent !== 'Notificações') gt.textContent = 'Notificações'; }).observe(gt, { childList: true, characterData: true, subtree: true }); }
+{ const gt = $('#g-t'); if (gt) new MutationObserver(() => { const ed = $('#editor'); if (ed && !ed.hidden && ed.classList.contains('ntpage') && gt.textContent !== 'Avisos') gt.textContent = 'Avisos'; }).observe(gt, { childList: true, characterData: true, subtree: true }); }
