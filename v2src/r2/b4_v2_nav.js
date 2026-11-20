@@ -35,10 +35,12 @@ drawTabbar = function () {
   const bar = $('#tabbar'); if (!bar) return; const h = drawHud(), cur = v2OnTab();
   bar.classList.add('v2bar');
   const av = `<span class="tb-av" style="${h.ph ? `background-image:${cssUrl(h.ph)}` : ''}">${h.ph ? '' : esc(initial((typeof socialProfile !== 'undefined' && socialProfile && socialProfile.displayName) || h.name))}</span>`;
-  bar.innerHTML = [['inicio', 'Hoje'], ['estante', 'Estante'], ['ler', 'Ler'], ['comunidade', 'Comunidade'], ['eu', 'Você']].map(([k, n]) => k === 'ler'
+  const html = [['inicio', 'Hoje'], ['estante', 'Estante'], ['ler', 'Ler'], ['comunidade', 'Comunidade'], ['eu', 'Você']].map(([k, n]) => k === 'ler'
     ? `<button type="button" class="v2ler" data-tab="ler" aria-label="Ler agora: começar uma sessão de leitura"><span class="pl">${V2SVG('ler')}</span><small>Ler</small></button>`
     : `<button type="button" data-tab="${k}" class="${cur === k ? 'on' : ''}" aria-current="${cur === k}">${k === 'eu' ? av : V2SVG(k)}<small>${n}</small></button>`).join('');
-  $$('button', bar).forEach((b) => b.addEventListener('click', () => (b.dataset.tab === 'ler' ? v2Ler() : goTab(b.dataset.tab, true))));
+  // só remonta a barra quando algo mudou (antes era remontada a cada tique, mesmo igual)
+  if (bar.dataset.v2sig !== html || !bar.querySelector('[data-tab]')) { bar.dataset.v2sig = html; bar.innerHTML = html;
+    $$('button', bar).forEach((b) => b.addEventListener('click', () => (b.dataset.tab === 'ler' ? v2Ler() : goTab(b.dataset.tab, true)))); }
   try { paintCommDot(); } catch {}
 };
 // lupa no topo: o Buscar que saiu da barra

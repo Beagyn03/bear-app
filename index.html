@@ -16922,10 +16922,12 @@ drawTabbar = function () {
   const bar = $('#tabbar'); if (!bar) return; const h = drawHud(), cur = v2OnTab();
   bar.classList.add('v2bar');
   const av = `<span class="tb-av" style="${h.ph ? `background-image:${cssUrl(h.ph)}` : ''}">${h.ph ? '' : esc(initial((typeof socialProfile !== 'undefined' && socialProfile && socialProfile.displayName) || h.name))}</span>`;
-  bar.innerHTML = [['inicio', 'Hoje'], ['estante', 'Estante'], ['ler', 'Ler'], ['comunidade', 'Comunidade'], ['eu', 'Você']].map(([k, n]) => k === 'ler'
+  const html = [['inicio', 'Hoje'], ['estante', 'Estante'], ['ler', 'Ler'], ['comunidade', 'Comunidade'], ['eu', 'Você']].map(([k, n]) => k === 'ler'
     ? `<button type="button" class="v2ler" data-tab="ler" aria-label="Ler agora: começar uma sessão de leitura"><span class="pl">${V2SVG('ler')}</span><small>Ler</small></button>`
     : `<button type="button" data-tab="${k}" class="${cur === k ? 'on' : ''}" aria-current="${cur === k}">${k === 'eu' ? av : V2SVG(k)}<small>${n}</small></button>`).join('');
-  $$('button', bar).forEach((b) => b.addEventListener('click', () => (b.dataset.tab === 'ler' ? v2Ler() : goTab(b.dataset.tab, true))));
+  // só remonta a barra quando algo mudou (antes era remontada a cada tique, mesmo igual)
+  if (bar.dataset.v2sig !== html || !bar.querySelector('[data-tab]')) { bar.dataset.v2sig = html; bar.innerHTML = html;
+    $$('button', bar).forEach((b) => b.addEventListener('click', () => (b.dataset.tab === 'ler' ? v2Ler() : goTab(b.dataset.tab, true)))); }
   try { paintCommDot(); } catch {}
 };
 // lupa no topo: o Buscar que saiu da barra
@@ -19302,7 +19304,8 @@ function v3Build(v, d) {
   const KEEP = ['sl-top', 'v3pf', 'v3hubw', 'v3tabs', 'v3pane', 'v2afi', 'cm-btn', 'yo-top', 'yo-nums', 'v2pv', 'ex-wish', 'v2ptabs', 'fr-acts', 'v2sus', 't5-row', 't5-empty', 'fr-unf'];
   [...body.children].forEach((el) => { if (KEEP.some((c) => el.classList.contains(c)) || el.classList.contains('t5-h')) return; pE.append(el); });
   if (!pE.children.length) pE.innerHTML = '<p class="v2wempty">' + (self ? 'Suas estantes aparecem aqui. Escolha quais mostrar em Ajustes › Organizar meu perfil.' : 'Nenhuma estante no perfil.') + '</p>';
-  else pE.querySelector(':scope > .v2wempty')?.remove();
+  // só tira o aviso de vazio quando há outra coisa na aba; tirar o aviso sozinho fazia o bloco m0 repô-lo e os dois se alternavam ~10x/s
+  else if (pE.children.length > 1) pE.querySelector(':scope > .v2wempty')?.remove();
   // Desejos (bloco f0)
   if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle + '|' + ro)) { pD.dataset.h = d.handle + '|' + ro; pD.innerHTML = ''; v2WishPaint(v, ro ? { ...d, self: false } : d, pD); }
   // Atividade
@@ -20670,7 +20673,8 @@ function v6List() {
 function v6Root(box) {
   let h = box.querySelector(':scope > .v6host');
   if (!h || !h.shadowRoot) {
-    box.innerHTML = ''; h = document.createElement('div'); h.className = 'v6host'; box.append(h);
+    // o espaço da barra fixa do topo (.gtop-sp) fica: sem ele o campo "Escreva sobre sua leitura" ficava escondido atrás da barra
+    box.innerHTML = '<div class="gtop-sp"></div>'; h = document.createElement('div'); h.className = 'v6host'; box.append(h);
     const sr = h.attachShadow({ mode: 'open' }), st = document.createElement('style'); st.textContent = V4CSS + V4EXTRA + V6CSS; sr.append(st);
     const r = document.createElement('div'); r.className = 'v4ler v6com'; sr.append(r); r.addEventListener('click', v6Click, true);
   }

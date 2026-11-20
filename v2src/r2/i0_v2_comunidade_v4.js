@@ -59,7 +59,8 @@ function v6List() {
 function v6Root(box) {
   let h = box.querySelector(':scope > .v6host');
   if (!h || !h.shadowRoot) {
-    box.innerHTML = ''; h = document.createElement('div'); h.className = 'v6host'; box.append(h);
+    // o espaço da barra fixa do topo (.gtop-sp) fica: sem ele o campo "Escreva sobre sua leitura" ficava escondido atrás da barra
+    box.innerHTML = '<div class="gtop-sp"></div>'; h = document.createElement('div'); h.className = 'v6host'; box.append(h);
     const sr = h.attachShadow({ mode: 'open' }), st = document.createElement('style'); st.textContent = V4CSS + V4EXTRA + V6CSS; sr.append(st);
     const r = document.createElement('div'); r.className = 'v4ler v6com'; sr.append(r); r.addEventListener('click', v6Click, true);
   }
