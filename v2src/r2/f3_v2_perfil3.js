@@ -84,6 +84,9 @@ function v3Data(d) {
     lendo: (d.reading || []).slice(0, 3).map((b) => ({ title: b.title, pct: b.pct, author: b.author, cover: b.cover })), top: sh.top5 ? (sh.potinho || []).slice(0, 3) : [] };
 }
 // ---------- montagem ----------
+// pílula da atividade pelo status do livro (Bia, 20/11): abandonado = Abandonou · pág. X (com a nota, se houver); pausado = Pausou; terminado = Avaliou ★ N
+function v3Pill(st, paws, pg, pct) { const n = paws ? ' ★ ' + String(paws).replace('.', ',') : '', at = pg ? ' · pág. ' + pg : pct != null && pct < 100 ? ' · ' + Math.round(pct) + '%' : '';
+  if (st === 'ABANDONEI') return 'Abandonou' + at + (n ? ' ·' + n : ''); if (st === 'HIBERNANDO') return 'Pausou' + at + (n ? ' ·' + n : ''); return 'Avaliou' + n; }
 function v3Head(v, d, x) {
   const m = v2Mods(), self = !!d.self, prev = self && S.v3prev, oldTop = v.querySelector('.sl-body > .yo-top'), pv = v.querySelector('.sl-body > .v2pv');
   const av = (oldTop && oldTop.querySelector('.yo-av')) || (pv && pv.querySelector('.avx > *'));
@@ -118,9 +121,9 @@ function v3Top3(x, self) {
 }
 function v3Ativ(d, host) {
   const f = S.v3atf || 'tudo', self = !!d.self; let L = [];
-  if (self) { lib().forEach((e) => { const r = reviewOfLib(e); if (r && (r.paws || String(r.texto || '').trim()) && r.share !== false) L.push({ k: 'aval', t: e.title, c: e.cover, pill: 'Avaliou' + (r.paws ? ' ★ ' + String(r.paws).replace('.', ',') : ''), tx: String(r.texto || '').trim(), at: e.finishedAt || e.statusAt || '' }); });
+  if (self) { lib().forEach((e) => { const r = reviewOfLib(e); if (r && (r.paws || String(r.texto || '').trim()) && r.share !== false) L.push({ k: 'aval', t: e.title, c: e.cover, pill: v3Pill(e.status, r.paws, (() => { try { return readingInfo(e).now || 0; } catch { return 0; } })(), null), tx: String(r.texto || '').trim(), at: e.finishedAt || e.statusAt || '' }); });
     lib().filter((e) => e.status === 'LENDO').forEach((e) => L.push({ k: 'prog', t: e.title, c: e.cover, pill: 'Lendo · ' + Math.round(readingInfo(e).pct || 0) + '%', tx: '', at: (e.readLog && e.readLog.length ? e.readLog[e.readLog.length - 1].date : e.startedAt) || '' })); }
-  else { (d.reviews || []).forEach((r) => L.push({ k: 'aval', t: (r.book && r.book.title) || r.title || '', c: (r.book && r.book.cover) || r.cover || null, pill: 'Avaliou' + (r.paws ? ' ★ ' + String(r.paws).replace('.', ',') : ''), tx: r.spoiler ? 'Tem spoiler: abra o livro para ver.' : String(r.text || r.body || '').trim(), at: String(r.updatedAt || r.createdAt || '').slice(0, 10) }));
+  else { (d.reviews || []).forEach((r) => L.push({ k: 'aval', t: (r.book && r.book.title) || r.title || '', c: (r.book && r.book.cover) || r.cover || null, pill: v3Pill(r.bookStatus || r.status, r.paws, r.page || 0, r.readerPct != null ? r.readerPct : null), tx: r.spoiler ? 'Tem spoiler: abra o livro para ver.' : String(r.text || r.body || '').trim(), at: String(r.updatedAt || r.createdAt || '').slice(0, 10) }));
     (d.reading || []).forEach((b) => L.push({ k: 'prog', t: b.title, c: b.cover, pill: 'Lendo · ' + Math.round(Number(b.pct) || 0) + '%', tx: '', at: '' })); }
   L.sort((a, b) => String(b.at).localeCompare(String(a.at)));
   const V = L.filter((x) => f === 'tudo' || x.k === f);

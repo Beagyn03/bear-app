@@ -61,13 +61,13 @@ openGoalsV4 = function () { // a tela "Metas"
         <div class="mt-btns">${Y.target ? '<button type="button" id="mt-ver">Ver detalhes</button><button type="button" id="mt-adj">Ajustar</button>' : '<button type="button" class="pri" id="mt-adj">Definir meta do ano</button>'}${Y.target && (db.shelves || []).length ? '<button type="button" id="mt-sh">O que conta</button>' : ''}</div>
       </section>
       <div class="mt-h">Metas com prazo</div>
-      <button type="button" class="fl-add" id="gl-new">+ Nova meta com prazo</button>
+      <button type="button" class="mt-new" id="gl-new"><i class=v3e data-i=plus></i>Nova meta com prazo</button>
       ${gs.length ? gs.map((g) => { const tot = g.books.reduce((a, b) => a + (b.totalPages || 0), 0), dn = g.books.reduce((a, b) => a + pagesOf(g, b), 0), p = tot ? Math.round((dn / tot) * 100) : 0;
           const lf = g.targetDate ? Math.ceil((new Date(g.targetDate) - new Date(today)) / 86400000) : null, perDay = lf > 0 ? Math.ceil(Math.max(0, tot - dn) / lf) : null;
           const sh = g.shelfId && (db.shelves || []).find((s) => s.id === g.shelfId);
           return `<button type="button" class="gl-it" data-g="${esc(g.id)}"><span class="gl-row"><b>${esc(g.name)}</b><small>${p}%</small></span><i><i style="width:${p}%"></i></i>
             <span class="gl-row"><small>${plural(g.books.length, 'livro', 'livros')} · ${dn} de ${tot} pág.</small><small>${lf == null ? '' : lf > 0 ? `${lf} dias · ${perDay} pág./dia` : lf === 0 ? 'termina hoje' : 'prazo passou'}</small></span>${sh ? `<span class="gl-sh">Estante “${esc(sh.name)}”</span>` : ''}</button>`; }).join('')
-        : '<p class="sl-empty">Uma meta com prazo é uma lista de livros com data para terminar. Pode ser uma estante inteira. O app calcula quantas páginas por dia você precisa ler.</p>'}`;
+        : '<p class="mt-hint">Uma lista de livros com data para terminar (pode ser uma estante inteira). O app calcula quantas páginas por dia.</p>'}`;
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
     $('#mt-adj', v).addEventListener('click', () => setYearGoal(Y.y));
     $('#mt-ver', v)?.addEventListener('click', () => openGoalPage());
