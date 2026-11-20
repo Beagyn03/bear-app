@@ -30,6 +30,7 @@
     cv.dataset.v6 = '1'; const p = Number(cv.dataset.rt) || 0; if (!p) return;
     if (!cv.closest('#shelflist') || cv.closest(SKIP)) return;
     const card = cv.closest('.es-bk, .es4-bk, button, a, li, article') || cv.parentElement; if (!card || card.querySelector('.v6st')) return;
+    if (/★/.test(card.textContent || '')) return; // o cartão já mostra a nota (ex.: lista Lidos da Meta): não repete
     const host = card.querySelector('.es4-st'); if (host) { host.classList.add('v6host'); host.innerHTML = '<span class="v6st" aria-label="nota ' + fmt(p) + '">' + stars(p) + '</span>'; return; }
     const w = cv.getBoundingClientRect().width, cs = getComputedStyle(card), row = cs.display.includes('flex') && !cs.flexDirection.startsWith('column');
     if (!row && w >= 44) { const cap = [...card.children].find((x) => x !== cv && /^(SMALL|B|SPAN)$/.test(x.tagName) && !x.classList.contains('cv') && x.offsetParent !== null && (x.textContent || '').trim()); const s = document.createElement('span'); s.className = 'v6st'; s.setAttribute('aria-label', 'nota ' + fmt(p)); s.innerHTML = stars(p); (cap || cv).after(s); return; }

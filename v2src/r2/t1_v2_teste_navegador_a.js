@@ -55,3 +55,36 @@ addEventListener('click', (ev) => {
     else if (row.previousElementSibling !== anchor) anchor.after(row);
   };
   let tm = 0; const v = $('#shelflist'); if (v) new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { fix(); } catch (err) { console.warn('livro do catálogo', err); } }, 40); }).observe(v, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+// 22) Busca › Leitores: o campo fica igual ao da aba Livros (pílula com lupa) e na mesma altura; antes encolhia e a aba subia.
+{ const st = document.createElement('style'); st.textContent = `
+#shelflist #ps-q{display:block;width:100%;box-sizing:border-box;height:48px!important;border-radius:999px!important;padding:0 1.1rem 0 2.6rem!important;margin:0 0 27px!important;background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23998877' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5l5 5'/%3E%3C/svg%3E") no-repeat .9rem 50%/18px!important;box-shadow:var(--v2-sh)!important;font-weight:700}`; TR.append(st); }
+// 21) Busca › Leitores: a etiqueta de quem já é amizade dizia "amigos"; vira "amizade", como no resto do app.
+{ const v = $('#shelflist'); if (v) new MutationObserver(() => { v.querySelectorAll('.ps-it em').forEach((x) => { if (x.textContent === 'amigos') x.textContent = 'amizade'; }); }).observe(v, { childList: true, subtree: true }); }
+// 1) Órbita: o ícone do topo era o planeta colorido (imagem); vira ícone de traço, na cor do tema.
+// 6) Hoje: "A seguir" no mesmo tamanho dos outros títulos de seção ("Para você").
+{ const st = document.createElement('style'); st.textContent = `
+.orb-pg .orb-big .orb-ic{display:grid!important;place-items:center;background:none!important;border:1.5px solid var(--line);color:var(--acc);padding:0!important}
+.orb-pg .orb-big .orb-ic img{display:none!important}
+.orb-pg .orb-big .orb-ic::before{content:"";width:62%;height:62%;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cellipse cx='12' cy='12' rx='10' ry='3.6' transform='rotate(-18 12 12)'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cellipse cx='12' cy='12' rx='10' ry='3.6' transform='rotate(-18 12 12)'/%3E%3C/svg%3E") center/contain no-repeat}
+.orb-pg .orb-big .orb-ic.off{color:var(--ink-2)}
+#lista .v3sh > b{font-size:1.08rem!important}`; TR.append(st); }
+// 3) Prazo: livro que já tem prazo abre a folha com o título "Seu prazo" (sem prazo continua "Quando quer terminar?").
+{ const _d = dueSheet; dueSheet = function (e) { const r = _d.apply(this, arguments);
+  if (e && e.dueAt) setTimeout(() => { [...document.querySelectorAll('h3'), ...TR.querySelectorAll('h3')].forEach((h) => { if (h.textContent.trim() === 'Quando quer terminar?') h.textContent = 'Seu prazo'; }); }, 0);
+  return r; }; }
+// 4) Página de gostos: título curto "Seus gostos" (o longo era cortado no topo).
+{ const v = $('#shelflist'); if (v) new MutationObserver(() => { const b = v.querySelector('.sl-body > .sl-top > b'); if (b && b.textContent === 'O que você gosta de ler?') b.textContent = 'Seus gostos'; }).observe(v, { childList: true, subtree: true }); }
+// 5) Hoje: ao voltar de uma página interna, volta para onde estava rolado (antes voltava para o topo).
+{ const L = () => TR.querySelector('#lista:not(.lista-snap)'); let saved = 0, open = false;
+  const v = $('#shelflist');
+  if (v) new MutationObserver(() => {
+    const now = !v.hidden; if (now === open) return; open = now; const l = L(); if (!l || S.tab !== 'inicio') return;
+    if (now) { saved = l.scrollTop; return; }
+    if (!saved) return; const want = saved;
+    [0, 80, 250, 600].forEach((ms) => setTimeout(() => { const x = L(); if (x && S.tab === 'inicio' && v.hidden && x.scrollTop < want - 4) x.scrollTop = want; }, ms));
+  }).observe(v, { attributes: true, attributeFilter: ['hidden'] }); }
+// 49) Recarregar em Completar histórico: volta para a mesma página (antes caía no Você).
+{ const _o = openFixReads; openFixReads = function (filter) { const r = _o.apply(this, arguments); try { S.navView = { t: 'fixreads', a: [filter || null] }; } catch {} return r; };
+  const _rn = restoreNav; restoreNav = function () { let n = null; try { n = JSON.parse(sessionStorage.getItem('bear.nav') || 'null'); } catch {}
+    if (n && n.view && n.view.t === 'fixreads' && Date.now() - (n.at || 0) < 30 * 60000) { setTimeout(() => { try { openFixReads(n.view.a && n.view.a[0] || undefined); } catch {} }, 400); return; }
+    return _rn.apply(this, arguments); }; }

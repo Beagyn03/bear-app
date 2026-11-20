@@ -22,6 +22,8 @@
     if (TR.querySelector('.bkm')) return bqClose();
     const ed = $('#editor'); if (ed && !ed.hidden) { const nb = ed.querySelector('#nt-back'); return nb ? nb.click() : closeEd(); }
     if (TR.querySelector('.drw')) return closeDrawer();
+    // v2: a seta de voltar da tela interna fica na barra do topo (.v4back/.v4back2); o "‹ Voltar" antigo fica escondido
+    { const lv0 = $('#shelflist'), tb = [...TR.querySelectorAll('.v4back, .v4back2')].find(vis); if (lv0 && !lv0.hidden && tb) return tb.click(); }
     const lv = $('#shelflist'); const back = (lv && !lv.hidden && lv.querySelector('.sl-back')) || [...TR.querySelectorAll('.sl-back')].find(vis); if (back && vis(back)) return back.click();
     if (lv && !lv.hidden && lv.classList.contains('mine-page')) return goTab('inicio');
     const sx = TR.querySelector('#sx-back'); if (sx && vis(sx)) return sx.click();
