@@ -58,7 +58,7 @@ function v2ReportSheet(d) {
 // "•••" no perfil de outra pessoa
 { let tm = 0; const put = () => {
     const v = $('#shelflist'), d = S.fpData; if (!v || v.hidden || !d || !d.handle || d.self) return;
-    const top = v.querySelector('.sl-body > .yo-top'); if (!top || top.querySelector('.v2pxm')) return;
+    const top = v.querySelector('.sl-body > .v3pf') || v.querySelector('.sl-body > .yo-top'); if (!top || top.querySelector('.v2pxm')) return;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'v2pxm'; b.setAttribute('aria-label', 'Mais opções do perfil'); b.textContent = '•••';
     b.addEventListener('click', (ev) => { ev.stopPropagation(); const dd = S.fpData; if (!dd) return; popMenu(b, [
       { label: 'Copiar link do perfil', fn: () => { const u = location.origin + location.pathname + '#@' + dd.handle; try { navigator.clipboard.writeText(u).then(() => toast('Link do perfil copiado'), () => toast(u)); } catch { toast(u); } } },

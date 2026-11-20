@@ -212,8 +212,8 @@ function v2Afi(d) {
       if (!x || x.dataset.h !== String(jh.length) + '|' + jh.slice(-80)) {
         const w = document.createElement('div'); w.innerHTML = jh; const n = w.firstElementChild; n.dataset.h = String(jh.length) + '|' + jh.slice(-80);
         n.addEventListener('click', (ev) => { if (ev.target.closest('[data-jl=share]')) v2JeitoShare(v2JeitoData()); });
-        if (x) x.replaceWith(n); else (v.querySelector('.v2pv') || v.querySelector('.yo-nums')).after(n); } // logo abaixo do cabeçalho
-      else if (x.previousElementSibling !== v.querySelector('.v2pv') && v.querySelector('.v2pv')) v.querySelector('.v2pv').after(x);
+        if (x) x.replaceWith(n); else ((v.classList.contains('v3pf-on') && v.querySelector('.v3pane[data-k=sobre]')) ? v.querySelector('.v3pane[data-k=sobre]').prepend(n) : (v.querySelector('.v2pv') || v.querySelector('.yo-nums')).after(n)); } // logo abaixo do cabeçalho
+      else if (!v.classList.contains('v3pf-on') && x.previousElementSibling !== v.querySelector('.v2pv') && v.querySelector('.v2pv')) v.querySelector('.v2pv').after(x); // no perfil novo (f3) o jeito de ler mora na aba Sobre
     } else if (!v.querySelector('.v2afi') && !v.dataset.v2afi) {
       v.querySelectorAll('.yo-nums > *').forEach((c) => { const b = c.querySelector('b, strong') || c; if (/^\s*(0|–|—|-)\s*$/.test(b.textContent || '')) c.classList.add('v2-zero'); });
       v.dataset.v2afi = d.handle; const html = v2Afi(d); if (html) { const w = document.createElement('div'); w.innerHTML = html; (v.querySelector('.yo-nums') || top).after(w.firstElementChild); try { paintCv(v); } catch {} }

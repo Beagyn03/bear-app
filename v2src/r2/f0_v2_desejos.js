@@ -1,5 +1,5 @@
 // v2 Desejos e Presentes (Bia, 19/11/2026, branch livroverso-2; desenho aprovado no protótipo v3).
-//  Perfil (o seu e o da amizade) ganha as abas Perfil · Desejos. Desejos = a lista "Quero ter" em grade de capas.
+//  Desejos mora na aba Desejos do perfil (bloco f3_v2_perfil3). Desejos = a lista "Quero ter" em grade de capas.
 //   - Seu: dica no topo, "+ Adicionar" como primeiro item (busca e marca Quero ter), esconder/mostrar para as amizades.
 //   - Da amizade: "Vou dar" abre a folha com prazo (Em 15 dias, Em 30 dias, Natal, Escolher data); depois aparece
 //     "Você vai dar · até dd/mm"; reservado por outra pessoa aparece "Alguém já vai dar". A dona não vê nada até a entrega.
@@ -9,11 +9,6 @@
 //  Desligado em Funções do app (Empréstimos e presentes), as abas somem e o perfil volta a ser uma tela só.
 { const st = document.createElement('style'); st.textContent = `
 #shelflist .ex-wish{display:none!important}
-.v2ptabs{display:flex;margin:.2rem 0 .9rem;border-bottom:1px solid var(--line)}
-.v2ptabs button{flex:1;border:0;background:none;padding:.65rem 0 .55rem;font:inherit;font-size:.86rem;font-weight:800;color:var(--ink-2);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
-.v2ptabs button.on{color:var(--ink);border-bottom-color:var(--acc)}
-#shelflist.v2des .sl-body > :not(.sl-top):not(.v2pv):not(.yo-top):not(.yo-nums):not(.v2ptabs):not(.v2wish){display:none!important}
-#shelflist:not(.v2des) .v2wish{display:none!important}
 .v2tip{display:flex;gap:.5rem;align-items:flex-start;border:1px solid var(--line);background:color-mix(in srgb,var(--acc) 7%,var(--panel));border-radius:14px;padding:.6rem .7rem;font-size:.8rem;line-height:1.4;color:var(--ink-2);margin-bottom:.8rem}
 .v2tip span{flex:1}.v2tip b{color:var(--ink)}
 .v2tip button{flex:none;border:0;background:none;color:var(--ink-2);font:inherit;font-size:1rem;line-height:1;padding:.1rem .2rem;cursor:pointer}
@@ -57,7 +52,7 @@
 .v2gc .act button{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:99px;padding:.3rem .7rem;font:inherit;font-size:.74rem;font-weight:800;cursor:pointer;white-space:nowrap}
 .v2gc .act button.p{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
 .v2gc .act button.dng{color:#c0392b}
-:host(.v2off-emprest) .v2ptabs,:host(.v2off-emprest) .v2wish{display:none!important}
+:host(.v2off-emprest) .v2wish{display:none!important}
 `; TR.append(st); }
 // ---------- dados ----------
 const gfSrv = { at: 0, giving: null, given: [], received: [] };
@@ -189,8 +184,9 @@ openGifts = function () {
 const gfAddDaysFrom = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 // ---------- perfil: abas Perfil · Desejos ----------
 const v2WishMine = () => lib().filter((e) => exOf(e).own === 'quero');
-async function v2WishPaint(v, d) {
-  let p = v.querySelector('.v2wish'); if (!p) { p = document.createElement('section'); p.className = 'v2wish'; v.querySelector('.sl-body').append(p); }
+async function v2WishPaint(v, d, host) {
+  host = host || v.querySelector('.v3pane[data-k=des]') || v.querySelector('.sl-body');
+  let p = host.querySelector('.v2wish'); if (!p) { p = document.createElement('section'); p.className = 'v2wish'; host.append(p); }
   const P = db.prefs || {}, mine = !!d.self, who = gfFirst(d.displayName || '@' + d.handle);
   const tip = (k, txt) => (P[k] ? '' : '<div class="v2tip"><span><b>Dica:</b> ' + txt + '</span><button type="button" data-tip="' + k + '" aria-label="Entendi">✕</button></div>');
   if (mine) {
@@ -212,14 +208,14 @@ async function v2WishPaint(v, d) {
             : '<button type="button" class="v2wg" data-g="' + i + '">🎁 Vou dar</button>';
           return '<div class="v2wi"><button type="button" class="cvb" data-i="' + i + '">' + cvh(b.title, b.cover, '') + '</button><b>' + esc(b.title) + '</b><small>' + esc(String(b.author || '').split(',')[0]) + '</small>' + st + '</div>'; }).join('') + '</div>'
         : '<p class="v2wempty">' + esc(who) + ' ainda não marcou livros em “Quero ter”.</p>');
-    p.querySelectorAll('[data-g]').forEach((bt) => bt.addEventListener('click', () => { const b = L[+bt.dataset.g], c = claims.get(exKey(b.title)), redo = () => { if (S.fpData === d) v2WishPaint(v, d); };
+    p.querySelectorAll('[data-g]').forEach((bt) => bt.addEventListener('click', () => { const b = L[+bt.dataset.g], c = claims.get(exKey(b.title)), redo = () => { if (S.fpData === d) v2WishPaint(v, d, p.parentElement); };
       if (c && c.mine) gfManage({ h: d.handle, name: d.displayName || d.handle, title: b.title, author: b.author, cover: b.cover, due: c.due || null }, redo);
       else gfReserve(d.handle, d.displayName, b, redo); }));
     // me avise se liberar: quem reservou não fica sabendo; se várias pessoas pedirem, todas recebem, e quem reservar primeiro leva
     p.querySelectorAll('[data-w]').forEach((bt) => bt.addEventListener('click', async () => { const b = L[+bt.dataset.w], off = !!bt.dataset.on;
       const r = await sapi(off ? 'DELETE' : 'POST', gfPath(d.handle) + '/watch' + (off ? '?title=' + encodeURIComponent(b.title) : ''), off ? undefined : { title: String(b.title).slice(0, 300) }).catch(() => null);
       if (!r || r.status >= 300) return toast('Não consegui agora');
-      toast(off ? 'Aviso cancelado' : 'Combinado: se a reserva cair, você recebe um aviso. Quem reservar primeiro leva.'); if (S.fpData === d) v2WishPaint(v, d); }));
+      toast(off ? 'Aviso cancelado' : 'Combinado: se a reserva cair, você recebe um aviso. Quem reservar primeiro leva.'); if (S.fpData === d) v2WishPaint(v, d, p.parentElement); }));
     p.querySelectorAll('.cvb[data-i]').forEach((bt) => bt.addEventListener('click', () => { const b = L[+bt.dataset.i]; try { openAnyBook(b.title, b.author, b.cover); } catch {} }));
   }
   try { paintCv(p); } catch {}
@@ -230,21 +226,3 @@ async function v2WishPaint(v, d) {
     let e = lib().find((x) => normT(x.title) === normT(it.title)); if (!e) e = addToLibrary(it, null, 'QUERO', { quiet: true });
     if (!e) return; e.ex = { ...exOf(e), own: 'quero' }; save(); try { publishSnapshot(); } catch {} toast('“' + e.title + '” está nos seus Desejos'); v2WishPaint(v, d); } }));
 }
-{ let tm = 0; const put = () => {
-    const v = $('#shelflist'), d = S.fpData; if (!v || v.hidden || !d || !d.handle) { v && v.classList.remove('v2des'); return; }
-    const body = v.querySelector('.sl-body'); if (!body) return;
-    const isProf = !!(body.querySelector(':scope > .yo-top') || body.querySelector(':scope > .v2pv'));
-    if (!isProf || !v2Mods().emprest) { v.classList.remove('v2des'); body.querySelector(':scope > .v2ptabs')?.remove(); return; }
-    if (S.v2ptabH !== d.handle) { S.v2ptabH = d.handle; S.v2ptab = 'perfil'; }
-    const anchor = body.querySelector(':scope > .v2pv') || body.querySelector(':scope > .yo-nums') || body.querySelector(':scope > .yo-top');
-    let tb = body.querySelector(':scope > .v2ptabs');
-    if (!tb) { tb = document.createElement('div'); tb.className = 'v2ptabs'; tb.setAttribute('role', 'tablist');
-      tb.innerHTML = [['perfil', 'Perfil'], ['des', 'Desejos']].map(([k, n]) => '<button type="button" role="tab" data-pt="' + k + '">' + n + '</button>').join('');
-      tb.querySelectorAll('[data-pt]').forEach((b) => b.addEventListener('click', () => { S.v2ptab = b.dataset.pt; put(); v.scrollTop = Math.min(v.scrollTop, Math.max(0, tb.offsetTop - 60)); })); }
-    if (anchor && anchor.nextElementSibling !== tb) anchor.after(tb);
-    tb.querySelectorAll('[data-pt]').forEach((b) => { const on = b.dataset.pt === S.v2ptab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-    const w = body.querySelector(':scope > .v2wish'); if (w && w.dataset.h !== d.handle) w.remove();
-    v.classList.toggle('v2des', S.v2ptab === 'des');
-    if (S.v2ptab === 'des' && !body.querySelector(':scope > .v2wish')) { const s = document.createElement('section'); s.className = 'v2wish'; s.dataset.h = d.handle; body.append(s); v2WishPaint(v, d); }
-  };
-  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 120); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }

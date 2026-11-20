@@ -18,7 +18,7 @@
     return r; }; }
 async function v2ModCheck() {
   if (!connected()) return; let r; try { r = await sapi('GET', '/v1/me/moderation'); } catch { return; } if (!r || r.status !== 200 || !r.data) return;
-  const m = r.data; S.modStatus = m; const notes = (m.notices || []);
+  const m = r.data; m.status = /^(suspended|banned)$/.test(m.status) ? m.status : 'ok'; S.modStatus = m; const notes = Array.isArray(m.notices) ? m.notices.filter((n) => n && n.id && n.title) : [];
   const showStatus = m.status !== 'ok' && !S.modShown; if (!showStatus && !notes.length) return;
   if (showStatus) S.modShown = 1;
   const ed = $('#editor'); if (!ed || !ed.hidden) { setTimeout(v2ModCheck, 8000); return; }
