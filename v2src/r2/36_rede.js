@@ -169,7 +169,7 @@ function rdShelfBtn(it) {
   if (!it.book || it.book2) return '';
   const e = myBookByKey(it.book.key || normT(it.book.title));
   if (!e) return '<button type="button" class="rd-ql">＋ Quero ler</button>';
-  const t = { LIDO: '✓ Lido', QUERO: '✓ Na sua fila', LENDO: 'Lendo', HIBERNANDO: 'Pausado', ABANDONEI: 'Abandonado' }[e.status] || 'Na estante';
+  const t = { LIDO: '<i class=v3e data-i=ok></i>Lido', QUERO: '<i class=v3e data-i=ok></i>Na sua fila', LENDO: 'Lendo', HIBERNANDO: 'Pausado', ABANDONEI: 'Abandonado' }[e.status] || 'Na estante';
   return '<button type="button" class="rd-ql in">' + t + '</button>';
 }
 function rdCardHTML(it, i, opts = {}) {

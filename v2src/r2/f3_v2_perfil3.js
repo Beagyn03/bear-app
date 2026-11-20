@@ -83,7 +83,7 @@ function v3Data(d) {
 function v3Head(v, d, x) {
   const m = v2Mods(), self = !!d.self, prev = self && S.v3prev, oldTop = v.querySelector('.sl-body > .yo-top'), pv = v.querySelector('.sl-body > .v2pv');
   const av = (oldTop && oldTop.querySelector('.yo-av')) || (pv && pv.querySelector('.avx > *'));
-  const bio = d.bio || (self ? String(((db.prefs || {}).bio) || '') : '') || (oldTop && (oldTop.querySelector('.yo-bio, .yo-frase, q') || {}).textContent) || '';
+  const bio = d.bio || (self ? String((T().bio || (db.prefs || {}).bio) || '') : '') || (S.v3bio || {})[d.handle] || ''; // frase: a sua fica em T().bio; a de outra pessoa vem de /v1/users/:h/bio
   const isFr = !self && (d.isFriend || ((SOC.fr && SOC.fr.friends) || []).some((f) => f.handle === d.handle));
   const amz = m.comunidade && x.am != null ? ' · <button type="button" data-v3="amigos"><b>' + x.am + '</b> ' + (x.am === 1 ? 'amizade' : 'amizades') + '</button>' : '';
   const lag = x.lendo.length ? '<div class="v3lag"><span>Lendo</span>' + x.lendo.map((b, i) => (i ? '<em>·</em>' : '') + '<button type="button" data-lag="' + i + '">' + esc(b.title) + ' <i>' + Math.round(Number(b.pct) || 0) + '%</i></button>').join('') + '</div>' : '';
@@ -102,7 +102,7 @@ function v3Hub() {
   const loans = (() => { try { return lib().filter((e) => e.ex && e.ex.loan).length; } catch { return 0; } })(), gifts = (() => { try { return gfList().length; } catch { return 0; } })();
   const H = [['metas', 'meta', 'Metas', s.meta ? s.meta.feitos + '/' + s.meta.alvo : 'definir', m.metas], ['stats', 'stats', 'Estatísticas', todayISO().slice(0, 4), true],
     ['resumo', 'cal', 'Resumo', (() => { try { return v2RsMonth(1).nome; } catch { return 'do mês'; } })(), true],
-    ['orbita', 'orb', 'Órbita', (() => { try { const n = streakNow(); return n ? n + (n === 1 ? ' dia' : ' dias') : 'hoje'; } catch { return ''; } })(), m.orbita],
+    ['orbita', 'orb', 'Órbita', (() => { try { const n = streakNow(); return n + (n === 1 ? ' dia' : ' dias'); } catch { return ''; } })(), m.orbita],
     ['emprest', 'swap', 'Empréstimos', loans ? loans + ' fora' : 'nenhum', m.emprest], ['presentes', 'gift', 'Presentes', gifts ? String(gifts) : 'nenhum', m.emprest]].filter((x) => x[4]);
   return '<div class="v3hubh"><b>Minha leitura</b><small>só você vê</small></div><div class="v3hub n' + H.length + '">' + H.map(([k, i, n, sm]) => '<button type="button" data-hub="' + k + '">' + v3pi(i, 20) + '<b>' + n + '</b><small>' + esc(sm) + '</small></button>').join('') + '</div>';
 }
@@ -134,7 +134,8 @@ function v3Build(v, d) {
   v.classList.add('v3pf-on');
   // cabeçalho
   let hd = body.querySelector(':scope > .v3pf');
-  const sig = JSON.stringify([key, x, S.v3prev, m, d.displayName, d.bio, d.isFriend]);
+  if (!d.bio && !(self && T().bio) && d.handle && !(S.v3bioAsk = S.v3bioAsk || {})[d.handle]) { S.v3bioAsk[d.handle] = 1; sapi('GET', '/v1/users/' + encodeURIComponent(d.handle) + '/bio').then((r) => { const b = r.status === 200 && r.data && r.data.bio; if (!b) return; (S.v3bio = S.v3bio || {})[d.handle] = b; try { v3Build(v, d); } catch {} }).catch(() => {}); }
+  const sig = JSON.stringify([key, x, S.v3prev, m, d.displayName, d.bio, d.isFriend, self ? T().bio : '', (S.v3bio || {})[d.handle]]);
   if (!hd) { hd = document.createElement('section'); hd.className = 'v3pf'; }
   const top = body.querySelector(':scope > .sl-top'); if ((top ? top.nextElementSibling : body.firstElementChild) !== hd) (top ? top.after(hd) : body.prepend(hd));
   if (hd.dataset.sig !== sig) { hd.dataset.sig = sig; hd.innerHTML = v3Head(v, d, x);

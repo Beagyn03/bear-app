@@ -93,7 +93,10 @@ function v2SesOpen(e, s) {
   TR.append(w); draw();
   v2Tick = setInterval(() => { const t = w.querySelector('#v2tm'); if (!w.isConnected) return clearInterval(v2Tick); if (t) t.textContent = v2Clock(s); }, 1000);
 }
-const V2FEEL = ['😱 Chocante', '🥹 Emocionante', '😍 Apaixonante', '😴 Arrastado', '🤯 Reviravolta', '😌 Tranquilo'];
+// Emoções da sessão = as 6 principais da lista única do app (Bia, 20/11; protótipo UPF). As antigas salvas em db.focus[].feel
+// continuam guardadas; V2FEEL_OLD diz para qual da lista nova cada uma conta (Tranquilo não conta: não é emoção).
+const V2FEEL = ['Não paro', 'Tensão', 'Reviravolta', 'Chorei', 'Ri alto', 'Arrastado'];
+const V2FEEL_OLD = { '😱 Chocante': 'Surpreendente', '🥹 Emocionante': 'Me emocionei', '😍 Apaixonante': 'Me apaixonei', '😴 Arrastado': 'Arrastado', '🤯 Reviravolta': 'Reviravolta', '😌 Tranquilo': null };
 // Encerrar: pergunta onde parou (página exata, ou % no e-book), já com a estimativa pelo ritmo da pessoa; capítulo é opcional
 function v2Pace() { const f = (db.focus || []).filter((x) => x.minutes > 0 && x.pages > 0).slice(-20); const m = f.reduce((a, x) => a + x.minutes, 0), p = f.reduce((a, x) => a + x.pages, 0); return m >= 10 ? p / m : 0.6; }
 function v2SesEnd(e, s, w) {
@@ -107,7 +110,7 @@ function v2SesEnd(e, s, w) {
     <p class="hint" id="v2hint">${est > s.pg0 ? 'Estimativa pelo seu ritmo. Corrija se for outra.' : 'Digite a página em que parou.'}</p>
     <input class="cap" id="v2cap" type="text" maxlength="40" placeholder="Capítulo (opcional)" value="${esc(s.cap || '')}">
     <div class="nums" style="margin-top:.8rem"><div><b>${secs < 60 ? '<1' : min}</b><small>minutos</small></div><div><b id="v2np">0</b><small>páginas</small></div><div><b id="v2nr">—</b><small>pág. por hora</small></div></div>
-    <div class="lb">Como foi?</div><div class="ch">${V2FEEL.map((f, i) => `<button type="button" data-f="${i}">${f.replace(/^\S+\s/, '')}</button>`).join('')}</div>
+    <div class="lb">Como foi?</div><div class="ch">${V2FEEL.map((f, i) => `<button type="button" data-f="${i}">${f}</button>`).join('')}</div>
     <div class="ac"><button type="button" data-a="back">Continuar lendo</button><button type="button" class="p" data-a="save">Salvar</button></div>
     <button type="button" data-a="drop" style="display:block;margin:.7rem auto 0;border:0;background:none;color:var(--ink-2);font:inherit;font-size:.78rem;font-weight:800;text-decoration:underline">Descartar sessão</button></div>`;
   const inp = o.querySelector('#v2stop');
