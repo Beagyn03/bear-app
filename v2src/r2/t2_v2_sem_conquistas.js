@@ -35,3 +35,12 @@ Object.assign(V3EMO, {
 { const st = document.createElement('style'); st.textContent = '.pop-it > span{display:inline-flex;align-items:center;gap:.55rem}.pop-it svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.pop-it.danger{color:#d4573d!important}'; TR.append(st); }
 // Avisos: as abas Notificações/Mensagens ficam na mesma altura nas duas telas (teste 20/11 item 23: pulava 9 px)
 { const st = document.createElement('style'); st.textContent = '#shelflist .sl-body > .av-tabs:first-child,#shelflist .sl-body > .av-tabs{margin-top:12px!important}'; TR.append(st); }
+// Comunidade abre na hora (teste 20/11 item 24: "Carregando a Comunidade…" por 3–4 s): o último feed de cada aba fica guardado
+// no aparelho (30 posts, por conta) e aparece logo; a resposta nova do servidor substitui sem piscar.
+{ const key = (sc) => 'v6c:' + ((socialProfile && socialProfile.handle) || '') + ':' + sc;
+  const hydrate = () => { if (!socialProfile || !socialProfile.handle) return; ['rede', 'amigos'].forEach((sc) => { const F = v6Feed(sc); if (F.items.length || F.at) return;
+    try { const c = JSON.parse(localStorage.getItem(key(sc)) || 'null'); if (c && Array.isArray(c.items) && c.items.length) { F.items = c.items; F.at = 1; F.more = false; if (sc === 'rede') { S.rd.items = F.items; } } } catch {} }); };
+  const _p = v6Paint; v6Paint = function () { try { hydrate(); } catch {} return _p.apply(this, arguments); };
+  const _l = v6Load; v6Load = async function (sc, more) { const r = await _l.apply(this, arguments);
+    try { const F = v6Feed(sc); if (!more && F.at > 1 && !F.err && socialProfile && socialProfile.handle) localStorage.setItem(key(sc), JSON.stringify({ t: Date.now(), items: F.items.slice(0, 30) })); } catch {}
+    return r; }; }

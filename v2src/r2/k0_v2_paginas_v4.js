@@ -171,6 +171,8 @@ v2FuncoesSheet = function () {
     G.forEach(([t, rows]) => { const L = rows.filter(Boolean); if (!L.length) return; wrap.insertAdjacentHTML('beforeend', '<div class="aj-g">' + t + '</div>'); const card = document.createElement('div'); card.className = 'aj-card'; L.forEach((x) => card.append(x)); wrap.append(card); });
     const end = document.createElement('div'); end.className = 'aj-card'; end.style.marginTop = '1.1rem'; [login, out, del].filter(Boolean).forEach((x) => end.append(x)); if (end.children.length) wrap.append(end);
     [...box.children].forEach((x) => { if (!keep.includes(x)) x.remove(); }); box.append(wrap);
+    // Ajustes sempre abre no topo (teste 20/11 item 46: uma vez abriu rolado até o fim)
+    requestAnimationFrame(() => { try { box.scrollTop = 0; const L = $('#lista'); if (L) L.scrollTop = 0; const w = TR.querySelector('.wrap'); if (w) w.scrollTop = 0; window.scrollTo(0, 0); } catch {} });
   } catch (err) { console.warn('ajustes v4', err); }
   return r; }; }
 
