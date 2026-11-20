@@ -3,6 +3,7 @@
 // Peguei emprestado (de quem, quando, até quando). Lembrete de devolução no Início. A amiga ainda não vê o empréstimo do lado
 // dela (fase 2, precisa da API).
 { const st = document.createElement('style'); st.textContent = `
+.ex-2col{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;align-items:end}.ex-2col .ex-f{margin:0;min-width:0}.ex-2col .ex-f label small{font-weight:600;color:var(--ink-2);font-size:.72rem}.ex-2col input{width:100%;box-sizing:border-box;min-height:44px}
 .ex-opt{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem}
 .ex-opt button{border:1.5px solid var(--line);border-radius:14px;padding:.6rem .3rem;background:var(--bg);color:var(--ink);font:inherit;font-size:.8rem;font-weight:800;cursor:pointer;display:grid;gap:.15rem;justify-items:center}
 .ex-opt button i{font-style:normal;font-size:1.2rem}.ex-opt button.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--panel));color:var(--acc)}
@@ -56,8 +57,9 @@ function exSheet(e, view) {
     } else {
       const L = mode === 'loan' ? x.loan || {} : x.borrow || {}, cur = who || (mode === 'loan' ? L.to : L.from);
       h += '<h4>' + (mode === 'loan' ? 'Para quem' : 'De quem') + '</h4>' + whoPick(cur)
-        + '<div class="ex-f"><label>' + (mode === 'loan' ? 'Quando emprestou' : 'Quando pegou') + '</label><input type="date" class="ex-at" max="' + today + '" value="' + esc(L.at || today) + '"></div>'
-        + '<div class="ex-f"><label>' + (mode === 'loan' ? 'Devolver até (opcional)' : 'Devolver até (opcional)') + '</label><input type="date" class="ex-due" value="' + esc(L.due || '') + '"></div>'
+        // datas lado a lado (Bia, 20/11): rótulos curtos, devolver vazio mostra 'sem data'
+        + '<div class="ex-2col"><div class="ex-f"><label>' + (mode === 'loan' ? 'Emprestei em' : 'Peguei em') + '</label><input type="date" class="ex-at" max="' + today + '" value="' + esc(L.at || today) + '"></div>'
+        + '<div class="ex-f"><label>Devolver até <small>(opcional)</small></label><input type="' + (L.due ? 'date' : 'text') + '" class="ex-due" placeholder="sem data" onfocus="this.type=&quot;date&quot;" onblur="if(!this.value)this.type=&quot;text&quot;" value="' + esc(L.due || '') + '"></div></div>'
         + '<div class="acts"><button type="button" data-a="cancel">Voltar</button><button type="button" class="p" data-a="save">' + (mode === 'loan' ? 'Registrar empréstimo' : 'Salvar') + '</button></div>';
     }
     sh.innerHTML = h + '</div>'; try { paintCv(sh); } catch {}

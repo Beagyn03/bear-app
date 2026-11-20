@@ -136,6 +136,15 @@ function v4PreHTML(e) {
 }
 const v4Clock = (s) => { const now = s.pz || Date.now(), el = Math.max(0, Math.floor((now - s.start - (s.off || 0)) / 1000)), v = s.dur ? Math.max(0, s.dur * 60 - el) : el, h = Math.floor(v / 3600), m = Math.floor((v % 3600) / 60), x = v % 60, p = (n) => String(n).padStart(2, '0');
   return { t: (h ? h + ':' + p(m) : p(m)) + ':' + p(x), done: !!(s.dur && v === 0), secs: el }; };
+// página estimada agora (Bia, 20/11): se a pessoa já atualizou na sessão, essa; senão início + minutos lidos × ritmo dela
+// (páginas/minuto das sessões anteriores); sem ritmo, a última página registrada.
+function v4EstPg(e, s) { if (!s) return 0; if (s.pgSet || s.pg !== s.pg0) return s.pg;
+  const F = (db.focus || []).filter((x) => Number(x.minutes) > 0 && Number(x.pages) > 0).slice(-20), mins = F.reduce((a, x) => a + Number(x.minutes), 0), pgs = F.reduce((a, x) => a + Number(x.pages), 0);
+  if (!mins) return s.pg; const est = s.pg0 + Math.round((v4Clock(s).secs / 60) * (pgs / mins)); const { total } = v4Info(e); return total ? Math.min(total, est) : est; }
+const v4PgLine = (P, what) => `<div class="v6pgl"><span>na pág.</span><button data-a="v6pgm" aria-label="Uma página antes">−</button><input id="v6edpg" inputmode="numeric" value="${P.pg}" aria-label="Página"><button data-a="v6pgp" aria-label="Uma página depois">+</button></div>
+    <small class="v6pgx">${what === 'eco' ? 'aparece para quem chegar na pág. ' + P.pg : 'só você vê'}</small>
+    <label class="tog v6pgup"><input type="checkbox" data-a="v6up" ${P.up ? 'checked' : ''}><span></span>Atualizar minha leitura para a pág. <b class="v6pgn">${P.pg}</b></label>`;
+function v4PgPaint(P, keepInput) { if (!V4) return; const i = V4.querySelector('#v6edpg'); if (i && !keepInput) i.value = P.pg; const x = V4.querySelector('.v6pgx'); if (x && /chegar/.test(x.textContent)) x.textContent = 'aparece para quem chegar na pág. ' + P.pg; const n = V4.querySelector('.v6pgn'); if (n) n.textContent = P.pg; }
 function v4SesHTML(e, s) {
   const st = v4State(), { total } = v4Info(e), pg = s.pg, c = v4Clock(s), due = v4Due(e), E = V4ECO.get(e.id);
   const tools = [v4On('trechos') ? `<button data-a="qtfoto">${v4ic('scan', 18)}Trecho por foto</button>` : '', `<button data-a="notaed">${v4ic('pen', 18)}Anotar</button>`, v4On('comunidade') ? `<button data-a="ecoed">${v4ic('orb', 18)}Deixar um eco</button>` : ''].filter(Boolean);
@@ -159,14 +168,14 @@ function v4PgEdHTML(e, s) { const st = v4State(), P = st.pgEd || (st.pgEd = { u:
     <div class="pgv"><b id="v4pgl">${v4Lbl(e, P.v, P.u)}</b><small id="v4pgs">${v4Sub(e, P.u)}</small></div>
     <div class="pgsl"><button data-a="pgst" data-n="-1" aria-label="Voltar">−</button><input type="range" id="v4pgr" min="0" max="${total || Math.max(500, P.v + 100)}" value="${P.v}" aria-label="Página"><button data-a="pgst" data-n="1" aria-label="Avançar">+</button></div>
     <div class="row" style="gap:8px;margin-top:10px"><button class="btn s" style="flex:1" data-a="pged">Cancelar</button><button class="btn p" style="flex:1" data-a="pgok">Salvar</button></div></div>`; }
-function v4EcoEdHTML(e, s) { const E = v4State().ecoEd || (v4State().ecoEd = { t: '', rec: false });
-  return `<div class="pged eced"><div class="eh"><b>Deixar um eco</b><small>na pág. ${s.pg} · aparece para quem chegar aqui</small></div>
+function v4EcoEdHTML(e, s) { const E = v4State().ecoEd || (v4State().ecoEd = { t: '', rec: false, pg: v4EstPg(e, s), up: true });
+  return `<div class="pged eced"><div class="eh"><b>Deixar um eco</b></div>${v4PgLine(E, 'eco')}
     <div class="ebox${E.rec ? ' rec' : ''}"><textarea id="v4ecot" maxlength="80" rows="2" placeholder="${E.rec ? 'Ouvindo… pode falar' : 'O que você sentiu nesta página?'}">${esc(E.t)}</textarea>
       <button class="mic" data-a="ecomic" aria-label="${E.rec ? 'Parar de ouvir' : 'Falar em vez de digitar'}">${E.rec ? '<i></i><i></i><i></i>' : v4ic('mic', 22)}</button></div>
     <div class="emeta"><span>${E.rec ? 'ouvindo… toque de novo para parar' : 'toque no microfone e fale; o texto aparece aqui'}</span><span id="v4ecoc">${E.t.length}/80</span></div>
     <div class="row" style="gap:8px;margin-top:10px"><button class="btn s" style="flex:1" data-a="ecoed">Cancelar</button><button class="btn p" style="flex:1" data-a="ecook">Deixar eco</button></div></div>`; }
-function v4NotaEdHTML(e, s) { const N = v4State().notaEd || (v4State().notaEd = { t: '', rec: false, ocr: '' });
-  return `<div class="pged eced"><div class="eh"><b>Anotar</b><small>na pág. ${s.pg} · só você vê</small></div>
+function v4NotaEdHTML(e, s) { const N = v4State().notaEd || (v4State().notaEd = { t: '', rec: false, ocr: '', pg: v4EstPg(e, s), up: true });
+  return `<div class="pged eced"><div class="eh"><b>Anotar</b></div>${v4PgLine(N, 'nota')}
     <div class="ebox${N.rec ? ' rec' : ''}"><textarea id="v4notat" rows="3" placeholder="${N.rec ? 'Ouvindo… pode falar' : 'O que você pensou?'}">${esc(N.t)}</textarea></div>
     <div class="ntools"><button class="${N.rec ? 'on' : ''}" data-a="nmic">${v4ic('mic', 18)}<span>${N.rec ? 'Ouvindo…' : 'Ditar'}</span></button><button data-a="nfoto">${v4ic('scan', 18)}<span>Foto vira texto</span></button></div>
     ${N.ocr ? `<div class="ocrw">${esc(N.ocr)}</div>` : ''}
@@ -233,15 +242,16 @@ function v4UpdHTML(k, e, s) {
   const st = v4State(), U = st.upd || (v4UpdInit(), st.upd), { now, total } = v4Info(e), com = v4On('comunidade');
   const secs = s ? v4Clock(s).secs : 0;
   return `<div class="sh-bk">${v4cv(e)}<div><h3>${k === 'end' ? 'Em que página você parou?' : 'Atualizar página'}</h3><span class="mut">${esc(e.title)} · estava na pág. ${k === 'end' && s ? s.pg0 : now}</span></div></div>
+    ${k === 'end' && s ? `<button class="btn s w v6cont" data-a="close" style="margin-top:10px">${v4ic('ler', 16)}Continuar lendo</button>` : ''}
     ${k === 'end' && s ? `<p class="mut" style="margin:6px 0 0">Sessão de ${Math.max(1, Math.round(secs / 60))} min · ${Math.max(0, s.pg - s.pg0)} páginas. Confira a página e salve.</p>` : ''}
     <div class="pgin"><input id="v4pgv" inputmode="${U.u === 'min' ? 'text' : 'numeric'}" value="${v4Fmt(e, U.pg, U.u)}" aria-label="Posição"><span id="v4pgvu">${v4UnitTail(e, U.u)}</span></div>
     <div class="pgsl up"><button data-a="ust" data-n="-1" aria-label="Voltar">−</button><input type="range" id="v4upr" min="0" max="${total || Math.max(500, U.pg + 100)}" value="${U.pg}" aria-label="Deslizar até a página"><button data-a="ust" data-n="1" aria-label="Avançar">+</button></div>
-    <div class="chips" style="justify-content:center;margin:0">${[['pg', 'página'], ['pct', '%'], ...(v4IsAudio(e) ? [['min', 'tempo']] : [])].map(([u, n]) => `<button class="chip ${U.u === u ? 'on' : ''}" data-a="updu" data-u="${u}">${n}</button>`).join('')}</div>
+    <div class="row" style="justify-content:space-between;align-items:center;gap:8px;margin-top:2px"><div class="chips" style="margin:0;padding:0">${[['pg', 'página'], ['pct', '%'], ...(v4IsAudio(e) ? [['min', 'tempo']] : [])].map(([u, n]) => `<button class="chip ${U.u === u ? 'on' : ''}" data-a="updu" data-u="${u}">${n}</button>`).join('')}</div><input class="fld cap" id="v4cap" placeholder="capítulo (opcional)" aria-label="Capítulo (opcional)" value="${esc(U.cap)}" style="flex:0 1 175px;min-width:150px;padding:7px 10px;font-size:12.5px"></div>
     <div class="lbl lblrow"><span>Como está sendo? <small>(até 3)</small></span><button data-a="upfmais">${U.more ? 'ver menos' : 'ver todas'}</button></div>
     <div class="chips wrap emo" id="v4fe" style="margin:0;padding:2px 0">${v4FeChips(U)}</div>
     <div class="lbl">Comentário <small>(opcional)</small></div>
     <div class="cbox${U.rec ? ' rec' : ''}"><textarea id="v4upc" rows="2" placeholder="${U.rec ? 'Ouvindo… pode falar' : 'O que achou deste trecho?'}">${esc(U.text)}</textarea><button class="mic2" data-a="upmic" aria-label="Ditar">${U.rec ? '<i></i><i></i><i></i>' : v4ic('mic', 18)}</button></div>
-    <div class="row" style="justify-content:space-between;margin-top:10px;gap:10px">${com ? `<label class="tog"><input type="checkbox" ${U.pub ? 'checked' : ''} data-a="uppub"><span></span>Publicar na Comunidade<small id="v4pubs">${U.pub ? (U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê') : 'fica só no seu diário'}</small></label>` : '<span></span>'}<input class="fld cap" id="v4cap" placeholder="cap." aria-label="Capítulo (opcional)" value="${esc(U.cap)}"></div>
+    <div class="row" style="justify-content:space-between;margin-top:10px;gap:10px">${com ? `<label class="tog"><input type="checkbox" ${U.pub ? 'checked' : ''} data-a="uppub"><span></span>Publicar na Comunidade<small id="v4pubs">${U.pub ? (U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê') : 'fica só no seu diário'}</small></label>` : ''}</div>
     <div id="v4pubx"${com && U.pub ? '' : ' hidden'}><div class="seg sm" style="margin-top:10px"><button class="${U.vis !== 'friends' ? 'on' : ''}" data-a="upvis" data-k="public">Todos</button><button class="${U.vis === 'friends' ? 'on' : ''}" data-a="upvis" data-k="friends">Só amizades</button></div>
     <label class="tog" style="margin-top:10px"><input type="checkbox" ${U.sp ? 'checked' : ''} data-a="upsp"><span></span>Tem spoiler<small id="v4sps">${U.sp ? `escondido para quem ainda não chegou na pág. ${U.pg}` : 'aparece aberto para todo mundo'}</small></label></div>
     <div class="row" style="margin-top:14px;gap:8px"><button class="btn s" data-a="fim">Terminei</button><button class="btn p" style="flex:1" data-a="savepg">Salvar</button></div>`;
@@ -407,20 +417,21 @@ function v4Click(ev) {
   if (a === 'pgok') { const nv = st.pgEd.v; s.pg = nv; v2SesPut(s); st.ed = null; st.pgEd = null; redraw();
     const before = new Set(((V4ECO.get(e.id) || {}).seen || []).map((x) => x.id));
     v4EcoLoad(e, nv).then((E) => { if (!E || !V4) return; const hits = (E.seen || []).filter((x) => !x.mine && !before.has(x.id)); redraw(); v4Float(hits); }); return; }
-  if (a === 'ecoed') { st.ed = st.ed === 'eco' ? null : 'eco'; st.ecoEd = st.ed ? { t: '', rec: false } : null; if (v4Rec) v4Dictate(); return redraw(); }
+  if (a === 'v6pgm' || a === 'v6pgp' || a === 'v6up') { const P = st.ed === 'eco' ? st.ecoEd : st.notaEd; if (!P) return; if (a === 'v6up') { P.up = !!b.checked; return; } const { total } = v4Info(e); P.pg = Math.max(1, Math.min(total || 99999, (P.pg || s.pg) + (a === 'v6pgp' ? 1 : -1))); return v4PgPaint(P); }
+  if (a === 'ecoed') { st.ed = st.ed === 'eco' ? null : 'eco'; st.ecoEd = st.ed ? { t: '', rec: false, pg: v4EstPg(e, s), up: true } : null; if (v4Rec) v4Dictate(); return redraw(); }
   if (a === 'ecomic') { const E = st.ecoEd; return v4Dictate((t) => { E.t = (E.t ? E.t + ' ' : '') + t; E.t = E.t.slice(0, 80); const ta = V4.querySelector('#v4ecot'); if (ta) ta.value = E.t; const c = V4.querySelector('#v4ecoc'); if (c) c.textContent = E.t.length + '/80'; }, (on) => { E.rec = on; const bx = V4.querySelector('.ebox'); if (bx) bx.classList.toggle('rec', on); const m = V4.querySelector('.ebox .mic'); if (m) m.innerHTML = on ? '<i></i><i></i><i></i>' : v4ic('mic', 22); }); }
   if (a === 'ecook') { const t = (st.ecoEd.t || '').trim(); if (!t) return toast('Escreva ou fale o seu eco'); if (!connected() || !socialProfile) return toast('Entre na sua conta e crie seu @usuário para deixar ecos');
     const { total } = v4Info(e); b.disabled = true;
-    sapi('POST', '/v1/echoes', { title: e.title, author: e.author || null, page: s.pg, total: total || null, text: t }).then((r) => {
-      if (r.status === 201) { const E = V4ECO.get(e.id) || { seen: [], ahead: [], aheadTotal: 0, aheadFriends: 0 }; E.seen = [...(E.seen || []), { ...r.data, mine: true, friend: false, handle: socialProfile.handle, displayName: socialProfile.displayName }]; V4ECO.set(e.id, E); S.v4myEcos = undefined; st.ed = null; st.ecoEd = null; if (v4Rec) v4Dictate(); redraw(); toast(`Eco deixado na pág. ${s.pg}`); }
+    sapi('POST', '/v1/echoes', { title: e.title, author: e.author || null, page: st.ecoEd.pg || s.pg, total: total || null, text: t }).then((r) => {
+      if (r.status === 201) { const pgE = (st.ecoEd && st.ecoEd.pg) || s.pg; if (st.ecoEd && st.ecoEd.up && pgE !== s.pg) { s.pg = pgE; s.pgSet = true; v2SesPut(s); } const E = V4ECO.get(e.id) || { seen: [], ahead: [], aheadTotal: 0, aheadFriends: 0 }; E.seen = [...(E.seen || []), { ...r.data, mine: true, friend: false, handle: socialProfile.handle, displayName: socialProfile.displayName }]; V4ECO.set(e.id, E); S.v4myEcos = undefined; st.ed = null; st.ecoEd = null; if (v4Rec) v4Dictate(); redraw(); toast(`Eco deixado na pág. ${pgE}`); }
       else { b.disabled = false; toast(r.status === 403 ? ((r.data && r.data.message) || 'Sua conta não pode publicar agora') : 'Não deu para deixar o eco agora'); } }).catch(() => { b.disabled = false; toast('Sem conexão: tente de novo'); }); return; }
-  if (a === 'notaed') { st.ed = st.ed === 'nota' ? null : 'nota'; st.notaEd = st.ed ? { t: '', rec: false, ocr: '' } : null; if (v4Rec) v4Dictate(); return redraw(); }
+  if (a === 'notaed') { st.ed = st.ed === 'nota' ? null : 'nota'; st.notaEd = st.ed ? { t: '', rec: false, ocr: '', pg: v4EstPg(e, s), up: true } : null; if (v4Rec) v4Dictate(); return redraw(); }
   if (a === 'nmic') { const N = st.notaEd; return v4Dictate((t) => { N.t = (N.t ? N.t + ' ' : '') + t; const ta = V4.querySelector('#v4notat'); if (ta) ta.value = N.t; }, (on) => { N.rec = on; const x = V4.querySelector('.ntools [data-a=nmic]'); if (x) { x.classList.toggle('on', on); x.querySelector('span').textContent = on ? 'Ouvindo…' : 'Ditar'; } }); }
   if (a === 'nfoto') { const N = st.notaEd; return v4PickPhoto(async (f) => { const w = (m) => { let o = V4.querySelector('.eced .ocrw'); if (!o) { o = document.createElement('div'); o.className = 'ocrw'; V4.querySelector('.ntools').after(o); } o.textContent = m; };
     const t = await v4Ocr(f, w); w(t ? 'Pronto: o texto da foto entrou na anotação.' : ''); if (t) { N.t = (N.t ? N.t + ' ' : '') + t; const ta = V4.querySelector('#v4notat'); if (ta) ta.value = N.t; } }); }
-  if (a === 'notaok') { const t = (st.notaEd.t || '').trim(); if (!t) return toast('Escreva, dite ou fotografe uma página'); addNote(e, t, s.pg); st.ed = null; st.notaEd = null; if (v4Rec) v4Dictate(); redraw(); return toast(`Anotação salva na pág. ${s.pg}`); }
+  if (a === 'notaok') { const t = (st.notaEd.t || '').trim(); if (!t) return toast('Escreva, dite ou fotografe uma página'); const pgN = st.notaEd.pg || s.pg; addNote(e, t, pgN); if (st.notaEd.up && pgN !== s.pg) { s.pg = pgN; s.pgSet = true; v2SesPut(s); } st.ed = null; st.notaEd = null; if (v4Rec) v4Dictate(); redraw(); return toast(`Anotação salva na pág. ${pgN}`); }
   if (a === 'qtfoto') return v4PickPhoto(async (f) => { toast('Lendo a foto…'); const t = await v4Ocr(f, () => {}); V4.hidden = true; saveQuote(e); const ed = $('#editor');
-    setTimeout(() => { const q = ed && ed.querySelector('#qt-txt'); if (q && t) q.value = t.slice(0, 400); const p = ed && ed.querySelector('#qt-pg'); if (p && s) p.value = s.pg; }, 60);
+    setTimeout(() => { const q = ed && ed.querySelector('#qt-txt'); if (q && t) q.value = t.slice(0, 400); const p = ed && ed.querySelector('#qt-pg'); if (p && s) p.value = v4EstPg(e, s); }, 60);
     const ob = new MutationObserver(() => { if (ed.hidden) { ob.disconnect(); if (V4) V4.hidden = false; } }); if (ed) ob.observe(ed, { attributes: true, attributeFilter: ['hidden'] }); });
   if (a === 'amb') { if (!s) return; s.amb = d.k || null; if (!s.amb) delete s.amb; v2SesPut(s); v4AmbPlay(d.k); if (!d.k) { st.sheet = null; return redraw(); }
     V4.querySelectorAll('.sheet .chip[data-a=amb]').forEach((x) => x.classList.toggle('on', x === b)); const tb = V4.querySelector('.ses .top [data-s=amb]'); if (tb) { tb.textContent = d.k; tb.classList.add('on'); } const off = V4.querySelector('.sheet .btn[data-a=amb]'); if (off) off.textContent = 'Desligar som'; return; }
@@ -466,6 +477,7 @@ function v4Input(ev) {
   if (t.id === 'v4pgr') { st.pgEd.v = Number(t.value); return v4PgSync(e); }
   if (t.id === 'v4ecot') { st.ecoEd.t = t.value; const c = V4.querySelector('#v4ecoc'); if (c) c.textContent = t.value.length + '/80'; return; }
   if (t.id === 'v4notat') { st.notaEd.t = t.value; return; }
+  if (t.id === 'v6edpg') { const P = st.ed === 'eco' ? st.ecoEd : st.notaEd; if (!P) return; const n = parseInt(t.value, 10); if (n > 0) { P.pg = n; v4PgPaint(P, true); } return; }
   if (t.id === 'v4upr') { st.upd.pg = Number(t.value); const i = V4.querySelector('#v4pgv'); if (i) i.value = v4Fmt(e, st.upd.pg, st.upd.u); return v4UpdSync(e); }
   if (t.id === 'v4pgv') { const v = v4Parse(e, t.value, st.upd.u); if (v != null) { st.upd.pg = v; const r = V4.querySelector('#v4upr'); if (r) r.value = v; const sps = V4.querySelector('#v4sps'); if (sps && st.upd.sp) sps.textContent = `escondido para quem ainda não chegou na pág. ${v}`; } return; }
   if (t.id === 'v4upc') { st.upd.text = t.value; return; }
