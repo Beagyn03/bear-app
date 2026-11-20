@@ -13204,14 +13204,14 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       list.sort((a, z) => new Date(z.createdAt) - new Date(a.createdAt)); // por ordem de postagem (mais recente primeiro)
       const total = mineLocal.length + data.revs.length + data.posts.length;
       sec.innerHTML = '<div class="br-top"><div class="br-avg">' + (data.avg != null ? '<b>' + esc(pawTxt(data.avg)) + '</b><small>média de ' + plural(data.count, 'nota', 'notas') + '</small>' : '<small>Ainda sem avaliações</small>') + '</div><button type="button" class="rd-new2">+ Comentar</button></div>'
-        + (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['com', 'Comentários']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
-          + '<select data-n aria-label="Filtrar por nota"><option value="">Todas as notas</option><option value="5">Nota 5</option><option value="4">4 e 4,5</option><option value="3">3 e 3,5</option><option value="2">Abaixo de 3</option></select>'
+        + (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
+          + (F.tipo !== 'aval' ? '' : '<select data-n aria-label="Filtrar por nota"><option value="">Todas as notas</option><option value="5">Nota 5</option><option value="4">4 e 4,5</option><option value="3">3 e 3,5</option><option value="2">Abaixo de 3</option></select>')
           + '<button type="button" data-sp class="' + (F.semSp ? 'on' : '') + '">Sem spoiler</button></div>' : '')
         + (list.length ? list.map((it, i) => rdCardHTML({ ...it, book: null }, i, it.local ? { noFoot: true } : {})).join('')
           : '<p class="bp-load">' + (total ? 'Nada com esses filtros.' : 'Ninguém comentou nem avaliou este livro ainda. Que tal começar?') + '</p>');
       const sel = sec.querySelector('select[data-n]'); if (sel) sel.value = F.nota;
       sec.querySelectorAll('.rd-card').forEach((c) => { const it = list[+c.dataset.i]; if (it && it.mine) c.classList.add('mine'); });
-      sec.querySelectorAll('[data-t]').forEach((b) => b.addEventListener('click', () => { F.tipo = b.dataset.t; draw(); }));
+      sec.querySelectorAll('[data-t]').forEach((b) => b.addEventListener('click', () => { F.tipo = b.dataset.t; if (F.tipo !== 'aval') F.nota = ''; draw(); }));
       sel?.addEventListener('change', () => { F.nota = sel.value; draw(); });
       sec.querySelector('[data-sp]')?.addEventListener('click', () => { F.semSp = !F.semSp; draw(); });
       sec.querySelector('.rd-new2').addEventListener('click', () => { try { openRdComposer({ book: { title, author: author || null, cover: lr ? lr.cover || null : null } }); } catch (err) { console.warn(err); } });
@@ -21541,6 +21541,45 @@ function openLembretes() {
       x.addEventListener('click', () => { try { closeEd(); } catch {} setTimeout(() => { try { feedPrefsSheet(); } catch { toast('Ajustes › Novidades no feed'); } }, 60); }); (all || fds[fds.length - 1]).after(x); }
   };
   const _on = openNotif; openNotif = function () { const r = _on.apply(this, arguments); const b = ed && ed.querySelector('.ed-body'); if (b) delete b.dataset.v6; setTimeout(enhance, 0); setTimeout(enhance, 120); return r; };
+}
+// --- l6_v2_livro_moldura.js ---
+// Página do livro + Moldura/selo + #editor limpo (Bia, 20/11).
+// G. Aba Minha leitura: o cartão Status deixa de ter seletor (duplicava o menu do livro) e o botão da ação principal
+//    ("Ler agora"/"Atualizar leitura"/"Avaliar" de quem já leu), que já estão no topo; vira texto "Lendo · pág. X de Y · Z%".
+//    Os números (início, fim, dias, pág./dia, focos) ficam. Mudar a situação só pelo "•••".
+// H. Aba Comunidade: sai o cartão "Convidar alguém para ler junto" (Ler junto fica no "•••" e no Hoje).
+// N. Moldura e selo saem da v2: sem item em Editar perfil/menus, sem editor, sem moldura no avatar nem selo no nome.
+//    As escolhas salvas não são apagadas, só não são usadas.
+// + #editor limpo: ao fechar, sai tudo que uma folha anterior deixou fora do .ed-body e as classes extras.
+{ const st = document.createElement('style'); st.textContent = `
+#shelflist .bp-card:has(> .bp-btn[data-a=buddy]){display:none!important}
+#shelflist .bp-card .bp-btn.pri[data-a=now],#shelflist .bp-card .bp-btn.pri[data-a=upd]{display:none!important}
+#shelflist .bp-row .v6sttxt{font-weight:800;color:var(--ink);font-size:.9rem;text-align:right}
+#aj-flair,#pf-flair,.fd-badge{display:none!important}
+[data-avh].framed{--frame:none!important}
+`; TR.append(st); }
+{ // G: cartão Status como texto
+  const fix = () => { const v = $('#shelflist'); if (!v || v.hidden) return;
+    v.querySelectorAll('select.bp-st:not([data-v6])').forEach((sel) => { sel.dataset.v6 = '1'; const card = sel.closest('.bp-card'); const lbl = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
+      const small = card && card.querySelector('.bp-small'), pct = card && card.querySelector('.rc-prog em');
+      const t = document.createElement('span'); t.className = 'v6sttxt'; t.textContent = [lbl, small ? small.textContent.replace(/^página/, 'pág.') : '', pct ? pct.textContent : ''].filter(Boolean).join(' · ');
+      sel.style.display = 'none'; sel.after(t); const lab = sel.parentElement && sel.parentElement.querySelector(':scope > span'); if (lab && /status/i.test(lab.textContent)) lab.textContent = 'Situação';
+      if (small) small.style.display = 'none';
+      // quem já leu: o "Avaliar/Editar" do cartão da avaliação repete a ação principal ("Minha avaliação")
+      if (sel.value === 'LIDO') v.querySelectorAll('.bp-card .bp-link[data-a=rate]').forEach((b) => { b.style.display = 'none'; });
+    }); };
+  let tm = 0; new MutationObserver(() => { if (!tm) tm = setTimeout(() => { tm = 0; fix(); }, 60); }).observe($('#shelflist') || TR, { childList: true, subtree: true });
+}
+{ // N: moldura e selo
+  try { flairSheet = function () { toast('Moldura e selo saíram desta versão'); }; } catch {}
+  try { editFrames = function () {}; } catch {}
+  try { paintFlairs = function () { TR.querySelectorAll('[data-avh].framed').forEach((n) => n.classList.remove('framed')); TR.querySelectorAll('.fd-badge').forEach((n) => n.remove()); }; } catch {}
+  const _pm = popMenu; popMenu = function (anchor, items) { return _pm.call(this, anchor, (items || []).filter((x) => !(x && /^Moldura e selo/.test(String(x.label || ''))))); };
+}
+{ // #editor: nada de uma folha vaza para a próxima
+  const ed = $('#editor'); if (ed) { const keep = new Set([...ed.children]), base = new Set([...ed.classList]);
+    const prune = () => { [...ed.children].forEach((c) => { if (!keep.has(c)) c.remove(); }); [...ed.classList].forEach((c) => { if (!base.has(c) && c !== 'ntpage') ed.classList.remove(c); }); const b = ed.querySelector('.ed-body'); if (b) { b.removeAttribute('style'); b.className = 'ed-body'; } };
+    new MutationObserver(() => { if (ed.hidden) prune(); }).observe(ed, { attributes: true, attributeFilter: ['hidden'] }); }
 }
 // --- m0_v2_perfil_fix.js ---
 // Correções do perfil (Bia, 20/11, prints do celular):

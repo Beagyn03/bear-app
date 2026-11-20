@@ -46,14 +46,14 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       list.sort((a, z) => new Date(z.createdAt) - new Date(a.createdAt)); // por ordem de postagem (mais recente primeiro)
       const total = mineLocal.length + data.revs.length + data.posts.length;
       sec.innerHTML = '<div class="br-top"><div class="br-avg">' + (data.avg != null ? '<b>' + esc(pawTxt(data.avg)) + '</b><small>média de ' + plural(data.count, 'nota', 'notas') + '</small>' : '<small>Ainda sem avaliações</small>') + '</div><button type="button" class="rd-new2">+ Comentar</button></div>'
-        + (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['com', 'Comentários']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
-          + '<select data-n aria-label="Filtrar por nota"><option value="">Todas as notas</option><option value="5">Nota 5</option><option value="4">4 e 4,5</option><option value="3">3 e 3,5</option><option value="2">Abaixo de 3</option></select>'
+        + (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
+          + (F.tipo !== 'aval' ? '' : '<select data-n aria-label="Filtrar por nota"><option value="">Todas as notas</option><option value="5">Nota 5</option><option value="4">4 e 4,5</option><option value="3">3 e 3,5</option><option value="2">Abaixo de 3</option></select>')
           + '<button type="button" data-sp class="' + (F.semSp ? 'on' : '') + '">Sem spoiler</button></div>' : '')
         + (list.length ? list.map((it, i) => rdCardHTML({ ...it, book: null }, i, it.local ? { noFoot: true } : {})).join('')
           : '<p class="bp-load">' + (total ? 'Nada com esses filtros.' : 'Ninguém comentou nem avaliou este livro ainda. Que tal começar?') + '</p>');
       const sel = sec.querySelector('select[data-n]'); if (sel) sel.value = F.nota;
       sec.querySelectorAll('.rd-card').forEach((c) => { const it = list[+c.dataset.i]; if (it && it.mine) c.classList.add('mine'); });
-      sec.querySelectorAll('[data-t]').forEach((b) => b.addEventListener('click', () => { F.tipo = b.dataset.t; draw(); }));
+      sec.querySelectorAll('[data-t]').forEach((b) => b.addEventListener('click', () => { F.tipo = b.dataset.t; if (F.tipo !== 'aval') F.nota = ''; draw(); }));
       sel?.addEventListener('change', () => { F.nota = sel.value; draw(); });
       sec.querySelector('[data-sp]')?.addEventListener('click', () => { F.semSp = !F.semSp; draw(); });
       sec.querySelector('.rd-new2').addEventListener('click', () => { try { openRdComposer({ book: { title, author: author || null, cover: lr ? lr.cover || null : null } }); } catch (err) { console.warn(err); } });
