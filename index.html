@@ -15289,6 +15289,9 @@ inSemana = function () { return ''; };
   const ready = (root) => { const c = root.querySelector('.v3-now:not(.empty)'); if (!c) return true; let e = null; try { const R = reading(); e = R && R.e; } catch {}
     if (!c.querySelector('.v3-quick') || !c.querySelector('.due-ln')) return false;
     if (e && e.dueAt && e.dueAt >= todayISO() && !c.querySelector('.due-cards')) return false;
+    // a Pergunta do dia entra depois do resto; sem esperar por ela, a tela nova aparecia sem o cartão e ele surgia em seguida (Bia, 20/11)
+    try { if (typeof vFn === 'function' && vFn('qday') && !homePrefs().off.includes('qday') && !root.querySelector('[data-v2qd]')) return false; } catch {}
+    if (root.querySelector('[data-v2qd] [data-cvk]')) return false;
     return true; };
   let snap = null, settleT = 0, hardT = 0, last = 0;
   const finish = () => { clearTimeout(settleT); clearTimeout(hardT); const l = L(); if (l) { if (snap) { l.style.transition = 'none'; } l.classList.remove('v3-wait', 'v3-back'); l.style.width = ''; if (snap) { void l.offsetHeight; requestAnimationFrame(() => { l.style.transition = ''; }); } } if (snap) { snap.remove(); snap = null; } };
