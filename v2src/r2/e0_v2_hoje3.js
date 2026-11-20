@@ -108,8 +108,8 @@ function v3HeroHTML(col) {
     <div class="acts">
       <button type="button" class="v3qa p" data-h3="upd" aria-label="Atualizar página">${V2SVG('pag', 20)}Atualizar</button>
       <button type="button" class="v3qa${near ? ' hi' : ''}" data-h3="fim" aria-label="Terminei o livro">${V2SVG('ok', 20)}Terminei</button>
-      <button type="button" class="v3qa" data-h3="qt" aria-label="Salvar um trecho">${V2SVG('qt', 20)}Trecho</button>
-      <button type="button" class="v3qa" data-h3="junto" aria-label="${esc(jl)}">${jt}Ler junto</button>
+      ${v2Mods().trechos ? `<button type="button" class="v3qa" data-h3="qt" aria-label="Salvar um trecho">${V2SVG('qt', 20)}Trecho</button>` : ''}
+      ${v2Mods().comunidade ? `<button type="button" class="v3qa" data-h3="junto" aria-label="${esc(jl)}">${jt}Ler junto</button>` : ''}
       <button type="button" class="v3qa" data-h3="more" aria-label="Mais opções do livro">${V2SVG('dots', 20)}Mais</button>
     </div></section></div>
     ${nx ? `<div class="v3dots"><span class="pp">${L.map((x) => `<button type="button" data-h3="sw" data-id="${esc(x.id)}" class="${x.id === e.id ? 'on' : ''}" aria-label="${esc(x.title)}"></button>`).join('')}</span><button type="button" class="nx" data-h3="sw" data-id="${esc(nx.id)}" data-d="l">${esc(nx.title)}${(() => { try { if (!nx.dueAt) return ''; const d = dueToday(nx); return d && !d.done && !d.todayOff ? ` <small class="cdue">${CAL}até pág. ${d.target}</small>` : ''; } catch { return ''; } })()} ${CHEV}</button></div>` : ''}
@@ -159,7 +159,7 @@ function v3Bind(n) {
       slot('v3x-a', keyA); slot('v3x-b', keyB);
       if (S.v3slide) { const h = col.querySelector(':scope > .v3x-a .v3hero'); if (h) h.classList.add(S.v3slide); S.v3slide = null; }
       // destaque do dia: um cartão só
-      const cands = [col.querySelector(':scope > .ex-alert'), col.querySelector(':scope > .v2rs-card'), col.querySelector(':scope > [data-v2qd]')].filter(Boolean);
+      const cands = [col.querySelector(':scope > .ex-alert'), col.querySelector(':scope > .v2rs-card'), (v2Mods().comunidade ? col.querySelector(':scope > [data-v2qd]') : null)].filter(Boolean);
       const pick = cands[0] || null; col.querySelectorAll(':scope > .v3mom').forEach((x) => { if (x !== pick) x.classList.remove('v3mom'); }); if (pick && !pick.classList.contains('v3mom')) pick.classList.add('v3mom');
       // sem livro em leitura: "Comece por aqui" (conta nova) aparece logo abaixo
       const cm = col.querySelector(':scope > [data-in=comece]'); if (cm) cm.classList.toggle('v3show', !R);

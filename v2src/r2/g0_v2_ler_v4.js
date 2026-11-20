@@ -58,7 +58,7 @@ const v4cv = (e, cls = '', st = '') => { const c = (() => { try { return colorOf
   return e && e.cover ? `<span class="cv img ${cls}" style="${st}background-image:${cssUrl(e.cover)}">${esc(e.title || '')}</span>` : `<span class="cv ${cls}" style="${st}background:linear-gradient(160deg,${c},#1b1426)">${esc((e && e.title) || '?')}</span>`; };
 const v4On = (k) => { try { return v2Mods()[k] !== false; } catch { return true; } };
 let V4 = null; // camada aberta
-const v4Host = () => { let h = TR.querySelector(':scope > .v4host'); if (h && h.shadowRoot) return h.shadowRoot; h = document.createElement('div'); h.className = 'v4host'; TR.append(h); const sr = h.attachShadow({ mode: 'open' }); const st = document.createElement('style'); st.textContent = V4CSS + V4EXTRA; sr.append(st); return sr; };
+const v4Host = () => { let h = [...TR.children].find((n) => n.classList && n.classList.contains('v4host')); if (h && h.shadowRoot) return h.shadowRoot; h = document.createElement('div'); h.className = 'v4host'; TR.append(h); const sr = h.attachShadow({ mode: 'open' }); const st = document.createElement('style'); st.textContent = V4CSS + V4EXTRA; sr.append(st); return sr; };
 const v4Root = () => { if (V4 && V4.isConnected) return V4; V4 = document.createElement('div'); V4.className = 'v4ler'; v4Host().append(V4); V4.addEventListener('click', v4Click); V4.addEventListener('input', v4Input); return V4; };
 const v4Close = () => { v4Stop(); if (V4) V4.remove(); V4 = null; S.v4 = null; };
 const v4State = () => (S.v4 = S.v4 || { view: null, sheet: null });
