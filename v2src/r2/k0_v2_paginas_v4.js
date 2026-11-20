@@ -154,11 +154,12 @@ v2FuncoesSheet = function () {
     const tema = rowByText(/^Tema/), sons = get('aj-sound') ? get('aj-sound').closest('.aj-row, label, div') : rowByText(/^Sons/);
     const G = [
       ['Seu perfil', [get('aj-priv'), get('aj-mu')]],
-      ['Seu app', [get('aj-home'), get('aj-fn'), tema, sons, spoiler, get('aj-v5rm'), v4Mod('trechos') ? get('aj-tq') : null]],
+      ['Seu app', [get('aj-home'), get('aj-fn'), tema, sons, spoiler, get('aj-v5rm')]], // Trechos e anotações saiu (Bia, 20/11): é conteúdo, mora na Estante › Trechos
       ['Conta e dados', [get('aj-sync'), get('aj-install'), hl, fix, get('aj-cv'), get('aj-exp'), get('aj-imp')]],
       ['Moderação', [get('aj-mod')]],
       ['Ajuda', [get('aj-tour')]],
     ];
+    const sS = sons && sons.querySelector('small'); if (sS) sS.textContent = 'Página virada e foco'; // conquistas saíram da v2
     const fnS = get('aj-fn') && get('aj-fn').querySelector('small'); if (fnS) fnS.textContent = 'o que aparece no seu app · ' + V2MODS.filter(([k]) => v4Mod(k)).length + ' de ' + V2MODS.length + ' ligadas';
     const keep = [...box.children].filter((x) => x.matches && x.matches('header, .v3-top, .aj-me'));
     const out = get('aj-out'), login = get('aj-login');

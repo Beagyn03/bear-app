@@ -79,6 +79,16 @@ drawProgresso = function (box) {
       const tot = days.reduce((s, d) => s + by[d], 0), wk = [0, 0, 0, 0, 0, 0, 0]; days.forEach((d) => { wk[new Date(d + 'T12:00:00').getDay()] += by[d]; });
       const WD = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'], fav = wk.indexOf(Math.max(...wk));
       hab = `<section class="v3c sx-c"><h3>Hábito de leitura</h3><div class="sx-two">${stat(plural(days.length, 'dia', 'dias'), 'com leitura registrada')}${stat(plural(best, 'dia', 'dias'), 'maior sequência')}${stat(Math.round(tot / days.length), 'páginas por dia lido')}${stat(WD[fav], 'dia em que mais lê')}</div></section>`;
+      // tempo de leitura (Bia, 20/11): tempo e ritmo só das sessões com cronômetro (o Ler); páginas sem cronômetro à parte;
+      // nunca ritmo com tempo zero.
+      const F = (db.focus || []).filter((f) => String(f.date || '').startsWith(String(y))), fm = F.reduce((a2, f) => a2 + (Number(f.minutes) || 0), 0), fp = F.reduce((a2, f) => a2 + (Number(f.pages) || 0), 0);
+      const semP = Math.max(0, tot - fp), hh = Math.floor(fm / 60), mn = fm % 60, tt = fm ? (hh ? hh + ' h' + (mn ? ' ' + mn + ' min' : '') : mn + ' min') : '';
+      const fpm = F.filter((f) => Number(f.minutes) > 0 && Number(f.pages) > 0), rm = fpm.reduce((a2, f) => a2 + Number(f.minutes), 0), rp = fpm.reduce((a2, f) => a2 + Number(f.pages), 0);
+      const rit = rm >= 10 && rp ? Math.round((rp / rm) * 60) : 0;
+      if (fm || semP) hab += '<section class="v3c sx-c"><h3>Tempo de leitura</h3><div class="sx-two">'
+        + (fm ? stat(tt + (rit ? ' · ' + rit + ' pág./h' : ''), 'com cronômetro · das sessões no Ler') : '')
+        + (semP ? stat(semP.toLocaleString('pt-BR') + ' páginas', 'sem cronômetro · atualizações fora do Ler') : '')
+        + '</div><small class="sx-note">Total de páginas do ano: ' + tot.toLocaleString('pt-BR') + '</small></section>';
     }
   } catch {}
   const yi = years.indexOf(y);

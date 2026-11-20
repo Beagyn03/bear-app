@@ -77,7 +77,8 @@ function openLembretes() {
     const rows = [];
     if (v4Mod('presentes')) rows.push(['gift', 'Presentes', 'uma semana antes do prazo de entrega', 'gifts']);
     if (v4Mod('emprest')) rows.push(['swap', 'Empréstimos', 'no dia combinado para devolver', 'loans']);
-    if (rows.length) h += '<div class="v4lb">Outros avisos</div><div class="v4card">' + rows.map(([i, t, s, k]) => '<div class="v4ok"><i class=v3e data-i=' + i + '></i><span><b>' + t + '</b><small>' + s + '</small></span><button type="button" class="lnk" data-a="go" data-k="' + k + '">Ver</button></div>').join('') + '</div>';
+    // "Outros avisos" saiu (Bia, 20/11): presentes e empréstimos não são lembretes configuráveis; os avisos continuam funcionando.
+    if (false && rows.length) h += '<div class="v4lb">Outros avisos</div><div class="v4card">' + rows.map(([i, t, s, k]) => '<div class="v4ok"><i class=v3e data-i=' + i + '></i><span><b>' + t + '</b><small>' + s + '</small></span><button type="button" class="lnk" data-a="go" data-k="' + k + '">Ver</button></div>').join('') + '</div>';
     const v = v4Page('Lembretes', h, () => openLembretes());
     const L = (sel, fn, ev = 'click') => v.querySelectorAll(sel).forEach((b) => b.addEventListener(ev, (e) => fn(b, e)));
     const ensure = async () => { try { await Promise.race([pushSubscribe(), new Promise((_, no) => setTimeout(() => no(new Error('tempo')), 9000))]); return true; } catch (err) { toast(err.message === 'negado' ? 'Sem permissão para notificar. Libere nas configurações do navegador.' : 'Este aparelho não aceitou notificações'); return false; } };

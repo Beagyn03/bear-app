@@ -125,6 +125,7 @@ function v3Ativ(d, host) {
     lib().filter((e) => e.status === 'LENDO').forEach((e) => L.push({ k: 'prog', t: e.title, c: e.cover, pill: 'Lendo · ' + Math.round(readingInfo(e).pct || 0) + '%', tx: '', at: (e.readLog && e.readLog.length ? e.readLog[e.readLog.length - 1].date : e.startedAt) || '' })); }
   else { (d.reviews || []).forEach((r) => L.push({ k: 'aval', t: (r.book && r.book.title) || r.title || '', c: (r.book && r.book.cover) || r.cover || null, pill: v3Pill(r.bookStatus || r.status, r.paws, r.page || 0, r.readerPct != null ? r.readerPct : null), tx: r.spoiler ? 'Tem spoiler: abra o livro para ver.' : String(r.text || r.body || '').trim(), at: String(r.updatedAt || r.createdAt || '').slice(0, 10) }));
     (d.reading || []).forEach((b) => L.push({ k: 'prog', t: b.title, c: b.cover, pill: 'Lendo · ' + Math.round(Number(b.pct) || 0) + '%', tx: '', at: '' })); }
+  if (self && S.v3prev) { const pv = (socialProfile && socialProfile.privacy) || {}; L = L.filter((x) => !((x.k === 'aval' && pv.reviews === false) || (x.k === 'prog' && pv.reading === false))); }
   L.sort((a, b) => String(b.at).localeCompare(String(a.at)));
   const V = L.filter((x) => f === 'tudo' || x.k === f);
   host.innerHTML = '<div class="v3chips">' + [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['prog', 'Progresso']].map(([k, n]) => '<button type="button" data-af="' + k + '" class="' + (f === k ? 'on' : '') + '">' + n + '</button>').join('') + '</div>'
@@ -137,8 +138,10 @@ function v3Build(v, d) {
   const m = v2Mods(), self = !!d.self, x = v3Data(d), key = d.handle + '|' + (self ? 1 : 0);
   if (S.v3pfH !== d.handle) { S.v3pfH = d.handle; S.v3tab = self ? 'sobre' : 'est'; S.v3prev = false; }
   // perfil de outra pessoa (protótipo perfilx): Estantes · Top 3 · Desejos · Atividade; o seu: Sobre · Estantes · Desejos · Atividade
-  const tabsOk = (self ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
-  if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self ? 'sobre' : 'est';
+  const ro = self && !!S.v3prev; // prévia "como as amizades veem": igual ao perfil de outra pessoa, só leitura
+  const tabsOk = (self && !ro ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
+  if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self && !ro ? 'sobre' : 'est';
+  body.classList.toggle('v6prev', ro); const pv0 = ro ? ((socialProfile && socialProfile.privacy) || {}) : {}; body.classList.toggle('v6noread', ro && pv0.reading === false);
   v.classList.add('v3pf-on');
   // cabeçalho
   let hd = body.querySelector(':scope > .v3pf');
@@ -169,12 +172,12 @@ function v3Build(v, d) {
   // painéis
   const pane = (k) => { let p = body.querySelector(':scope > .v3pane[data-k=' + k + ']'); if (!p) { p = document.createElement('section'); p.className = 'v3pane'; p.dataset.k = k; body.append(p); } p.hidden = S.v3tab !== k; return p; };
   const pS = pane('sobre'), pE = pane('est'), pT = pane('top'), pD = pane('des'), pA = pane('ativ');
-  const pTop = self ? pS : pT; // Top 3 (e o jeito de ler): no seu perfil fica em Sobre; no de outra pessoa, na aba Top 3
+  const pTop = self && !ro ? pS : pT; // Top 3 (e o jeito de ler): no seu perfil fica em Sobre; no de outra pessoa, na aba Top 3
   let last = tb; [pS, pE, pT, pD, pA].forEach((p) => { if (last.nextElementSibling !== p) last.after(p); last = p; });
   // Sobre: jeito de ler + Top 3
   const jl = body.querySelector(':scope > .v2jl') || body.querySelector('.v3pane > .v2jl'); if (jl && jl.parentElement !== pTop) pTop.prepend(jl);
   let t3 = body.querySelector('.v3pane .v3t3w'); if (!t3) { t3 = document.createElement('div'); t3.className = 'v3t3w'; } if (t3.parentElement !== pTop) pTop.append(t3);
-  const t3s = JSON.stringify([x.top, self, S.v3prev]); if (t3.dataset.sig !== t3s) { t3.dataset.sig = t3s;
+  const t3s = JSON.stringify([x.top, self, S.v3prev, ro]); if (t3.dataset.sig !== t3s) { t3.dataset.sig = t3s;
     t3.innerHTML = '<div class="v3h2"><b>Top 3</b>' + (self && !S.v3prev && x.top.length ? '<button type="button" data-v3="top5">Editar</button>' : '') + '</div>' + v3Top3(x, self);
     try { paintCv(t3); } catch {}
     t3.querySelectorAll('[data-top]').forEach((b) => b.addEventListener('click', () => { const t = x.top[+b.dataset.top]; if (!t) return; const e = self && lib().find((y) => normT(y.title) === normT(t.title)); if (e) openBookPage(e); else openAnyBook(t.title, t.author, t.cover); }));
@@ -185,9 +188,9 @@ function v3Build(v, d) {
   if (!pE.children.length) pE.innerHTML = '<p class="v2wempty">' + (self ? 'Suas estantes aparecem aqui. Escolha quais mostrar em Ajustes › Organizar meu perfil.' : 'Nenhuma estante no perfil.') + '</p>';
   else pE.querySelector(':scope > .v2wempty')?.remove();
   // Desejos (bloco f0)
-  if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle)) { pD.dataset.h = d.handle; pD.innerHTML = ''; v2WishPaint(v, d, pD); }
+  if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle + '|' + ro)) { pD.dataset.h = d.handle + '|' + ro; pD.innerHTML = ''; v2WishPaint(v, ro ? { ...d, self: false } : d, pD); }
   // Atividade
-  if (S.v3tab === 'ativ' && pA.dataset.h !== d.handle + '|' + (S.v3atf || '')) { pA.dataset.h = d.handle + '|' + (S.v3atf || ''); v3Ativ(d, pA); }
+  if (S.v3tab === 'ativ' && pA.dataset.h !== d.handle + '|' + (S.v3atf || '') + '|' + ro) { pA.dataset.h = d.handle + '|' + (S.v3atf || '') + '|' + ro; v3Ativ(d, pA); }
   if (!self) { const pm = body.querySelector('.v2pxm'), st = body.querySelector(':scope > .sl-top'); if (pm && st && pm.parentElement !== st) st.append(pm);
     const cm = body.querySelector(':scope > .cm-btn'), af = body.querySelector(':scope > .v2afi'); if (cm && af) { cm.hidden = true; if (!af.dataset.cm) { af.dataset.cm = 1; af.setAttribute('role', 'button'); af.addEventListener('click', () => cm.click()); } } }
   // a faixa de conta suspensa fica logo abaixo do cabeçalho
@@ -206,7 +209,7 @@ function v3Wire(v, d, hd, x) {
   const on = (k, fn) => hd.querySelectorAll('[data-v3=' + k + ']').forEach((b) => b.addEventListener('click', fn));
   on('edit', () => v3Old(v, '[data-p=edit]'));
   on('share', () => { if (!v3Old(v, '[data-p=share]')) toast('Link do perfil copiado'); });
-  on('prev', () => { S.v3prev = !S.v3prev; if (S.v3prev && S.v3tab === 'des') S.v3tab = 'sobre'; v3Build(v, d); });
+  on('prev', () => { S.v3prev = !S.v3prev; S.v3tab = S.v3prev ? 'est' : 'sobre'; v3Build(v, d); });
   on('aj', () => { const aj = [...v.querySelectorAll('.sl-body > .yo-top button')].find((b) => /Ajustes/.test(b.textContent) || /Ajustes/.test(b.getAttribute('aria-label') || '')); if (aj) aj.click(); else { v.hidden = true; goTab('perfil'); } });
   on('photo', () => { if (d.self && !S.v3prev) v3Old(v, '[data-p=photo]'); });
   on('amigos', () => { if (d.self) v3Old(v, '[data-p=amigos]'); });

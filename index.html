@@ -11147,6 +11147,16 @@ drawProgresso = function (box) {
       const tot = days.reduce((s, d) => s + by[d], 0), wk = [0, 0, 0, 0, 0, 0, 0]; days.forEach((d) => { wk[new Date(d + 'T12:00:00').getDay()] += by[d]; });
       const WD = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'], fav = wk.indexOf(Math.max(...wk));
       hab = `<section class="v3c sx-c"><h3>Hábito de leitura</h3><div class="sx-two">${stat(plural(days.length, 'dia', 'dias'), 'com leitura registrada')}${stat(plural(best, 'dia', 'dias'), 'maior sequência')}${stat(Math.round(tot / days.length), 'páginas por dia lido')}${stat(WD[fav], 'dia em que mais lê')}</div></section>`;
+      // tempo de leitura (Bia, 20/11): tempo e ritmo só das sessões com cronômetro (o Ler); páginas sem cronômetro à parte;
+      // nunca ritmo com tempo zero.
+      const F = (db.focus || []).filter((f) => String(f.date || '').startsWith(String(y))), fm = F.reduce((a2, f) => a2 + (Number(f.minutes) || 0), 0), fp = F.reduce((a2, f) => a2 + (Number(f.pages) || 0), 0);
+      const semP = Math.max(0, tot - fp), hh = Math.floor(fm / 60), mn = fm % 60, tt = fm ? (hh ? hh + ' h' + (mn ? ' ' + mn + ' min' : '') : mn + ' min') : '';
+      const fpm = F.filter((f) => Number(f.minutes) > 0 && Number(f.pages) > 0), rm = fpm.reduce((a2, f) => a2 + Number(f.minutes), 0), rp = fpm.reduce((a2, f) => a2 + Number(f.pages), 0);
+      const rit = rm >= 10 && rp ? Math.round((rp / rm) * 60) : 0;
+      if (fm || semP) hab += '<section class="v3c sx-c"><h3>Tempo de leitura</h3><div class="sx-two">'
+        + (fm ? stat(tt + (rit ? ' · ' + rit + ' pág./h' : ''), 'com cronômetro · das sessões no Ler') : '')
+        + (semP ? stat(semP.toLocaleString('pt-BR') + ' páginas', 'sem cronômetro · atualizações fora do Ler') : '')
+        + '</div><small class="sx-note">Total de páginas do ano: ' + tot.toLocaleString('pt-BR') + '</small></section>';
     }
   } catch {}
   const yi = years.indexOf(y);
@@ -19221,6 +19231,7 @@ function v3Ativ(d, host) {
     lib().filter((e) => e.status === 'LENDO').forEach((e) => L.push({ k: 'prog', t: e.title, c: e.cover, pill: 'Lendo · ' + Math.round(readingInfo(e).pct || 0) + '%', tx: '', at: (e.readLog && e.readLog.length ? e.readLog[e.readLog.length - 1].date : e.startedAt) || '' })); }
   else { (d.reviews || []).forEach((r) => L.push({ k: 'aval', t: (r.book && r.book.title) || r.title || '', c: (r.book && r.book.cover) || r.cover || null, pill: v3Pill(r.bookStatus || r.status, r.paws, r.page || 0, r.readerPct != null ? r.readerPct : null), tx: r.spoiler ? 'Tem spoiler: abra o livro para ver.' : String(r.text || r.body || '').trim(), at: String(r.updatedAt || r.createdAt || '').slice(0, 10) }));
     (d.reading || []).forEach((b) => L.push({ k: 'prog', t: b.title, c: b.cover, pill: 'Lendo · ' + Math.round(Number(b.pct) || 0) + '%', tx: '', at: '' })); }
+  if (self && S.v3prev) { const pv = (socialProfile && socialProfile.privacy) || {}; L = L.filter((x) => !((x.k === 'aval' && pv.reviews === false) || (x.k === 'prog' && pv.reading === false))); }
   L.sort((a, b) => String(b.at).localeCompare(String(a.at)));
   const V = L.filter((x) => f === 'tudo' || x.k === f);
   host.innerHTML = '<div class="v3chips">' + [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['prog', 'Progresso']].map(([k, n]) => '<button type="button" data-af="' + k + '" class="' + (f === k ? 'on' : '') + '">' + n + '</button>').join('') + '</div>'
@@ -19233,8 +19244,10 @@ function v3Build(v, d) {
   const m = v2Mods(), self = !!d.self, x = v3Data(d), key = d.handle + '|' + (self ? 1 : 0);
   if (S.v3pfH !== d.handle) { S.v3pfH = d.handle; S.v3tab = self ? 'sobre' : 'est'; S.v3prev = false; }
   // perfil de outra pessoa (protótipo perfilx): Estantes · Top 3 · Desejos · Atividade; o seu: Sobre · Estantes · Desejos · Atividade
-  const tabsOk = (self ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
-  if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self ? 'sobre' : 'est';
+  const ro = self && !!S.v3prev; // prévia "como as amizades veem": igual ao perfil de outra pessoa, só leitura
+  const tabsOk = (self && !ro ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
+  if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self && !ro ? 'sobre' : 'est';
+  body.classList.toggle('v6prev', ro); const pv0 = ro ? ((socialProfile && socialProfile.privacy) || {}) : {}; body.classList.toggle('v6noread', ro && pv0.reading === false);
   v.classList.add('v3pf-on');
   // cabeçalho
   let hd = body.querySelector(':scope > .v3pf');
@@ -19265,12 +19278,12 @@ function v3Build(v, d) {
   // painéis
   const pane = (k) => { let p = body.querySelector(':scope > .v3pane[data-k=' + k + ']'); if (!p) { p = document.createElement('section'); p.className = 'v3pane'; p.dataset.k = k; body.append(p); } p.hidden = S.v3tab !== k; return p; };
   const pS = pane('sobre'), pE = pane('est'), pT = pane('top'), pD = pane('des'), pA = pane('ativ');
-  const pTop = self ? pS : pT; // Top 3 (e o jeito de ler): no seu perfil fica em Sobre; no de outra pessoa, na aba Top 3
+  const pTop = self && !ro ? pS : pT; // Top 3 (e o jeito de ler): no seu perfil fica em Sobre; no de outra pessoa, na aba Top 3
   let last = tb; [pS, pE, pT, pD, pA].forEach((p) => { if (last.nextElementSibling !== p) last.after(p); last = p; });
   // Sobre: jeito de ler + Top 3
   const jl = body.querySelector(':scope > .v2jl') || body.querySelector('.v3pane > .v2jl'); if (jl && jl.parentElement !== pTop) pTop.prepend(jl);
   let t3 = body.querySelector('.v3pane .v3t3w'); if (!t3) { t3 = document.createElement('div'); t3.className = 'v3t3w'; } if (t3.parentElement !== pTop) pTop.append(t3);
-  const t3s = JSON.stringify([x.top, self, S.v3prev]); if (t3.dataset.sig !== t3s) { t3.dataset.sig = t3s;
+  const t3s = JSON.stringify([x.top, self, S.v3prev, ro]); if (t3.dataset.sig !== t3s) { t3.dataset.sig = t3s;
     t3.innerHTML = '<div class="v3h2"><b>Top 3</b>' + (self && !S.v3prev && x.top.length ? '<button type="button" data-v3="top5">Editar</button>' : '') + '</div>' + v3Top3(x, self);
     try { paintCv(t3); } catch {}
     t3.querySelectorAll('[data-top]').forEach((b) => b.addEventListener('click', () => { const t = x.top[+b.dataset.top]; if (!t) return; const e = self && lib().find((y) => normT(y.title) === normT(t.title)); if (e) openBookPage(e); else openAnyBook(t.title, t.author, t.cover); }));
@@ -19281,9 +19294,9 @@ function v3Build(v, d) {
   if (!pE.children.length) pE.innerHTML = '<p class="v2wempty">' + (self ? 'Suas estantes aparecem aqui. Escolha quais mostrar em Ajustes › Organizar meu perfil.' : 'Nenhuma estante no perfil.') + '</p>';
   else pE.querySelector(':scope > .v2wempty')?.remove();
   // Desejos (bloco f0)
-  if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle)) { pD.dataset.h = d.handle; pD.innerHTML = ''; v2WishPaint(v, d, pD); }
+  if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle + '|' + ro)) { pD.dataset.h = d.handle + '|' + ro; pD.innerHTML = ''; v2WishPaint(v, ro ? { ...d, self: false } : d, pD); }
   // Atividade
-  if (S.v3tab === 'ativ' && pA.dataset.h !== d.handle + '|' + (S.v3atf || '')) { pA.dataset.h = d.handle + '|' + (S.v3atf || ''); v3Ativ(d, pA); }
+  if (S.v3tab === 'ativ' && pA.dataset.h !== d.handle + '|' + (S.v3atf || '') + '|' + ro) { pA.dataset.h = d.handle + '|' + (S.v3atf || '') + '|' + ro; v3Ativ(d, pA); }
   if (!self) { const pm = body.querySelector('.v2pxm'), st = body.querySelector(':scope > .sl-top'); if (pm && st && pm.parentElement !== st) st.append(pm);
     const cm = body.querySelector(':scope > .cm-btn'), af = body.querySelector(':scope > .v2afi'); if (cm && af) { cm.hidden = true; if (!af.dataset.cm) { af.dataset.cm = 1; af.setAttribute('role', 'button'); af.addEventListener('click', () => cm.click()); } } }
   // a faixa de conta suspensa fica logo abaixo do cabeçalho
@@ -19302,7 +19315,7 @@ function v3Wire(v, d, hd, x) {
   const on = (k, fn) => hd.querySelectorAll('[data-v3=' + k + ']').forEach((b) => b.addEventListener('click', fn));
   on('edit', () => v3Old(v, '[data-p=edit]'));
   on('share', () => { if (!v3Old(v, '[data-p=share]')) toast('Link do perfil copiado'); });
-  on('prev', () => { S.v3prev = !S.v3prev; if (S.v3prev && S.v3tab === 'des') S.v3tab = 'sobre'; v3Build(v, d); });
+  on('prev', () => { S.v3prev = !S.v3prev; S.v3tab = S.v3prev ? 'est' : 'sobre'; v3Build(v, d); });
   on('aj', () => { const aj = [...v.querySelectorAll('.sl-body > .yo-top button')].find((b) => /Ajustes/.test(b.textContent) || /Ajustes/.test(b.getAttribute('aria-label') || '')); if (aj) aj.click(); else { v.hidden = true; goTab('perfil'); } });
   on('photo', () => { if (d.self && !S.v3prev) v3Old(v, '[data-p=photo]'); });
   on('amigos', () => { if (d.self) v3Old(v, '[data-p=amigos]'); });
@@ -21098,11 +21111,12 @@ v2FuncoesSheet = function () {
     const tema = rowByText(/^Tema/), sons = get('aj-sound') ? get('aj-sound').closest('.aj-row, label, div') : rowByText(/^Sons/);
     const G = [
       ['Seu perfil', [get('aj-priv'), get('aj-mu')]],
-      ['Seu app', [get('aj-home'), get('aj-fn'), tema, sons, spoiler, get('aj-v5rm'), v4Mod('trechos') ? get('aj-tq') : null]],
+      ['Seu app', [get('aj-home'), get('aj-fn'), tema, sons, spoiler, get('aj-v5rm')]], // Trechos e anotações saiu (Bia, 20/11): é conteúdo, mora na Estante › Trechos
       ['Conta e dados', [get('aj-sync'), get('aj-install'), hl, fix, get('aj-cv'), get('aj-exp'), get('aj-imp')]],
       ['Moderação', [get('aj-mod')]],
       ['Ajuda', [get('aj-tour')]],
     ];
+    const sS = sons && sons.querySelector('small'); if (sS) sS.textContent = 'Página virada e foco'; // conquistas saíram da v2
     const fnS = get('aj-fn') && get('aj-fn').querySelector('small'); if (fnS) fnS.textContent = 'o que aparece no seu app · ' + V2MODS.filter(([k]) => v4Mod(k)).length + ' de ' + V2MODS.length + ' ligadas';
     const keep = [...box.children].filter((x) => x.matches && x.matches('header, .v3-top, .aj-me'));
     const out = get('aj-out'), login = get('aj-login');
@@ -21277,7 +21291,8 @@ function openLembretes() {
     const rows = [];
     if (v4Mod('presentes')) rows.push(['gift', 'Presentes', 'uma semana antes do prazo de entrega', 'gifts']);
     if (v4Mod('emprest')) rows.push(['swap', 'Empréstimos', 'no dia combinado para devolver', 'loans']);
-    if (rows.length) h += '<div class="v4lb">Outros avisos</div><div class="v4card">' + rows.map(([i, t, s, k]) => '<div class="v4ok"><i class=v3e data-i=' + i + '></i><span><b>' + t + '</b><small>' + s + '</small></span><button type="button" class="lnk" data-a="go" data-k="' + k + '">Ver</button></div>').join('') + '</div>';
+    // "Outros avisos" saiu (Bia, 20/11): presentes e empréstimos não são lembretes configuráveis; os avisos continuam funcionando.
+    if (false && rows.length) h += '<div class="v4lb">Outros avisos</div><div class="v4card">' + rows.map(([i, t, s, k]) => '<div class="v4ok"><i class=v3e data-i=' + i + '></i><span><b>' + t + '</b><small>' + s + '</small></span><button type="button" class="lnk" data-a="go" data-k="' + k + '">Ver</button></div>').join('') + '</div>';
     const v = v4Page('Lembretes', h, () => openLembretes());
     const L = (sel, fn, ev = 'click') => v.querySelectorAll(sel).forEach((b) => b.addEventListener(ev, (e) => fn(b, e)));
     const ensure = async () => { try { await Promise.race([pushSubscribe(), new Promise((_, no) => setTimeout(() => no(new Error('tempo')), 9000))]); return true; } catch (err) { toast(err.message === 'negado' ? 'Sem permissão para notificar. Libere nas configurações do navegador.' : 'Este aparelho não aceitou notificações'); return false; } };
@@ -21692,6 +21707,57 @@ function openLembretes() {
 { const fix = () => { const v = TR.querySelector('#shelflist'); if (!v || v.hidden) return; const bk = v.querySelector('.sl-body > .sl-top > .sl-back');
     if (bk && /undefined|null/.test(bk.textContent)) { bk.textContent = '‹ Voltar'; if (v.classList.contains('mine-page') && v.querySelector('.sl-body > .sl-list, .sl-body > .sl-note')) { v.classList.remove('mine-page', 'tabroot'); S.v4fromMe = true; } } };
   let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; fix(); }, 40); }).observe(TR, { childList: true, subtree: true }); }
+// --- m1_v2_perfil_publico.js ---
+// Estantes no perfil: uma regra só (Bia, 20/11). Estante criada pela pessoa aparece no perfil se "Quem vê = Pública" (s.priv
+// falso). A tela "O que aparece no meu perfil" › Escolher estantes liga/desliga esse mesmo "Quem vê", e a ordem de lá é a do
+// perfil. Na primeira vez, a escolha antiga (prefs.profShelves) vira a verdade: o que estava marcado fica pública, o resto
+// fica "só você"; depois disso vale só s.priv. Listas automáticas (Melhores avaliados, Lidos recentes...) seguem na tela.
+// Perfil real, prévia ("como as amizades veem") e resumo publicado usam a mesma regra.
+{ const isSh = (k) => String(k).startsWith('sh:');
+  const mine = () => (db.shelves || []).filter((s) => !s.arch);
+  const migrate = () => { db.prefs = db.prefs || {}; if (db.prefs.v6privMig) return; const p = db.prefs.profShelves;
+    if (Array.isArray(p)) mine().forEach((s) => { s.priv = !p.includes('sh:' + s.id); });
+    db.prefs.v6privMig = 1; try { save(); } catch {} };
+  // profShelves sempre espelha s.priv (mantém a ordem escolhida; pública nova entra no fim)
+  const sync = () => { db.prefs = db.prefs || {}; const p = Array.isArray(db.prefs.profShelves) ? db.prefs.profShelves : (typeof PROF_SH_DEFAULT !== 'undefined' ? PROF_SH_DEFAULT.slice() : []);
+    const pub = new Set(mine().filter((s) => !s.priv).map((s) => 'sh:' + s.id));
+    const kept = p.filter((k) => !isSh(k) || pub.has(k)), extra = [...pub].filter((k) => !kept.includes(k));
+    db.prefs.profShelves = [...kept, ...extra]; };
+  window.v6ProfOrder = () => { sync(); return db.prefs.profShelves.filter(isSh).map((k) => mine().find((s) => 'sh:' + s.id === k)).filter(Boolean); };
+  try { migrate(); sync(); } catch {}
+  const _ps = profShelvesSnap; profShelvesSnap = function () { try { migrate(); sync(); } catch {} return _ps.apply(this, arguments); };
+  // "Quem vê" mudado pela folha da estante (v5priv) ou pelo formulário: o perfil acompanha
+  const _vs = v5Sheet; v5Sheet = function () { const r = _vs.apply(this, arguments); try { const R = v4Root(); if (R && !R.dataset.v6pv) { R.dataset.v6pv = 1; R.addEventListener('click', (ev) => { const b = ev.target.closest('[data-a]'); if (b && /^v5(priv|shdel|arch|unarch)/.test(b.dataset.a)) setTimeout(() => { try { sync(); save(); publishSnapshotSoon(); } catch {} }, 200); }, true); } } catch {} return r; };
+  // tela "O que aparece no meu perfil": marcar estante = pública; sem Conquistas; toggles do protótipo
+  const st = document.createElement('style'); st.textContent = `
+body > .sheet form.pv2 input[type=checkbox]{appearance:none;-webkit-appearance:none;width:38px;height:22px;border-radius:99px;background:#cfc6bb;position:relative;flex:none;cursor:pointer;transition:background .15s;margin:0}
+body > .sheet form.pv2 input[type=checkbox]::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+body > .sheet form.pv2 input[type=checkbox]:checked{background:#c46f2e}body > .sheet form.pv2 input[type=checkbox]:checked::after{left:19px}
+body > .sheet form.pv2 .v6hide{display:none!important}`; document.head.append(st);
+  const _ss = socialSettingsSheet; socialSettingsSheet = async function () { try { migrate(); sync(); } catch {} const r = await _ss.apply(this, arguments);
+    const form = document.querySelector('body > .sheet form.pv2'); if (!form) return r;
+    [...form.querySelectorAll('.ck-row, .pv2-shr, label')].forEach((x) => { if (/^\s*Conquistas/.test(x.textContent)) x.classList.add('v6hide'); });
+    form.querySelectorAll('.pv2-sh input[data-k]').forEach((i) => { const k = i.dataset.k; if (!isSh(k)) return; const s = mine().find((x) => 'sh:' + x.id === k); if (s) i.checked = !s.priv;
+      i.addEventListener('change', () => { const s2 = mine().find((x) => 'sh:' + x.id === k); if (s2) { s2.priv = !i.checked; save(); } }); });
+    form.addEventListener('submit', () => { try { sync(); save(); } catch {} });
+    return r; };
+  // prévia: só as estantes públicas, na ordem do perfil, sem nenhum controle de dono
+  const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments);
+    try { const body = v.querySelector('.sl-body'), pE = body && body.querySelector(':scope > .v3pane[data-k=est]'); if (!pE || !d || !d.self) return r;
+      if (!S.v3prev) { if (pE.dataset.v6pv) { delete pE.dataset.v6pv; delete pE.dataset.mysig; } return r; }
+      const L = window.v6ProfOrder(), sig = JSON.stringify(L.map((s) => [s.id, (s.bookIds || []).length]));
+      if (pE.dataset.v6pv === sig && pE.querySelector(':scope > [data-v6pv]')) return r; pE.dataset.v6pv = sig;
+      const card = (s) => { const B = v5ShBooks(s), lid = B.filter((e) => e.status === 'LIDO').length;
+        return '<div class="pshelf"><div class="hd"><b>' + esc(s.name) + '</b><small>' + plural(B.length, 'livro', 'livros') + (lid ? ' · ' + plural(lid, 'lido', 'lidos') : '') + '</small></div><div class="covers">' + B.slice(0, 7).map((e) => '<span class="scv">' + cvh(e.title, e.cover, '') + '</span>').join('') + '</div></div>'; };
+      pE.innerHTML = L.length ? '<div class="v4psh" data-v6pv="1">' + L.map(card).join('') + '</div>' : '<p class="v2wempty" data-v6pv="1">Nenhuma estante no perfil.</p>';
+      try { paintCv(pE); } catch {}
+    } catch (err) { console.warn('prévia estantes', err); }
+    return r; };
+  // prévia só leitura: some qualquer controle de dono que ainda sobre
+  const s2 = document.createElement('style'); s2.textContent = `
+.sl-body.v6prev .v4mysh-bar,.sl-body.v6prev [data-v3=top5],.sl-body.v6prev .v2wadd,.sl-body.v6prev .v2tip,.sl-body.v6prev [data-del],.sl-body.v6prev .v3hubw,.sl-body.v6prev .v3tpe,.sl-body.v6prev .rd-more,.sl-body.v6prev [data-tip]{display:none!important}
+.sl-body.v6noread .v3lag{display:none!important}`; TR.append(s2);
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
