@@ -19312,6 +19312,19 @@ if (S.tab === 'perfil' && connected()) setTimeout(() => goTab('eu'), 0);
 // Recarregar com o perfil aberto: restoreNav chama openMyProfile direto, que sem perfil carregado caía em Editar perfil.
 // Enquanto o perfil não chegou, vai pelo caminho da aba Você (espera com "Abrindo seu perfil…").
 { const _om = openMyProfile; openMyProfile = function () { if (connected() && socialProfile === undefined) return goTab('eu'); return _om.apply(this, arguments); }; }
+// Título do topo ao recarregar no perfil (Bia, 20/11): a navegação guardada voltava pela aba "perfil" (que é a tela de
+// Ajustes), e o topo ficava "Ajustes" e depois "Editar perfil". Agora volta pela aba Você, e o perfil aberto nunca deixa
+// a aba marcada como Ajustes.
+{ const _rn = restoreNav; restoreNav = function () {
+    let n = null; try { n = JSON.parse(sessionStorage.getItem('bear.nav') || 'null'); } catch {}
+    if (n && n.view && n.view.t === 'me' && Date.now() - (n.at || 0) < 30 * 60000) return goTab('eu');
+    return _rn.apply(this, arguments);
+  }; }
+{ const _om = openMyProfile; openMyProfile = async function () {
+    const r = await _om.apply(this, arguments);
+    const v = $('#shelflist'); if (v && !v.hidden && v.classList.contains('mine-page') && S.tab === 'perfil') { S.tab = 'eu'; try { sessionStorage.setItem('bear.tab', 'eu'); } catch {} try { syncTopTitle(); } catch {} }
+    return r;
+  }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
