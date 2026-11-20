@@ -44,3 +44,8 @@ Object.assign(V3EMO, {
   const _l = v6Load; v6Load = async function (sc, more) { const r = await _l.apply(this, arguments);
     try { const F = v6Feed(sc); if (!more && F.at > 1 && !F.err && socialProfile && socialProfile.handle) localStorage.setItem(key(sc), JSON.stringify({ t: Date.now(), items: F.items.slice(0, 30) })); } catch {}
     return r; }; }
+// Buscar capas: avisos curtos, numa linha (teste 20/11 item 44: quebrava em duas linhas e cobria "Ver o tour")
+{ const _t = toast; toast = function (m) { let s = String(m == null ? '' : m);
+    s = s.replace(/^Procurando capas para (\d+) livros?…$/, 'Buscando $1 capas…').replace(/^(\d+ capas? encontradas?) · \d+ sem capa em português$/, '$1')
+      .replace(/^Não encontrei capas em português para esses livros$/, 'Nenhuma capa nova').replace(/^Todos os seus livros já têm capa$/, 'Todos têm capa');
+    return _t.call(this, s, ...[].slice.call(arguments, 1)); }; }
