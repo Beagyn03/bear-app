@@ -9,7 +9,16 @@
 // - Página do livro: "Meus ecos" só em Minha leitura.
 function v9Ask(anchor, label, fn) { try { popMenu(anchor, [{ label, fn }]); } catch { fn(); } }
 { const st = document.createElement('style'); st.textContent = `#shelflist:not(.v5bp-minha) .sl-body > .v9ecos{display:none!important}
-.bub.me[data-mid]{cursor:pointer}`; TR.append(st); }
+.bub.me[data-mid]{cursor:pointer}
+.bub small{font-size:.66rem!important;opacity:.92!important;font-weight:700}`; TR.append(st); }
+// os balões não trazem o id da mensagem: as suas mensagens na tela seguem a ordem das suas na conversa guardada
+{ let tm = 0;
+  const marca = () => { tm = 0; const v = $('#shelflist'); if (!v || v.hidden) return; const box = v.querySelector('.cht'); if (!box) return;
+    const h = (v.querySelector('.cht-who') || {}).dataset ? v.querySelector('.cht-who').dataset.h : ''; if (!h) return;
+    let items = []; try { items = ((chatCache()[h] || {}).items || []).filter((m) => m.mine && m.id); } catch {} const bs = [...box.querySelectorAll('.bub.me')];
+    if (!items.length || bs.length !== items.length) return;
+    bs.forEach((b, i) => { if (b.dataset.mid !== items[i].id) { b.dataset.mid = items[i].id; b.dataset.mh = h; } }); };
+  const v = $('#shelflist'); if (v) new MutationObserver(() => { if (!tm) tm = setTimeout(marca, 60); }).observe(v, { childList: true, subtree: true }); }
 { const _s = sapi;
   const purgeSaved = (pred) => { try { const L = rdSavedList(), K = L.filter((x) => !pred(x)); if (K.length !== L.length) rdSetPref('rdSaved', K); } catch {} };
   sapi = async function (method, path, body) {

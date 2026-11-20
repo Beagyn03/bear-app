@@ -8281,7 +8281,7 @@ setTimeout(async () => { const L = lib().filter((e) => !e.cover && !e.coverTried
 .bub{max-width:80%;padding:.5rem .7rem;border-radius:16px;font-size:.88rem;line-height:1.4;white-space:pre-wrap;word-break:break-word}
 .bub.me{align-self:flex-end;background:var(--acc);color:var(--on-acc,#fff);border-bottom-right-radius:5px}
 .bub.ot{align-self:flex-start;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-bottom-left-radius:5px}
-.bub small{display:block;font-size:.66rem;opacity:.92;font-weight:700;margin-top:.2rem;text-align:right}
+.bub small{display:block;font-size:.62rem;opacity:.7;margin-top:.2rem;text-align:right}
 .bub i{display:block;font-style:normal;font-size:.66rem;font-weight:800;opacity:.85;margin-bottom:.15rem}
 .bub .bub-sp{border:1px dashed currentColor;background:none;color:inherit;border-radius:10px;padding:.3rem .5rem;font-weight:800;font-size:.76rem}
 .cht-in{position:fixed;left:0;right:0;bottom:calc(3.9rem + env(safe-area-inset-bottom,0px));z-index:36;background:var(--bg);border-top:1px solid var(--line);padding:.5rem .7rem;display:grid;gap:.35rem}
@@ -8348,7 +8348,7 @@ function openChat(handle, opt) {
   const friend = (SOC.fr.friends || []).find((f) => f.handle === handle);
   const open = S.chOpen || (S.chOpen = new Set());
   const bubble = (m) => { const hide = !m.mine && m.bookTitle && !iReadT(m.bookTitle) && !open.has(m.id);
-    return `<div class="bub ${m.mine ? 'me' : 'ot'}"${m.mine && m.id && m.id !== 'pv' ? ` data-mid="${esc(m.id)}" data-mh="${esc(handle)}"` : ''}>${m.bookTitle ? `<i>📖 ${esc(m.bookTitle)}</i>` : ''}${hide ? `<button type="button" class="bub-sp" data-sp="${esc(m.id)}">Você ainda não leu este livro · toque para ver</button>` : esc(m.body)}<small>${hm(m.at)}</small></div>`; };
+    return `<div class="bub ${m.mine ? 'me' : 'ot'}">${m.bookTitle ? `<i>📖 ${esc(m.bookTitle)}</i>` : ''}${hide ? `<button type="button" class="bub-sp" data-sp="${esc(m.id)}">Você ainda não leu este livro · toque para ver</button>` : esc(m.body)}<small>${hm(m.at)}</small></div>`; };
   const list = () => { if (!data) return preview ? `${bubble({ id: 'pv', body: preview.last, bookTitle: preview.bookTitle, mine: preview.mine, at: preview.at })}<p class="cht-note">Carregando o resto da conversa…</p>` : '<p class="cht-note">Carregando a conversa…</p>'; if (!data.items.length) return '<p class="cht-note">Comece a conversa. Mensagens sobre um livro que a outra pessoa não terminou ficam escondidas até ela tocar.</p>';
     let last = ''; return data.items.map((m) => { const d = dayLabel(m.at), head = d !== last ? `<div class="cht-day">${d}</div>` : ''; last = d; return head + bubble(m); }).join(''); };
   const name = () => (data && data.with.displayName) || (friend && friend.displayName) || '@' + handle;
@@ -23094,7 +23094,16 @@ Object.assign(V3EMO, {
 // - Página do livro: "Meus ecos" só em Minha leitura.
 function v9Ask(anchor, label, fn) { try { popMenu(anchor, [{ label, fn }]); } catch { fn(); } }
 { const st = document.createElement('style'); st.textContent = `#shelflist:not(.v5bp-minha) .sl-body > .v9ecos{display:none!important}
-.bub.me[data-mid]{cursor:pointer}`; TR.append(st); }
+.bub.me[data-mid]{cursor:pointer}
+.bub small{font-size:.66rem!important;opacity:.92!important;font-weight:700}`; TR.append(st); }
+// os balões não trazem o id da mensagem: as suas mensagens na tela seguem a ordem das suas na conversa guardada
+{ let tm = 0;
+  const marca = () => { tm = 0; const v = $('#shelflist'); if (!v || v.hidden) return; const box = v.querySelector('.cht'); if (!box) return;
+    const h = (v.querySelector('.cht-who') || {}).dataset ? v.querySelector('.cht-who').dataset.h : ''; if (!h) return;
+    let items = []; try { items = ((chatCache()[h] || {}).items || []).filter((m) => m.mine && m.id); } catch {} const bs = [...box.querySelectorAll('.bub.me')];
+    if (!items.length || bs.length !== items.length) return;
+    bs.forEach((b, i) => { if (b.dataset.mid !== items[i].id) { b.dataset.mid = items[i].id; b.dataset.mh = h; } }); };
+  const v = $('#shelflist'); if (v) new MutationObserver(() => { if (!tm) tm = setTimeout(marca, 60); }).observe(v, { childList: true, subtree: true }); }
 { const _s = sapi;
   const purgeSaved = (pred) => { try { const L = rdSavedList(), K = L.filter((x) => !pred(x)); if (K.length !== L.length) rdSetPref('rdSaved', K); } catch {} };
   sapi = async function (method, path, body) {
