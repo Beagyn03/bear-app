@@ -188,9 +188,10 @@ function v3Build(v, d) {
   // Estantes: tudo o que sobrar do perfil antigo (estantes, lidos recentes, leituras por mês)
   const KEEP = ['sl-top', 'v3pf', 'v3hubw', 'v3tabs', 'v3pane', 'v2afi', 'cm-btn', 'yo-top', 'yo-nums', 'v2pv', 'ex-wish', 'v2ptabs', 'fr-acts', 'v2sus', 't5-row', 't5-empty', 'fr-unf'];
   [...body.children].forEach((el) => { if (KEEP.some((c) => el.classList.contains(c)) || el.classList.contains('t5-h')) return; pE.append(el); });
-  if (!pE.children.length) pE.innerHTML = '<p class="v2wempty">' + (self ? 'Suas estantes aparecem aqui. Escolha quais mostrar em Ajustes › Organizar meu perfil.' : 'Nenhuma estante no perfil.') + '</p>';
+  if (!pE.children.length) pE.innerHTML = '<p class="v2wempty">' + (self ? 'Suas estantes aparecem aqui.<button type="button" class="v3tpe" data-v3="newsh" style="display:block;margin:.7rem auto 0">+ Nova estante</button>' : 'Nenhuma estante no perfil.') + '</p>';
   // só tira o aviso de vazio quando há outra coisa na aba; tirar o aviso sozinho fazia o bloco m0 repô-lo e os dois se alternavam ~10x/s
   else if (pE.children.length > 1) pE.querySelector(':scope > .v2wempty')?.remove();
+  pE.querySelectorAll('[data-v3=newsh]').forEach((b) => { if (b.dataset.on) return; b.dataset.on = 1; b.addEventListener('click', () => { try { shelfEditForm(); } catch { try { newEstante(); } catch {} } }); });
   // Desejos (bloco f0)
   if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle + '|' + ro)) { pD.dataset.h = d.handle + '|' + ro; pD.innerHTML = ''; v2WishPaint(v, ro ? { ...d, self: false } : d, pD); }
   // Atividade
