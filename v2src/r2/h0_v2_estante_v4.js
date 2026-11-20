@@ -467,7 +467,8 @@ bookMenu = function (e) { if (e && lib().includes(e)) return v5Menu(e); };
 { const st = document.createElement('style'); st.textContent = `#shelflist .v5bpacts{display:flex;gap:8px;margin:0 0 12px}
 #shelflist .v5bpacts .pri{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:16px;padding:12px 14px;font:inherit;font-weight:900;font-size:.95rem;background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 65%,#fff),var(--acc));color:var(--on-acc,#fff);box-shadow:0 6px 16px color-mix(in srgb,var(--acc) 30%,transparent);cursor:pointer}
 #shelflist .v5bpacts .pri svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-#shelflist .v5bpacts.solo{justify-content:flex-end}#shelflist .v5bpacts.solo .pri{display:none}
+#shelflist .v5bpacts.solo{display:none}
+#shelflist .bp-hero .v5hdots{position:absolute;top:.55rem;right:.55rem;z-index:2;width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 85%,transparent);color:var(--ink);font:inherit;font-weight:900;font-size:1rem;line-height:1;cursor:pointer}
 #shelflist .v5bpacts .dots{width:52px;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);font:inherit;font-weight:900;font-size:1.1rem;cursor:pointer}
 #shelflist.v5bp .bp-tabs [data-t=enredo],#shelflist.v5bp .sl-top .es-dots[data-a=menu]{display:none!important}
 #shelflist.v5bp:not(.v5bp-minha) .bp-ex,#shelflist.v5bp:not(.v5bp-minha) .bp-buy{display:none!important}`; TR.append(st); }
@@ -480,6 +481,10 @@ bookMenu = function (e) { if (e && lib().includes(e)) return v5Menu(e); };
     v.classList.toggle('v5bp-minha', t === 'minha');
     if (t === 'minha') { const tabs = v.querySelector('.bp-tabs'), ex = v.querySelector('.bp-ex'), buy = v.querySelector('.bp-buy'); if (tabs && ex && tabs.nextElementSibling !== ex) { tabs.after(ex); if (buy) ex.after(buy); } }
     // lendo: sem "Atualizar página" na página do livro (Bia, 20/11); atualizar fica no Hoje e no Ler. Fica só o •••
+    // lendo: o ••• vai para o canto do card do livro (a linha de ações fica vazia sem o Atualizar)
+    let hd = hero.querySelector(':scope > .v5hdots');
+    if (e.status === 'LENDO') { if (!hd || hd.dataset.k !== e.id) { if (hd) hd.remove(); hero.insertAdjacentHTML('beforeend', '<button type="button" class="v5hdots" aria-label="Mais opções do livro">•••</button>'); hd = hero.querySelector(':scope > .v5hdots'); hd.dataset.k = e.id; hd.addEventListener('click', () => v5Menu(e)); } }
+    else if (hd) hd.remove();
     const [ic, lb] = prim(e); let row = v.querySelector('.v5bpacts');
     if (!row || row.dataset.k !== e.id + e.status) { if (row) row.remove(); const nc = hero.nextElementSibling && hero.nextElementSibling.classList.contains('v8nc') ? hero.nextElementSibling : hero; nc.insertAdjacentHTML('afterend', `<div class="v5bpacts${e.status === 'LENDO' ? ' solo' : ''}" data-k="${esc(e.id + e.status)}"><button type="button" class="pri" data-a="pri"><svg viewBox="0 0 24 24" aria-hidden="true">${V4ICON[ic] || ''}</svg>${lb}</button><button type="button" class="dots" data-a="more" aria-label="Mais opções do livro">•••</button></div>`); row = v.querySelector('.v5bpacts');
       row.querySelector('[data-a=more]').addEventListener('click', () => v5Menu(e));
