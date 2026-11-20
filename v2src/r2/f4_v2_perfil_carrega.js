@@ -40,3 +40,6 @@ loadProfile = async function () {
 // recarregar parado em Ajustes/Editar perfil volta para o perfil (o modo da tela não é guardado e caía em "Editar perfil")
 if (S.tab === 'perfil' && connected()) setTimeout(() => goTab('eu'), 0);
 
+// Recarregar com o perfil aberto: restoreNav chama openMyProfile direto, que sem perfil carregado caía em Editar perfil.
+// Enquanto o perfil não chegou, vai pelo caminho da aba Você (espera com "Abrindo seu perfil…").
+{ const _om = openMyProfile; openMyProfile = function () { if (connected() && socialProfile === undefined) return goTab('eu'); return _om.apply(this, arguments); }; }
