@@ -176,10 +176,10 @@ v2FuncoesSheet = function () {
 // ---------- Voltar no topo das páginas internas (como no protótipo) ----------
 { const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
   let tm = 0; const sync = () => { const top = TR.querySelector('.gtop'), v = $('#shelflist'); if (!top) return;
-    const back = v && !v.hidden && v.querySelector('.sl-body > .sl-top > .sl-back'), inner = !!(back && !v.classList.contains('tabroot') && !v.classList.contains('mine-page'));
+    const back = v && !v.hidden && v.querySelector('.sl-body > .sl-top > .sl-back'), inner = !!(back && ((!v.classList.contains('tabroot') && !v.classList.contains('mine-page')) || v.querySelector('.sl-body > .bp-hero'))); // página do livro é sempre interna, mesmo aberta do perfil ou da Busca
     v && v.classList.toggle('v4inner', inner);
     const meNow = !!(v && !v.hidden && !inner && v.querySelector('.v3pb [data-v3=aj]')); if (meNow) S.v4fromMe = true; else if (!inner) S.v4fromMe = false;
-    if (inner) { const st = back.parentElement; st.classList.toggle('v4empty', ![...st.children].some((x) => x !== back && x.tagName !== 'B' && (x.children.length || (x.textContent || '').trim()))); }
+    if (inner) { const st = back.parentElement; st.classList.toggle('v4empty', ![...st.children].some((x) => x !== back && x.tagName !== 'B' && x.getClientRects().length && (x.children.length || (x.textContent || '').trim()))); }
     const lb = (!v || v.hidden) ? TR.querySelector('#lista > header.v3-top .sl-back, #lista > .v3-top .sl-back') : null; const L = TR.querySelector('#lista'); if (L) L.classList.toggle('v4inner-l', !!lb);
     if (['inicio', 'estante', 'comunidade', 'eu'].includes(S.tab)) S.v4lastTab = S.tab;
     const ed = $('#editor'), nt = !!(ed && !ed.hidden && ed.classList.contains('ntpage'));

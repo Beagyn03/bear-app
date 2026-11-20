@@ -11878,7 +11878,7 @@ function rdCardHTML(it, i, opts = {}) {
   return `<article class="rd-card rd2${it.paws ? ' has-nota' : ''}" data-i="${i}">
     <header><span class="av sm" data-avh="${esc(u.handle || '')}" style="background:${friendColor(u.handle || '')}">${esc(initial(u.displayName))}</span>
       <button type="button" class="rd-who" data-h="${esc(u.handle || '')}"><b>${esc(u.displayName || '')}</b><small>@${esc(u.handle || '')} · ${esc(relTime(it.createdAt))}${it.visibility === 'friends' ? ' · só amigos' : ''}</small></button>
-      <span class="rd-kc">${isRev && it.paws ? `<span class="rd-tag rv rd-nt" title="${revLbl} · nota ${String(it.paws).replace('.', ',')}">${esc(revLbl)} <i>${'★'.repeat(Math.round(Number(it.paws)))}<u>${'★'.repeat(5 - Math.round(Number(it.paws)))}</u></i></span>` : `<span class="rd-tag${isRev || isAch || (isAct && it.act === 'FINISHED') ? ' rv' : ''}">${esc(kind)}</span>`}${pct != null ? `<span class="rd-kpct" title="${esc(readerPctTxt(it.readerPct))}">${pct}%</span>` : ''}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
+      <span class="rd-kc">${isRev && it.paws ? `<span class="rd-tag rv rd-nt" title="${revLbl} · nota ${String(it.paws).replace('.', ',')}">${esc(revLbl)} <i>${'★'.repeat(Math.round(Number(it.paws)))}<u>${'★'.repeat(5 - Math.round(Number(it.paws)))}</u></i></span>` : `<span class="rd-tag${isRev || isAch || (isAct && it.act === 'FINISHED') ? ' rv' : ''}"${pct != null ? ` title="${esc(readerPctTxt(it.readerPct))}"` : ''}>${esc(kind)}${pct != null ? ' · ' + pct + '%' : ''}</span>`}</span><button type="button" class="rd-more" aria-label="Mais opções">•••</button></header>
     ${isAch ? `<div class="rd-ach">${it.reward && typeof DECO_IMG !== 'undefined' && DECO_IMG[it.reward] ? `<img src="${DECO_IMG[it.reward]}" alt="">` : '<span></span>'}<span><b>${esc(it.name || '')}</b><small>ganhou esta conquista</small></span></div>` : ''}
     ${it.book && !it.book2 ? `<div class="rd-main"><div class="rd-lc"><button type="button" class="rd-book rd-bcv" aria-label="Ver o livro">${cvh(it.book.title, it.book.cover)}</button></div><div class="rd-col"><button type="button" class="rd-book rd-bt"><b>${esc(it.book.title)}</b><small>${esc(it.book.author || '')}</small>${it.paws && fr ? `<span class="rd-ntx">${esc(fr)}</span>` : ''}${isAct ? `<em>${it.act === 'STARTED' ? 'começou a ler' : it.act === 'FINISHED' ? 'terminou o livro' : it.pages ? 'chegou na pág. ' + it.pages : 'avançou na leitura'}</em>` : ''}${fim ? `<em>${esc(fim)}</em>` : ''}</button>${(it.text || it.quote || it.hasImage || (it.feelings || []).length) ? `<div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}${reHide}` : ''}</div></div>` : `<div class="rd-body${sp ? ' spoil' : ''}">${body}${sp ? `<button type="button" class="rd-veil"><i class="rd-eye" aria-hidden="true"></i><b>${esc(sp.label)}</b>${sp.note ? `<small>${esc(sp.note)}</small>` : ''}<u>Mostrar mesmo assim</u></button>` : ''}</div>${sp && fe ? `<div class="rd-fe-out">${fe}</div>` : ''}${reHide}`}
     ${opts.noFoot || isAch ? '' : isAct ? `<footer><span class="rd-sp"></span><button type="button" class="rd-save${saved ? ' on' : ''}" aria-pressed="${saved}" aria-label="Salvar"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></button>${rdShelfBtn(it)}</footer>` : `<footer><button type="button" class="rd-like${it.liked ? ' on' : ''}" data-ic2="1" aria-label="Curtir" aria-pressed="${!!it.liked}"><img class="rd-hi" src="img/bt_curtir.webp" alt="">${it.likes || ''}</button><button type="button" class="rd-rp">Responder${it.replies ? ' · ' + it.replies : ''}</button>
@@ -13175,7 +13175,7 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
 .bp-rede .br-top{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
 .bp-rede .br-avg b{font-size:1.1rem}.bp-rede .br-avg small{display:block;font-size:.74rem;color:var(--ink-2);font-weight:700}
 .bp-rede .rd-new2{border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:99px;padding:.45rem .9rem;font:inherit;font-weight:800;font-size:.84rem}
-.br-f{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center}
+.br-f{display:flex;gap:.35rem;flex-wrap:nowrap;align-items:center;overflow-x:auto;scrollbar-width:none}.br-f > *{flex:none}
 .br-f button,.br-f select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.32rem .75rem;font:inherit;font-weight:800;font-size:.8rem}
 .br-f button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
 .bp-rede .bp-load{margin:0}
@@ -13206,7 +13206,7 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
     const lr = lib().find((x) => normT(x.title) === normT(title)), my = lr && reviewOfLib(lr);
     const mineLocal = !data.revs.some((r) => r.mine) && my && (my.paws || my.texto) ? [{ type: 'review', id: 'me-local', user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME }, paws: my.paws || null, text: my.texto || null, spoiler: !!my.spoiler, createdAt: lr.finishedAt || todayISO(), mine: true, local: true, readerPct: readerPctOf(title) }] : [];
     const draw = () => {
-      const F = S.bkF;
+      const F = S.bkF; F.nota = ''; // filtro por nota saiu (Bia, 20/11; protótipo: Tudo · Avaliações · Sem spoiler)
       let list = [...mineLocal, ...data.revs, ...data.posts].map((x) => ({ ...x, mine: !!(x.mine || (x.user && socialProfile && x.user.handle === socialProfile.handle)) }));
       if (F.tipo === 'aval') list = list.filter((x) => x.type === 'review'); else if (F.tipo === 'com') list = list.filter((x) => x.type !== 'review');
       if (F.nota) list = list.filter((x) => { const p = Number(x.paws) || 0; return F.nota === '5' ? p >= 5 : F.nota === '4' ? p >= 4 && p < 5 : F.nota === '3' ? p >= 3 && p < 4 : p > 0 && p < 3; });
@@ -13215,7 +13215,6 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       const total = mineLocal.length + data.revs.length + data.posts.length;
       sec.innerHTML = '<div class="br-top"><div class="br-avg">' + (data.avg != null ? '<b>' + esc(pawTxt(data.avg)) + '</b><small>média de ' + plural(data.count, 'nota', 'notas') + '</small>' : '<small>Ainda sem avaliações</small>') + '</div><button type="button" class="rd-new2">+ Comentar</button></div>'
         + (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
-          + (F.tipo !== 'aval' ? '' : '<select data-n aria-label="Filtrar por nota"><option value="">Todas as notas</option><option value="5">Nota 5</option><option value="4">4 e 4,5</option><option value="3">3 e 3,5</option><option value="2">Abaixo de 3</option></select>')
           + '<button type="button" data-sp class="' + (F.semSp ? 'on' : '') + '">Sem spoiler</button></div>' : '')
         + (list.length ? list.map((it, i) => rdCardHTML({ ...it, book: null }, i, it.local ? { noFoot: true } : {})).join('')
           : '<p class="bp-load">' + (total ? 'Nada com esses filtros.' : 'Ninguém comentou nem avaliou este livro ainda. Que tal começar?') + '</p>');
@@ -20289,11 +20288,12 @@ function v5BmHTML(e) {
   return `<button class="sh-bk sh-go" data-a="v5open" aria-label="Abrir página do livro">${v4cv(e)}<div style="flex:1;min-width:0;text-align:left"><h3>${esc(e.title)}</h3><span class="mut">${esc(e.author || '')}${e.author ? ' · ' : ''}${V5ST[st] || ''}${st === 'LENDO' && pg ? ' · pág. ' + pg + (tot ? ' de ' + tot : '') : ''}</span><small class="sh-lk">Ver página do livro</small></div><span class="r">${v4ic('chev', 18)}</span></button>
   <div class="list">${top.filter(Boolean).join('')}
   ${v4On('emprest') ? v5li('v5lend', 'swap', 'Emprestar', 'para uma amizade ou alguém de fora') : ''}
+  ${v5li('v5buy', 'cart', 'Onde comprar', 'comparar preços nas lojas')}
   ${v5li('v5shelves', 'estante', 'Estantes', shN.length ? esc(shN.slice(0, 2).join(', ')) + (shN.length > 2 ? ' e mais ' + (shN.length - 2) : '') : 'em nenhuma estante')}
   ${v5li('sheet', 'pag', 'Trocar edição', 'capa, páginas, formato e idioma', ' data-s="v5edicao"')}
   ${v5li('sheet', 'send', 'Compartilhar', soc ? 'indicar a alguém ou postar' : 'indicar a alguém', ' data-s="v5share"')}
   ${v5li('sheet', 'trash', 'Remover livro', '', ' data-s="v5rm"', 'dng')}</div>
-  <p class="mut" style="margin:10px 0 0;font-size:12px">Formato e meu exemplar ficam na página do livro, em Minha leitura.</p>`;
+  <p class="mut" style="margin:10px 0 0;font-size:12px">Meu exemplar fica na página do livro, em Minha leitura.</p>`;
 }
 const v4SheetHTML_v5 = v4SheetHTML;
 v4SheetHTML = function (k) {
@@ -20466,6 +20466,7 @@ function v5V4Click(ev) {
   if (a === 'v5prio') return ext(() => prioSheet(e));
   if (a === 'v5retro') return ext(() => openRetro(e));
   if (a === 'v5lend') return ext(() => exSheet(e, 'loan'));
+  if (a === 'v5buy') return ext(() => whereToBuy(e));
   if (a === 'v5shelves') return ext(() => moveToShelf(e));
   if (a === 'v5fila') { withUndo(`“${e.title}” voltou para Quero ler`, () => { setLibStatus(e, 'QUERO'); v5Save(); }); return done(); }
   if (a === 'v5pause') { withUndo(`Pausado na pág. ${libProgress(e)}`, () => { if (e.dueAt) { e.dueOff = e.dueAt; delete e.dueAt; } setLibStatus(e, 'HIBERNANDO'); v5Save(); }); return done(); }
@@ -21138,10 +21139,10 @@ v2FuncoesSheet = function () {
 // ---------- Voltar no topo das páginas internas (como no protótipo) ----------
 { const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
   let tm = 0; const sync = () => { const top = TR.querySelector('.gtop'), v = $('#shelflist'); if (!top) return;
-    const back = v && !v.hidden && v.querySelector('.sl-body > .sl-top > .sl-back'), inner = !!(back && !v.classList.contains('tabroot') && !v.classList.contains('mine-page'));
+    const back = v && !v.hidden && v.querySelector('.sl-body > .sl-top > .sl-back'), inner = !!(back && ((!v.classList.contains('tabroot') && !v.classList.contains('mine-page')) || v.querySelector('.sl-body > .bp-hero'))); // página do livro é sempre interna, mesmo aberta do perfil ou da Busca
     v && v.classList.toggle('v4inner', inner);
     const meNow = !!(v && !v.hidden && !inner && v.querySelector('.v3pb [data-v3=aj]')); if (meNow) S.v4fromMe = true; else if (!inner) S.v4fromMe = false;
-    if (inner) { const st = back.parentElement; st.classList.toggle('v4empty', ![...st.children].some((x) => x !== back && x.tagName !== 'B' && (x.children.length || (x.textContent || '').trim()))); }
+    if (inner) { const st = back.parentElement; st.classList.toggle('v4empty', ![...st.children].some((x) => x !== back && x.tagName !== 'B' && x.getClientRects().length && (x.children.length || (x.textContent || '').trim()))); }
     const lb = (!v || v.hidden) ? TR.querySelector('#lista > header.v3-top .sl-back, #lista > .v3-top .sl-back') : null; const L = TR.querySelector('#lista'); if (L) L.classList.toggle('v4inner-l', !!lb);
     if (['inicio', 'estante', 'comunidade', 'eu'].includes(S.tab)) S.v4lastTab = S.tab;
     const ed = $('#editor'), nt = !!(ed && !ed.hidden && ed.classList.contains('ntpage'));
@@ -21840,6 +21841,47 @@ var V6H = [['dia', 'Linha do dia', 'Órbita e Meta, logo abaixo do livro'], ['de
       v.querySelectorAll('[data-mv]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k, i = p.order.indexOf(k), j = i + +b.dataset.mv; if (i < 0 || j < 0 || j >= p.order.length) return; [p.order[i], p.order[j]] = [p.order[j], p.order[i]]; save(); apply(); draw(); }));
     };
     S.listRedraw = draw; draw();
+  };
+}
+// --- o0_v2_livro_pagina.js ---
+// Página do livro como no protótipo (Bia, 20/11):
+//  - Minha leitura: "Meu exemplar" vira linha de lista (não mais dois cartões lado a lado); "Onde comprar" sai daqui e fica
+//    no menu "•••" do livro (h0, v5buy).
+//  - Aberta do perfil (classe mine-page) a página não ganha o respiro de 2,9rem do perfil.
+//  - Comunidade do livro: no seu post/avaliação o "•••" abre a mesma folha do feed (Editar, Quem vê, spoiler, Excluir);
+//    no post dos outros some o "Ver o livro" (você já está nele). Depois de editar/excluir, a lista do livro recarrega.
+if (typeof V4ICON !== 'undefined' && !V4ICON.cart) V4ICON.cart = '<path d="M3 4h2.5l2.2 10.5h10.6L20.5 7H6.6"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/>';
+{ const st = document.createElement('style'); st.textContent = `
+#shelflist .sl-body > .bp-buy{display:none!important}
+#shelflist.v5bp-minha .sl-body > .bp-ex{grid-column:1/-1!important;display:flex!important;align-items:center!important;gap:.75rem!important;width:100%!important;min-height:58px!important;margin:0 0 .85rem!important;padding:.55rem .9rem!important;border-radius:16px!important;border:1px solid var(--line)!important;background:var(--panel)!important;box-shadow:none!important;text-align:left}
+#shelflist.v5bp-minha .sl-body > .bp-ex > i{width:auto!important;height:auto!important;background:none!important;border-radius:0!important;color:var(--ink-2)}
+#shelflist.v5bp-minha .sl-body > .bp-ex > span{flex:1;min-width:0}
+#shelflist.v5bp-minha .sl-body > .bp-ex b{font-size:.92rem!important}
+#shelflist.v5bp-minha .sl-body > .bp-ex small{font-size:.74rem!important;-webkit-line-clamp:1!important}
+#shelflist.v5bp-minha .sl-body > .bp-ex > em{display:block!important;font-style:normal;font-size:1.2rem;color:var(--ink-2)}
+#shelflist.mine-page .sl-body:has(> .bp-hero){padding-top:.75rem!important}
+#shelflist.v5bp:not(.v5bp-minha) .sl-body > .bp-ex{display:none!important}
+`; TR.append(st); }
+{ const _rm = rdMenu;
+  rdMenu = function (it, after, anchor) {
+    const inBook = !!(anchor && anchor.closest && anchor.closest('.bp-rede'));
+    if (!inBook || !it || it.type === 'activity' || it.type === 'achievement') return _rm.apply(this, arguments);
+    const le = it.book ? lib().find((x) => normT(x.title) === normT(it.book.title)) : null;
+    if (it.mine && it.local) { // avaliação só sua, ainda não publicada: só editar
+      if (le && typeof popMenu === 'function') return popMenu(anchor, [{ label: 'Editar avaliação', fn: () => { try { v4FimOpen(le); } catch { rateForm(le, { logs: [] }, () => {}); } } }]);
+      return;
+    }
+    if (it.mine && (it.type === 'post' || it.type === 'review')) {
+      if (it.type === 'review' && !it.libId && le) it.libId = le.id;
+      S.v7bkRefresh = 1; return v6Sheet('v6my', { it });
+    }
+    return _rm.call(this, { ...it, book: null }, after, anchor); // sem "Ver o livro" dentro do próprio livro
+  };
+  const _close = v6SheetClose;
+  v6SheetClose = function () {
+    const r = _close.apply(this, arguments);
+    if (S.v7bkRefresh) { S.v7bkRefresh = 0; S.bkRede = {}; const sec = TR.querySelector('#shelflist .bp-rede'); if (sec) sec.remove(); }
+    return r;
   };
 }
 // ==== 4.4 rodada 2 (fim) ====

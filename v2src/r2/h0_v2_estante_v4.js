@@ -184,11 +184,12 @@ function v5BmHTML(e) {
   return `<button class="sh-bk sh-go" data-a="v5open" aria-label="Abrir página do livro">${v4cv(e)}<div style="flex:1;min-width:0;text-align:left"><h3>${esc(e.title)}</h3><span class="mut">${esc(e.author || '')}${e.author ? ' · ' : ''}${V5ST[st] || ''}${st === 'LENDO' && pg ? ' · pág. ' + pg + (tot ? ' de ' + tot : '') : ''}</span><small class="sh-lk">Ver página do livro</small></div><span class="r">${v4ic('chev', 18)}</span></button>
   <div class="list">${top.filter(Boolean).join('')}
   ${v4On('emprest') ? v5li('v5lend', 'swap', 'Emprestar', 'para uma amizade ou alguém de fora') : ''}
+  ${v5li('v5buy', 'cart', 'Onde comprar', 'comparar preços nas lojas')}
   ${v5li('v5shelves', 'estante', 'Estantes', shN.length ? esc(shN.slice(0, 2).join(', ')) + (shN.length > 2 ? ' e mais ' + (shN.length - 2) : '') : 'em nenhuma estante')}
   ${v5li('sheet', 'pag', 'Trocar edição', 'capa, páginas, formato e idioma', ' data-s="v5edicao"')}
   ${v5li('sheet', 'send', 'Compartilhar', soc ? 'indicar a alguém ou postar' : 'indicar a alguém', ' data-s="v5share"')}
   ${v5li('sheet', 'trash', 'Remover livro', '', ' data-s="v5rm"', 'dng')}</div>
-  <p class="mut" style="margin:10px 0 0;font-size:12px">Formato e meu exemplar ficam na página do livro, em Minha leitura.</p>`;
+  <p class="mut" style="margin:10px 0 0;font-size:12px">Meu exemplar fica na página do livro, em Minha leitura.</p>`;
 }
 const v4SheetHTML_v5 = v4SheetHTML;
 v4SheetHTML = function (k) {
@@ -361,6 +362,7 @@ function v5V4Click(ev) {
   if (a === 'v5prio') return ext(() => prioSheet(e));
   if (a === 'v5retro') return ext(() => openRetro(e));
   if (a === 'v5lend') return ext(() => exSheet(e, 'loan'));
+  if (a === 'v5buy') return ext(() => whereToBuy(e));
   if (a === 'v5shelves') return ext(() => moveToShelf(e));
   if (a === 'v5fila') { withUndo(`“${e.title}” voltou para Quero ler`, () => { setLibStatus(e, 'QUERO'); v5Save(); }); return done(); }
   if (a === 'v5pause') { withUndo(`Pausado na pág. ${libProgress(e)}`, () => { if (e.dueAt) { e.dueOff = e.dueAt; delete e.dueAt; } setLibStatus(e, 'HIBERNANDO'); v5Save(); }); return done(); }

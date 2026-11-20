@@ -7,7 +7,7 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
 .bp-rede .br-top{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
 .bp-rede .br-avg b{font-size:1.1rem}.bp-rede .br-avg small{display:block;font-size:.74rem;color:var(--ink-2);font-weight:700}
 .bp-rede .rd-new2{border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:99px;padding:.45rem .9rem;font:inherit;font-weight:800;font-size:.84rem}
-.br-f{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center}
+.br-f{display:flex;gap:.35rem;flex-wrap:nowrap;align-items:center;overflow-x:auto;scrollbar-width:none}.br-f > *{flex:none}
 .br-f button,.br-f select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.32rem .75rem;font:inherit;font-weight:800;font-size:.8rem}
 .br-f button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
 .bp-rede .bp-load{margin:0}
@@ -38,7 +38,7 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
     const lr = lib().find((x) => normT(x.title) === normT(title)), my = lr && reviewOfLib(lr);
     const mineLocal = !data.revs.some((r) => r.mine) && my && (my.paws || my.texto) ? [{ type: 'review', id: 'me-local', user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME }, paws: my.paws || null, text: my.texto || null, spoiler: !!my.spoiler, createdAt: lr.finishedAt || todayISO(), mine: true, local: true, readerPct: readerPctOf(title) }] : [];
     const draw = () => {
-      const F = S.bkF;
+      const F = S.bkF; F.nota = ''; // filtro por nota saiu (Bia, 20/11; protótipo: Tudo · Avaliações · Sem spoiler)
       let list = [...mineLocal, ...data.revs, ...data.posts].map((x) => ({ ...x, mine: !!(x.mine || (x.user && socialProfile && x.user.handle === socialProfile.handle)) }));
       if (F.tipo === 'aval') list = list.filter((x) => x.type === 'review'); else if (F.tipo === 'com') list = list.filter((x) => x.type !== 'review');
       if (F.nota) list = list.filter((x) => { const p = Number(x.paws) || 0; return F.nota === '5' ? p >= 5 : F.nota === '4' ? p >= 4 && p < 5 : F.nota === '3' ? p >= 3 && p < 4 : p > 0 && p < 3; });
@@ -47,7 +47,6 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       const total = mineLocal.length + data.revs.length + data.posts.length;
       sec.innerHTML = '<div class="br-top"><div class="br-avg">' + (data.avg != null ? '<b>' + esc(pawTxt(data.avg)) + '</b><small>média de ' + plural(data.count, 'nota', 'notas') + '</small>' : '<small>Ainda sem avaliações</small>') + '</div><button type="button" class="rd-new2">+ Comentar</button></div>'
         + (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
-          + (F.tipo !== 'aval' ? '' : '<select data-n aria-label="Filtrar por nota"><option value="">Todas as notas</option><option value="5">Nota 5</option><option value="4">4 e 4,5</option><option value="3">3 e 3,5</option><option value="2">Abaixo de 3</option></select>')
           + '<button type="button" data-sp class="' + (F.semSp ? 'on' : '') + '">Sem spoiler</button></div>' : '')
         + (list.length ? list.map((it, i) => rdCardHTML({ ...it, book: null }, i, it.local ? { noFoot: true } : {})).join('')
           : '<p class="bp-load">' + (total ? 'Nada com esses filtros.' : 'Ninguém comentou nem avaliou este livro ainda. Que tal começar?') + '</p>');
