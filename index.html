@@ -19201,7 +19201,7 @@ const v3Emo = (e) => { const c = new Map(); ((e && e.quotes) || []).forEach((q) 
   try { if (snapshot.shelf && snapshot.shelf.stats) snapshot.shelf.stats.am = ((SOC.fr && SOC.fr.friends) || []).length; } catch {} }; }
 function v3Data(d) {
   if (d.self) { const s = myStatsSnap(), L = lib();
-    return { lidos: s.lidos, aband: s.aband, pags: s.paginas, maior: s.maior, am: ((SOC.fr && SOC.fr.friends) || []).length,
+    return { lidos: s.lidos, aband: s.aband, pags: s.paginas, maior: s.maior, am: (() => { const L = SOC.fr && SOC.fr.friends; if (Array.isArray(L) && (SOC.ok || L.length)) { try { localStorage.setItem('v3.am', String(L.length)); } catch {} return L.length; } let c = null; try { c = localStorage.getItem('v3.am'); } catch {} return c != null && c !== '' ? +c : (socialProfile && socialProfile.friendsCount != null ? socialProfile.friendsCount : null); })(), // antes de a lista chegar: o último número conhecido, nunca "0 amizades" (teste 20/11 item 36)
       lendo: L.filter((e) => e.status === 'LENDO').slice(0, 3).map((e) => ({ title: e.title, pct: readingInfo(e).pct, id: e.id })),
       top: (() => { try { return top5Books().slice(0, 3).map((b) => ({ ...b, emo: v3Emo(lib().find((x) => normT(x.title) === normT(b.title))) })); } catch { return []; } })() }; }
   const sh = d.shelf || {}, s = sh.stats || {}, c = sh.counts || {};
@@ -21174,7 +21174,9 @@ v2FuncoesSheet = function () {
 // ---------- Voltar no topo das páginas internas (como no protótipo) ----------
 { const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
   let tm = 0; const sync = () => { const top = TR.querySelector('.gtop'), v = $('#shelflist'); if (!top) return;
-    const back = v && !v.hidden && v.querySelector('.sl-body > .sl-top > .sl-back'), inner = !!(back && ((!v.classList.contains('tabroot') && !v.classList.contains('mine-page')) || v.querySelector('.sl-body > .bp-hero'))); // página do livro é sempre interna, mesmo aberta do perfil ou da Busca
+    const back = v && !v.hidden && v.querySelector('.sl-body > .sl-top > .sl-back'); let inner = !!(back && ((!v.classList.contains('tabroot') && !v.classList.contains('mine-page')) || v.querySelector('.sl-body > .bp-hero'))); // página do livro é sempre interna, mesmo aberta do perfil ou da Busca
+    // o seu próprio perfil é a raiz do Você, mesmo quando abriu por cima de outra tela (perfil de outra pessoa › Você): sem seta (Bia, teste 20/11 item 34)
+    if (inner && v.querySelector('.v3pb [data-v3=aj]') && !v.querySelector('.sl-body > .bp-hero')) { inner = false; v.classList.add('mine-page'); }
     v && v.classList.toggle('v4inner', inner);
     const meNow = !!(v && !v.hidden && !inner && v.querySelector('.v3pb [data-v3=aj]')); if (meNow) S.v4fromMe = true; else if (!inner) S.v4fromMe = false;
     if (inner) { const st = back.parentElement; st.classList.toggle('v4empty', ![...st.children].some((x) => x !== back && x.tagName !== 'B' && x.getClientRects().length && (x.children.length || (x.textContent || '').trim()))); }
@@ -22144,6 +22146,11 @@ function v8BjPut() { const v = $('#shelflist');
   // a espera do seu perfil (bloco f4) ganha as mesmas estrelas no lugar do círculo girando
   new MutationObserver(() => { TR.querySelectorAll('.v3pfwait:not(.v7st)').forEach((w) => { w.classList.add('v7st'); w.insertAdjacentHTML('afterbegin', '<s></s><s></s><s></s><s></s><s></s>'); }); }).observe(TR, { childList: true, subtree: true });
 }
+// O "Carregando perfil…" do bloco antigo (91) liga com a classe fp-wait e cobria o perfil já desenhado (vindo do cache ou da
+// volta de Ajustes) por 2–3 s (Bia, teste 20/11 itens 30 e 35): com o perfil na tela, ele não aparece.
+{ const st = document.createElement('style'); st.textContent = '.fp-load.v7off{display:none!important}'; TR.append(st);
+  const chk = () => { const o = TR.querySelector('.fp-load:not(.v7off)'); if (!o) return; const v = TR.querySelector('#shelflist'); if (v && !v.hidden && v.querySelector('.sl-body .v3pf, .sl-body .yo-top')) o.classList.add('v7off'); };
+  new MutationObserver(chk).observe(TR, { childList: true, subtree: true }); }
 // --- q0_v2_metricas_livro.js ---
 // Números do livro (Bia, 20/11; API 035): a estante vai para o servidor (PUT /v1/me/books, só quando muda) e a aba Sobre
 // da página do livro mostra os números logo abaixo do topo (duas fileiras como a faixa do perfil): lendo, leram, querem ler, abandonaram, avaliações (★ média),

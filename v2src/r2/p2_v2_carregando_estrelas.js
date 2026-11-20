@@ -35,3 +35,8 @@
   // a espera do seu perfil (bloco f4) ganha as mesmas estrelas no lugar do círculo girando
   new MutationObserver(() => { TR.querySelectorAll('.v3pfwait:not(.v7st)').forEach((w) => { w.classList.add('v7st'); w.insertAdjacentHTML('afterbegin', '<s></s><s></s><s></s><s></s><s></s>'); }); }).observe(TR, { childList: true, subtree: true });
 }
+// O "Carregando perfil…" do bloco antigo (91) liga com a classe fp-wait e cobria o perfil já desenhado (vindo do cache ou da
+// volta de Ajustes) por 2–3 s (Bia, teste 20/11 itens 30 e 35): com o perfil na tela, ele não aparece.
+{ const st = document.createElement('style'); st.textContent = '.fp-load.v7off{display:none!important}'; TR.append(st);
+  const chk = () => { const o = TR.querySelector('.fp-load:not(.v7off)'); if (!o) return; const v = TR.querySelector('#shelflist'); if (v && !v.hidden && v.querySelector('.sl-body .v3pf, .sl-body .yo-top')) o.classList.add('v7off'); };
+  new MutationObserver(chk).observe(TR, { childList: true, subtree: true }); }

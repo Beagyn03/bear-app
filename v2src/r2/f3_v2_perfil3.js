@@ -79,7 +79,7 @@ const v3Emo = (e) => { const c = new Map(); ((e && e.quotes) || []).forEach((q) 
   try { if (snapshot.shelf && snapshot.shelf.stats) snapshot.shelf.stats.am = ((SOC.fr && SOC.fr.friends) || []).length; } catch {} }; }
 function v3Data(d) {
   if (d.self) { const s = myStatsSnap(), L = lib();
-    return { lidos: s.lidos, aband: s.aband, pags: s.paginas, maior: s.maior, am: ((SOC.fr && SOC.fr.friends) || []).length,
+    return { lidos: s.lidos, aband: s.aband, pags: s.paginas, maior: s.maior, am: (() => { const L = SOC.fr && SOC.fr.friends; if (Array.isArray(L) && (SOC.ok || L.length)) { try { localStorage.setItem('v3.am', String(L.length)); } catch {} return L.length; } let c = null; try { c = localStorage.getItem('v3.am'); } catch {} return c != null && c !== '' ? +c : (socialProfile && socialProfile.friendsCount != null ? socialProfile.friendsCount : null); })(), // antes de a lista chegar: o último número conhecido, nunca "0 amizades" (teste 20/11 item 36)
       lendo: L.filter((e) => e.status === 'LENDO').slice(0, 3).map((e) => ({ title: e.title, pct: readingInfo(e).pct, id: e.id })),
       top: (() => { try { return top5Books().slice(0, 3).map((b) => ({ ...b, emo: v3Emo(lib().find((x) => normT(x.title) === normT(b.title))) })); } catch { return []; } })() }; }
   const sh = d.shelf || {}, s = sh.stats || {}, c = sh.counts || {};
