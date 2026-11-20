@@ -235,10 +235,12 @@ TR.addEventListener('click', (ev) => { const g = ev.target.closest && ev.target.
 .v2-qd .qr.qme .t b{color:var(--acc)}`; TR.append(st); }
 // página "Mais votados"
 let V6TOP = null;
+let V6HIST = null;
 async function v6QdayOpen() {
   const st = v4State(); st.view = 'v6qday'; st.sheet = null; v6Arm(v4Root()); v4Draw();
   v6QdLoad(true);
   try { const r = await sapi('GET', '/v1/qday/top?limit=20'); if (r.status === 200 && r.data && Array.isArray(r.data.items)) V6TOP = r.data; } catch {}
+  try { const h = await sapi('GET', '/v1/qday/history?days=7'); if (h.status === 200 && h.data && Array.isArray(h.data.items)) V6HIST = h.data.items; } catch {}
   if (v4State().view === 'v6qday') v4Draw();
 }
 const v4Draw_v6 = v4Draw;
@@ -253,8 +255,8 @@ v4Draw = function () {
     ${voted ? '' : `<div class="card ph" style="margin-top:10px"><b>Vote para ver o resultado</b><div class="qpk">${bks.map((e) => `<button data-a="v6qv" data-id="${esc(e.id)}">${cvh(e.title, e.cover)}<span>${esc(e.title)}</span></button>`).join('')}<button class="o" data-a="v6qv" data-id=""><span class="cv">${v4ic('busca', 22)}</span><span>Outro livro</span></button></div></div>`}
     <div class="h2">Mais votados</div>
     <div class="card qlist">${!T.items.length ? '<p class="mut" style="margin:0">Ninguém votou ainda. Seja a primeira pessoa.</p>' : voted ? T.items.map((x, i) => v6QdRow(x, T.total, i, Q.mine)).join('') : T.items.slice(0, 3).map((x, i) => `<div class="qr"><span class="n">${i + 1}</span>${cvh(x.title, x.cover, '', 'width:30px;height:45px;font-size:6px;filter:blur(3px)')}<span class="t"><b class="mut">resultado depois do seu voto</b></span></div>`).join('')}</div>
-    <div class="h2">O que estão dizendo</div>
-    <div class="card qcom"><p class="mut" style="margin:0 0 10px">Conte por que escolheu esse livro. O post vai para a Comunidade com a pergunta.</p><button class="btn s w" data-a="v6qc">Comentar</button></div>
+    ${(() => { const C = Q.comments || { total: 0, items: [] }; return '<div class="h2">O que estão dizendo' + (C.total > C.items.length ? ' <small><button data-a="v6qall">Ver os ' + C.total + '</button></small>' : '') + '</div><div class="card qcom">' + (C.items.length ? C.items.map((c) => '<p><b>' + esc(String(c.name).split(' ')[0]) + '</b> ' + esc(c.text) + '</p>').join('') : '<p class="mut" style="margin:0 0 10px">Ninguém comentou ainda. Conte por que escolheu esse livro: o post vai para a Comunidade com a pergunta.</p>') + '<button class="btn s w" data-a="v6qc">Comentar</button></div>'; })()}
+    ${(() => { const H = (V6HIST || []).filter((x) => x.total); if (!H.length) return ''; const dn = (d) => { const t = new Date(d + 'T12:00:00'), y = new Date(); y.setDate(y.getDate() - 1); return t.toDateString() === y.toDateString() ? 'Ontem' : ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][t.getDay()]; }; return '<div class="h2">Perguntas anteriores</div><div class="list card" style="padding:4px 12px">' + H.map((x) => '<div class="li"><span class="t">' + esc(x.question) + '<small>' + dn(x.day) + ' · venceu ' + esc(x.winner.title) + ' com ' + x.winner.pct + '% · ' + x.total + (x.total === 1 ? ' voto' : ' votos') + '</small></span></div>').join('') + '</div>'; })()}
   </div></section>${sh}`;
   try { paintCv(R); } catch {}
 };
@@ -263,6 +265,7 @@ v4Draw = function () {
     if (a === 'v6qx') { ev.stopPropagation(); const st = v4State(); st.view = null; st.sheet = null; return v4Close(); }
     if (a === 'v6qv') { ev.stopPropagation(); const id = b.dataset.id; if (id) { const e = lib().find((x) => String(x.id) === String(id)); if (e) return v6Vote({ title: e.title, author: e.author, cover: e.cover }).then(() => v6QdayOpen()); }
       try { return findBook('Votar em qual livro?', (x) => v6Vote({ title: x.title, author: x.author, cover: x.cover }).then(() => v6QdayOpen())); } catch { return; } }
+    if (a === 'v6qall') { ev.stopPropagation(); const st = v4State(); st.view = null; v4Close(); try { v6S().f = 'todos'; } catch {} return goTab('comunidade'); }
     if (a === 'v6qc') { ev.stopPropagation(); const q = (V6QD && V6QD.question) || ''; const st = v4State(); st.view = null; v4Close(); return openRdComposer({ kind: 'comment', text: `Pergunta do dia: ${q}\n` }); }
     return prev.apply(this, arguments);
   }; }

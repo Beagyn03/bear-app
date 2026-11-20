@@ -158,7 +158,7 @@ openGifts = function () {
       + '<div class="act"><button type="button" class="p" data-a="again" data-k="' + esc(g.bookKey) + '">Reservar de novo</button></div></div></div>';
     return '<div class="v2gc">' + cvh(g.title, g.cover, '') + '<div><b>' + esc(g.title) + '</b><small>para ' + esc(who) + (g.due ? ' · até ' + exD(g.due) : ' · sem data') + '</small>'
       + (d != null && d <= 7 ? '<span class="soon">' + (d <= 0 ? 'vence hoje' : 'vence em ' + d + (d === 1 ? ' dia' : ' dias')) + ': ainda está de pé?</span>' : '')
-      + '<div class="act"><button type="button" class="p" data-a="given" data-k="' + esc(g.bookKey) + '"><i class=v3e data-i=ok></i>Já dei</button><button type="button" data-a="date" data-k="' + esc(g.bookKey) + '">Mudar data</button><button type="button" data-a="buy" data-k="' + esc(g.bookKey) + '">Onde comprar</button><button type="button" class="dng" data-a="quit" data-k="' + esc(g.bookKey) + '">Desistir</button></div></div></div>'; };
+      + '<div class="act"><button type="button" class="p" data-a="given" data-k="' + esc(g.bookKey) + '"><i class=v3e data-i=ok></i>Já dei</button><button type="button" data-a="date" data-k="' + esc(g.bookKey) + '"><i class=v3e data-i=cal></i>Mudar data</button><button type="button" class="dng" data-a="quit" data-k="' + esc(g.bookKey) + '"><i class=v3e data-i=x></i>Desistir</button></div></div></div>'; };
   const draw = () => {
     const off = !gfSrv.giving, t = tab();
     const giving = gfSrv.giving || gfList().map((g) => ({ bookKey: exKey(g.title), title: g.title, author: g.author, cover: g.cover, due: g.due || null, expired: false, person: { handle: g.h, displayName: g.name } }));

@@ -45,10 +45,10 @@ const V2DRWT = [[/estat/i, 'stats'], [/resumo/i, 'resumo'], [/órbita|orbita/i, 
     // o bloco antigo escreve a imagem dentro do primeiro svg do sino: devolve o traço novo
     ['g-bell', 'g-imore', 'g-av'].forEach((id) => { const b = TR.querySelector('#' + id); if (!b) return; const s = b.querySelector(':scope > svg.v2i');
       const k = id === 'g-bell' ? 'bell' : id === 'g-imore' ? 'dots' : 'menu';
-      if (s) { s.dataset.ic2 = '1'; if (s.querySelector('image') && V2I[k]) s.innerHTML = V2I[k]; } });
+      if (s) { if (s.dataset.ic2 !== '1') s.dataset.ic2 = '1'; if (s.querySelector('image') && V2I[k]) s.innerHTML = V2I[k]; } });
   };
   const fixDrw = () => {
-    TR.querySelectorAll('.drw .drw-it').forEach((b) => { const k = keyOf(b); if (!k || !V2I[k]) return; b.dataset.ic2 = '1';
+    TR.querySelectorAll('.drw .drw-it').forEach((b) => { const k = keyOf(b); if (!k || !V2I[k]) return; if (b.dataset.ic2 !== '1') b.dataset.ic2 = '1';
       let s = b.querySelector(':scope > svg.v2i'); if (s && s.dataset.k === k) return;
       b.querySelectorAll(':scope > svg, :scope > img').forEach((x) => { if (!x.classList.contains('v2i')) x.remove(); });
       if (!s) { b.insertAdjacentHTML('afterbegin', V2SVG(k, 22)); s = b.querySelector(':scope > svg.v2i'); } else s.innerHTML = V2I[k];

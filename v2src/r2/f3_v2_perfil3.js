@@ -80,7 +80,7 @@ function v3Data(d) {
       lendo: L.filter((e) => e.status === 'LENDO').slice(0, 3).map((e) => ({ title: e.title, pct: readingInfo(e).pct, id: e.id })),
       top: (() => { try { return top5Books().slice(0, 3).map((b) => ({ ...b, emo: v3Emo(lib().find((x) => normT(x.title) === normT(b.title))) })); } catch { return []; } })() }; }
   const sh = d.shelf || {}, s = sh.stats || {}, c = sh.counts || {};
-  return { lidos: s.lidos != null ? s.lidos : c.LIDO, aband: s.aband != null ? s.aband : c.ABANDONEI, pags: s.paginas, maior: s.maior, am: s.am,
+  return { lidos: s.lidos != null ? s.lidos : c.LIDO, aband: s.aband != null ? s.aband : c.ABANDONEI, pags: s.paginas, maior: s.maior, am: s.am != null ? s.am : d.friendsCount,
     lendo: (d.reading || []).slice(0, 3).map((b) => ({ title: b.title, pct: b.pct, author: b.author, cover: b.cover })), top: sh.top5 ? (sh.potinho || []).slice(0, 3) : [] };
 }
 // ---------- montagem ----------
@@ -107,7 +107,7 @@ function v3Hub() {
   const H = [['metas', 'meta', 'Metas', s.meta ? s.meta.feitos + '/' + s.meta.alvo : 'definir', m.metas], ['stats', 'stats', 'Estatísticas', todayISO().slice(0, 4), true],
     ['resumo', 'cal', 'Resumo', (() => { try { return v2RsMonth(1).nome; } catch { return 'do mês'; } })(), true],
     ['orbita', 'orb', 'Órbita', (() => { try { const n = streakNow(); return n + (n === 1 ? ' dia' : ' dias'); } catch { return ''; } })(), m.orbita],
-    ['emprest', 'swap', 'Empréstimos', loans ? loans + ' fora' : 'nenhum', m.emprest], ['presentes', 'gift', 'Presentes', gifts ? String(gifts) : 'nenhum', m.emprest]].filter((x) => x[4]);
+    ['emprest', 'swap', 'Empréstimos', loans ? loans + ' fora' : 'nenhum', v4Mod('emprest')], ['presentes', 'gift', 'Presentes', gifts ? String(gifts) : 'nenhum', v4Mod('presentes')]].filter((x) => x[4]);
   return '<div class="v3hubh"><b>Minha leitura</b><small>só você vê</small></div><div class="v3hub n' + H.length + '">' + H.map(([k, i, n, sm]) => '<button type="button" data-hub="' + k + '">' + v3pi(i, 20) + '<b>' + n + '</b><small>' + esc(sm) + '</small></button>').join('') + '</div>';
 }
 function v3Top3(x, self) {
@@ -134,7 +134,7 @@ function v3Build(v, d) {
   const m = v2Mods(), self = !!d.self, x = v3Data(d), key = d.handle + '|' + (self ? 1 : 0);
   if (S.v3pfH !== d.handle) { S.v3pfH = d.handle; S.v3tab = self ? 'sobre' : 'est'; S.v3prev = false; }
   // perfil de outra pessoa (protótipo perfilx): Estantes · Top 3 · Desejos · Atividade; o seu: Sobre · Estantes · Desejos · Atividade
-  const tabsOk = (self ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || m.emprest);
+  const tabsOk = (self ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
   if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self ? 'sobre' : 'est';
   v.classList.add('v3pf-on');
   // cabeçalho

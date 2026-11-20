@@ -124,6 +124,8 @@ function v2HojeEnsure() {
   // a chave ignora o id da capa (data-cvk muda a cada desenho): antes o cartão era trocado sem parar e piscava com o "A seguir"
   const html = v2QdayHTML(), want = html.replace(/ data-cvk="c\d+"/g, '').replace(/\s+/g, ' ');
   if (!qd || qd.dataset.k !== want) { const tmp = document.createElement('div'); tmp.innerHTML = html; const neu = tmp.firstElementChild; neu.dataset.k = want; if (qd) qd.replaceWith(neu); else box.append(neu); qd = neu; try { paintCv(neu); } catch {} }
+  // no Hoje novo (coluna .v3h) a posição é dada pela ordem do CSS: mover o cartão de novo a cada redesenho fazia ele sair e voltar sem parar
+  if (qd.parentElement === now.parentElement && now.parentElement.classList.contains('v3h')) return;
   // posição: depois da última seção visível que vem antes dela na ordem; se nenhuma, logo depois da linha "Qual leio agora?"
   let ref = (qn && qn.isConnected ? qn : null) || now; const i = order.indexOf('qday');
   for (let j = i - 1; j >= 0; j--) { const k = order[j]; if (off.includes(k) || !V2_SEC_EL[k]) continue; const els = V2_SEC_EL[k](box).filter((x) => x && x.isConnected && x.offsetParent !== null); if (els.length) { ref = els[els.length - 1]; break; } }

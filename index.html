@@ -17391,6 +17391,8 @@ function v2HojeEnsure() {
   // a chave ignora o id da capa (data-cvk muda a cada desenho): antes o cartão era trocado sem parar e piscava com o "A seguir"
   const html = v2QdayHTML(), want = html.replace(/ data-cvk="c\d+"/g, '').replace(/\s+/g, ' ');
   if (!qd || qd.dataset.k !== want) { const tmp = document.createElement('div'); tmp.innerHTML = html; const neu = tmp.firstElementChild; neu.dataset.k = want; if (qd) qd.replaceWith(neu); else box.append(neu); qd = neu; try { paintCv(neu); } catch {} }
+  // no Hoje novo (coluna .v3h) a posição é dada pela ordem do CSS: mover o cartão de novo a cada redesenho fazia ele sair e voltar sem parar
+  if (qd.parentElement === now.parentElement && now.parentElement.classList.contains('v3h')) return;
   // posição: depois da última seção visível que vem antes dela na ordem; se nenhuma, logo depois da linha "Qual leio agora?"
   let ref = (qn && qn.isConnected ? qn : null) || now; const i = order.indexOf('qday');
   for (let j = i - 1; j >= 0; j--) { const k = order[j]; if (off.includes(k) || !V2_SEC_EL[k]) continue; const els = V2_SEC_EL[k](box).filter((x) => x && x.isConnected && x.offsetParent !== null); if (els.length) { ref = els[els.length - 1]; break; } }
@@ -18279,10 +18281,10 @@ const V2DRWT = [[/estat/i, 'stats'], [/resumo/i, 'resumo'], [/órbita|orbita/i, 
     // o bloco antigo escreve a imagem dentro do primeiro svg do sino: devolve o traço novo
     ['g-bell', 'g-imore', 'g-av'].forEach((id) => { const b = TR.querySelector('#' + id); if (!b) return; const s = b.querySelector(':scope > svg.v2i');
       const k = id === 'g-bell' ? 'bell' : id === 'g-imore' ? 'dots' : 'menu';
-      if (s) { s.dataset.ic2 = '1'; if (s.querySelector('image') && V2I[k]) s.innerHTML = V2I[k]; } });
+      if (s) { if (s.dataset.ic2 !== '1') s.dataset.ic2 = '1'; if (s.querySelector('image') && V2I[k]) s.innerHTML = V2I[k]; } });
   };
   const fixDrw = () => {
-    TR.querySelectorAll('.drw .drw-it').forEach((b) => { const k = keyOf(b); if (!k || !V2I[k]) return; b.dataset.ic2 = '1';
+    TR.querySelectorAll('.drw .drw-it').forEach((b) => { const k = keyOf(b); if (!k || !V2I[k]) return; if (b.dataset.ic2 !== '1') b.dataset.ic2 = '1';
       let s = b.querySelector(':scope > svg.v2i'); if (s && s.dataset.k === k) return;
       b.querySelectorAll(':scope > svg, :scope > img').forEach((x) => { if (!x.classList.contains('v2i')) x.remove(); });
       if (!s) { b.insertAdjacentHTML('afterbegin', V2SVG(k, 22)); s = b.querySelector(':scope > svg.v2i'); } else s.innerHTML = V2I[k];
@@ -18828,7 +18830,7 @@ openGifts = function () {
       + '<div class="act"><button type="button" class="p" data-a="again" data-k="' + esc(g.bookKey) + '">Reservar de novo</button></div></div></div>';
     return '<div class="v2gc">' + cvh(g.title, g.cover, '') + '<div><b>' + esc(g.title) + '</b><small>para ' + esc(who) + (g.due ? ' · até ' + exD(g.due) : ' · sem data') + '</small>'
       + (d != null && d <= 7 ? '<span class="soon">' + (d <= 0 ? 'vence hoje' : 'vence em ' + d + (d === 1 ? ' dia' : ' dias')) + ': ainda está de pé?</span>' : '')
-      + '<div class="act"><button type="button" class="p" data-a="given" data-k="' + esc(g.bookKey) + '"><i class=v3e data-i=ok></i>Já dei</button><button type="button" data-a="date" data-k="' + esc(g.bookKey) + '">Mudar data</button><button type="button" data-a="buy" data-k="' + esc(g.bookKey) + '">Onde comprar</button><button type="button" class="dng" data-a="quit" data-k="' + esc(g.bookKey) + '">Desistir</button></div></div></div>'; };
+      + '<div class="act"><button type="button" class="p" data-a="given" data-k="' + esc(g.bookKey) + '"><i class=v3e data-i=ok></i>Já dei</button><button type="button" data-a="date" data-k="' + esc(g.bookKey) + '"><i class=v3e data-i=cal></i>Mudar data</button><button type="button" class="dng" data-a="quit" data-k="' + esc(g.bookKey) + '"><i class=v3e data-i=x></i>Desistir</button></div></div></div>'; };
   const draw = () => {
     const off = !gfSrv.giving, t = tab();
     const giving = gfSrv.giving || gfList().map((g) => ({ bookKey: exKey(g.title), title: g.title, author: g.author, cover: g.cover, due: g.due || null, expired: false, person: { handle: g.h, displayName: g.name } }));
@@ -19173,7 +19175,7 @@ function v3Data(d) {
       lendo: L.filter((e) => e.status === 'LENDO').slice(0, 3).map((e) => ({ title: e.title, pct: readingInfo(e).pct, id: e.id })),
       top: (() => { try { return top5Books().slice(0, 3).map((b) => ({ ...b, emo: v3Emo(lib().find((x) => normT(x.title) === normT(b.title))) })); } catch { return []; } })() }; }
   const sh = d.shelf || {}, s = sh.stats || {}, c = sh.counts || {};
-  return { lidos: s.lidos != null ? s.lidos : c.LIDO, aband: s.aband != null ? s.aband : c.ABANDONEI, pags: s.paginas, maior: s.maior, am: s.am,
+  return { lidos: s.lidos != null ? s.lidos : c.LIDO, aband: s.aband != null ? s.aband : c.ABANDONEI, pags: s.paginas, maior: s.maior, am: s.am != null ? s.am : d.friendsCount,
     lendo: (d.reading || []).slice(0, 3).map((b) => ({ title: b.title, pct: b.pct, author: b.author, cover: b.cover })), top: sh.top5 ? (sh.potinho || []).slice(0, 3) : [] };
 }
 // ---------- montagem ----------
@@ -19200,7 +19202,7 @@ function v3Hub() {
   const H = [['metas', 'meta', 'Metas', s.meta ? s.meta.feitos + '/' + s.meta.alvo : 'definir', m.metas], ['stats', 'stats', 'Estatísticas', todayISO().slice(0, 4), true],
     ['resumo', 'cal', 'Resumo', (() => { try { return v2RsMonth(1).nome; } catch { return 'do mês'; } })(), true],
     ['orbita', 'orb', 'Órbita', (() => { try { const n = streakNow(); return n + (n === 1 ? ' dia' : ' dias'); } catch { return ''; } })(), m.orbita],
-    ['emprest', 'swap', 'Empréstimos', loans ? loans + ' fora' : 'nenhum', m.emprest], ['presentes', 'gift', 'Presentes', gifts ? String(gifts) : 'nenhum', m.emprest]].filter((x) => x[4]);
+    ['emprest', 'swap', 'Empréstimos', loans ? loans + ' fora' : 'nenhum', v4Mod('emprest')], ['presentes', 'gift', 'Presentes', gifts ? String(gifts) : 'nenhum', v4Mod('presentes')]].filter((x) => x[4]);
   return '<div class="v3hubh"><b>Minha leitura</b><small>só você vê</small></div><div class="v3hub n' + H.length + '">' + H.map(([k, i, n, sm]) => '<button type="button" data-hub="' + k + '">' + v3pi(i, 20) + '<b>' + n + '</b><small>' + esc(sm) + '</small></button>').join('') + '</div>';
 }
 function v3Top3(x, self) {
@@ -19227,7 +19229,7 @@ function v3Build(v, d) {
   const m = v2Mods(), self = !!d.self, x = v3Data(d), key = d.handle + '|' + (self ? 1 : 0);
   if (S.v3pfH !== d.handle) { S.v3pfH = d.handle; S.v3tab = self ? 'sobre' : 'est'; S.v3prev = false; }
   // perfil de outra pessoa (protótipo perfilx): Estantes · Top 3 · Desejos · Atividade; o seu: Sobre · Estantes · Desejos · Atividade
-  const tabsOk = (self ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || m.emprest);
+  const tabsOk = (self ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
   if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self ? 'sobre' : 'est';
   v.classList.add('v3pf-on');
   // cabeçalho
@@ -19492,6 +19494,28 @@ const V3EMO = {"swap":"<path d=\"M4 8h14l-3-3M20 16H6l3 3\"/>","friends":"<circl
     seg.insertAdjacentHTML('afterend', '<div class="v3tip"><span><b>Dica:</b> toque na capa para abrir o livro; segure para atualizar, terminar ou mudar o status sem abrir.</span><button type="button" aria-label="Entendi">×</button></div>');
     seg.parentElement.querySelector('.v3tip button').addEventListener('click', (ev) => { ev.stopPropagation(); db.prefs = { ...(db.prefs || {}), tipCapa: 1 }; save(); ev.currentTarget.closest('.v3tip').remove(); }); };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true }); }
+// --- f9_v2_sem_escrita_repetida.js ---
+// Fim dos laços de redesenho (Bia, 20/11): vários blocos antigos regravam o MESMO valor (hidden, aria-*, classe, data-*)
+// a cada mudança na tela, e cada regravação gera um aviso de mudança que acorda outro bloco, num laço sem fim
+// (medido: 48 a 166 mudanças/s com a tela parada; perfil com abas trocando aria-selected sem parar).
+// Aqui a escrita só acontece quando o valor muda de verdade; o resultado na tela é idêntico.
+{ const EP = Element.prototype, _sa = EP.setAttribute, _ra = EP.removeAttribute;
+  EP.setAttribute = function (n, v) { if (this.getAttribute(n) === String(v)) return; return _sa.call(this, n, v); };
+  EP.removeAttribute = function (n) { if (!this.hasAttribute(n)) return; return _ra.call(this, n); };
+  const TL = DOMTokenList.prototype, _add = TL.add, _rem = TL.remove, _tog = TL.toggle;
+  TL.add = function (...t) { const need = t.filter((x) => !this.contains(x)); if (need.length) _add.apply(this, need); };
+  TL.remove = function (...t) { const need = t.filter((x) => this.contains(x)); if (need.length) _rem.apply(this, need); };
+  TL.toggle = function (t, force) { const has = this.contains(t); if (force === undefined) return _tog.call(this, t); if (!!force === has) return has; return _tog.call(this, t, force); };
+  const hd = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'hidden');
+  if (hd && hd.set) Object.defineProperty(HTMLElement.prototype, 'hidden', { ...hd, set(v) { if (!!v === !!this.hidden && typeof v !== 'string') return; hd.set.call(this, v); } });
+
+}
+// o "•••" antigo do topo saiu (topo só com marca, lupa e sino): dois blocos antigos brigavam pelo hidden dele
+{ const kill = () => { const b = TR.querySelector('#g-imore'); if (b && !b.dataset.v3off) { b.dataset.v3off = '1'; b.style.display = 'none'; Object.defineProperty(b, 'hidden', { get: () => true, set: () => {} }); } };
+  kill(); new MutationObserver(() => kill()).observe(TR, { childList: true, subtree: true }); setTimeout(kill, 800); }
+// textContent igual em nó que só tem texto (saudação, nome no topo, contadores): não troca o nó de texto à toa
+{ const td = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+  if (td && td.set) Object.defineProperty(Node.prototype, 'textContent', { ...td, set(v) { const s = v == null ? '' : String(v); if (this.nodeType === 1 && this.childNodes.length === 1 && this.firstChild.nodeType === 3 && this.firstChild.data === s) return; td.set.call(this, v); } }); }
 // --- g0_v2_ler_v4.js ---
 // v4 Ler, Atualizar e Terminei (Bia, 20/11; etapas 2 e 3 do alinhamento com o protótipo v3 https://claude.ai/artifact/FZDpofzVvP8EJjSrugBoJc).
 // Telas numa camada própria (.v4ler, dentro de um shadow root próprio) com o CSS do protótipo isolado (tokens ligados aos do app).
@@ -20740,10 +20764,12 @@ TR.addEventListener('click', (ev) => { const g = ev.target.closest && ev.target.
 .v2-qd .qr.qme .t b{color:var(--acc)}`; TR.append(st); }
 // página "Mais votados"
 let V6TOP = null;
+let V6HIST = null;
 async function v6QdayOpen() {
   const st = v4State(); st.view = 'v6qday'; st.sheet = null; v6Arm(v4Root()); v4Draw();
   v6QdLoad(true);
   try { const r = await sapi('GET', '/v1/qday/top?limit=20'); if (r.status === 200 && r.data && Array.isArray(r.data.items)) V6TOP = r.data; } catch {}
+  try { const h = await sapi('GET', '/v1/qday/history?days=7'); if (h.status === 200 && h.data && Array.isArray(h.data.items)) V6HIST = h.data.items; } catch {}
   if (v4State().view === 'v6qday') v4Draw();
 }
 const v4Draw_v6 = v4Draw;
@@ -20758,8 +20784,8 @@ v4Draw = function () {
     ${voted ? '' : `<div class="card ph" style="margin-top:10px"><b>Vote para ver o resultado</b><div class="qpk">${bks.map((e) => `<button data-a="v6qv" data-id="${esc(e.id)}">${cvh(e.title, e.cover)}<span>${esc(e.title)}</span></button>`).join('')}<button class="o" data-a="v6qv" data-id=""><span class="cv">${v4ic('busca', 22)}</span><span>Outro livro</span></button></div></div>`}
     <div class="h2">Mais votados</div>
     <div class="card qlist">${!T.items.length ? '<p class="mut" style="margin:0">Ninguém votou ainda. Seja a primeira pessoa.</p>' : voted ? T.items.map((x, i) => v6QdRow(x, T.total, i, Q.mine)).join('') : T.items.slice(0, 3).map((x, i) => `<div class="qr"><span class="n">${i + 1}</span>${cvh(x.title, x.cover, '', 'width:30px;height:45px;font-size:6px;filter:blur(3px)')}<span class="t"><b class="mut">resultado depois do seu voto</b></span></div>`).join('')}</div>
-    <div class="h2">O que estão dizendo</div>
-    <div class="card qcom"><p class="mut" style="margin:0 0 10px">Conte por que escolheu esse livro. O post vai para a Comunidade com a pergunta.</p><button class="btn s w" data-a="v6qc">Comentar</button></div>
+    ${(() => { const C = Q.comments || { total: 0, items: [] }; return '<div class="h2">O que estão dizendo' + (C.total > C.items.length ? ' <small><button data-a="v6qall">Ver os ' + C.total + '</button></small>' : '') + '</div><div class="card qcom">' + (C.items.length ? C.items.map((c) => '<p><b>' + esc(String(c.name).split(' ')[0]) + '</b> ' + esc(c.text) + '</p>').join('') : '<p class="mut" style="margin:0 0 10px">Ninguém comentou ainda. Conte por que escolheu esse livro: o post vai para a Comunidade com a pergunta.</p>') + '<button class="btn s w" data-a="v6qc">Comentar</button></div>'; })()}
+    ${(() => { const H = (V6HIST || []).filter((x) => x.total); if (!H.length) return ''; const dn = (d) => { const t = new Date(d + 'T12:00:00'), y = new Date(); y.setDate(y.getDate() - 1); return t.toDateString() === y.toDateString() ? 'Ontem' : ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][t.getDay()]; }; return '<div class="h2">Perguntas anteriores</div><div class="list card" style="padding:4px 12px">' + H.map((x) => '<div class="li"><span class="t">' + esc(x.question) + '<small>' + dn(x.day) + ' · venceu ' + esc(x.winner.title) + ' com ' + x.winner.pct + '% · ' + x.total + (x.total === 1 ? ' voto' : ' votos') + '</small></span></div>').join('') + '</div>'; })()}
   </div></section>${sh}`;
   try { paintCv(R); } catch {}
 };
@@ -20768,6 +20794,7 @@ v4Draw = function () {
     if (a === 'v6qx') { ev.stopPropagation(); const st = v4State(); st.view = null; st.sheet = null; return v4Close(); }
     if (a === 'v6qv') { ev.stopPropagation(); const id = b.dataset.id; if (id) { const e = lib().find((x) => String(x.id) === String(id)); if (e) return v6Vote({ title: e.title, author: e.author, cover: e.cover }).then(() => v6QdayOpen()); }
       try { return findBook('Votar em qual livro?', (x) => v6Vote({ title: x.title, author: x.author, cover: x.cover }).then(() => v6QdayOpen())); } catch { return; } }
+    if (a === 'v6qall') { ev.stopPropagation(); const st = v4State(); st.view = null; v4Close(); try { v6S().f = 'todos'; } catch {} return goTab('comunidade'); }
     if (a === 'v6qc') { ev.stopPropagation(); const q = (V6QD && V6QD.question) || ''; const st = v4State(); st.view = null; v4Close(); return openRdComposer({ kind: 'comment', text: `Pergunta do dia: ${q}\n` }); }
     return prev.apply(this, arguments);
   }; }
@@ -20869,6 +20896,259 @@ pickBooksFor = function (s, after) { if (!s) return; v7Sheet('v7add', { sid: s.i
 .sheet.due-sh .primary{border-radius:14px!important;background:linear-gradient(135deg,#e9a35c,#c46f2e)!important;color:#fff!important;border:0!important;font-weight:900!important;padding:.8rem!important}
 .sheet.due-sh .cancel,.sheet.due-sh .dx{border-radius:14px!important;font-weight:800!important}
 `; document.head.append(st); }
+// --- k0_v2_paginas_v4.js ---
+// Etapa 8 do alinhamento com o protótipo (Bia, 20/11; protótipo v3 v131): páginas internas.
+//  - Empréstimos vira página própria (abas Emprestei · Peguei), aberta pelo atalho de Minha leitura;
+//  - Completar histórico no desenho do protótipo (abas Sem fim · Sem início · Sem pág. · Sem nota, um campo por livro);
+//  - Funções do app como página, com a lista do protótipo (Empréstimos e Presentes separados, sem Conquistas);
+//  - Ajustes nos grupos do protótipo (Seu perfil · Seu app · Conta e dados · Ajuda), Moderação para quem modera,
+//    Sair e Excluir conta no fim; "Trechos e anotações" abre a aba Trechos da Estante;
+//  - páginas internas com o Voltar no topo, ao lado do título (como no protótipo), sem a linha de voltar repetida.
+Object.assign(V3EMO, { x: '<path d="M6 6l12 12M18 6 6 18"/>', sino: '<path d="M6 10a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 15 6 10zM10 20a2.2 2.2 0 0 0 4 0"/>', plus: '<path d="M12 5v14M5 12h14"/>' });
+{ const st = document.createElement('style'); st.textContent = `
+.v4pg-intro{font-size:.82rem;color:var(--ink-2);line-height:1.45;margin:.1rem 0 .8rem}
+.v4pg-foot{font-size:.74rem;color:var(--ink-2);margin:.7rem .1rem 0;line-height:1.4}
+.v4seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:14px;background:var(--panel);border:1px solid var(--line);margin:.2rem 0 .8rem}
+.v4seg button{border:0;background:none;border-radius:10px;padding:.5rem .2rem;font:inherit;font-size:.78rem;font-weight:800;color:var(--ink-2);line-height:1.15;cursor:pointer}
+.v4seg button small{display:block;font-size:.7rem;font-weight:700;opacity:.8}
+.v4seg button.on{background:var(--bg);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.v4btn-w{display:flex;align-items:center;justify-content:center;gap:.4rem;width:100%;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:14px;padding:.75rem;font:inherit;font-weight:800;font-size:.86rem;cursor:pointer;margin-bottom:.8rem}
+.v4fx{display:grid;grid-template-columns:40px minmax(0,1fr);gap:.7rem;align-items:start;padding:.65rem 0;border-top:1px solid var(--line)}
+.v4fx:first-child{border-top:0}
+.v4fx .cv{width:40px!important;height:60px!important;border-radius:3px 5px 5px 3px!important;font-size:0!important}
+.v4fx b{display:block;font-size:.9rem;line-height:1.25}.v4fx small{display:block;font-size:.74rem;color:var(--ink-2);margin-top:.05rem}
+.v4fx .fld{display:flex;gap:.4rem;align-items:center;margin-top:.45rem}
+.v4fx input{flex:1;min-width:0;height:38px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-weight:700;font-size:.84rem;padding:0 .6rem;box-sizing:border-box}
+.v4fx .chip{flex:none;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.4rem .7rem;font:inherit;font-size:.76rem;font-weight:800;cursor:pointer}
+.v4fx .ok{font-size:.72rem;font-weight:900;color:var(--acc)}
+.v4st{display:flex;gap:.15rem;margin-top:.35rem}.v4st button{border:0;background:none;padding:0 .1rem;font-size:1.55rem;line-height:1;color:var(--line);cursor:pointer}.v4st button.on{color:var(--acc)}
+.v4card{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:0 .8rem}
+.v4fn{display:grid;grid-template-columns:1fr auto;gap:.6rem;align-items:center;min-height:58px;border-top:1px solid var(--line);padding:.4rem 0}
+.v4fn:first-child{border-top:0}.v4fn b{display:block;font-size:.92rem}.v4fn small{display:block;font-size:.74rem;color:var(--ink-2);margin-top:.1rem}
+.gtop .v4back{display:grid;place-items:center;width:36px;height:36px;margin-right:.2rem;border:0;background:none;color:var(--ink);border-radius:50%;cursor:pointer;flex:none}
+.gtop .v4back svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#shelflist.v4inner .sl-body > .sl-top > .sl-back{visibility:hidden!important;width:0!important;min-width:0!important;padding:0!important;margin:0!important;border:0!important;overflow:hidden!important}
+#lista.v4inner-l > .v3-top{display:none!important}
+#shelflist.v4inner .sl-body > .sl-top.v4empty{height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
+`; TR.append(st); }
+const v4Page = (title, html, reopen) => { if (reopen) { reopen.key = 'v4|' + title; try { navEnter(reopen); } catch {} } const v = $('#shelflist'); try { closeEd(); } catch {} v.classList.remove('feedview', 'tabroot', 'mine-page', 'v2des', 'v2pf');
+  v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>' + esc(title) + '</b><span></span></div>' + html;
+  v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; try { syncTopTitle(); } catch {} });
+  try { paintCv(v); } catch {} v.hidden = false; v.scrollTop = 0; try { syncTopTitle(); } catch {} return v; };
+const v4Mod = (k) => { const m = v2Mods(); if (k === 'presentes') return m.presentes === undefined ? m.emprest !== false : m.presentes !== false; return m[k] !== false; };
+
+// ---------- Empréstimos: página com Emprestei · Peguei ----------
+function openLoans() {
+  const tab = () => S.v4lnTab || 'out';
+  const save2 = (e) => { if (e.ex && !e.ex.own && !e.ex.loan && !(e.ex.log || []).length) delete e.ex; save(); try { publishSnapshot(); } catch {} try { exApiLoan(e); } catch {} };
+  const draw = () => {
+    const OUT = lib().filter((e) => exOf(e).loan), IN = lib().filter((e) => exOf(e).own === 'pegou');
+    const t = tab(), L = t === 'in' ? IN : OUT;
+    const tabs = '<div class="v2pr-tabs" role="tablist">' + [['out', 'Emprestei · ' + OUT.length], ['in', 'Peguei · ' + IN.length]].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (t === k) + '" class="' + (t === k ? 'on' : '') + '" data-t="' + k + '">' + n + '</button>').join('') + '</div>';
+    const card = (e) => { const x = exOf(e);
+      if (t === 'out') { const p = x.loan || {}, late = exLate(p.due), friend = !!(p.to && p.to.h);
+        return '<div class="v2gc" data-id="' + esc(String(e.id)) + '">' + cvh(e.title, e.cover, '') + '<div><b>' + esc(e.title) + '</b><small>com ' + esc(exName(p.to) || 'alguém') + (friend ? '' : ' (fora do app)') + (p.at ? ' · desde ' + exD(p.at) : '') + ' · ' + (p.due ? 'devolve até ' + exD(p.due) : 'sem data') + '</small>'
+          + (late ? '<span class="late">atrasado ' + plural(late, 'dia', 'dias') + '</span>' : '')
+          + '<div class="act"><button type="button" class="p" data-a="back"><i class=v3e data-i=ok></i>Voltou</button>' + (friend ? '<button type="button" data-a="remind"><i class=v3e data-i=sino></i>Lembrar</button>' : '') + '<button type="button" data-a="date"><i class=v3e data-i=cal></i>Data</button></div></div></div>'; }
+      const p = x.borrow || {}, late = exLate(p.due), friend = !!(p.from && p.from.h);
+      return '<div class="v2gc" data-id="' + esc(String(e.id)) + '">' + cvh(e.title, e.cover, '') + '<div><b>' + esc(e.title) + '</b><small>de ' + esc(exName(p.from) || 'alguém') + (p.at ? ' · desde ' + exD(p.at) : '') + ' · ' + (p.due ? 'devolver até ' + exD(p.due) : 'sem data') + '</small>'
+        + (late ? '<span class="late">passou ' + plural(late, 'dia', 'dias') + '</span>' : '')
+        + '<div class="act"><button type="button" class="p" data-a="gave"><i class=v3e data-i=ok></i>Já devolvi</button>' + (friend ? '<button type="button" data-a="more"><i class=v3e data-i=cal></i>Pedir mais prazo</button>' : '<button type="button" data-a="bdate"><i class=v3e data-i=cal></i>Data</button>') + '</div></div></div>'; };
+    const empty = t === 'out' ? 'Nenhum livro emprestado agora.' : 'Você não está com livro de ninguém agora.';
+    const v = v4Page('Empréstimos', tabs + (L.length ? L.map(card).join('') : '<p class="v2wempty">' + empty + '</p>')
+      + '<p class="v4pg-foot">Para emprestar: segure a capa do livro e toque em Emprestar. Perto da data, o lembrete aparece no Hoje.</p>', () => openLoans());
+    v.querySelectorAll('.v2pr-tabs [data-t]').forEach((b) => b.addEventListener('click', () => { S.v4lnTab = b.dataset.t; draw(); }));
+    v.querySelectorAll('.v2gc [data-a]').forEach((b) => b.addEventListener('click', () => {
+      const e = lib().find((y) => String(y.id) === b.closest('.v2gc').dataset.id); if (!e) return; const x = e.ex = e.ex || {}, a = b.dataset.a;
+      if (a === 'back') { exLog(e, { t: 'devolveram', to: x.loan && x.loan.to, at: x.loan && x.loan.at }); delete x.loan; save2(e); toast('Voltou para a sua estante'); return draw(); }
+      if (a === 'gave') { exLog(e, { t: 'devolvi', from: x.borrow && x.borrow.from }); delete x.borrow; delete x.own; save2(e); toast('Devolução registrada'); return draw(); }
+      if (a === 'remind') { const h = x.loan && x.loan.to && x.loan.to.h; if (h) { try { openChat(h); } catch { toast('Abra a conversa para lembrar'); } } return; }
+      if (a === 'more') { const h = x.borrow && x.borrow.from && x.borrow.from.h; if (h) { try { openChat(h); } catch { toast('Abra a conversa para pedir mais prazo'); } } return; }
+      if (a === 'date' || a === 'bdate') { try { exSheet(e, a === 'date' ? 'loan' : 'borrow'); } catch { exSheet(e); } }
+    }));
+  };
+  S.listRedraw = draw; draw();
+}
+
+// ---------- Completar histórico ----------
+openFixReads = function (filter) {
+  const PER = 12; let f = filter && ['fim', 'ini', 'pag', 'nota'].includes(filter) ? filter : (S.v4fxF || null), page = 0;
+  const counts = () => { const L = lib().filter((e) => e.status === 'LIDO'); const c = { fim: 0, ini: 0, pag: 0, nota: 0 }; L.forEach((e) => { const m = fxMiss(e); ['fim', 'ini', 'pag', 'nota'].forEach((k) => { if (m[k]) c[k]++; }); }); return c; };
+  if (!f) { const c = counts(); f = ['fim', 'ini', 'pag', 'nota'].find((k) => c[k]) || 'fim'; }
+  const draw = () => {
+    const c = counts(), NM = { fim: 'Sem fim', ini: 'Sem início', pag: 'Sem pág.', nota: 'Sem nota' };
+    const all = lib().filter((e) => e.status === 'LIDO' && fxMiss(e)[f]).sort((a, z) => String(z.finishedAt || z.addedAt || '').localeCompare(String(a.finishedAt || a.addedAt || '')));
+    const pages = Math.max(1, Math.ceil(all.length / PER)); if (page >= pages) page = pages - 1; const list = all.slice(page * PER, page * PER + PER);
+    const fld = (e) => { if (f === 'nota') return '<div class="v4st">' + [1, 2, 3, 4, 5].map((i) => '<button type="button" data-n="' + i + '" aria-label="' + i + ' estrelas">★</button>').join('') + '</div>';
+      if (f === 'pag') return '<div class="fld"><input inputmode="numeric" data-k="pag" placeholder="nº de páginas" aria-label="Páginas"><span class="ok" hidden>Salvo</span></div>';
+      return '<div class="fld"><input type="date" data-k="' + f + '" max="' + todayISO() + '" aria-label="Data"><button type="button" class="chip" data-a="ano">Só o ano</button><span class="ok" hidden>Salvo</span></div>'; };
+    const sub = (e) => esc(String(e.author || '').split(',')[0]) + (f === 'fim' && e.startedAt ? ' · começou em ' + exD(e.startedAt) + '/' + String(e.startedAt).slice(2, 4) : '') + (f === 'ini' && e.finishedAt ? ' · terminou em ' + exD(e.finishedAt) + '/' + String(e.finishedAt).slice(2, 4) : '');
+    const nav = all.length > PER ? '<div class="fx-pg"><button type="button" data-pg="-1"' + (page ? '' : ' disabled') + '>‹ Anterior</button><span>' + (page * PER + 1) + '–' + Math.min(all.length, page * PER + PER) + ' de ' + all.length + '</span><button type="button" data-pg="1"' + (page < pages - 1 ? '' : ' disabled') + '>Próxima ›</button></div>' : '';
+    const v = v4Page('Completar histórico', '<p class="v4pg-intro">Livros que vieram do Goodreads ou do StoryGraph sem alguns dados. Complete quando quiser: eles entram nas estatísticas e na meta do ano certo.</p>'
+      + '<button type="button" class="v4btn-w" data-a="addold"><i class=v3e data-i=plus></i>Adicionar livros que já li</button>'
+      + '<div class="v4seg" role="tablist">' + ['fim', 'ini', 'pag', 'nota'].map((k) => '<button type="button" role="tab" class="' + (f === k ? 'on' : '') + '" data-f="' + k + '">' + NM[k] + ' <small>' + c[k] + '</small></button>').join('') + '</div>'
+      + (list.length ? '<div class="v4card">' + list.map((e) => '<div class="v4fx" data-id="' + esc(String(e.id)) + '">' + cvh(e.title, e.cover, '') + '<div><b>' + esc(e.title) + '</b><small>' + sub(e) + '</small>' + fld(e) + '</div></div>').join('') + '</div>' + nav
+        : '<p class="v2wempty">Nada faltando aqui.</p>')
+      + '<p class="v4pg-foot">Salva sozinho a cada campo. O que você não preencher continua aqui.</p>', () => openFixReads(f));
+    v.querySelector('[data-a=addold]').addEventListener('click', () => { try { openHistory(); } catch { try { openHistLeituras(); } catch {} } });
+    v.querySelectorAll('.v4seg [data-f]').forEach((b) => b.addEventListener('click', () => { f = S.v4fxF = b.dataset.f; page = 0; draw(); }));
+    v.querySelectorAll('.fx-pg button').forEach((b) => b.addEventListener('click', () => { page += Number(b.dataset.pg); draw(); }));
+    v.querySelectorAll('.v4fx').forEach((row) => {
+      const e = lib().find((y) => String(y.id) === row.dataset.id); if (!e) return; const ok = row.querySelector('.ok');
+      const done = () => { save(); try { publishSnapshotSoon(); } catch {} if (ok) { ok.hidden = false; } setTimeout(() => { if (!fxMiss(e)[f]) { row.style.transition = 'opacity .25s'; row.style.opacity = '.35'; } }, 300); };
+      row.querySelectorAll('.v4st button').forEach((b) => b.addEventListener('click', () => { const n = +b.dataset.n; let rv = reviewOfLib(e); if (!rv) { e.review = { paws: n, mel: [], frase: '' }; rv = e.review; } else rv.paws = n;
+        row.querySelectorAll('.v4st button').forEach((x) => x.classList.toggle('on', +x.dataset.n <= n)); try { publishReview(e); } catch {} done(); }));
+      const inp = row.querySelector('input'); if (!inp) return;
+      const setDate = (k, val, approx) => { if (k === 'ini') { e.startedAt = val; if (approx) e.startApprox = true; else delete e.startApprox; } else { e.finishedAt = val; delete e.noDate; if (approx) e.dateApprox = true; else delete e.dateApprox; } };
+      inp.addEventListener('change', () => { const k = inp.dataset.k, val = inp.value.trim(); if (!val) return;
+        if (k === 'pag') { const n = Math.round(Number(val)); if (!(n > 0 && n < 100000)) { inp.value = ''; return toast('Número de páginas inválido'); } e.totalPages = n; return done(); }
+        let d = val; if (/^\d{4}$/.test(val)) d = k === 'ini' ? val + '-01-01' : val + '-06-30';
+        if (d > todayISO()) { inp.value = ''; return toast('A data não pode ser no futuro'); }
+        const ini = k === 'ini' ? d : e.startedAt, fim = k === 'fim' ? d : e.finishedAt; if (ini && fim && ini > fim) { inp.value = ''; return toast('O início precisa ser antes do fim'); }
+        setDate(k, d, /^\d{4}$/.test(val)); done(); });
+      row.querySelector('[data-a=ano]')?.addEventListener('click', (ev) => { inp.type = 'text'; inp.inputMode = 'numeric'; inp.maxLength = 4; inp.value = ''; inp.placeholder = 'ano, ex.: 2023'; inp.focus(); ev.currentTarget.remove(); });
+    });
+  };
+  S.listRedraw = draw; draw();
+};
+
+// ---------- Funções do app: página, lista do protótipo ----------
+V2MODS.splice(0, V2MODS.length,
+  ['comunidade', 'Comunidade', 'feed, amizades, ecos, posts e perfil público'],
+  ['metas', 'Metas', 'meta do ano e metas com prazo'],
+  ['orbita', 'Órbita', 'dias seguidos de leitura'],
+  ['emprest', 'Empréstimos', 'emprestei e peguei'],
+  ['presentes', 'Presentes e desejos', 'lista de desejos e "Vou dar"'],
+  ['trechos', 'Trechos', 'frases guardadas dos livros']);
+v2ModsApply = function () { const m = v2Mods(), h = TR.host; if (!h) return; V2MODS.forEach(([k]) => h.classList.toggle('v2off-' + k, !v4Mod(k))); h.classList.remove('v2off-conq'); if (!m.comunidade && S.tab === 'comunidade') { try { goTab('inicio'); } catch {} } };
+{ const st = document.createElement('style'); st.textContent = ':host(.v2off-presentes) .drw [data-go2="gifts"],:host(.v2off-presentes) .gf-alert{display:none!important}:host(.v2off-emprest) .ex-alert{display:none!important}'; TR.append(st); }
+v2FuncoesSheet = function () {
+  const draw = () => {
+    const v = v4Page('Funções do app', '<p class="v4pg-intro">Desligue o que você não usa. O app se reorganiza e some com os botões, abas e números dessa função. Nada é apagado: ao religar, volta tudo.</p>'
+      + '<div class="v4card">' + V2MODS.map(([k, n, d]) => '<div class="v4fn"><span><b>' + esc(n) + '</b><small>' + esc(d) + '</small></span><button type="button" class="v2fn-tg' + (v4Mod(k) ? ' on' : '') + '" data-k="' + k + '" role="switch" aria-checked="' + v4Mod(k) + '" aria-label="' + esc(n) + '"></button></div>').join('') + '</div>', () => v2FuncoesSheet());
+    v.querySelectorAll('.v2fn-tg').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k, mods = { ...((db.prefs || {}).mods || {}) };
+      if (mods.presentes === undefined) mods.presentes = mods.emprest !== false;
+      mods[k] = !v4Mod(k); db.prefs = { ...(db.prefs || {}), mods }; save(); v2ModsApply(); try { drawTabbar(); } catch {} draw(); }));
+  };
+  S.listRedraw = draw; draw();
+};
+setTimeout(() => { try { v2ModsApply(); } catch {} }, 0);
+
+// ---------- Ajustes nos grupos do protótipo ----------
+{ const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
+  try {
+    if (S.ajMode === 'perfil' || !box || box.querySelector('.v4aj')) return r;
+    const get = (id) => box.querySelector('#' + id);
+    const rowByText = (re) => [...box.querySelectorAll('.aj-row, .aj-card > *')].find((x) => re.test((x.textContent || '').trim()));
+    const mk = (id, t, s, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'aj-row'; b.id = id; b.innerHTML = '<span><b>' + t + '</b>' + (s ? '<small>' + s + '</small>' : '') + '</span>›'; b.addEventListener('click', fn); return b; };
+    const P = db.prefs || {};
+    const spoiler = (() => { const b = document.createElement('div'); b.className = 'aj-row aj-static'; b.id = 'aj-v4sp';
+      b.innerHTML = '<span><b>Aviso de spoiler</b><small>perguntar antes de publicar comentário sem marcação</small></span><button type="button" class="v2fn-tg' + (P.spNever ? '' : ' on') + '" role="switch" aria-checked="' + !P.spNever + '" aria-label="Aviso de spoiler"></button>';
+      b.querySelector('button').addEventListener('click', (ev) => { db.prefs = db.prefs || {}; db.prefs.spNever = !db.prefs.spNever; save(); ev.currentTarget.classList.toggle('on', !db.prefs.spNever); ev.currentTarget.setAttribute('aria-checked', String(!db.prefs.spNever)); toast(db.prefs.spNever ? 'Não vamos mais perguntar' : 'Vamos perguntar antes de publicar'); });
+      return b; })();
+    const tq = get('aj-tq'); if (tq) { const nb = tq.cloneNode(true); nb.addEventListener('click', () => { const v = $('#shelflist'); if (v) v.hidden = true; try { v5S().tab = 'trechos'; } catch {} goTab('estante'); }); tq.replaceWith(nb); }
+    const hl = get('aj-hl'); if (hl) { const b = hl.querySelector('b'), s = hl.querySelector('small'); if (b) b.textContent = 'Importar histórico'; if (s) s.textContent = 'Goodreads e StoryGraph'; }
+    const fix = mk('aj-v4fix', 'Completar histórico', (() => { try { const L = lib().filter((e) => e.status === 'LIDO' && Object.values(fxMiss(e)).some(Boolean)).length; return L ? L + ' livros com dados faltando' : 'datas, páginas e notas dos lidos'; } catch { return ''; } })(), () => openFixReads());
+    const del = connected() ? mk('aj-v4del', 'Excluir conta', 'apaga tudo, não tem volta', () => { try { deleteAccountSheet(); } catch {} }) : null; if (del) del.classList.add('danger');
+    const tema = rowByText(/^Tema/), sons = get('aj-sound') ? get('aj-sound').closest('.aj-row, label, div') : rowByText(/^Sons/);
+    const G = [
+      ['Seu perfil', [get('aj-priv'), get('aj-mu')]],
+      ['Seu app', [get('aj-home'), get('aj-fn'), tema, sons, spoiler, get('aj-v5rm'), v4Mod('trechos') ? get('aj-tq') : null]],
+      ['Conta e dados', [get('aj-sync'), get('aj-install'), hl, fix, get('aj-cv'), get('aj-exp'), get('aj-imp')]],
+      ['Moderação', [get('aj-mod')]],
+      ['Ajuda', [get('aj-tour')]],
+    ];
+    const fnS = get('aj-fn') && get('aj-fn').querySelector('small'); if (fnS) fnS.textContent = 'o que aparece no seu app · ' + V2MODS.filter(([k]) => v4Mod(k)).length + ' de ' + V2MODS.length + ' ligadas';
+    const keep = [...box.children].filter((x) => x.matches && x.matches('header, .v3-top, .aj-me'));
+    const out = get('aj-out'), login = get('aj-login');
+    const wrap = document.createElement('div'); wrap.className = 'v4aj';
+    G.forEach(([t, rows]) => { const L = rows.filter(Boolean); if (!L.length) return; wrap.insertAdjacentHTML('beforeend', '<div class="aj-g">' + t + '</div>'); const card = document.createElement('div'); card.className = 'aj-card'; L.forEach((x) => card.append(x)); wrap.append(card); });
+    const end = document.createElement('div'); end.className = 'aj-card'; end.style.marginTop = '1.1rem'; [login, out, del].filter(Boolean).forEach((x) => end.append(x)); if (end.children.length) wrap.append(end);
+    [...box.children].forEach((x) => { if (!keep.includes(x)) x.remove(); }); box.append(wrap);
+  } catch (err) { console.warn('ajustes v4', err); }
+  return r; }; }
+
+// ---------- Minha leitura › Empréstimos abre a página ----------
+{ const _go = v3Go; v3Go = function (v, d, k) { if (k === 'emprest') return openLoans(); return _go.apply(this, arguments); }; }
+
+// ---------- Voltar no topo das páginas internas (como no protótipo) ----------
+{ const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  let tm = 0; const sync = () => { const top = TR.querySelector('.gtop'), v = $('#shelflist'); if (!top) return;
+    const back = v && !v.hidden && v.querySelector('.sl-body > .sl-top > .sl-back'), inner = !!(back && !v.classList.contains('tabroot') && !v.classList.contains('mine-page'));
+    v && v.classList.toggle('v4inner', inner);
+    const meNow = !!(v && !v.hidden && !inner && v.querySelector('.v3pb [data-v3=aj]')); if (meNow) S.v4fromMe = true; else if (!inner) S.v4fromMe = false;
+    if (inner) { const st = back.parentElement; st.classList.toggle('v4empty', ![...st.children].some((x) => x !== back && x.tagName !== 'B' && (x.children.length || (x.textContent || '').trim()))); }
+    const lb = (!v || v.hidden) ? TR.querySelector('#lista > header.v3-top .sl-back, #lista > .v3-top .sl-back') : null; const L = TR.querySelector('#lista'); if (L) L.classList.toggle('v4inner-l', !!lb);
+    let b = top.querySelector('.v4back'); const t = top.querySelector('#g-t');
+    if (inner || lb) { if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'v4back'; b.setAttribute('aria-label', 'Voltar'); b.innerHTML = BK; b.addEventListener('click', () => { const me = !!S.v4fromMe, sv = $('#shelflist'), bb = (sv && !sv.hidden && sv.querySelector('.sl-body > .sl-top > .sl-back')) || TR.querySelector('#lista > header.v3-top .sl-back, #lista > .v3-top .sl-back'); if (bb) bb.click(); setTimeout(() => { const v = $('#shelflist'); if (me && v && v.hidden) { try { goTab('eu'); } catch {} } }, 30); }); (t || top.firstElementChild).before(b); } b.hidden = false; }
+    else if (b) b.hidden = true; };
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; sync(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] }); }
+
+// ---------- Nova/Editar estante: Biblioteca e Quem vê no formulário (como no protótipo) ----------
+{ const st = document.createElement('style'); st.textContent = '.shf-f .v4shx{display:grid;gap:.35rem;margin-top:.2rem}.shf-f .v4shx select{height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-weight:700;padding:0 .5rem}.shf-f .v4seg2{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}.shf-f .v4seg2 button{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;padding:.55rem .4rem;font:inherit;font-weight:800;font-size:.8rem;cursor:pointer;line-height:1.2}.shf-f .v4seg2 button small{display:block;font-weight:700;font-size:.7rem;color:var(--ink-2)}.shf-f .v4seg2 button.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}'; TR.append(st); }
+{ const _f = shelfEditForm; shelfEditForm = function (s) {
+    const ed = $('#editor'); let grp = (s && s.grp) || '', priv = !!(s && s.priv);
+    const groups = () => [...new Set((db.shelves || []).map((x) => x.grp).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt'));
+    const inject = () => { const f = ed.querySelector('.shf-f'), ok = f && f.querySelector('#shf-ok'); if (!f || !ok || f.querySelector('.v4shx')) return;
+      const w = document.createElement('div'); w.className = 'v4shx';
+      w.innerHTML = '<label for="v4shg">Biblioteca (opcional)</label><select id="v4shg"><option value="">Nenhuma</option>' + groups().map((g) => '<option' + (g === grp ? ' selected' : '') + '>' + esc(g) + '</option>').join('') + '<option value="__new">+ Nova biblioteca…</option></select>'
+        + '<label>Quem vê</label><div class="v4seg2"><button type="button" data-p="0" class="' + (priv ? '' : 'on') + '">Pública<small>aparece no seu perfil</small></button><button type="button" data-p="1" class="' + (priv ? 'on' : '') + '">Só você<small>não aparece para ninguém</small></button></div>';
+      ok.before(w);
+      const sel = w.querySelector('#v4shg');
+      sel.addEventListener('change', () => { if (sel.value !== '__new') { grp = sel.value; return; } sel.value = grp;
+        const box = document.createElement('div'); box.innerHTML = '<input class="v4shgn" maxlength="40" placeholder="Nome da biblioteca, ex.: 2026 mês a mês" style="width:100%;margin-top:.35rem;height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-weight:700;padding:0 .6rem;box-sizing:border-box">';
+        sel.after(box); const inp = box.querySelector('input'); inp.focus(); inp.addEventListener('input', () => { grp = inp.value.trim(); }); });
+      w.querySelectorAll('[data-p]').forEach((b) => b.addEventListener('click', () => { priv = b.dataset.p === '1'; w.querySelectorAll('[data-p]').forEach((x) => x.classList.toggle('on', x === b)); }));
+      ok.addEventListener('click', () => { const n0 = (db.shelves || []).length, name = (ed.querySelector('#shf-n') || {}).value || '';
+        setTimeout(() => { const L = db.shelves || []; const x = s || (L.length > n0 ? L[L.length - 1] : L.find((y) => y.name === name.trim())); if (!x) return;
+          if (grp) x.grp = grp.slice(0, 40); else delete x.grp; if (priv) x.priv = true; else delete x.priv; x.touchedAt = new Date().toISOString();
+          save(); try { publishSnapshotSoon(); } catch {} try { refresh(); } catch {} }, 0); }, true);
+    };
+    const mo = new MutationObserver(inject); mo.observe(ed, { childList: true, subtree: true });
+    const stop = new MutationObserver(() => { if (ed.hidden || !ed.querySelector('.shf-f')) { mo.disconnect(); stop.disconnect(); } }); stop.observe(ed, { attributes: true, attributeFilter: ['hidden'], childList: true, subtree: true });
+    const r = _f.apply(this, arguments); inject(); return r; }; }
+
+// ---------- Perfil de amizade › Estantes: cartões com contagem e situação de cada capa (como no protótipo) ----------
+// O resumo publicado passa a levar, em cada estante mostrada, o total de livros (n) e a situação de cada livro (st, nota, %).
+// O resumo é um JSON livre na API (snapshot), então nada muda no servidor. Estantes privadas e arquivadas já ficam de fora.
+{ const ST = { LIDO: 'lido', LENDO: 'lendo', QUERO: 'quero', HIBERNANDO: 'pausado', ABANDONEI: 'abandonado' };
+  const _ps = profShelvesSnap; profShelvesSnap = function (snapshot) { const r = _ps.apply(this, arguments);
+    try { const L = lib(); (snapshot.shelf.extra || []).forEach((x) => { const all = profShelfBooks(x.key); x.n = all.length;
+      x.books = (x.books || []).map((b) => { const e = all.find((y) => normT(y.title) === normT(b.title)) || L.find((y) => normT(y.title) === normT(b.title)); if (!e) return b;
+        const rv = reviewOfLib(e) || {}, pct = e.status === 'LENDO' ? (() => { try { return Math.round(readingInfo(e).pct) || 0; } catch { return 0; } })() : null;
+        return { ...b, st: ST[e.status] || null, ...(rv.paws ? { nota: rv.paws } : {}), ...(pct != null ? { pct } : {}) }; }); }); } catch (err) { console.warn('estantes no resumo', err); }
+    return r; }; }
+{ const st = document.createElement('style'); st.textContent = `
+.v4psh{display:grid;gap:.6rem}
+.v4psh .pshelf{display:block;width:100%;text-align:left;padding:12px 14px;font:inherit;color:var(--ink);border:1px solid var(--line);background:var(--panel);border-radius:16px;cursor:pointer}
+.v4psh .pshelf .hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.v4psh .pshelf b{font-family:var(--v2-disp,Georgia,serif);font-size:15px}
+.v4psh .pshelf small{font-size:11.5px;color:var(--ink-2)}
+.v4psh .covers{display:flex;gap:6px;margin-top:8px;align-items:flex-start;overflow:hidden}
+.v4psh .scv{display:grid;justify-items:center;gap:4px;flex:none;width:38px}
+.v4psh .scv .cv{width:38px!important;height:57px!important;font-size:6px!important;border-radius:3px 5px 5px 3px!important}
+.v4psh .sb{font-style:normal;font-size:10px;font-weight:900;line-height:1;white-space:nowrap}
+.v4psh .sb.lido{color:var(--acc)}.v4psh .sb.quero{color:var(--ink-2);font-weight:800}
+.v4psh .sb.lendo{display:block;width:100%;height:4px;border-radius:9px;background:color-mix(in srgb,var(--ink) 10%,var(--panel));overflow:hidden;margin-top:3px}
+.v4psh .sb.lendo i{display:block;height:100%;background:var(--acc)}
+.v4psh .scount{display:block;margin-top:8px;font-size:11.5px;font-weight:700;color:var(--ink-2)}
+`; TR.append(st); }
+const v4ShBadge = (b) => b.st === 'lido' ? '<em class="sb lido">' + (b.nota ? '★ ' + String(b.nota).replace('.', ',') : 'lido') + '</em>' : b.st === 'lendo' ? '<em class="sb lendo"><i style="width:' + (b.pct || 0) + '%"></i></em>' : b.st === 'quero' ? '<em class="sb quero">quer ler</em>' : b.st === 'pausado' ? '<em class="sb quero">pausado</em>' : '';
+const v4ShCount = (L) => { const c = (s) => L.filter((b) => b.st === s).length; return [c('lido') && c('lido') + (c('lido') > 1 ? ' lidos' : ' lido'), c('lendo') && c('lendo') + ' lendo', c('quero') && c('quero') + ' quer ler'].filter(Boolean).join(' · '); };
+{ const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments);
+    try { if (!d || d.self) return r; const body = v.querySelector('.sl-body'), pE = body && body.querySelector(':scope > .v3pane[data-k=est]'); if (!pE) return r;
+      const X = ((d.shelf && d.shelf.extra) || []).filter((x) => x && (x.books || []).length); if (!X.length) return r;
+      const sig = JSON.stringify(X.map((x) => [x.key, x.n, (x.books || []).map((b) => [b.title, b.st, b.nota, b.pct])]));
+      if (pE.dataset.v4sig === sig && pE.children.length === 1 && pE.firstElementChild.classList.contains('v4psh')) return r;
+      pE.dataset.v4sig = sig;
+      pE.innerHTML = '<div class="v4psh">' + X.map((x, i) => '<button type="button" class="pshelf" data-i="' + i + '"><div class="hd"><b>' + esc(x.name || 'Estante') + '</b><small>' + plural(x.n || x.books.length, 'livro', 'livros') + '</small></div><div class="covers">'
+        + x.books.slice(0, 7).map((b) => '<span class="scv">' + cvh(b.title, b.cover, '') + v4ShBadge(b) + '</span>').join('') + '</div>' + (v4ShCount(x.books) ? '<small class="scount">' + v4ShCount(x.books) + '</small>' : '') + '</button>').join('') + '</div>';
+      try { paintCv(pE); } catch {}
+      pE.querySelectorAll('.pshelf').forEach((b) => b.addEventListener('click', () => { const x = X[+b.dataset.i]; if (!x) return;
+        v4Page(x.name || 'Estante', '<p class="v4pg-intro">' + plural(x.n || x.books.length, 'livro', 'livros') + (x.n > x.books.length ? ' · mostrando ' + x.books.length : '') + '</p><div class="v4psh"><div class="pshelf" style="cursor:default"><div class="covers" style="flex-wrap:wrap;gap:10px">' + x.books.map((bk, j) => '<button type="button" class="scv" data-j="' + j + '" style="border:0;background:none;padding:0;width:56px">' + cvh(bk.title, bk.cover, '') + v4ShBadge(bk) + '</button>').join('') + '</div></div></div>', () => { const p = pE.querySelector('.pshelf[data-i="' + b.dataset.i + '"]'); if (p) p.click(); });
+        const pv = $('#shelflist'); pv.querySelectorAll('[data-j]').forEach((q) => q.addEventListener('click', () => { const bk = x.books[+q.dataset.j]; if (bk) try { openAnyBook(bk.title, bk.author, bk.cover); } catch {} })); }));
+    } catch (err) { console.warn('estantes da amizade', err); }
+    return r; }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
