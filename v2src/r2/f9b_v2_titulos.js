@@ -26,7 +26,9 @@ const v4PageTitle = () => (v4Avisos() ? 'Avisos' : v4Busca() ? 'Buscar' : '');
   const need = () => { if (TR.querySelector('.gtop .v4back:not([hidden])')) return false; const v = TR.querySelector('#shelflist');
     if (v4Avisos() || v4Busca()) return true; return S.tab === 'progresso' && (!v || v.hidden); };
   const back = () => { if (v4Avisos()) { const ed = TR.querySelector('#editor'); if (ed && !ed.hidden && ed.classList.contains('ntpage')) { try { closeEd(); } catch {} return; } }
-    const v = TR.querySelector('#shelflist'); if (v && !v.hidden) v.hidden = true; try { goTab(S.v4lastTab || 'inicio'); } catch {} };
+    const v = TR.querySelector('#shelflist'); if (v && !v.hidden) v.hidden = true; const to = S.v4lastTab || 'inicio'; try { goTab(to); } catch {}
+    // o Você abre por cima (página do perfil) e não troca S.tab: sem isso o topo continuava "Estatísticas"
+    if (to === 'eu' && S.tab === 'progresso') { S.tab = 'eu'; try { syncTopTitle(); } catch {} } };
   const sync = () => { const top = TR.querySelector('.gtop'); if (!top) return; let b = top.querySelector('.v4back2');
     if (need()) { if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'v4back2'; b.setAttribute('aria-label', 'Voltar'); b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'; b.addEventListener('click', back); (top.querySelector('#g-t') || top.firstElementChild).before(b); } b.hidden = false; }
     else if (b) b.hidden = true; };

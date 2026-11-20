@@ -182,7 +182,8 @@ v2FuncoesSheet = function () {
     const meNow = !!(v && !v.hidden && !inner && v.querySelector('.v3pb [data-v3=aj]')); if (meNow) S.v4fromMe = true; else if (!inner) S.v4fromMe = false;
     if (inner) { const st = back.parentElement; st.classList.toggle('v4empty', ![...st.children].some((x) => x !== back && x.tagName !== 'B' && x.getClientRects().length && (x.children.length || (x.textContent || '').trim()))); }
     const lb = (!v || v.hidden) ? TR.querySelector('#lista > header.v3-top .sl-back, #lista > .v3-top .sl-back') : null; const L = TR.querySelector('#lista'); if (L) L.classList.toggle('v4inner-l', !!lb);
-    if (['inicio', 'estante', 'comunidade', 'eu'].includes(S.tab)) S.v4lastTab = S.tab;
+    // última aba principal: vale a aba acesa na barra de baixo (S.tab fica "buscar"/"perfil" quando o Você abre por cima de outra tela, e o Voltar de Estatísticas caía na Comunidade)
+    { const onb = TR.querySelector('#tabbar button.on'), tb = onb && onb.dataset.tab; if (['inicio', 'estante', 'comunidade', 'eu'].includes(tb)) S.v4lastTab = tb; else if (['inicio', 'estante', 'comunidade', 'eu'].includes(S.tab)) S.v4lastTab = S.tab; }
     const ed = $('#editor'), nt = !!(ed && !ed.hidden && ed.classList.contains('ntpage'));
     let b = top.querySelector('.v4back'); const t = top.querySelector('#g-t');
     if (inner || lb || nt) { if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'v4back'; b.setAttribute('aria-label', 'Voltar'); b.innerHTML = BK; b.addEventListener('click', () => { const e2 = $('#editor'); if (e2 && !e2.hidden && e2.classList.contains('ntpage')) { try { closeEd(); } catch {} return; } const wasBusca = S.tab === 'buscar';
