@@ -9941,6 +9941,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -12291,6 +12292,27 @@ function segPaint() {
 .rdc2-foot .rdc-go{flex:1;margin:0!important}
 .rdc2-me{margin:-.3rem 0 0;font-size:.74rem;color:var(--ink-2);text-align:center}
 `; TR.append(st); }
+// --- 36b_publicar_avaliacao.js ---
+// Avaliação não chegava à Comunidade (reteste da Bia, 20/11, G2): o publishReview original chama readerPctOf, que mora no
+// bloco 36 (fora do alcance do código antigo, em modo estrito); dava ReferenceError, engolido pelo catch, e nada era enviado.
+// Mesmo envio de antes, agora daqui, onde readerPctOf existe. Os embrulhos seguintes (72 níveis, u2 só lido) continuam valendo.
+publishReview = async function (b) {
+  if (!connected()) return;
+  libSync();
+  const e = b.status && db.goals.some((g) => g.books.includes(b)) ? (db.library || []).find((x) => x.link && x.link.bookId === b.id) : b;
+  if (!e) return;
+  try {
+    if (socialProfile === undefined) await loadProfile();
+    if (!socialProfile) return; // sem @usuário ainda: publica tudo ao criar
+    const rv = b.review;
+    if (!rv || rv.share === false) { await sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`); return; }
+    let pct = null; try { pct = readerPctOf(e.title); } catch {}
+    await sapi('PUT', `/v1/reviews/${encodeURIComponent(e.id)}`, { title: e.title, author: e.author || null, cover: smallCover(e.cover), paws: rv.paws || null, text: reviewText(rv) || null, spoiler: !!rv.spoiler,
+      ressaca: rv.ressaca === 'curou' ? 'curou' : rv.ressaca ? 'deu' : null, readerPct: pct, bookStatus: ['LIDO', 'LENDO', 'HIBERNANDO', 'ABANDONEI', 'QUERO'].includes(e.status) ? e.status : null,
+      ...(e.status === 'LIDO' && e.finishedAt && /^\d{4}-\d{2}-\d{2}$/.test(e.finishedAt) ? { readAt: e.finishedAt } : {}),
+      ...(rv.spoiler && rv.spoilerKind ? { spoilerKind: rv.spoilerKind, ...(rv.spoilerAt ? { spoilerAt: rv.spoilerAt } : {}) } : {}) });
+  } catch (err) { console.warn('publicar avaliação', err); }
+};
 // --- 37_metas.js ---
 // Metas (15/11): Meta do ano e Metas com prazo numa tela só. Meta com prazo pode usar uma estante: os livros da estante
 // viram os livros da meta e a meta acompanha a estante (entrou na estante, entra na meta; saiu, sai). A meta do ano pode
@@ -13223,22 +13245,25 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       const net = b && b.status === 200 && b.data ? b.data : {};
       const seen = new Set(); const revs = [];
       const asRev = (x, mine) => ({ type: 'review', id: x.id, user: x.user, paws: x.paws, text: x.text, spoiler: !!x.spoiler, createdAt: x.updatedAt, mine: !!mine, readerPct: x.readerPct ?? null, bookStatus: x.bookStatus || null });
-      if (net.mine) { revs.push(asRev(net.mine, true)); seen.add(net.mine.id); }
+      const lrNow = lib().find((x) => normT(x.title) === normT(title));
+      if (net.mine && (!lrNow || lrNow.status === 'LIDO')) { revs.push(asRev(net.mine, true)); seen.add(net.mine.id); }
       for (const x of [...(net.friends || []), ...(net.public || [])]) if (!seen.has(x.id)) { seen.add(x.id); revs.push(asRev(x, false)); }
       data = { posts, revs, avg: net.avg ?? null, count: net.count || 0, at: Date.now() }; S.bkRede[key] = data;
     }
     if (!sec.isConnected) return;
     // a sua avaliação aparece mesmo se for privada (só você vê)
     const lr = lib().find((x) => normT(x.title) === normT(title)), my = lr && reviewOfLib(lr);
-    const mineLocal = !data.revs.some((r) => r.mine) && my && (my.paws || my.texto) ? [{ type: 'review', id: 'me-local', user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME }, paws: my.paws || null, text: my.texto || null, spoiler: !!my.spoiler, createdAt: lr.finishedAt || todayISO(), mine: true, local: true, readerPct: readerPctOf(title) }] : [];
+    // avaliação só de leitura concluída (Bia, 20/11; reteste G1): fora de Lido a sua avaliação guardada não aparece; a hora é o meio-dia do dia em que terminou (antes, meia-noite UTC virava "1 d")
+    const mineLocal = !data.revs.some((r) => r.mine) && lr && lr.status === 'LIDO' && my && (my.paws || my.texto) ? [{ type: 'review', id: 'me-local', user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME }, paws: my.paws || null, text: my.texto || null, spoiler: !!my.spoiler, createdAt: lr.finishedAt && /^\d{4}-\d{2}-\d{2}$/.test(lr.finishedAt) ? lr.finishedAt + 'T12:00:00' : (lr.finishedAt || todayISO()), mine: true, local: true, readerPct: readerPctOf(title) }] : [];
     const draw = () => {
       const F = S.bkF; F.nota = ''; // filtro por nota saiu (Bia, 20/11; protótipo: Tudo · Avaliações · Sem spoiler)
-      let list = [...mineLocal, ...data.revs, ...data.posts].map((x) => ({ ...x, mine: !!(x.mine || (x.user && socialProfile && x.user.handle === socialProfile.handle)) }));
+      const lido = !lr || lr.status === 'LIDO';
+      let list = [...mineLocal, ...data.revs.filter((r) => lido || !(r.mine || (r.user && socialProfile && r.user.handle === socialProfile.handle))), ...data.posts].map((x) => ({ ...x, mine: !!(x.mine || (x.user && socialProfile && x.user.handle === socialProfile.handle)) }));
       if (F.tipo === 'aval') list = list.filter((x) => x.type === 'review'); else if (F.tipo === 'com') list = list.filter((x) => x.type !== 'review');
       if (F.nota) list = list.filter((x) => { const p = Number(x.paws) || 0; return F.nota === '5' ? p >= 5 : F.nota === '4' ? p >= 4 && p < 5 : F.nota === '3' ? p >= 3 && p < 4 : p > 0 && p < 3; });
       if (F.semSp) list = list.filter((x) => x.mine || !(x.spoiler || x.spoilerKind));
       list.sort((a, z) => new Date(z.createdAt) - new Date(a.createdAt)); // por ordem de postagem (mais recente primeiro)
-      const total = mineLocal.length + data.revs.length + data.posts.length;
+      const total = mineLocal.length + data.revs.filter((r) => lido || !(r.mine || (r.user && socialProfile && r.user.handle === socialProfile.handle))).length + data.posts.length;
       sec.innerHTML = (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
           + '<button type="button" data-sp class="' + (F.semSp ? 'on' : '') + '">Sem spoiler</button></div>' : '')
         + (list.length ? list.map((it, i) => rdCardHTML({ ...it, book: null }, i, it.local ? { noFoot: true } : {})).join('')
@@ -15324,11 +15349,14 @@ inSemana = function () { return ''; };
     if (mode === 'snap' && !snap && l.childElementCount && !l.classList.contains('v3-wait')) {
       const w = l.getBoundingClientRect().width; snap = l.cloneNode(true); snap.classList.add('lista-snap'); snap.removeAttribute('id'); snap.setAttribute('aria-hidden', 'true'); snap.style.pointerEvents = 'none';
       snap.id = 'lista'; l.after(snap); l.style.width = w + 'px'; l.classList.add('v3-back');
-    } else if (mode === 'fade') l.classList.add('v3-wait');
+    } else if (mode === 'fade') { l.style.transition = 'none'; l.classList.add('v3-wait'); requestAnimationFrame(() => { l.style.transition = ''; }); }
     settle(); };
   const _dt = drawTab; drawTab = function () {
     const l = L(), home = S.tab === 'inicio';
-    if (home && l && !l.hidden) start(l.querySelector('.v3-now') ? 'snap' : 'fade');
+    // o Hoje novo (v2) não tem .v3-now: sem isto ia pelo "fade", e o layout antigo aparecia meio transparente por um instante (reteste M8)
+    // na v2, congelar a tela só quando ela já é a nova: a 1ª cópia era do layout antigo (meta, estante, números) e ficava 1,6 s na frente
+    const v2 = typeof v2HojeEnsure === 'function';
+    if (home && l && !l.hidden) start(l.querySelector(v2 ? '.v2hero, .v3x, .v8dia' : '.v3-now') ? 'snap' : 'fade');
     return _dt.apply(this, arguments); };
   new MutationObserver((ms) => { if (!(snap || (L() && L().classList.contains('v3-wait')))) return; if (ms.some((m) => !(m.target.closest && m.target.closest('.lista-snap')))) { last = Date.now(); settle(); } }).observe(TR, { childList: true, subtree: true });
   // ao trocar de aba enquanto espera, mostra na hora
@@ -19785,13 +19813,13 @@ function v4PgEdHTML(e, s) { const st = v4State(), P = st.pgEd || (st.pgEd = { u:
     <div class="pgv"><b id="v4pgl">${v4Lbl(e, P.v, P.u)}</b><small id="v4pgs">${v4Sub(e, P.u)}</small></div>
     <div class="pgsl"><button data-a="pgst" data-n="-1" aria-label="Voltar">−</button><input type="range" id="v4pgr" min="0" max="${total || Math.max(500, P.v + 100)}" value="${P.v}" aria-label="Página"><button data-a="pgst" data-n="1" aria-label="Avançar">+</button></div>
     <div class="row" style="gap:8px;margin-top:10px"><button class="btn s" style="flex:1" data-a="pged">Cancelar</button><button class="btn p" style="flex:1" data-a="pgok">Salvar</button></div></div>`; }
-function v4EcoEdHTML(e, s) { const E = v4State().ecoEd || (v4State().ecoEd = { t: '', rec: false, pg: (s && s.pg) || v4Info(e).now || 1, up: false });
+function v4EcoEdHTML(e, s) { const E = v4State().ecoEd || (v4State().ecoEd = { t: '', rec: false, pg: (s && s.libId === e.id && s.pg) || v4Info(e).now || 1, up: false });
   return `<div class="pged eced"><div class="eh"><b>Deixar um eco</b></div>${v4PgLine(E, 'eco')}
     <div class="ebox${E.rec ? ' rec' : ''}"><textarea id="v4ecot" maxlength="80" rows="2" placeholder="${E.rec ? 'Ouvindo… pode falar' : 'O que você sentiu nesta página?'}">${esc(E.t)}</textarea>
       <button class="mic" data-a="ecomic" aria-label="${E.rec ? 'Parar de ouvir' : 'Falar em vez de digitar'}">${E.rec ? '<i></i><i></i><i></i>' : v4ic('mic', 22)}</button></div>
     <div class="emeta"><span>${E.rec ? 'ouvindo… toque de novo para parar' : 'toque no microfone e fale; o texto aparece aqui'}</span><span id="v4ecoc">${E.t.length}/80</span></div>
     <div class="row" style="gap:8px;margin-top:10px"><button class="btn s" style="flex:1" data-a="ecoed">Cancelar</button><button class="btn p" style="flex:1" data-a="ecook">Deixar eco</button></div></div>`; }
-function v4NotaEdHTML(e, s) { const N = v4State().notaEd || (v4State().notaEd = { t: '', rec: false, ocr: '', pg: (s && s.pg) || v4Info(e).now || 1, up: false });
+function v4NotaEdHTML(e, s) { const N = v4State().notaEd || (v4State().notaEd = { t: '', rec: false, ocr: '', pg: (s && s.libId === e.id && s.pg) || v4Info(e).now || 1, up: false });
   return `<div class="pged eced"><div class="eh"><b>Anotar</b></div>${v4PgLine(N, 'nota')}
     <div class="ebox${N.rec ? ' rec' : ''}"><textarea id="v4notat" rows="3" placeholder="${N.rec ? 'Ouvindo… pode falar' : 'O que você pensou?'}">${esc(N.t)}</textarea></div>
     <div class="ntools"><button class="${N.rec ? 'on' : ''}" data-a="nmic">${v4ic('mic', 18)}<span>${N.rec ? 'Ouvindo…' : 'Ditar'}</span></button><button data-a="nfoto">${v4ic('scan', 18)}<span>Foto vira texto</span></button></div>
@@ -20039,14 +20067,14 @@ function v4Click(ev) {
     const before = new Set(((V4ECO.get(e.id) || {}).seen || []).map((x) => x.id));
     v4EcoLoad(e, nv).then((E) => { if (!E || !V4) return; const hits = (E.seen || []).filter((x) => !x.mine && !before.has(x.id)); redraw(); v4Float(hits); }); return; }
   if (a === 'v6pgm' || a === 'v6pgp' || a === 'v6up') { const P = st.ed === 'eco' ? st.ecoEd : st.notaEd; if (!P) return; if (a === 'v6up') { P.up = !!b.checked; return; } const { total } = v4Info(e); P.pg = Math.max(1, Math.min(total || 99999, (P.pg || s.pg) + (a === 'v6pgp' ? 1 : -1))); return v4PgPaint(P); }
-  if (a === 'ecoed') { st.ed = st.ed === 'eco' ? null : 'eco'; st.ecoEd = st.ed ? { t: '', rec: false, pg: (s && s.pg) || v4Info(e).now || 1, up: false } : null; if (v4Rec) v4Dictate(); return redraw(); }
+  if (a === 'ecoed') { st.ed = st.ed === 'eco' ? null : 'eco'; st.ecoEd = st.ed ? { t: '', rec: false, pg: (s && s.libId === e.id && s.pg) || v4Info(e).now || 1, up: false } : null; if (v4Rec) v4Dictate(); return redraw(); }
   if (a === 'ecomic') { const E = st.ecoEd; return v4Dictate((t) => { E.t = (E.t ? E.t + ' ' : '') + t; E.t = E.t.slice(0, 80); const ta = V4.querySelector('#v4ecot'); if (ta) ta.value = E.t; const c = V4.querySelector('#v4ecoc'); if (c) c.textContent = E.t.length + '/80'; }, (on) => { E.rec = on; const bx = V4.querySelector('.ebox'); if (bx) bx.classList.toggle('rec', on); const m = V4.querySelector('.ebox .mic'); if (m) m.innerHTML = on ? '<i></i><i></i><i></i>' : v4ic('mic', 22); }); }
   if (a === 'ecook') { const t = (st.ecoEd.t || '').trim(); if (!t) return toast('Escreva ou fale o seu eco'); if (!connected() || !socialProfile) return toast('Entre na sua conta e crie seu @usuário para deixar ecos');
     const { total } = v4Info(e); b.disabled = true;
     sapi('POST', '/v1/echoes', { title: e.title, author: e.author || null, page: st.ecoEd.pg || s.pg, total: total || null, text: t }).then((r) => {
       if (r.status === 201) { const pgE = (st.ecoEd && st.ecoEd.pg) || s.pg; if (st.ecoEd && st.ecoEd.up && pgE !== s.pg) { s.pg = pgE; s.pgSet = true; v2SesPut(s); } const E = V4ECO.get(e.id) || { seen: [], ahead: [], aheadTotal: 0, aheadFriends: 0 }; E.seen = [...(E.seen || []), { ...r.data, mine: true, friend: false, handle: socialProfile.handle, displayName: socialProfile.displayName }]; V4ECO.set(e.id, E); S.v4myEcos = undefined; st.ed = null; st.ecoEd = null; if (v4Rec) v4Dictate(); redraw(); toast(`Eco deixado na pág. ${pgE}`); }
       else { b.disabled = false; toast(r.status === 403 ? ((r.data && r.data.message) || 'Sua conta não pode publicar agora') : 'Não deu para deixar o eco agora'); } }).catch(() => { b.disabled = false; toast('Sem conexão: tente de novo'); }); return; }
-  if (a === 'notaed') { st.ed = st.ed === 'nota' ? null : 'nota'; st.notaEd = st.ed ? { t: '', rec: false, ocr: '', pg: (s && s.pg) || v4Info(e).now || 1, up: false } : null; if (v4Rec) v4Dictate(); return redraw(); }
+  if (a === 'notaed') { st.ed = st.ed === 'nota' ? null : 'nota'; st.notaEd = st.ed ? { t: '', rec: false, ocr: '', pg: (s && s.libId === e.id && s.pg) || v4Info(e).now || 1, up: false } : null; if (v4Rec) v4Dictate(); return redraw(); }
   if (a === 'nmic') { const N = st.notaEd; return v4Dictate((t) => { N.t = (N.t ? N.t + ' ' : '') + t; const ta = V4.querySelector('#v4notat'); if (ta) ta.value = N.t; }, (on) => { N.rec = on; const x = V4.querySelector('.ntools [data-a=nmic]'); if (x) { x.classList.toggle('on', on); x.querySelector('span').textContent = on ? 'Ouvindo…' : 'Ditar'; } }); }
   if (a === 'nfoto') { const N = st.notaEd; return v4PickPhoto(async (f) => { const w = (m) => { let o = V4.querySelector('.eced .ocrw'); if (!o) { o = document.createElement('div'); o.className = 'ocrw'; V4.querySelector('.ntools').after(o); } o.textContent = m; };
     const t = await v4Ocr(f, w); w(t ? 'Pronto: o texto da foto entrou na anotação.' : ''); if (t) { N.t = (N.t ? N.t + ' ' : '') + t; const ta = V4.querySelector('#v4notat'); if (ta) ta.value = N.t; } }); }
@@ -20335,7 +20363,7 @@ function v5BmHTML(e) {
   const top = st === 'LENDO' ? [v5li('v5upd', 'pag', 'Atualizar página'), v5li('v5fim', 'ok', 'Terminei', 'nota, datas e o que sentiu'), vFn('junto') ? v5li('v5junto', 'friends', 'Ler junto') : '', vFn('prazos') && v5li('v5prazo', 'cal', e.dueAt ? 'Prazo' : 'Definir prazo', e.dueAt ? (due && !due.done ? `hoje, até a pág. ${due.target}` : 'mudar a data ou tirar') : 'quando quer terminar?'), v5li('sheet', 'stop', 'Parar de ler', 'pausar, desistir ou marquei por engano', ' data-s="v5stop"')]
     : st === 'QUERO' ? [v5li('v5start', 'ler', 'Começar a ler'), v5li('v5prio', 'sort', 'Prioridade', { 1: 'alta', 2: 'normal', 3: 'baixa' }[e.prio || 2]), v5li('v5fim', 'ok', 'Já li', 'nota e quando leu')]
     : st === 'LIDO' ? [v5li('v5fim', 'quote', 'Minha avaliação', 'nota, emoções e níveis do enredo'), v5li('v5retro', 'cal', 'Retrospectiva'), v5li('sheet', 'swap', 'Ler de novo', 'a leitura anterior fica no histórico', ' data-s="v5reler"'), v5li('sheet', 'undo', 'Não terminei', 'marquei como lido por engano', ' data-s="v5unlido"')]
-    : st === 'HIBERNANDO' ? [v5li('v5start', 'ler', 'Retomar', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5aband', 'stop', 'Desistir de vez', 'vai para Abandonados')]
+    : st === 'HIBERNANDO' ? [v5li('v5start', 'ler', 'Retomar', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5aband', 'stop', 'Desistir de vez', 'vai para Abandonados'), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')]
     : [v5li('v5start', 'ler', 'Tentar de novo', pg ? 'volta para o Hoje na pág. ' + pg : ''), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')];
   return `<button class="sh-bk sh-go" data-a="v5open" aria-label="Abrir página do livro">${v4cv(e)}<div style="flex:1;min-width:0;text-align:left"><h3>${esc(e.title)}</h3><span class="mut">${esc(e.author || '')}${e.author ? ' · ' : ''}${V5ST[st] || ''}${st === 'LENDO' && pg ? ' · pág. ' + pg + (tot ? ' de ' + tot : '') : ''}</span><small class="sh-lk">Ver página do livro</small></div><span class="r">${v4ic('chev', 18)}</span></button>
   <div class="list">${top.filter(Boolean).join('')}
@@ -20516,7 +20544,8 @@ function v5V4Click(ev) {
   if (a === 'v5fim') return ext(() => v4FimOpen(e));
   if (a === 'v5junto') return ext(() => inviteBuddy(e));
   if (a === 'v5prazo') return ext(() => dueSheet(e));
-  if (a === 'v5start') return ext(() => startReading(e));
+  // Começar/Retomar: fecha a camada inteira antes (a pergunta "Ler os dois / Trocar" abre por baixo dela e parecia que nada acontecia; reteste M3)
+  if (a === 'v5start') { st.sheet = null; st.view = null; try { v4Close(); } catch {} setTimeout(() => { try { startReading(e); } catch (err) { console.warn('menu do livro', err); } }, 30); return; }
   if (a === 'v5prio') return ext(() => prioSheet(e));
   if (a === 'v5retro') return ext(() => openRetro(e));
   if (a === 'v5lend') return ext(() => exSheet(e, 'loan'));
@@ -20857,12 +20886,17 @@ function v6V4Click(ev) {
 function v6V4Input(ev) { const t = ev.target; if (t && t.id === 'v6ta') { const st = v4State(); st.v6.t = t.value; const c = t.getRootNode().getElementById('v6cnt'); if (c) c.textContent = t.value.length + '/280'; } }
 
 // ---------- Pergunta do dia (API /v1/qday) ----------
-let V6QD = null, V6QDAt = 0, V6QDBusy = false;
+// a pergunta e o seu voto do dia ficam guardados no aparelho: o Hoje já abre com eles (reteste G4: abria com outra pergunta,
+// sem voto e capas vazias, e trocava sozinho segundos depois). Sem nada guardado, o cartão espera a resposta em vez de chutar.
+const V6QDK = 'lv.qday';
+let V6QD = (() => { try { const c = JSON.parse(localStorage.getItem(V6QDK) || 'null'); return c && c.d === todayISO() && c.q && c.q.question ? c.q : null; } catch { return null; } })(), V6QDAt = 0, V6QDBusy = false;
+const v6QdKeep = () => { try { if (V6QD && V6QD.question) localStorage.setItem(V6QDK, JSON.stringify({ d: todayISO(), q: V6QD })); } catch {} };
 async function v6QdLoad(force) {
   if (!connected() || !socialProfile || V6QDBusy || (!force && Date.now() - V6QDAt < 10 * 60000)) return; V6QDBusy = true;
   // falha ou resposta sem pergunta também conta como tentativa (nova tentativa em 1 min): antes, cada redesenho pedia de novo e o Hoje e a página da pergunta entravam em laço
   let ok = false; const before = JSON.stringify(V6QD);
   try { const r = await sapi('GET', '/v1/qday'); if (r.status === 200 && r.data && r.data.question) { V6QD = r.data; ok = true; } } catch {} finally { V6QDBusy = false; V6QDAt = ok ? Date.now() : Date.now() - 9 * 60000; }
+  if (ok) v6QdKeep(); else if (!V6QD) { V6QD = { failed: true }; } // sem resposta: usa a pergunta local (não fica esperando para sempre)
   if (JSON.stringify(V6QD) !== before) v6QdRefresh();
 }
 function v6QdRefresh() { try { if (S.tab === 'inicio' && typeof v2HojeEnsure === 'function') v2HojeEnsure(); } catch {} const st = v4State(); if (st.view === 'v6qday') v4Draw(); }
@@ -20872,7 +20906,11 @@ const v6QdRow = (x, tot, i, mine) => { const pc = tot ? Math.round(x.votes / tot
 v2QdayHTML = function () {
   v6QdLoad();
   let q0 = '', from = 'lidos'; try { [q0, from] = v2QOfDay(); } catch {}
-  const Q = V6QD, q = (Q && Q.question) || q0;
+  let Q = V6QD;
+  // ainda sem resposta do servidor (nem guardada): reserva o lugar do cartão, sem mostrar uma pergunta que vai trocar
+  try { if (!Q && connected() && socialProfile !== null) { if (!v2QdayHTML.t) v2QdayHTML.t = setTimeout(() => { v2QdayHTML.t = 0; v6QdLoad(); if (!V6QD && !V6QDBusy) { V6QD = { failed: true }; v6QdRefresh(); } }, 6000); return `<section class="v2-qd v6qd-wait" data-v2qd="1" aria-busy="true"><div class="k">Pergunta do dia</div><div class="q">&nbsp;</div><div class="qpicks" style="min-height:96px"></div><div class="qft"><span>&nbsp;</span></div></section>`; } } catch {}
+  if (Q && Q.failed) Q = null;
+  const q = (Q && Q.question) || q0;
   if (Q && Q.mine) return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div><div class="v6ql">${(Q.top || []).map((x, i) => v6QdRow(x, Q.total, i, Q.mine)).join('')}</div>
     <div class="qft"><span>${Q.total} ${Q.total === 1 ? 'voto' : 'votos'} · você votou em <b>${esc(Q.mine.title)}</b></span><button type="button" data-q6go="1">Mais votados ›</button></div></section>`;
   const bks = (() => { try { return v2QBooks(from); } catch { return []; } })();
@@ -20883,7 +20921,7 @@ v2QdayHTML = function () {
 async function v6Vote(book) {
   if (!connected() || !socialProfile) return toast('Entre na sua conta para votar');
   try { const r = await sapi('POST', '/v1/qday/vote', { book: { title: String(book.title).slice(0, 300), author: book.author ? String(book.author).slice(0, 300) : null, cover: /^https:\/\//.test(book.cover || '') ? String(book.cover).slice(0, 2000) : null } });
-    if (r.status === 200 && r.data && r.data.question) { V6QD = r.data; V6QDAt = Date.now(); toast('Voto registrado'); v6QdRefresh(); return; }
+    if (r.status === 200 && r.data && r.data.question) { V6QD = r.data; V6QDAt = Date.now(); v6QdKeep(); toast('Voto registrado'); v6QdRefresh(); return; }
     toast(r.status === 403 ? 'Sua conta não pode votar agora' : 'Não consegui votar agora'); } catch { toast('Não consegui votar agora'); }
 }
 v2QAnswer = function (id) {
@@ -22292,6 +22330,8 @@ function v8BjPut() { const v = $('#shelflist');
   };
   // a estante muda (Terminei, Não terminei, novo livro): sobe em poucos segundos e os números do livro se refazem (teste 14)
   setTimeout(push, 6000); setInterval(push, 5000);
+  // mudou o status (Terminei, Não terminei, Começar): sobe na hora, para os números do livro não mostrarem "0 leram, 1 lendo" (reteste M6)
+  { const _sls = setLibStatus; setLibStatus = function () { const r = _sls.apply(this, arguments); setTimeout(push, 250); return r; }; }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') push(); }); }
 // ---------- números do livro, abaixo do topo (perfil do livro; Bia, 20/11) ----------
 var v8Bust = () => {};
@@ -23337,7 +23377,9 @@ function v9DelReview(e) {
 { const _rm = rdMenu; rdMenu = function (it, after, anchor) {
     const inBook = !!(anchor && anchor.closest && anchor.closest('.bp-rede'));
     if (inBook && it && it.mine && it.type === 'review') {
-      const le = lib().find((x) => x.id === it.libId) || (it.book ? lib().find((x) => normT(x.title) === normT(it.book.title)) : null); if (!le) return _rm.apply(this, arguments);
+      // o cartão da Comunidade do livro não traz o livro (book: null); o título vem da própria página (reteste G3: o ••• não abria nada)
+      const pt = ((anchor.closest('#shelflist') || TR).querySelector('.bp-hero h2') || {}).textContent || '';
+      const le = lib().find((x) => x.id === it.libId) || (it.book ? lib().find((x) => normT(x.title) === normT(it.book.title)) : null) || (pt ? lib().find((x) => normT(x.title) === normT(pt)) : null); if (!le) return _rm.apply(this, arguments);
       return popMenu(anchor, [{ label: 'Editar avaliação', fn: () => { try { v4FimOpen(le); } catch { rateForm(le, { logs: [] }, () => {}); } } },
         { label: 'Apagar avaliação', fn: () => sheet('Apagar sua avaliação de “' + le.title + '”?', [['Apagar avaliação', () => { v9DelReview(le); toast('Avaliação apagada'); }]]) }]); }
     return _rm.apply(this, arguments); }; }
@@ -23426,6 +23468,58 @@ document.addEventListener('click', async (ev) => {
       const tmp = document.createElement('div'); tmp.innerHTML = v9LikeBtn({ id, liked: !!r.data.liked, likes: r.data.likes }); b.replaceWith(tmp.firstElementChild); }
     else toast(r && r.status === 403 ? 'Chegue nesta página para curtir' : 'Não deu para curtir agora'); }
   catch { toast('Não deu para curtir agora'); } finally { delete b.dataset.busy; } }, true);
+// --- u5_v2_reteste_livro.js ---
+// Reteste no navegador (Bia, 20/11), página do livro:
+// - M2: "Minha leitura › Biblioteca › Tirar daqui" abria a janela do navegador com outro aviso. Agora é a mesma ação do menu
+//   ("Remover livro", folha do app, 30 dias em Removidos recentemente) e com o mesmo nome.
+{ const bookHere = () => { const t = ((TR.querySelector('#shelflist .bp-hero h2') || {}).textContent || '').trim(); if (!t) return null; try { return lib().find((x) => normT(x.title) === normT(t)) || null; } catch { return null; } };
+  TR.addEventListener('click', (ev) => {
+    const p = ev.composedPath ? ev.composedPath() : []; const b = p.find((n) => n && n.dataset && n.dataset.a === 'rmlib'); if (!b) return;
+    const e = bookHere(); if (!e) return; ev.stopPropagation(); ev.preventDefault();
+    try { v5Sheet('v5rm', { e }); } catch (err) { console.warn('remover livro', err); } }, true);
+  const v = $('#shelflist'); let tm = 0;
+  const fix = () => { tm = 0; if (!v || v.hidden) return; v.querySelectorAll('.bp-adj[data-a=rmlib] b').forEach((x) => { if (x.textContent !== 'Remover livro') x.textContent = 'Remover livro'; }); };
+  if (v) new MutationObserver(() => { if (!tm) tm = setTimeout(fix, 60); }).observe(v, { childList: true, subtree: true }); }
+// - M7: estante aberta a partir do Você herdava a marca do perfil (mine-page): ficava sem seta de voltar e sem o "•••".
+//   Excluir de dentro da página agora fecha a página na hora (antes ficava presa numa tela "Estante" vazia).
+{ const _os = openShelfV3; openShelfV3 = function () { try { const v = $('#shelflist'); if (v) v.classList.remove('mine-page'); } catch {} S.v4fromMe = false; return _os.apply(this, arguments); };
+  TR.addEventListener('click', (ev) => { const p = ev.composedPath ? ev.composedPath() : []; const b = p.find((n) => n && n.dataset && n.dataset.a === 'v5shdel'); if (!b) return;
+    setTimeout(() => { const v = $('#shelflist'); if (!v || v.hidden || !v.classList.contains('v6shp')) return; const t = ((TR.querySelector('#g-t') || {}).textContent || '').trim();
+      if (!(db.shelves || []).some((s) => s.name === t)) { v.hidden = true; try { goTab('estante'); } catch {} } }, 60); }, true); }
+// o "•••" da página da estante sumia quando a lista era redesenhada depois de aberta (l2 só põe na abertura): recoloca sempre
+{ const v = $('#shelflist'); let tm = 0;
+  const fix = () => { tm = 0; if (!v || v.hidden) return; const bar = v.querySelector('.sl-body > .esv-bar'); if (!bar || bar.querySelector('.v6dots')) return;
+    const nm = ((v.querySelector('.sl-body > .sl-top > b') || {}).textContent || '').trim(); const sh = (db.shelves || []).find((s) => s.name === nm); if (!sh) return;
+    v.classList.add('v6shp'); const b = document.createElement('button'); b.type = 'button'; b.className = 'v6dots'; b.setAttribute('aria-label', 'Opções da estante'); b.textContent = '•••';
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); try { v5Sheet('v5shm', { sh: sh.id, page: 'sh:' + sh.id }); } catch (err) { console.warn('estante', err); } }); bar.append(b); };
+  if (v) new MutationObserver(() => { if (!tm) tm = setTimeout(fix, 80); }).observe(v, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+// "Adicionar livros" de dentro da página da estante: ao salvar, a página mostra os livros novos (antes continuava "0 livros")
+{ const _pb = pickBooksFor; pickBooksFor = function (s, after) { return _pb.call(this, s, function () { try { if (after) after.apply(this, arguments); } catch {}
+    try { const v = $('#shelflist'); if (s && v && !v.hidden && v.classList.contains('v6shp')) openShelfV3('sh:' + s.id); } catch {} }); }; }
+// --- u6_v2_tema_sistema.js ---
+// Aparência › "Sistema" (reteste da Bia, 20/11, M9): segue o tema do celular (claro = Papel, escuro = Escuro) e muda junto
+// quando o celular muda. É o padrão de quem nunca escolheu um tema. A escolha fica em T().theme = 'sistema'; o
+// localStorage "bear.theme" guarda o tema já resolvido, para a primeira pintura (script do topo da página) não piscar.
+{ const st = document.createElement('style'); st.textContent = `.th-dots button[data-th=sistema]{background:linear-gradient(135deg,#f5efe4 50%,#1a1613 50%)!important}`; TR.append(st); }
+{ const MQ = (() => { try { return matchMedia('(prefers-color-scheme: dark)'); } catch { return null; } })();
+  if (!THEMES.some((t) => t[0] === 'sistema')) THEMES.unshift(['sistema', 'Sistema', '#f5efe4', '#c46f2b']);
+  const real = () => (MQ && MQ.matches ? 'escuro' : 'papel');
+  const _at = applyTheme;
+  applyTheme = function (k, persist) {
+    if (k !== 'sistema') { try { localStorage.removeItem('lv.temaSis'); } catch {} return _at.apply(this, arguments); }
+    _at.call(this, real(), false); try { localStorage.setItem('lv.temaSis', '1'); } catch {}
+    if (persist && T().theme !== 'sistema') { T().theme = 'sistema'; save(); }
+  };
+  const isSis = () => { try { return T().theme === 'sistema' || (!T().theme && localStorage.getItem('lv.temaSis') !== '0'); } catch { return false; } };
+  // quem nunca escolheu (sem T().theme) passa a seguir o celular; escolher qualquer tema grava a escolha
+  if (isSis()) applyTheme('sistema');
+  if (MQ) { const ch = () => { if (isSis()) applyTheme('sistema'); }; try { MQ.addEventListener('change', ch); } catch { try { MQ.addListener(ch); } catch {} } }
+  // Ajustes: a bolinha acesa e o nome acompanham "Sistema"
+  let tm = 0; const sync = () => { tm = 0; const box = TR.querySelector('.th-dots'); if (!box) return; const sis = isSis(), k = sis ? 'sistema' : document.documentElement.dataset.pal;
+    box.querySelectorAll('button[data-th]').forEach((b) => { const on = b.dataset.th === k; if (b.classList.contains('on') !== on) b.classList.toggle('on', on); });
+    const n = TR.querySelector('#aj-thn'), nm = (THEMES.find((t) => t[0] === k) || [])[1]; if (n && nm && n.textContent !== nm) n.textContent = nm; };
+  new MutationObserver(() => { if (!tm) tm = setTimeout(sync, 60); }).observe(TR, { childList: true, subtree: true });
+  TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('.th-dots button[data-th]'); if (!b) return; if (b.dataset.th !== 'sistema') { try { localStorage.setItem('lv.temaSis', '0'); } catch {} } setTimeout(sync, 30); }, true); }
 // --- w1_v2_paridade.js ---
 // Paridade produção × v2 (Bia, 20/11), decisões sobre o relatório:
 // 1) Conquistas saíram do app: nada de aviso "Conquista nova", "Ver conquistas" nem envio à API (quem já ganhou não perde nada no banco).
