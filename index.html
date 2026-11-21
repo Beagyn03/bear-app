@@ -24539,7 +24539,7 @@ function ppBalloon(o) {
 }
 document.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape' || !document.querySelector('.ppbal')) return; ev.stopPropagation(); if (ppG) ppStop(); else ppClose(); }, true);
 // toque no elemento destacado avança o passo
-document.addEventListener('click', (ev) => { if (!ppG || !ppG.tapEl) return; const path = ev.composedPath ? ev.composedPath() : []; if (path.includes(ppG.tapEl)) { const g = ppG, i = g.i; g.tapEl = null; setTimeout(() => { if (ppG === g && g.i === i) ppNext(); }, 450); } }, true);
+document.addEventListener('click', (ev) => { if (!ppG || !ppG.tapEl) return; const path = ev.composedPath ? ev.composedPath() : []; if (path.includes(ppG.tapEl)) { const g = ppG, i = g.i, st = g.steps[i]; g.tapEl = null; setTimeout(() => { if (ppG === g && g.i === i) { if (st && st.tapGo) st.tapGo(); else ppNext(); } }, 450); } }, true);
 document.addEventListener('contextmenu', (ev) => { if (!ppG || !ppG.tapEl || !ppG.hold) return; const path = ev.composedPath ? ev.composedPath() : []; if (path.includes(ppG.tapEl)) { const g = ppG, i = g.i; g.tapEl = null; setTimeout(() => { if (ppG === g && g.i === i) ppNext(); }, 450); } }, true);
 // antes de cada passo, fecha folhas e menus que não fazem parte dele (Bia, 21/11, item D)
 function ppCloseLayers() { try { if (typeof closePop === 'function') closePop(); } catch {}
@@ -24569,7 +24569,7 @@ function ppStep() {
   const show = (el) => { const btns = (s.btns || (s.adv === 'btn' ? [[s.btn || 'Continuar', () => ppNext()]] : [])).map(([l, f]) => [l, f === 'next' ? () => ppNext() : f]);
     if (!el && !btns.length) btns.push(['Continuar', () => ppNext()]);
     shown = ppBalloon({ t: s.sub ? 'Sessão · ' + s.t : s.t, x: s.x, el, n, N, btns, bottom: !!s.bottom, skip: () => ppFinish('skip'), onX: () => ppStop() });
-    g.tapEl = el && !s.adv ? el : null; g.hold = !!s.hold; };
+    g.tapEl = el && (!s.adv || s.tapGo) ? el : null; g.hold = !!s.hold; };
   const tick = () => { if (ppG !== g) return clearInterval(g.tm);
     if (s.until && (() => { try { return s.until(); } catch { return false; } })()) { clearInterval(g.tm); g.tm = 0; return ppNext(); }
     ppHideTips(true);
@@ -24616,6 +24616,8 @@ const PP_HOJE = [
   { go: () => ppTab('inicio'), sel: () => ppFindAny('#lista:not(.lista-snap) .v3ring'), t: 'Seu progresso', x: 'O anel mostra quanto você já leu. Toque nele para abrir o livro.', adv: 'btn' },
   { sel: () => { const b = ppFindAny('#lista:not(.lista-snap) .v3qa.p'); return b ? b.parentElement : null; }, t: 'Atalhos do livro', x: 'Atualizar: diga a página se leu fora do app. Ao lado: Terminei, Trecho, Ler junto e Mais.', adv: 'btn' },
   { sel: '#tabbar [data-tab=ler]', t: 'Ler', x: 'Abre a sessão de leitura: conta o tempo e silencia o resto. No caminho, ecos de quem já passou.', adv: 'btn',
+    // tocar no próprio Ler também segue para a sessão guiada (como "Experimentar agora")
+    tapGo: () => { ppG.sn = 0; ppG.steps.push(...PP_SESSAO); ppNext(); },
     btns: [['Depois', () => ppFinish()], ['Experimentar agora', () => { ppG.sn = 0; ppG.steps.push(...PP_SESSAO); ppNext(); }]] },
 ];
 const PP_SESSAO0 = [
