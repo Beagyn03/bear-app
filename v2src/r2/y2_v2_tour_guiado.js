@@ -68,7 +68,8 @@ function ppCloseLayers() { try { if (typeof closePop === 'function') closePop();
 // o alvo está à vista e não coberto? (o que está no centro dele é ele mesmo ou algo dentro dele)
 function ppOnTop(el) { try { const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + Math.min(r.height / 2, 30); if (y < 0 || y > innerHeight) return false;
     let t = document.elementFromPoint(x, y); for (let k = 0; k < 8 && t && t.shadowRoot; k++) { const u = t.shadowRoot.elementFromPoint(x, y); if (!u || u === t) break; t = u; }
-    if (!t) return false; if (t === el || el.contains(t) || (t.closest && t.closest('.ppbal'))) return true; const host = el.getRootNode && el.getRootNode().host; return !!(host && (t === host || (t.getRootNode && t.getRootNode() === el.getRootNode() && el.contains(t)))); } catch { return true; } }
+    // o que está por cima é o próprio alvo, algo dentro dele ou o contêiner dele (campo de busca dentro da moldura): não está coberto
+    if (!t) return false; if (t === el || el.contains(t) || t.contains(el) || (t.closest && t.closest('.ppbal'))) return true; const host = el.getRootNode && el.getRootNode().host; return !!(host && (t === host || (t.getRootNode && t.getRootNode() === el.getRootNode() && el.contains(t)))); } catch { return true; } }
 // dicas antigas da tela somem enquanto o tour mostra a dele (item E)
 function ppHideTips(on) { for (const r of ppRoots()) { try { r.querySelectorAll(on ? '.tip, .v3tip' : '[data-pphid]').forEach((x) => { if (on) { if (!x.hidden && !x.closest('.ppbal')) { x.hidden = true; x.dataset.pphid = '1'; } } else { x.hidden = false; delete x.dataset.pphid; } }); } catch {} } }
 function ppStop() { if (ppG && ppG.tm) clearInterval(ppG.tm); ppG = null; ppClose(); ppHideTips(false); }

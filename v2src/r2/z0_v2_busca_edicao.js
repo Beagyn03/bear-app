@@ -5,7 +5,7 @@
 const LV_LANG = { pt: 'Português', en: 'Inglês', es: 'Espanhol', fr: 'Francês', it: 'Italiano', de: 'Alemão', ja: 'Japonês', ko: 'Coreano', zh: 'Chinês', ru: 'Russo' };
 function lvEdLines(it) {
   let lg = ''; try { lg = typeof langOf === 'function' ? langOf(it) : String(it.lang || '').slice(0, 2).toLowerCase(); } catch {}
-  const pub = it.publisher || (it._meta && it._meta.pub) || '';
+  let pub = it.publisher || (it._meta && it._meta.pub) || ''; if (pub && it.author && normT(pub) === normT(it.author)) pub = ''; // autopublicação: não repete o nome
   const l1 = [it.author, pub].filter(Boolean).join(' · ');
   const l2 = [it.pages ? it.pages + ' páginas' : 'páginas não informadas', LV_LANG[lg] || '', it.year || ''].filter(Boolean).join(' · ');
   return [l1, l2];
