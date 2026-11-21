@@ -11573,11 +11573,29 @@ function openTaste(first, prof) {
       keep(); if (sel.size || books.length) toast(first ? 'Tudo pronto' : 'Gostos salvos'); done();
     });
   };
-  const done = () => { if (!first && S.nav.st.length) return navBack(); v.hidden = true; try { if (S.tab === 'inicio') drawTab(); else goTab('inicio'); } catch {} };
+  const done = () => { if (first) top3ToLib(books); if (!first && S.nav.st.length) return navBack(); v.hidden = true; try { if (S.tab === 'inicio') drawTab(); else goTab('inicio'); } catch {} };
   S.listRedraw = draw; S.navView = { t: 'taste', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle();
 }
 { const _o = openTaste; openTaste = function (first) { if (first) { S.nav.st = []; S.nav.cur = null; return _o.apply(this, arguments); } navEnter(() => openTaste()); S.nav.depth++; try { return _o.apply(this, arguments); } finally { S.nav.depth--; } }; }
 // ---------- "Para você" no Hoje ----------
+// Top 3 do primeiro acesso entra na Biblioteca (Bia, 20/11): sem duplicar. Livro que já está na biblioteca (ex.: veio da
+// importação) fica com o status que tem; o que não está entra como Lido, sem data. Toast com Desfazer.
+function top3ToLib(books) {
+  try {
+    if (!books || !books.length) return;
+    db.library = db.library || [];
+    const have = new Set(lib().map((x) => normT(x.title)));
+    const added = [];
+    books.forEach((b) => { if (!b || !b.title || have.has(normT(b.title))) return;
+      const e = { id: uid(), title: b.title, author: b.author || null, totalPages: null, status: 'LIDO', addedAt: todayISO(), noDate: true };
+      if (b.cover) e.cover = b.cover;
+      db.library.push(e); have.add(normT(b.title)); added.push(e.id); });
+    if (!added.length) return;
+    save();
+    const msg = added.length === books.length ? (added.length === 1 ? 'Seu livro entrou como lido' : `Seus ${added.length} livros entraram como lidos`) : (added.length === 1 ? '1 livro do seu Top 3 entrou como lido' : `${added.length} livros do seu Top 3 entraram como lidos`);
+    setTimeout(() => toast(msg, { label: 'Desfazer', fn: () => { db.library = (db.library || []).filter((x) => !added.includes(x.id)); save(); try { drawTab(); } catch {} } }), 400);
+  } catch (err) { console.warn('top 3 na biblioteca', err); }
+}
 async function tasteRecs() {
   const t = tasteOf(); if (!t) return [];
   const key = JSON.stringify(['pt2', t.genres, (t.books || []).map((b) => b.title)]), day = todayISO();
