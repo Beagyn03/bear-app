@@ -9976,6 +9976,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
@@ -26028,6 +26029,729 @@ TR.addEventListener('click', (ev) => {
     try { sheet('Prazo para qual livro?', L.map((e) => [e.title, () => dueSheet(e)])); } catch {} return; }
   if (a === 'goal') { const g = (db.goals || []).find((x) => x.id === b.dataset.g); const v = $('#shelflist'); if (v) v.hidden = true; try { screen('desafios'); if (g) setTimeout(() => open(g), 60); } catch {} return; }
 }, true);
+// --- wk_v2_estante.js ---
+// Prateleira na Biblioteca › Livros e no perfil (Bia, 21/11): porta do protótipo v186 (scratchpad/livroverso_v3.html), visual igual.
+// - Livros ganha Grade · Prateleira (o modo escolhido fica lembrado em prefs.shView). A Grade não muda.
+// - Prateleira: topo compacto (seletor "Todos ▾" com situações e as estantes da pessoa, Grade, Organizar, Decorar, + e "?"),
+//   lombadas com proporção real (altura pelo formato, grossura pelas páginas), tipos (brochura, capa dura, tecido, duas cores),
+//   lombada tirada da capa (faixa da borda esquerda + cor amostrada em canvas; se a capa não deixa ler a cor, fica a cor da paleta).
+// - Tudo o que a pessoa arruma fica em prefs.shx (vai junto com a conta, sem migração): ordem, pilhas, edição de cada livro,
+//   foto da lombada (JPEG pequeno em data URL, até 60 fotos; não existe rota de upload de imagem na API), enfeites, madeira,
+//   parede, luzinhas e lombadas da capa/desenhadas.
+// - Perfil: uma estante só, decorada igual à da Biblioteca, com chips (Todas + cada estante; cadeado nas só suas). Quem visita vê
+//   a mesma estante pelo resumo publicado (snapshot.shelf.prat), só com as estantes públicas.
+// Esta parte: estado, lombadas, prateleira, topo, filtro, legenda, perfil e resumo. Organizar, Decorar, edições e foto: wk_v2_estante_decorar.js.
+try { Object.assign(V4ICON, { grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>', prat: '<path d="M3 20h18M3 4h18"/><path d="M5 20V8h3v12M9 20V6h3v14M13.5 20l2-12 3 .5-2 11.5"/>', lua: '<path d="M19 14.5A7.5 7.5 0 1 1 9.5 5a6 6 0 0 0 9.5 9.5z"/>' }); } catch {}
+const SHX_CSS1 = `.v4ler .bsh{--bk-wall:#efe7da;--bk-back:#e4d8c5;--bk-w1:#d6aa76;--bk-w2:#b98551;--bk-w3:#8e5f36;--bk-top:#e8c597;--bk-sh:rgba(70,40,15,.28);--bk-glow:rgba(255,196,110,.20);--bk-hint:#7d6a55}
+.v4ler .bsh.dk{--bk-wall:#141d31;--bk-back:#0f1728;--bk-w1:#6b4a32;--bk-w2:#4d3322;--bk-w3:#2f1f15;--bk-top:#7d5a3e;--bk-sh:rgba(0,0,0,.55);--bk-glow:rgba(255,190,100,.16);--bk-hint:#a99ab8}
+.v4ler .bsh{position:relative;margin:2px -16px -110px;padding:14px 0 130px;background:var(--bk-wall)}
+.v4ler .bsh .case{position:relative;margin:0 6px;padding:0 9px;border-radius:3px 3px 0 0;
+ background:linear-gradient(90deg,var(--bk-w3),var(--bk-w1) 3px,var(--bk-w2) 7px,var(--bk-w3) 9px,transparent 9px,transparent calc(100% - 9px),var(--bk-w3) calc(100% - 9px),var(--bk-w2) calc(100% - 7px),var(--bk-w1) calc(100% - 3px),var(--bk-w3));
+ box-shadow:0 10px 30px -12px var(--bk-sh)}
+.v4ler .bsh .crown{height:12px;margin:0 -15px;border-radius:3px 3px 0 0;background:linear-gradient(180deg,var(--bk-top),var(--bk-w1) 40%,var(--bk-w2));box-shadow:0 3px 6px -2px var(--bk-sh)}
+.v4ler .bsh .bay{position:relative;background:linear-gradient(180deg,rgba(0,0,0,.20),rgba(0,0,0,0) 22px),radial-gradient(120% 60% at 50% 105%,var(--bk-glow),transparent 70%),var(--bk-back)}
+.v4ler .bsh .bay::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,.01) 0 1px,transparent 1px 22px);pointer-events:none}
+.v4ler .bsh .brow{position:relative;z-index:1;display:flex;align-items:flex-end;height:166px;padding:0 3px}
+.v4ler .bsh .brow::after{content:'';position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(0deg,rgba(0,0,0,.35),transparent);pointer-events:none;z-index:0}
+.v4ler .bsh .bpl{position:relative;z-index:2;height:16px;margin:0 -9px;background:linear-gradient(180deg,var(--bk-top) 0,var(--bk-top) 4px,var(--bk-w1) 4px,var(--bk-w2) 70%,var(--bk-w3));box-shadow:0 7px 9px -4px var(--bk-sh)}
+.v4ler .bsh .bpl::before{content:'';position:absolute;left:0;right:0;top:4px;height:1px;background:rgba(0,0,0,.18)}
+.v4ler .bsh .lt{position:absolute;left:4px;right:4px;top:8px;height:18px;pointer-events:none;z-index:3}
+.v4ler .bsh .lt svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.v4ler .bsh .lt i{position:absolute;width:4px;height:6px;margin-left:-2px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 50% 40%,#fffaf0,#ffd37a 55%,#e8a238);box-shadow:0 0 4px 1px rgba(255,205,110,.65),0 0 12px 4px rgba(255,190,90,.18);animation:bktw 4s ease-in-out infinite}
+.v4ler .bsh .lt i:nth-child(4n){animation-delay:-1.3s}
+.v4ler .bsh .lt i:nth-child(4n+1){animation-delay:-2.6s}
+@keyframes bktw{0%,100%{opacity:.82}50%{opacity:1}}
+.v4ler .bsh .sp{--c:#444;--k:#eee;position:relative;flex:none;display:block;box-sizing:border-box;padding:0;margin:0;border:0;cursor:pointer;font:inherit;-webkit-tap-highlight-color:transparent;background:var(--c);color:var(--k);border-radius:1.5px 1.5px .5px .5px;transition:transform .2s ease;box-shadow:0 0 0 .5px rgba(0,0,0,.22)}
+.v4ler .bsh .sp::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.30) 0,rgba(255,255,255,.16) 14%,rgba(255,255,255,.05) 34%,rgba(0,0,0,0) 58%,rgba(0,0,0,.10) 82%,rgba(0,0,0,.34) 100%)}
+.v4ler .bsh .sp::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:.5;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,rgba(0,0,0,.03) 1px 2px)}
+.v4ler .bsh .sp.cl::after{opacity:.9;background:repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px),repeating-linear-gradient(-45deg,rgba(0,0,0,.06) 0 1px,transparent 1px 3px)}
+.v4ler .bsh .sp.hc{border-radius:2.5px 2.5px 1px 1px}
+.v4ler .bsh .sp:hover,.v4ler .bsh .sp:focus-visible{transform:translateY(-6px)}
+.v4ler .bsh .sp:focus-visible{outline:2px solid var(--acc);outline-offset:2px;z-index:4}
+.v4ler .bsh .sp.lean{transform-origin:0 100%;transform:rotate(-7deg)}
+.v4ler .bsh .sp.lean:hover{transform:rotate(-7deg) translateY(-5px)}
+.v4ler .bsh .sp .tb{position:absolute;left:0;right:0;top:0;background:var(--c2)}
+.v4ler .bsh .sp .fb{position:absolute;left:2px;right:2px;height:1px;background:var(--k);opacity:.55}
+.v4ler .bsh .sp .lb{position:absolute;left:2px;right:2px;border-radius:1px;background:rgba(0,0,0,.42);box-shadow:inset 0 0 0 .5px rgba(255,220,150,.45)}
+.v4ler .bsh .sp .tt,.v4ler .bsh .sp .au{position:absolute;left:0;right:0;display:block;writing-mode:vertical-rl;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1;z-index:1;margin:auto}
+.v4ler .bsh .sp .tt.w2{white-space:normal;line-height:1.02;text-overflow:clip}
+.v4ler .bsh .sp .au{font-size:6.6px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;opacity:.78}
+.v4ler .bsh .sp .pm{position:absolute;left:50%;bottom:5px;width:6px;height:6px;margin-left:-3px;z-index:1;opacity:.75}
+.v4ler .bsh .sp .pm.p0{border-radius:50%;background:var(--k)}
+.v4ler .bsh .sp .pm.p1{border-radius:50%;border:1px solid var(--k)}
+.v4ler .bsh .sp .pm.p2{background:var(--k);transform:rotate(45deg) scale(.78)}
+.v4ler .bsh .sp .pm.p3{width:8px;margin-left:-4px;height:2px;border-top:1px solid var(--k);border-bottom:1px solid var(--k)}
+.v4ler .bsh .sp.f0 .tt{font-family:var(--f-disp,Georgia,serif);font-weight:600}
+.v4ler .bsh .sp.f1 .tt{font-family:var(--f-disp,Georgia,serif);font-style:italic;font-weight:600}
+.v4ler .bsh .sp.f2 .tt{font-weight:800;text-transform:uppercase;letter-spacing:.16em}
+.v4ler .bsh .sp.f3 .tt{font-family:'Arial Narrow','Roboto Condensed',Arial,sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:.01em}
+.v4ler .bsh .sp.f4 .tt{font-family:var(--f-disp,Georgia,serif);font-variant:small-caps;letter-spacing:.06em;font-weight:500}
+.v4ler .bsh .sp .rb{position:absolute;top:-13px;left:22%;width:max(6px,46%);max-width:12px;height:20px;background:linear-gradient(180deg,#fbf3e2,#efe2c6);border-radius:1px 1px 0 0;box-shadow:0 0 0 .5px rgba(0,0,0,.25);z-index:-1}
+.v4ler .bsh .sp .rb::after{content:'';position:absolute;left:50%;top:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--acc)}
+.v4ler .bsh .sp .sr{position:absolute;top:5px;left:50%;transform:translateX(-50%);z-index:2;font-size:8px;line-height:1;color:#f3cf6b;text-shadow:0 0 2px rgba(0,0,0,.6)}
+.v4ler .bsh .pile{flex:none;position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;margin:0 5px 0 4px}
+.v4ler .bsh .pb{position:relative;display:flex;align-items:center;box-sizing:border-box;padding:0 7px;border-radius:1.5px;font-size:7px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;cursor:pointer;background:var(--c);color:var(--k);box-shadow:0 0 0 .5px rgba(0,0,0,.25)}
+.v4ler .bsh .pb::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 30%,rgba(0,0,0,0) 65%,rgba(0,0,0,.3))}
+.v4ler .bsh .pb span{position:relative;overflow:hidden;text-overflow:ellipsis}
+.v4ler .bsh .pb.sf span{font-family:var(--f-disp,Georgia,serif);font-style:italic;text-transform:none;letter-spacing:.02em;font-size:8.5px}
+.v4ler .bsh .face{flex:none;position:relative;align-self:flex-end;margin:0 7px 0 5px;padding:0;border:0;background:none;cursor:pointer;transform:rotate(-4deg);transform-origin:50% 100%}
+.v4ler .bsh .face .cv{width:84px;height:126px;font-size:8.5px;border-radius:2px;box-shadow:4px 3px 8px rgba(0,0,0,.35),inset -2px 0 3px rgba(0,0,0,.25)}
+.v4ler .bsh .dec{flex:none;align-self:flex-end;position:relative;margin:0 5px;pointer-events:none}
+.v4ler .bsh .dec svg{display:block;overflow:visible}
+.v4ler .bsh .ghost{flex:1;align-self:center;text-align:center;font-size:12px;font-weight:700;color:var(--bk-hint);opacity:.8;padding:0 10px}
+.v4ler .bsh .hint{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin:0 12px 10px;font-size:11.5px;font-weight:700;color:var(--bk-hint)}
+.v4ler .bsh .hint .k1{display:inline-block;width:6px;height:10px;margin-right:4px;vertical-align:-1px;border-radius:1px;background:#f6ecd6;box-shadow:0 0 0 1px rgba(0,0,0,.25);position:relative}
+.v4ler .bsh .hint .k1::after{content:'';position:absolute;left:1px;top:2px;width:4px;height:4px;border-radius:50%;background:var(--acc)}
+.v4ler .bsh .hint .k2{color:#d9a93a;margin-right:3px}
+.v4ler .bsh .hint .r{margin-left:auto}
+.v4ler .bsh.sm{margin:8px 0 0;padding:8px 0 0;border-radius:12px;overflow:hidden}
+.v4ler .bsh.sm .case{margin:0}
+.v4ler .bsh.sm .brow{height:104px}
+.v4ler .bsh.sm .bpl{height:10px}
+.v4ler .bsh.sm .crown{height:8px}
+.v4ler .bsh.sm .sp .au,.v4ler .bsh.sm .sp .pm{display:none}
+.v4ler .bsh.sm .sp .rb{top:-7px;height:14px;width:4px;margin-left:-2px}
+.v4ler .addsm{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.v4ler .addsm svg{width:20px;height:20px}
+@media (prefers-reduced-motion: reduce){.v4ler .bsh .lt i{animation:none}
+.v4ler .bsh .sp{transition:none}
+}
+
+.v4ler .shtop{display:flex;align-items:center;gap:5px;margin:2px 0 10px}
+.v4ler .shsel{flex:1;min-width:0;display:grid;grid-template-columns:auto auto;justify-content:start;align-items:center;column-gap:5px;min-height:40px;padding:0 2px;border:0;background:none;color:var(--ink);font:inherit;font-weight:800;font-size:15.5px;line-height:1.15;cursor:pointer;text-align:left}
+.v4ler .shsel small{grid-column:1 / -1}
+.v4ler .shsel b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v4ler .shsel small{font-size:12px;font-weight:700;color:var(--mut);white-space:nowrap}
+.v4ler .shsel i{font-style:normal;font-size:11px;color:var(--mut)}
+.v4ler .shic{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.v4ler .shic svg{width:19px;height:19px}
+.v4ler .shic.q{width:28px;height:28px;border-radius:50%;font-weight:900;font-size:13px;border-color:transparent;background:var(--soft);color:var(--mut)}
+.v4ler .shtopw .bsh .hint{display:none}
+.v4ler .shleg{display:grid;gap:10px;margin:4px 0 2px}
+.v4ler .shleg div{display:flex;align-items:center;gap:10px;font-size:14px}
+.v4ler .shleg .k1{width:8px;height:14px;border-radius:1px;background:#f6ecd6;box-shadow:0 0 0 1px rgba(0,0,0,.25);flex:none;border-top:4px solid #e7934c}
+.v4ler .shleg .k2{color:#e2b23f;font-size:16px;width:8px;text-align:center}
+.v4ler .shfl .li small{margin-left:auto;color:var(--mut);font-weight:700}
+.v4ler .shfl .li.on{background:var(--soft)}
+.v4ler .shfl h4{margin:12px 4px 6px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.v4ler .pfsh{margin-top:12px}
+.v4ler .pfsh .chips{margin-bottom:6px}
+.v4ler .pfsh .chip svg{width:11px;height:11px;margin-left:3px;vertical-align:-1px}
+.v4ler .pfsh .pfl{margin:2px 2px 8px;font-size:12.5px;font-weight:700;color:var(--mut)}
+.v4ler .pfsh .pfbox{position:relative;max-height:440px;overflow-y:auto;overscroll-behavior:contain;border-radius:18px;border:1px solid var(--line);box-shadow:0 10px 24px rgba(0,0,0,.12)}
+.v4ler .pfsh .pfbox .bsh{margin:0;padding:12px 0 14px}
+.v4ler .pfsh .pfbox .bsh .hint{display:none}
+.v4ler .pfsh .pfbox .brow.few{justify-content:center}
+.v4ler .pfsh .pfbox .bay:not(:has(.sp,.v4ler .pile,.v4ler .face)),.v4ler .pfsh .pfbox .bay:not(:has(.sp,.v4ler .pile,.v4ler .face)) + .bpl{display:none}
+.v4ler .pfsh .pfall{display:block;width:100%;margin-top:8px;min-height:40px;border:0;background:none;color:var(--acc);font:inherit;font-weight:800;cursor:pointer}
+
+.v4ler{--mut:var(--ink2)}
+.v4ler.shxr{position:static!important;inset:auto!important;z-index:auto!important}
+.v4ler .shtopw>.shban{top:calc(var(--shx-sticky,0px) + 6px)}
+.v4ler .shtopw>.bsh{margin-left:calc(-1 * var(--shx-pad,16px));margin-right:calc(-1 * var(--shx-pad,16px))}
+.v4ler .lbl{font-size:10.5px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:14px 0 2px}
+.v4ler .vtog{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:var(--soft)}.v4ler .vtog button{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:0 10px;border:0;border-radius:9px;background:none;color:var(--ink2);font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}.v4ler .vtog button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.v4ler .shx-sx{position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,.45);display:grid;align-items:end}
+.v4ler .shx-sx>div{background:var(--bg,var(--card));color:var(--ink);border-radius:20px 20px 0 0;padding:16px max(16px,env(safe-area-inset-left,0px)) calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;max-width:560px;width:100%;margin:0 auto;box-sizing:border-box}
+.v4ler .shx-sx>div>b{font-size:17px}.v4ler .shx-sx .btn{min-height:46px;justify-content:center}
+.v4ler .shx-sx .btn:not(.p):not(.s){background:var(--soft);color:var(--ink)}
+`;
+const SHX_ST = { LENDO: 'lendo', LIDO: 'lido', QUERO: 'quero', HIBERNANDO: 'pausado', ABANDONEI: 'abandonado' };
+let SHX_CTX = null, SHX_VB = null, SHX_VIS = false, SHX_MODE = null, SHX_VER = 0, SHX_W = 0;
+const SHX_ROOTS = new Set(); // raízes onde há estante desenhada (Biblioteca, perfil, folhas): a cor amostrada entra em todas
+function shDefaults(o) { const d = { ed: {}, sp: {}, ord: null, lay: {}, manual: 0, deco: null, wood: 'auto', wall: 'linho', lt: { on: 1, c: 'quente' }, spMode: 'capa' }; Object.keys(d).forEach((k) => { if (o[k] === undefined) o[k] = d[k]; }); if (!o.ed || typeof o.ed !== 'object') o.ed = {}; if (!o.sp || typeof o.sp !== 'object') o.sp = {}; if (!o.lay || typeof o.lay !== 'object') o.lay = {}; return o; }
+function shc() { if (SHX_CTX) return SHX_CTX; const P = v5P(); if (!P.shx || typeof P.shx !== 'object') P.shx = {}; return shDefaults(P.shx); }
+function shSave() { SHX_VER++; v5Save(); try { publishSnapshotSoon(); } catch {} }
+function shMode() { return SHX_CTX ? null : SHX_MODE; }
+const shView = () => (v5P().shView === 'prat' ? 'prat' : 'grade');
+const shDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+// livro da Biblioteca no formato do protótipo
+const shB = (e) => ({ id: String(e.id), t: e.title || '', a: e.author || '', st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || 0, img: e.cover || null });
+function shById(id) { if (SHX_VB) { const x = SHX_VB[id]; return x ? { id, ...x } : null; } const e = v5Book(id); return e ? shB(e) : null; }
+function shEdOf(b) { const e = b && shc().ed && shc().ed[b.id]; return e ? { t: e.t, e: e.e } : { t: 'auto' }; }
+const spnHash = (s) => { let h = 2166136261; for (const ch of String(s)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h; };
+// cores tiradas de lombadas reais (fundo, letra): creme, preto, marinho, vinho, verde-floresta, mostarda, rosa antigo, petróleo, terracota...
+const SH_PAL = [['#efe6d6', '#2a2420'], ['#1d1d1f', '#e9dcc3'], ['#1f2f4a', '#e8d7a8'], ['#6e1f2a', '#f2e2c4'], ['#2f4a3a', '#e9e0c8'], ['#c58b3a', '#2a1d10'], ['#d8a9a1', '#3b2228'], ['#2c5f63', '#f0e7d4'], ['#b3532f', '#fbeee0'], ['#9fae8f', '#26301f'], ['#a89bc4', '#2a2240'], ['#e46f5a', '#2b1410'], ['#f4f1ea', '#7a2230'], ['#3a3f47', '#d8c27a'], ['#6b5a8c', '#f1e9ff'], ['#e9c46a', '#3a2a0c'], ['#4b2e2b', '#e8c99a'], ['#5b7f9e', '#f3f0e8'], ['#d9cfc0', '#4b3a2a'], ['#20364a', '#f2a07e'], ['#8c2f39', '#f6d58e'], ['#f2d7c9', '#5a2d3a'], ['#284139', '#e7c17a'], ['#141a2e', '#c8b6ff']];
+const shLum = (hex) => { const m = String(hex).replace('#', ''); const n = parseInt(m.length === 3 ? m.replace(/./g, '$&$&') : m.slice(0, 6), 16); const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255; return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+const shMix = (hex, t, to) => { const p = (x) => { const m = String(x).replace('#', ''); const n = parseInt(m.length === 3 ? m.replace(/./g, '$&$&') : m.slice(0, 6), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }; const a = p(hex), b = p(to); return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`; };
+// formato → altura (px por cm ≈ 6,1); páginas → grossura
+const SH_FMT = [['p', 18, 8], ['a', 21, 45], ['m', 23, 25], ['h', 23.5, 15], ['g', 24, 7]];
+function spnGeo(b, sm) { const h0 = spnHash(b.t + '|' + (b.a || '')); let r = h0 % 100, f = SH_FMT[1]; for (const x of SH_FMT) { if (r < x[2]) { f = x; break; } r -= x[2]; }
+  const pages = b.tot || (150 + (h0 >>> 7) % 520), ov = shEdOf(b), hc0 = f[0] === 'h' || (f[0] === 'g' && h0 % 2 === 0), hc = ov.t === 'hc' || ov.t === 'ep' ? true : (ov.t === 'pb' || ov.t === 'bp') ? false : hc0;
+  let h = Math.round(f[1] * 6.15 + ((h0 >>> 3) % 5) - 2) + (hc && !hc0 ? 5 : 0), w = Math.round(Math.max(12, Math.min(46, pages * 0.066 + (hc ? 4 : 1))));
+  if (sm) { h = Math.round(h * 0.6); w = Math.max(8, Math.round(w * 0.6)); } return { h, w, hc, pages, h0 }; }
+function spnColors(b) { const g = spnHash(b.t + '|' + (b.a || '')); const p = SH_PAL[g % SH_PAL.length], q = SH_PAL[(g >>> 5) % SH_PAL.length]; return [p[0], p[1], q[0]]; }
+// ação de tocar num livro: na sua estante abre o livro (segurar abre o menu); na estante de outra pessoa abre a página do livro
+const shAct = (b, long) => SHX_VIS ? ` data-a="shxvb" data-id="${esc(b.id)}"` : ` data-a="v5book" data-id="${esc(b.id)}"${long ? ' data-long="bm"' : ''}`;
+function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnColors(b), w = G.w, h = G.h, ov = shEdOf(b), C0 = shc();
+  // estilo: brochura (lisa), capa dura (douração), tecido (etiqueta), duas cores; a edição marcada pela pessoa manda
+  let sty = G.hc ? (hh % 3 === 0 ? 'cl' : 'hc') : (hh % 5 === 0 ? 'dt' : 'pb');
+  if (ov.t === 'hc' && sty === 'cl') sty = 'hc'; if (ov.t === 'ep') sty = 'ep'; if (ov.t === 'pb' && sty === 'dt') sty = 'pb';
+  // lombada: foto da pessoa > tirada da capa (faixa da borda esquerda + cor amostrada) > desenhada
+  const photo = (C0.sp && C0.sp[b.id]) || null, cvUrl = !photo && C0.spMode !== 'desenho' && b.img ? cssUrl(b.img) : '';
+  let fi = sty === 'cl' ? 4 : sty === 'ep' ? 0 : (hh >>> 9) % 4; if (String(b.t).length > 13 && fi === 2) fi = hh % 2 ? 3 : 0;
+  const cls = `sp ${sty} f${fi}${b.lean ? ' lean' : ''}${cvUrl ? ' cvs' : ''}${photo ? ' ph' : ''}`;
+  // título de cima para baixo; ocupa o meio da lombada; autor no terço de baixo; marca da editora no pé
+  const t = String(b.t), au = String(b.a || '').split(' ').slice(-1)[0], sz = sm ? 0.6 : 1;
+  const hasAu = !sm && w >= 15 && !!au, auH0 = hasAu ? Math.round(h * 0.22) : 0, foot = sm ? 5 : (w >= 13 ? 15 : 7);
+  const topR = Math.round(h * (sty === 'dt' ? 0.21 : cvUrl ? 0.1 : 0.07)), botR = foot + auH0 + (hasAu ? 5 : 0), L = h - topR - botR;
+  const kk = fi === 2 ? 0.86 : fi === 3 ? 0.5 : 0.56; let fs = Math.min(w * 0.6, 13.5 * sz);
+  if (t.length * fs * kk > L) fs = L / (t.length * kk);
+  fs = Math.max(5.6 * sz, fs);
+  const smp = cvUrl ? shSampled(b) : null, cc = smp ? smp.c : c, kx = sty === 'ep' ? '#efd28a' : smp ? smp.k : k;
+  let deco = '';
+  if (sty === 'dt') deco += `<span class="tb" style="height:${Math.round(h * 0.17)}px;--c2:${c2}"></span>`;
+  if (sty === 'hc') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px;opacity:.3"></span><span class="fb" style="bottom:${Math.round(h * 0.27)}px"></span><span class="fb" style="bottom:4px"></span>`;
+  if (sty === 'ep') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px"></span><span class="orn" style="top:${Math.max(12, topR - 9)}px"></span><span class="orn" style="bottom:${Math.max(9, botR - 7)}px"></span><span class="fb" style="bottom:8px"></span><span class="fb" style="bottom:5px"></span>`;
+  if (sty === 'cl') deco += `<span class="lb" style="top:${topR - 3}px;height:${L + 6}px"></span><span class="fb" style="top:4px;opacity:.6"></span><span class="fb" style="bottom:4px;opacity:.6"></span>`;
+  const edge = ov.t === 'bp' ? `<span class="eg" style="--eg:${ov.e || '#b3283f'}"></span>` : sty === 'ep' ? '<span class="eg" style="--eg:linear-gradient(90deg,#8a6a22,#f4dd8e 45%,#8a6a22)"></span>' : '';
+  if (cvUrl) deco += `<span class="tp" style="top:${topR - 4}px;height:${L + 8}px"></span>`;
+  const mk = b.st === 'lendo' ? '<span class="rb" aria-hidden="true"></span>' : b.st === 'lido' ? '<span class="sr" aria-hidden="true">✦</span>' : '';
+  const lab = `${t}${b.a ? ', ' + b.a : ''}${b.st === 'lendo' ? ', lendo' : b.st === 'lido' ? ', lido' : b.st === 'quero' ? ', quero ler' : b.st === 'pausado' ? ', pausado' : b.st === 'abandonado' ? ', abandonado' : ''}`;
+  const tag = sm ? 'span' : 'button', at = sm || shMode() ? '' : shAct(b, true);
+  const auH = hasAu ? `<span class="au" style="bottom:${foot}px;height:${auH0}px;font-size:${Math.min(6.8, w * 0.36).toFixed(1)}px">${esc(au)}</span>` : '';
+  const pm = (!sm && w >= 13) ? `<span class="pm p${(hh >>> 13) % 4}" aria-hidden="true"></span>` : '';
+  const bg = photo ? `;background-image:url('${photo}')` : cvUrl ? `;background-image:${cvUrl}` : '';
+  const inner = photo ? edge : `${deco}${edge}<span class="tt" style="top:${topR}px;height:${L}px;font-size:${fs.toFixed(1)}px">${esc(t)}</span>${auH}${pm}`;
+  return `<${tag}${tag === 'button' ? ' type="button"' : ''} class="${cls}"${at} data-bid="${esc(b.id)}"${cvUrl ? ` data-sk="${spnHash(b.img)}"` : ''} aria-label="${esc(lab)}" style="width:${w}px;height:${h}px;--c:${cc};--k:${kx}${bg}${b.lean ? `;margin-left:${Math.ceil(h * 0.125)}px` : ''}">${inner}${mk}</${tag}>`; }
+// objetos (desenho próprio, nos tons do universo do app); s = escala
+const SH_DEC = {
+  lua: (s) => `<svg width="${34 * s}" height="${92 * s}" viewBox="0 0 34 92" aria-hidden="true"><defs><linearGradient id="bkl1" x1="0" x2="1"><stop offset="0" stop-color="#8a6326"/><stop offset=".45" stop-color="#e9c46a"/><stop offset="1" stop-color="#9a6f2c"/></linearGradient></defs><path d="M28 6C10 14 4 34 8 52s16 28 24 30c-16-8-22-24-20-40S20 12 28 6z" fill="url(#bkl1)"/><circle cx="21" cy="30" r="1.2" fill="#fff3c4"/><circle cx="17" cy="50" r=".9" fill="#fff3c4"/><rect x="2" y="82" width="30" height="10" rx="1.5" fill="#5b3f1c"/><rect x="2" y="82" width="30" height="3" rx="1" fill="#a07a3c"/></svg>`,
+  globo: (s) => `<svg width="${54 * s}" height="${86 * s}" viewBox="0 0 54 86" aria-hidden="true"><defs><radialGradient id="bkg1" cx="38%" cy="32%"><stop offset="0" stop-color="#4a6fa5"/><stop offset=".7" stop-color="#1c2f52"/><stop offset="1" stop-color="#0e1730"/></radialGradient><linearGradient id="bkg2" x1="0" x2="1"><stop offset="0" stop-color="#8a6326"/><stop offset=".5" stop-color="#e2bd66"/><stop offset="1" stop-color="#8a6326"/></linearGradient></defs><path d="M27 64v12" stroke="url(#bkg2)" stroke-width="3"/><ellipse cx="27" cy="80" rx="14" ry="4.5" fill="#6d4c22"/><ellipse cx="27" cy="78.5" rx="14" ry="3" fill="url(#bkg2)"/><path d="M5 38a22 22 0 0 0 44 0" fill="none" stroke="url(#bkg2)" stroke-width="2.2"/><circle cx="27" cy="36" r="19" fill="url(#bkg1)"/><g stroke="#e6c574" stroke-width=".6" fill="none" opacity=".75"><path d="M14 28l6 4 7-6 8 5 6-3"/><path d="M12 42l7-2 5 5 9-4"/></g><g fill="#fff4cf"><circle cx="14" cy="28" r="1"/><circle cx="20" cy="32" r=".8"/><circle cx="27" cy="26" r="1.1"/><circle cx="35" cy="31" r=".8"/><circle cx="41" cy="28" r=".9"/><circle cx="19" cy="40" r=".7"/><circle cx="24" cy="45" r=".9"/><circle cx="33" cy="41" r=".8"/></g><ellipse cx="21" cy="27" rx="6" ry="4" fill="#fff" opacity=".12"/></svg>`,
+  planta: (s) => `<svg width="${62 * s}" height="${120 * s}" viewBox="0 0 62 120" aria-hidden="true" style="margin-bottom:${-34 * s}px"><path d="M16 60h30l-3 26H19z" fill="#d9d2c5"/><path d="M16 60h30l-.6 5H16.6z" fill="#efe9de"/><path d="M19 86h24" stroke="rgba(0,0,0,.15)"/><g fill="none" stroke="#3f6b45" stroke-width="1.4" stroke-linecap="round"><path d="M20 62c-8 8-12 22-10 38s4 18 2 20"/><path d="M42 62c6 10 9 24 8 36"/></g><g fill="#4f8a56"><ellipse cx="11" cy="74" rx="5" ry="3.2" transform="rotate(-30 11 74)"/><ellipse cx="9" cy="90" rx="5" ry="3.2" transform="rotate(20 9 90)"/><ellipse cx="11" cy="106" rx="4.6" ry="3" transform="rotate(-25 11 106)"/><ellipse cx="13" cy="118" rx="4" ry="2.6"/><ellipse cx="49" cy="74" rx="5" ry="3.2" transform="rotate(30 49 74)"/><ellipse cx="51" cy="90" rx="4.6" ry="3" transform="rotate(-15 51 90)"/></g><g fill="#5e9e64"><path d="M31 60c-4-10-14-16-22-14 4 8 12 14 22 14z"/><path d="M31 60c4-12 14-20 24-18-4 10-14 17-24 18z"/><path d="M31 60c-2-14 2-26 8-32 2 12-2 24-8 32z"/><path d="M31 60c-6-8-8-20-4-30 6 8 8 20 4 30z" fill="#6cae71"/></g></svg>`,
+  vela: (s) => `<svg width="${34 * s}" height="${56 * s}" viewBox="0 0 34 56" aria-hidden="true"><defs><radialGradient id="bkv1" cx="50%" cy="30%" r="60%"><stop offset="0" stop-color="#ffe3a3" stop-opacity=".9"/><stop offset="1" stop-color="#ffcf7a" stop-opacity="0"/></radialGradient></defs><circle cx="17" cy="18" r="17" fill="url(#bkv1)"/><path d="M4 24h26v28a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z" fill="#f3ead6" opacity=".55"/><path d="M6 30h22v20a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z" fill="#efe2c7"/><path d="M17 30v-5" stroke="#3b2a1a" stroke-width="1"/><path d="M17 16c3 3 3 7 0 9-3-2-3-6 0-9z" fill="#ffb648"/><path d="M17 20c1.2 1.4 1.2 3 0 4-1.2-1-1.2-2.6 0-4z" fill="#fff1c2"/><path d="M4 24h26" stroke="rgba(255,255,255,.6)"/></svg>`,
+  quadro: (s) => `<svg width="${60 * s}" height="${84 * s}" viewBox="0 0 60 84" aria-hidden="true" style="transform:rotate(4deg);transform-origin:50% 100%"><rect x="2" y="2" width="56" height="80" rx="1.5" fill="#6b4a2a"/><rect x="2" y="2" width="56" height="80" rx="1.5" fill="none" stroke="#c99a58" stroke-width="2"/><rect x="8" y="8" width="44" height="68" fill="#14203a"/><g stroke="#e8c879" stroke-width=".7" fill="none" opacity=".9"><path d="M16 22l9 8 8-4 7 10 6 14"/><path d="M33 26l-2 14 9 6"/></g><g fill="#fff6d6"><circle cx="16" cy="22" r="1.3"/><circle cx="25" cy="30" r="1"/><circle cx="33" cy="26" r="1.4"/><circle cx="40" cy="36" r="1"/><circle cx="46" cy="50" r="1.2"/><circle cx="31" cy="40" r=".9"/><circle cx="40" cy="46" r=".9"/><circle cx="14" cy="60" r=".6"/><circle cx="22" cy="66" r=".5"/><circle cx="44" cy="64" r=".6"/></g><text x="30" y="71" text-anchor="middle" font-size="4.2" fill="#c9b88a" font-family="Georgia,serif" letter-spacing=".6">CASSIOPEIA</text></svg>`,
+  telescopio: (s) => `<svg width="${56 * s}" height="${96 * s}" viewBox="0 0 56 96" aria-hidden="true"><defs><linearGradient id="bkt1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#36507c"/><stop offset="1" stop-color="#1a2846"/></linearGradient><linearGradient id="bkt2" x1="0" x2="1"><stop offset="0" stop-color="#8a6326"/><stop offset=".5" stop-color="#e6c06a"/><stop offset="1" stop-color="#8a6326"/></linearGradient></defs><g stroke="#4a3220" stroke-width="2.4" stroke-linecap="round"><path d="M28 56L12 94M28 56L44 94M28 56v38"/></g><circle cx="28" cy="55" r="3" fill="url(#bkt2)"/><g transform="rotate(-30 28 50)"><rect x="4" y="44" width="46" height="11" rx="2.5" fill="url(#bkt1)"/><rect x="44" y="41.5" width="9" height="16" rx="2" fill="url(#bkt2)"/><rect x="0" y="46.5" width="6" height="6" rx="1" fill="url(#bkt2)"/><rect x="22" y="44" width="3" height="11" fill="url(#bkt2)"/></g></svg>`,
+};
+SH_DEC.cristal = (s) => `<svg width="${30 * s}" height="${34 * s}" viewBox="0 0 30 34" aria-hidden="true"><path d="M4 32l4-14 5 14z" fill="#7d5aa8"/><path d="M10 32l5-26 6 26z" fill="#a98bd6"/><path d="M15 6l6 26h-3z" fill="#c9b2ee"/><path d="M19 32l4-16 4 16z" fill="#8d6cc0"/><path d="M2 32h26" stroke="#5c4380" stroke-width="2"/></svg>`;
+SH_DEC.globoP = (s) => SH_DEC.globo(s * 0.55);
+const SH_DW = { lua: 34, globo: 54, planta: 62, vela: 34, quadro: 60, telescopio: 56 };
+Object.assign(SH_DEC, {
+  planeta: (s) => `<svg width="${52 * s}" height="${70 * s}" viewBox="0 0 52 70" aria-hidden="true"><defs><radialGradient id="bkp1" cx="35%" cy="30%"><stop offset="0" stop-color="#f6c89a"/><stop offset=".6" stop-color="#c8743f"/><stop offset="1" stop-color="#6e3418"/></radialGradient><linearGradient id="bkp2" x1="0" x2="1"><stop offset="0" stop-color="#8a6326"/><stop offset=".5" stop-color="#ecd08a"/><stop offset="1" stop-color="#8a6326"/></linearGradient></defs><path d="M26 50v12" stroke="#4a3220" stroke-width="2.4"/><ellipse cx="26" cy="65" rx="13" ry="4" fill="#5b3f1c"/><ellipse cx="26" cy="63.6" rx="13" ry="2.8" fill="url(#bkp2)"/><path d="M5 31C8 24 44 18 47 26" fill="none" stroke="url(#bkp2)" stroke-width="2.2" opacity=".55"/><circle cx="26" cy="31" r="17" fill="url(#bkp1)"/><g opacity=".32" fill="none" stroke="#7a3a1a" stroke-width="1.3"><path d="M11 25c8 2 22 2 30-2"/><path d="M10 35c10 2 24 2 32-1"/></g><path d="M3 35c3 6 46-2 46-10" fill="none" stroke="url(#bkp2)" stroke-width="2.6"/><ellipse cx="20" cy="24" rx="5" ry="3.4" fill="#fff" opacity=".18"/></svg>`,
+  luminaria: (s) => `<svg width="${46 * s}" height="${100 * s}" viewBox="0 0 46 100" aria-hidden="true"><defs><radialGradient id="bklu1" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#ffe2a0" stop-opacity=".7"/><stop offset="1" stop-color="#ffcf7a" stop-opacity="0"/></radialGradient><linearGradient id="bklu2" x1="0" x2="1"><stop offset="0" stop-color="#1f3a34"/><stop offset=".5" stop-color="#3f7a6c"/><stop offset="1" stop-color="#1f3a34"/></linearGradient></defs><ellipse cx="23" cy="46" rx="23" ry="26" fill="url(#bklu1)"/><path d="M8 34h30l-6-20H14z" fill="url(#bklu2)"/><path d="M8 34h30" stroke="#d9b76a" stroke-width="1.5"/><path d="M14 14h18" stroke="#d9b76a" stroke-width="1"/><ellipse cx="23" cy="35" rx="9" ry="2" fill="#fff3c9" opacity=".9"/><path d="M23 36v52" stroke="#b8924a" stroke-width="2.2"/><path d="M23 52c-6 4-6 10 0 14" stroke="#b8924a" stroke-width="1.6" fill="none"/><ellipse cx="23" cy="94" rx="14" ry="4.5" fill="#6d4c22"/><ellipse cx="23" cy="92.5" rx="14" ry="3" fill="#c9a35a"/></svg>`,
+  potinho: (s) => `<svg width="${32 * s}" height="${46 * s}" viewBox="0 0 32 46" aria-hidden="true"><defs><radialGradient id="bkj1" cx="50%" cy="60%" r="55%"><stop offset="0" stop-color="#ffe7a6" stop-opacity=".7"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient></defs><ellipse cx="16" cy="28" rx="16" ry="18" fill="url(#bkj1)"/><rect x="8" y="4" width="16" height="6" rx="1.5" fill="#a8743a"/><rect x="8" y="4" width="16" height="2" rx="1" fill="#d3a35c"/><path d="M7 10h18c2 0 3 2 3 4v24c0 3-2 5-5 5H9c-3 0-5-2-5-5V14c0-2 1-4 3-4z" fill="#cfe3ea" fill-opacity=".3" stroke="#e9f3f6" stroke-opacity=".6" stroke-width=".8"/><g fill="#ffd66b"><path d="M12 24l1 2.2 2.4.3-1.8 1.6.5 2.4-2.1-1.2-2.1 1.2.5-2.4-1.8-1.6 2.4-.3z"/><path d="M20 31l.7 1.5 1.6.2-1.2 1.1.3 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.2z"/><path d="M18 18l.6 1.2 1.3.2-1 .9.3 1.3-1.2-.6-1.2.6.3-1.3-1-.9 1.3-.2z"/><circle cx="11" cy="35" r=".9"/><circle cx="23" cy="22" r=".7"/><circle cx="15" cy="38" r=".6"/></g><path d="M8 14v22" stroke="#fff" stroke-opacity=".35" stroke-width="1.2"/></svg>`,
+  astronauta: (s) => `<svg width="${44 * s}" height="${60 * s}" viewBox="0 0 44 60" aria-hidden="true"><ellipse cx="22" cy="57" rx="18" ry="3" fill="rgba(0,0,0,.22)"/><rect x="7" y="40" width="10" height="16" rx="5" fill="#e6e4dd"/><rect x="27" y="40" width="10" height="16" rx="5" fill="#e6e4dd"/><rect x="9" y="26" width="26" height="24" rx="10" fill="#f2f1ec"/><rect x="15" y="32" width="14" height="9" rx="2" fill="#d6d2c7"/><circle cx="19" cy="36.5" r="1.4" fill="#e4685a"/><circle cx="24" cy="36.5" r="1.4" fill="#5a8fe4"/><rect x="2" y="28" width="9" height="18" rx="4.5" fill="#e6e4dd" transform="rotate(-14 6 37)"/><rect x="33" y="28" width="9" height="18" rx="4.5" fill="#e6e4dd" transform="rotate(14 38 37)"/><circle cx="22" cy="17" r="14" fill="#f2f1ec"/><ellipse cx="22" cy="18" rx="10" ry="8" fill="#1d2a4d"/><ellipse cx="18" cy="15" rx="3.4" ry="2.2" fill="#8fb4ff" opacity=".55"/><circle cx="26" cy="20" r=".7" fill="#fff"/><circle cx="20" cy="22" r=".5" fill="#fff"/><path d="M8 13c4-8 24-8 28 0" stroke="#d6d2c7" stroke-width="1.2" fill="none"/></svg>`,
+  cometa: (s) => `<svg width="${42 * s}" height="${70 * s}" viewBox="0 0 42 70" aria-hidden="true"><defs><linearGradient id="bkc1" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".3" stop-color="#fff" stop-opacity=".05"/><stop offset=".85" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity=".3"/></linearGradient><linearGradient id="bkc2" x1="0" x2="1"><stop offset="0" stop-color="#ffe9b0" stop-opacity="0"/><stop offset="1" stop-color="#fff6d8"/></linearGradient></defs><rect x="3" y="60" width="36" height="8" rx="2" fill="#6d4c22"/><rect x="3" y="60" width="36" height="2.5" rx="1" fill="#b48a48"/><path d="M9 36l17 7" stroke="url(#bkc2)" stroke-width="5" stroke-linecap="round" opacity=".9"/><circle cx="27" cy="43.5" r="6" fill="#ffd77a" opacity=".25"/><circle cx="27" cy="43.5" r="3.4" fill="#fff6d8"/><g fill="#fff"><circle cx="12" cy="24" r=".8"/><circle cx="30" cy="22" r=".6"/><circle cx="18" cy="52" r=".6"/></g><path d="M6 60V22a15 15 0 0 1 30 0v38z" fill="url(#bkc1)" stroke="#e9f2f5" stroke-opacity=".55" stroke-width=".9"/><path d="M10 24c0-6 3-10 7-11" stroke="#fff" stroke-opacity=".6" stroke-width="1.2" fill="none"/></svg>`,
+  foguete: (s) => `<svg width="${32 * s}" height="${68 * s}" viewBox="0 0 32 68" aria-hidden="true"><defs><linearGradient id="bkf1" x1="0" x2="1"><stop offset="0" stop-color="#c9c4ba"/><stop offset=".45" stop-color="#fbf8f1"/><stop offset="1" stop-color="#b8b2a6"/></linearGradient></defs><path d="M16 2c8 8 9 22 7 38H9C7 24 8 10 16 2z" fill="url(#bkf1)"/><path d="M16 2c3 3 5 7 6 11H10c1-4 3-8 6-11z" fill="#c9473f"/><circle cx="16" cy="22" r="4" fill="#2d4f7c" stroke="#d9b76a" stroke-width="1.4"/><circle cx="15" cy="21" r="1.2" fill="#9cc3ff"/><path d="M9 32L3 46l7-3zM23 32l6 14-7-3z" fill="#c9473f"/><path d="M12 40h8l-1 5h-6z" fill="#6b6b6b"/><path d="M13 45c1 5 5 5 6 0" fill="#ffb648" opacity=".9"/><path d="M16 49v7" stroke="#8a6326" stroke-width="1.6"/><rect x="6" y="56" width="20" height="10" rx="2" fill="#5b3f1c"/><rect x="6" y="56" width="20" height="2.5" rx="1" fill="#a07a3c"/></svg>`,
+  xicara: (s) => `<svg width="${42 * s}" height="${46 * s}" viewBox="0 0 42 46" aria-hidden="true"><g fill="none" stroke="#cbbfa8" stroke-opacity=".7" stroke-width="1.3" stroke-linecap="round"><path d="M14 14c-3-4 3-6 0-10"/><path d="M21 13c-3-4 3-6 0-10"/></g><ellipse cx="20" cy="44" rx="18" ry="2" fill="rgba(0,0,0,.18)"/><path d="M32 24c6 0 8 3 7 7s-5 5-8 4" fill="none" stroke="#e2dccf" stroke-width="3"/><path d="M4 20h28v12a10 10 0 0 1-10 10h-8A10 10 0 0 1 4 32z" fill="#ebe5d8"/><path d="M9 31c3 2 15 2 18 0" stroke="#c99a58" stroke-width="1" fill="none"/><ellipse cx="18" cy="20.5" rx="14" ry="2.4" fill="#f7f3ea"/><ellipse cx="18" cy="21" rx="12" ry="1.8" fill="#5a3a22"/></svg>`,
+});
+Object.assign(SH_DW, { planeta: 52, luminaria: 46, potinho: 32, astronauta: 44, cometa: 42, foguete: 32, xicara: 42, cristal: 30 });
+const SH_DH = { lua: 92, globo: 86, planta: 86, vela: 56, quadro: 84, telescopio: 96, cristal: 34, planeta: 70, luminaria: 100, potinho: 46, astronauta: 60, cometa: 70, foguete: 68, xicara: 46 };
+const SH_CAT = [['lua', 'Lua aparadora'], ['planeta', 'Planeta com anel'], ['telescopio', 'Telescópio'], ['globo', 'Globo celeste'], ['planta', 'Planta'], ['luminaria', 'Luminária'], ['potinho', 'Potinho de estrelas'], ['quadro', 'Quadro de constelação'], ['astronauta', 'Astronauta de pelúcia'], ['cometa', 'Cometa na redoma'], ['foguete', 'Foguete de brinquedo'], ['vela', 'Vela'], ['xicara', 'Xícara'], ['cristal', 'Cristal']];
+const SH_DN = Object.fromEntries(SH_CAT);
+// cor da lombada amostrada na capa (borda esquerda da imagem): fica guardada no aparelho e entra nos elementos já desenhados.
+// Capa de outro site sem permissão de leitura (CORS): a imagem não carrega no canvas e a lombada fica com a cor da paleta.
+const SH_SC = (() => { try { return JSON.parse(localStorage.getItem('lv.shsc') || '{}') || {}; } catch { return {}; } })(), SH_SCq = {};
+let SH_SCt = 0; const shScSave = () => { clearTimeout(SH_SCt); SH_SCt = setTimeout(() => { try { const ks = Object.keys(SH_SC); if (ks.length > 900) ks.slice(0, ks.length - 900).forEach((k) => delete SH_SC[k]); localStorage.setItem('lv.shsc', JSON.stringify(SH_SC)); } catch {} }, 1500); };
+function shSampled(b) { const key = spnHash(b.img); const v = SH_SC[key]; if (v) return v === 1 ? null : { c: v[0], k: v[1] }; if (!SH_SCq[key]) { SH_SCq[key] = 1; setTimeout(() => shSample(b.img, key), 0); } return null; }
+function shSample(u, key) { if (!u) return; const im = new Image(); if (!/^data:/.test(u)) im.crossOrigin = 'anonymous';
+  im.onerror = () => { SH_SC[key] = 1; shScSave(); };
+  im.onload = () => { try { const cn = document.createElement('canvas'); cn.width = 40; cn.height = 60; const x = cn.getContext('2d'); x.drawImage(im, 0, 0, 40, 60);
+    const d = x.getImageData(0, 0, 10, 60).data; let r = 0, g = 0, bb = 0, n = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; bb += d[i + 2]; n++; }
+    r = Math.round(r / n); g = Math.round(g / n); bb = Math.round(bb / n); const lum = (0.299 * r + 0.587 * g + 0.114 * bb) / 255;
+    const v = [`rgb(${r},${g},${bb})`, lum > 0.56 ? '#1f150d' : '#f7efe2']; SH_SC[key] = v; shScSave();
+    SHX_ROOTS.forEach((R) => { if (!R.isConnected && !(R.host && R.host.isConnected)) { SHX_ROOTS.delete(R); return; } R.querySelectorAll(`.bsh .sp.cvs[data-sk="${key}"]`).forEach((el) => { el.style.setProperty('--c', v[0]); if (!el.classList.contains('ep')) el.style.setProperty('--k', v[1]); }); }); } catch (e) { SH_SC[key] = 1; shScSave(); } };
+  im.src = u; }
+function shWoodVars(w) { if (w === 'tema') return '--bk-w1:color-mix(in srgb,var(--acc) 58%,#6b4a2a);--bk-w2:color-mix(in srgb,var(--acc) 44%,#3e2716);--bk-w3:color-mix(in srgb,var(--acc) 26%,#1f130a);--bk-top:color-mix(in srgb,var(--acc) 50%,#f3d7a8)';
+  const p = SH_WOOD[w]; return p ? `--bk-w1:${p[0]};--bk-w2:${p[1]};--bk-w3:${p[2]};--bk-top:${p[3]}` : ''; }
+const SH_WOOD = { clara: ['#d6aa76', '#b98551', '#8e5f36', '#e8c597'], escura: ['#6b4a32', '#4d3322', '#2f1f15', '#7d5a3e'], branca: ['#f2eee7', '#ddd6ca', '#bcb3a5', '#fcfaf6'] };
+// largura da estante (px): na Biblioteca ela ocupa a largura toda da tela; no perfil, a da caixa
+function pratHTML(list0, sm, wBsh) {
+  const C0 = shc(), md = sm ? null : shMode(), sc = sm ? 0.6 : 1, W = Math.max(200, Math.min(480, wBsh || 390)) - (sm ? 56 : 40);
+  let list = list0.map((b) => ({ ...b }));
+  // "Minha ordem" (Organizar): vale dentro do filtro; o que não está na ordem salva vai para o fim
+  if (C0.ord && C0.ord.length) { const ix = new Map(C0.ord.map((id, i) => [id, i])); list = list.map((b, i) => [b, ix.has(b.id) ? ix.get(b.id) : 1e6 + i]).sort((x, y) => x[1] - y[1]).map((x) => x[0]); }
+  const man = !!C0.manual || Object.keys(C0.lay || {}).some((id) => C0.lay[id]);
+  // sequência: livro em pé; deitados (Organizar) viram pilha no lugar deles; sem arrumação manual, a estante arruma sozinha (pilhas, livro de frente)
+  const seq = []; for (let i = 0; i < list.length; i++) { const b = list[i];
+    if (C0.lay && C0.lay[b.id]) { const bs = [b]; while (list[i + 1] && C0.lay[list[i + 1].id] && bs.length < 5) bs.push(list[++i]); seq.push({ k: 'pile', bs, top: null }); continue; }
+    if (!man && !sm && list.length >= 20 && i % 14 === 9 && list[i + 1]) { const n = list[i + 2] && i % 28 === 9 ? 3 : 2; seq.push({ k: 'pile', bs: list.slice(i, i + n), top: ['vela', 'cristal'][(i / 14 | 0) % 2] }); i += n - 1; continue; }
+    if (!man && !sm && list.length >= 20 && i % 19 === 13 && b.img) { seq.push({ k: 'face', b }); continue; }
+    seq.push({ k: 'sp', b }); }
+  const wOf = (it) => it.k === 'sp' ? spnGeo(it.b, sm).w + (it.b.lean ? Math.ceil(spnGeo(it.b, sm).h * 0.13) : 0) : it.k === 'pile' ? Math.round(124 * sc) + 9 : 98;
+  // decoração: a da pessoa (Decorar: {k, r, p}) ou a padrão por prateleira
+  const UD = C0.deco || null;
+  const DECS = sm ? ['planta', null, 'globo', null, 'lua'] : ['planta', 'lua', null, 'globo', 'quadro', null, 'telescopio', 'lua', null, 'vela'];
+  const decOf = (r) => DECS[r % DECS.length];
+  const udRow = (r) => UD ? UD.map((d, i) => ({ ...d, i })).filter((d) => d.r === r && SH_DEC[d.k]).sort((a, z) => a.p - z.p) : [];
+  const decW = (r) => UD ? udRow(r).reduce((s, d) => s + Math.round((SH_DW[d.k] || 40) * sc) + 10, 0) : (decOf(r) ? Math.round(SH_DW[decOf(r)] * sc) + 10 : 0);
+  // enche cada prateleira: se um item grande (pilha, livro de frente) não cabe, ele espera a próxima e os livros em pé seguem
+  const rows = []; let cur = [], used = 0, ri = 0, cap = W - decW(0); const q = seq.slice(), wait = [];
+  while (q.length || wait.length) { let it = null, from = null;
+    if (wait.length && used + wOf(wait[0]) <= cap) { it = wait[0]; from = wait; } else if (q.length) { it = q[0]; from = q; } else { it = wait[0]; from = wait; }
+    const w = wOf(it);
+    if (used + w > cap && cur.length) { if (it.k !== 'sp' && from === q) { wait.push(q.shift()); continue; } rows.push(cur); cur = []; used = 0; ri++; cap = W - decW(ri); continue; }
+    from.shift(); cur.push(it); used += w; }
+  if (cur.length || !rows.length) rows.push(cur);
+  // estante nunca fica com uma prateleira só: no mínimo 3; um enfeite da pessoa numa prateleira mais baixa garante que ela exista
+  const minR = sm ? 1 : Math.max(3, ...(UD ? UD.map((d) => d.r + 1) : [0]));
+  while (rows.length < minR) rows.push([]);
+  // o último livro de algumas fileiras cheias encosta no vizinho, inclinado (só na arrumação automática)
+  if (!man && !md) rows.forEach((r, k) => { const last = r[r.length - 1]; if (!sm && last && last.k === 'sp' && k % 3 === 1 && r.length > 4) last.b.lean = 1; });
+  const pileHTML = (bs, top) => `<span class="pile">${top ? `<span class="dec" style="margin:0 0 0 18px">${SH_DEC[top](0.9)}</span>` : ''}${bs.map((x, j) => { const G = spnGeo(x, false), [c, k] = spnColors(x), ov = shEdOf(x), wv = Math.round(G.h * 0.86 * sc) - j * 3, ht = Math.max(13, Math.min(26, Math.round(G.w * 0.8)));
+    const fe = ov.t === 'bp' || ov.t === 'ep', act = md ? '' : shAct(x, true);
+    // bordas pintadas (ou douradas): o livro deitado mostra o corte das páginas, não a lombada
+    return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}${fe ? ', bordas ' + (ov.t === 'ep' ? 'douradas' : 'pintadas') : ''}"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (ov.e || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : `<span>${esc(x.t)}</span>`}</span>`; }).join('')}</span>`;
+  const decHTML = (d) => { const edit = md === 'deco' && d.i != null; return `<span class="dec${edit ? ' u' : ''}"${edit ? ` data-dk="${d.i}" role="button" tabindex="0" aria-label="${esc(SH_DN[d.k] || d.k)}: trocar, tirar ou arrastar"` : ''}>${SH_DEC[d.k](sc)}</span>`; };
+  const itemHTML = (it) => it.k === 'sp' ? spnHTML(it.b, sm) : it.k === 'pile' ? pileHTML(it.bs, it.top) : `<button type="button" class="face" data-bid="${esc(it.b.id)}"${md ? '' : shAct(it.b, true)} aria-label="${esc(it.b.t)}, de frente">${v4cv({ title: it.b.t, cover: it.b.img })}</button>`;
+  const ltOff = C0.lt && C0.lt.on === 0;
+  const rowHTML = (r, k) => { let items;
+    if (UD) { const arr = r.map(itemHTML); udRow(k).reverse().forEach((d) => arr.splice(Math.min(d.p, arr.length), 0, decHTML(d))); items = arr.join('');
+      if (!r.length && !udRow(k).length && !sm && k === rows.length - 1 && list.length < 16) items = '<span class="ghost">Seus próximos livros ficam aqui</span>'; }
+    else { items = r.map(itemHTML).join('');
+      if (!r.length && !sm) items = `<span class="dec">${SH_DEC.quadro(1)}</span><span style="flex:1"></span><span class="dec">${SH_DEC[k % 2 ? 'telescopio' : 'globo'](1)}</span>`;
+      let d = r.length ? decOf(k) : null; if (d === 'lua' && !(r[r.length - 1] && r[r.length - 1].k === 'sp')) d = 'globo'; if (d) { const dec = `<span class="dec">${SH_DEC[d](sc)}</span>`; items = (d === 'lua' || k % 2) ? items + dec : dec + items; }
+      if (!r.length && !sm && k === rows.length - 1 && list.length < 16) items = items.replace('<span style="flex:1"></span>', '<span class="ghost">Seus próximos livros ficam aqui</span>'); }
+    const n = sm ? 0 : 9, bulbs = Array.from({ length: n }, (_, i) => { const x = (i + 0.5) / n, t = (x * 3) % 1, y = 1 + 10 * Math.sin(Math.PI * t); return `<i style="left:${(x * 100).toFixed(2)}%;top:${y.toFixed(1)}px"></i>`; }).join('');
+    const wire = (sm || k % 2 || ltOff) ? '' : `<span class="lt" aria-hidden="true"><svg viewBox="0 0 300 18" preserveAspectRatio="none"><path d="M0 1 Q50 22 100 1 T200 1 T300 1" fill="none" stroke="rgba(30,20,10,.55)" stroke-width="1" vector-effect="non-scaling-stroke"/></svg>${bulbs}</span>`;
+    return `<div class="bay" data-r="${k}"><div class="brow">${items}</div></div><div class="bpl" aria-hidden="true">${wire}</div>`; };
+  const hint = sm || md ? '' : `<div class="hint"><span><i class="k1"></i>lendo</span><span><i class="k2">✦</i>lido</span><span class="r">${man ? 'Minha ordem · ' : ''}toque abre · segure para opções</span></div>`;
+  const cls = `bsh${sm ? ' sm' : ''}${md ? ' ' + md : ''}${shDark() ? ' dk' : ''} w-${C0.wall || 'linho'} lt-${ltOff ? 'off' : (C0.lt && C0.lt.c) || 'quente'}`;
+  return `<div class="${cls}" style="${shWoodVars(C0.wood)}">${hint}<div class="case"><div class="crown"></div>${rows.map(rowHTML).join('')}</div></div>`; }
+// ajusta o título na lombada depois de desenhar: diminui a letra até caber (e corta com reticências só no limite).
+// O resultado fica guardado por livro/tamanho: redesenhar a estante não mede de novo (estante grande abre rápido).
+const SH_FIT = new Map();
+function shFit(root) { const rg = document.createRange();
+  root.querySelectorAll('.bsh .sp .tt, .bsh .sp .au').forEach((el) => { if (el.dataset.fit) return; el.dataset.fit = 1; const tn = el.firstChild; if (!tn) return;
+    const sp = el.parentElement, key = (el.classList.contains('au') ? 'a|' : 't|') + sp.dataset.bid + '|' + sp.style.width + '|' + el.style.height + '|' + el.style.fontSize + '|' + sp.className;
+    const got = SH_FIT.get(key); if (got) { el.style.fontSize = got[0]; if (got[1]) el.classList.add('w2'); return; }
+    const room = el.clientHeight - 2, min = el.classList.contains('au') ? 4.4 : 5.2; let fs = parseFloat(el.style.fontSize) || parseFloat(getComputedStyle(el).fontSize);
+    el.style.textOverflow = 'clip'; rg.selectNodeContents(tn); let len = rg.getBoundingClientRect().height, n = 0;
+    while (len > room && fs > min && n++ < 30) { fs = Math.max(min, fs * Math.max(0.6, room / len) - 0.1); el.style.fontSize = fs.toFixed(2) + 'px'; len = rg.getBoundingClientRect().height; }
+    if (len > room && !el.classList.contains('au') && el.clientWidth >= 21) { el.classList.add('w2'); fs = Math.min(el.clientWidth * 0.42, 9); el.style.fontSize = fs.toFixed(2) + 'px'; len = rg.getBoundingClientRect().height; n = 0;
+      while (len > room && fs > 5 && n++ < 20) { fs = Math.max(5, fs - 0.4); el.style.fontSize = fs.toFixed(2) + 'px'; len = rg.getBoundingClientRect().height; } }
+    el.style.textOverflow = ''; if (room > 0) SH_FIT.set(key, [el.style.fontSize, el.classList.contains('w2')]); });
+  root.querySelectorAll('.bsh .pb span').forEach((el) => { if (el.dataset.fit) return; el.dataset.fit = 1; let fs = parseFloat(getComputedStyle(el).fontSize), n = 0; const room = el.parentElement.clientWidth - 14;
+    while (el.scrollWidth > room && fs > 5.4 && n++ < 12) { fs -= 0.4; el.style.fontSize = fs.toFixed(1) + 'px'; } }); }
+
+// ---------- CSS nas raízes (Biblioteca, perfil, folhas) ----------
+function shCss(sr) { if (!sr || sr.querySelector('style[data-shx]')) return; const st = document.createElement('style'); st.dataset.shx = 1; st.textContent = SHX_CSS1 + (typeof SHX_CSS2 === 'string' ? SHX_CSS2 : ''); sr.append(st); }
+
+// ---------- Biblioteca › Livros ----------
+const SHF = [['todos', 'Todos os livros'], ['lendo', 'Lendo'], ['quero', 'Quero ler'], ['lido', 'Lidos'], ['pausado', 'Pausados'], ['abandonado', 'Abandonados']];
+const shSh = () => v5Shelves().filter((s) => !s.arch);
+function shF() { const f = v5P().shF || 'todos'; if (f.indexOf('sh:') === 0 && !shSh().some((s) => 'sh:' + s.id === f)) return 'todos'; return f; }
+function shBase() { let L = lib().slice(); try { L = esnSort(L, ESN().sort); } catch {} return L; }
+function shList(f) { f = f || shF();
+  if (f.indexOf('sh:') === 0) { const s = shSh().find((x) => 'sh:' + x.id === f); return s ? v5ShBooks(s).map(shB) : []; }
+  const L = shBase().map(shB); return f === 'todos' ? L : L.filter((b) => b.st === f); }
+const shFName = (f) => { f = f || shF(); if (f.indexOf('sh:') === 0) { const x = shSh().find((s) => 'sh:' + s.id === f); return x ? x.name : 'Estante'; } return (SHF.find((x) => x[0] === f) || SHF[0])[1]; };
+const shAllIds = () => shList().map((b) => b.id);
+const shVtog = () => `<div class="shxvt" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 2px 10px"><div class="vtog" role="group" aria-label="Ver como"><button type="button" class="on" data-a="shxview" data-v="grade" aria-pressed="true">${v4ic('grid', 16)}Grade</button><button type="button" data-a="shxview" data-v="prat" aria-pressed="false">${v4ic('prat', 16)}Prateleira</button></div></div>`;
+// a Grade não muda; só ganha o seletor Grade · Prateleira. Na Prateleira a grade nem é montada.
+{ const _lh = v5LivrosHTML; v5LivrosHTML = function () { const S5 = v5S();
+    if (shView() === 'prat' && !S5.sub) return '<div class="shxph"></div>';
+    const h = _lh.apply(this, arguments); const i = h.indexOf('<div class="v6sbar">'), j = i >= 0 ? i : h.indexOf('<div class="grid">');
+    return j >= 0 ? h.slice(0, j) + shVtog() + h.slice(j) : h; }; }
+{ const _de = drawEstante; drawEstante = function (box) { const r = _de.apply(this, arguments); try { shDraw(box || $('#lista')); } catch (err) { console.warn('prateleira', err); } return r; }; }
+function shBibRoot() { const box = $('#lista'), host = box && box.querySelector(':scope > .v5host'); return host && host.shadowRoot; }
+function shDraw(box) {
+  const host = box && box.querySelector(':scope > .v5host'), sr = host && host.shadowRoot; if (!sr) return; const R = sr.querySelector('.v5est'); if (!R) return;
+  shArm(sr); const S5 = v5S();
+  if (S5.tab !== 'livros' || S5.sub || shView() !== 'prat' || !R.querySelector('.shxph')) { SHX_MODE = null; return; }
+  const t0 = performance.now(), seg = R.querySelector(':scope > .seg'), segH = seg ? seg.outerHTML : '', f = shF(), list = shList(f), md = SHX_MODE, n = list.length;
+  const top = `<div class="shtop">${md ? '' : `<button type="button" class="shsel" data-a="shxsheet" data-s="shxfilt" aria-label="Mostrar: ${esc(shFName())}"><b>${esc(f === 'todos' ? 'Todos' : shFName())}</b><i>▾</i><small>${n} livro${n === 1 ? '' : 's'}</small></button>
+      <button type="button" class="shic" data-a="shxview" data-v="grade" aria-label="Ver em grade" title="Grade">${v4ic('grid', 19)}</button>
+      <button type="button" class="shic" data-a="shmode" data-v="org" aria-label="Organizar" title="Organizar">${v4ic('sort', 19)}</button>
+      <button type="button" class="shic" data-a="shmode" data-v="deco" aria-label="Decorar" title="Decorar">${v4ic('lua', 19)}</button>
+      <button type="button" class="shic" data-a="sheet" data-s="v5add" aria-label="Adicionar livro" title="Adicionar">${v4ic('plus', 19)}</button>
+      <button type="button" class="shic q" data-a="shxsheet" data-s="shxleg" aria-label="Como ler a estante" title="Legenda">?</button>`}</div>`;
+  const ban = md === 'org' ? `<div class="shban" role="status"><b>Arraste para reorganizar<small>Toque num livro para deitar ou levantar${shc().manual ? ' · <button type="button" data-a="shreset">voltar à arrumação automática</button>' : ''}</small></b><button type="button" data-a="shdone">Concluir</button></div>` : '';
+  // a estante vai de borda a borda: desconta o respiro da página (#lista) e usa a largura que sobra
+  const pad = Math.max(0, Math.min(32, parseFloat(getComputedStyle(box).paddingLeft) || 0)); R.style.setProperty('--shx-pad', pad + 'px');
+  // o painel Decorar fica acima da barra de abas do app
+  try { const tb = box.getRootNode().querySelector('#tabbar'), tr = tb && tb.getBoundingClientRect(); let tp = tr && tr.height ? tr.top : innerHeight; if (tb) tb.querySelectorAll('button, a').forEach((n) => { const r = n.getBoundingClientRect(); if (r.height && r.top < tp) tp = r.top; }); R.style.setProperty('--shx-tab', Math.max(0, Math.round(innerHeight - tp)) + 'px'); } catch {}
+  // a faixa do Organizar gruda logo abaixo do topo fixo do app
+  try { const g = box.getRootNode().querySelector('.gtop'); R.style.setProperty('--shx-sticky', (g ? Math.max(0, Math.round(g.getBoundingClientRect().bottom - Math.max(0, box.getBoundingClientRect().top))) : 0) + 'px'); } catch {}
+  const wB = SHX_W || ((R.clientWidth || Math.min(innerWidth, 480) - 2 * pad) + 2 * pad);
+  const paint = (w) => { const rest = !n ? `<p class="mut" style="text-align:center;margin:40px 12px">Nenhum livro aqui ainda.</p>` : ban + pratHTML(list, false, w) + (md === 'deco' ? '<div style="height:44vh" aria-hidden="true"></div>' : '');
+    R.innerHTML = `<div class="shtopw">${segH}${top}${rest}</div>` + (md === 'deco' ? dkPanel() : ''); };
+  paint(wB);
+  // a largura real da estante (a página pode ter outro respiro): se for outra, desenha de novo com ela
+  const bsh = R.querySelector('.bsh'); if (bsh && bsh.clientWidth && Math.abs(bsh.clientWidth - wB) > 6) { SHX_W = bsh.clientWidth; paint(SHX_W); }
+  shFit(R); window.__shxMs = Math.round(performance.now() - t0);
+}
+// cliques da Biblioteca (raiz própria em captura: roda antes do clique do v5)
+function shArm(sr) { if (!sr || sr.__shx) return; sr.__shx = 1; shCss(sr); SHX_ROOTS.add(sr);
+  sr.addEventListener('click', (ev) => shClick(ev, sr), true);
+  sr.addEventListener('keydown', (ev) => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('.bsh .dec[data-dk], .bsh .pb[data-bid]')) { ev.preventDefault(); ev.target.click(); } });
+  try { shDragArm(sr); } catch (err) { console.warn('arrastar estante', err); } }
+function shGo(v) { v5P().shView = v; SHX_MODE = null; v5Save(); v5Redraw(); }
+
+// ---------- folhas (camada V4): filtro e legenda; as de edição e foto ficam na outra parte ----------
+function shArmV4() { try { const R = v4Root(), sr = R.getRootNode(); shCss(sr); SHX_ROOTS.add(sr); if (!R.__shx) { R.__shx = 1; R.addEventListener('click', (ev) => shV4Click(ev), true); R.addEventListener('change', (ev) => shV4Change(ev), true); } } catch (err) { console.warn('folhas da estante', err); } }
+{ const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments); try { const st = v4State(); if (st && String(st.sheet || '').startsWith('shx') && V4) shFit(V4); } catch {} return r; }; }
+function shOpen(k, ctx) { shArmV4(); v5Sheet(k, ctx || {}); shArmV4(); }
+{ const _vs = v5Sheet; v5Sheet = function () { const r = _vs.apply(this, arguments); shArmV4(); return r; }; }
+{ const _sh = v4SheetHTML; v4SheetHTML = function (k) { if (!String(k).startsWith('shx')) return _sh.apply(this, arguments);
+    try { return shSheetHTML(k); } catch (err) { console.warn('folha da estante', err); return '<p class="mut">Não deu para abrir.</p>'; } }; }
+function shSheetHTML(k) {
+  if (k === 'shxleg') return `<h3>Como ler a estante</h3><div class="shleg"><div><span class="k1"></span>Fitinha: você está lendo</div><div><span class="k2">✦</span>Estrela: você já leu</div><div>${v4ic('ler', 18)}Toque num livro para abrir · segure para ver as opções</div></div>`;
+  if (k === 'shxfilt') { const f = shF(), cnt = (x) => shList(x).length, L = shSh();
+    return `<div class="shfl"><h3>Mostrar na estante</h3><div class="list">${SHF.map(([x, nm]) => `<button type="button" class="li${f === x ? ' on' : ''}" data-a="shfil" data-k="${x}" aria-pressed="${f === x}"><span class="t">${nm}</span><small>${cnt(x)}</small></button>`).join('')}</div>${L.length ? `<h4>Suas estantes</h4><div class="list">${L.map((s) => `<button type="button" class="li${f === 'sh:' + s.id ? ' on' : ''}" data-a="shfil" data-k="sh:${esc(String(s.id))}" aria-pressed="${f === 'sh:' + s.id}"><span class="t">${esc(s.name)}</span><small>${(s.bookIds || []).filter((id) => v5Book(id)).length}</small></button>`).join('')}</div>` : ''}</div>`; }
+  return typeof shSheetHTML2 === 'function' ? shSheetHTML2(k) : ''; }
+
+// ---------- Perfil: uma estante só, decorada igual à da Biblioteca, com chips ----------
+const SHX_PF = {}, SHX_PFX = {}; // estante escolhida e "ver inteira", por perfil
+function shProfHTML(L, mine, key, wBox) { if (!L.length) return `<p class="mut" style="margin:16px 4px">${mine ? 'Crie estantes para organizar seus livros do seu jeito (ex.: Clássicos, Para reler).' : 'Nenhuma estante para mostrar.'}</p>`;
+  const k = SHX_PF[key] == null || SHX_PF[key] >= L.length ? 'all' : SHX_PF[key];
+  const ids = k === 'all' ? [...new Set(L.flatMap((x) => x[1]))] : L[k][1], list = ids.map(shById).filter(Boolean);
+  const nL = list.filter((b) => b.st === 'lido').length, nR = list.filter((b) => b.st === 'lendo').length;
+  const chips = `<div class="chips" role="tablist">${[['all', 'Todas']].concat(L.map((x, i) => [i, x[0], x[3]])).map(([v, n, pv]) => `<button type="button" class="chip ${String(k) === String(v) ? 'on' : ''}" data-a="pfsh" data-k="${v}" role="tab" aria-selected="${String(k) === String(v)}">${esc(n)}${mine && pv ? v4ic('lock', 11) : ''}</button>`).join('')}</div>`;
+  const line = `<div class="pfl">${list.length} livro${list.length === 1 ? '' : 's'}${nL ? ' · ' + nL + ' lido' + (nL > 1 ? 's' : '') : ''}${nR ? ' · ' + nR + ' lendo' : ''}${k !== 'all' && mine && L[k][3] ? ' · só você vê' : ''}</div>`;
+  let box = pratHTML(list, false, wBox);
+  if (list.length < 8) box = box.replace(/<div class="brow">/, '<div class="brow few">');
+  const all = !!SHX_PFX[key];
+  return `<div class="pfsh">${chips}${line}<div class="pfbox"${all ? ' style="max-height:none"' : ''}>${box}</div>${list.length > 14 ? `<button type="button" class="pfall" data-a="prat-go">${mine ? 'Ver estante inteira' : all ? 'Mostrar menos' : 'Ver estante inteira'}</button>` : ''}</div>`; }
+{ const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments); try { shProfPaint(v, d); } catch (err) { console.warn('prateleira no perfil', err); } return r; }; }
+function shProfData(d) {
+  if (d.self && !S.v3prev) return { mine: true, key: '@me', L: shSh().map((s) => [s.name, (s.bookIds || []).map(String).filter((id) => v5Book(id)), 0, !!s.priv]) };
+  if (d.self) { const L = (typeof window.v6ProfOrder === 'function' ? window.v6ProfOrder() : shSh().filter((s) => !s.priv)); return { mine: false, prev: true, key: '@prev', L: L.map((s) => [s.name, (s.bookIds || []).map(String).filter((id) => v5Book(id)), 0, false]) }; }
+  const P = d.shelf && d.shelf.prat; if (!P || !Array.isArray(P.sh) || !P.b) return null;
+  return { mine: false, vis: true, key: String(d.handle || '?'), L: P.sh.map((x) => [String(x.n || 'Estante'), (x.ids || []).map(String).filter((id) => P.b[id]), 0, false]).filter((x) => x[1].length), C: shDefaults({ ...(P.C || {}) }), B: P.b }; }
+function shWith(x, fn) { const c0 = SHX_CTX, v0 = SHX_VB, s0 = SHX_VIS; if (x.vis) { SHX_CTX = x.C; SHX_VB = x.B; SHX_VIS = true; } try { return fn(); } finally { SHX_CTX = c0; SHX_VB = v0; SHX_VIS = s0; } }
+function shProfPaint(v, d) {
+  const body = v && v.querySelector('.sl-body'), pE = body && body.querySelector(':scope > .v3pane[data-k=est]'); if (!pE || !d) return;
+  const x = shProfData(d); if (!x) return;
+  const wBox = Math.max(240, (pE.clientWidth || Math.min(innerWidth, 560) - 32) - 2);
+  const sig = JSON.stringify([x.key, x.L, x.vis ? JSON.stringify(x.C).length : SHX_VER, shDark(), wBox, x.vis ? 0 : lib().length]);
+  const cur = pE.querySelector('.shxpf');
+  if (cur && pE.dataset.shxsig === sig && cur.isConnected) return;
+  pE.dataset.shxsig = sig;
+  // o seu perfil mantém a barra "Organizar · Nova estante"; as outras partes do perfil continuam vendo o que esperam (v4psh / v6pv)
+  const bar = x.mine ? pE.querySelector(':scope > .v4mysh-bar') : null;
+  const wrap = document.createElement('div'); wrap.className = 'v4psh shxwrap'; if (x.prev) wrap.dataset.v6pv = '1'; wrap.style.display = 'block';
+  const host = document.createElement('div'); host.className = 'shxpf'; wrap.append(host);
+  pE.replaceChildren(...(bar ? [bar] : []), wrap);
+  const sr = host.attachShadow({ mode: 'open' }); const st = document.createElement('style'); st.textContent = V4CSS + V4EXTRA; sr.append(st); shCss(sr); SHX_ROOTS.add(sr);
+  const R = document.createElement('div'); R.className = 'v4ler shxr'; sr.append(R);
+  const paint = () => { R.innerHTML = shWith(x, () => shProfHTML(x.L, x.mine, x.key, wBox)); shFit(R); };
+  paint();
+  if (x.mine) { R.addEventListener('click', v5ClickLongGuard, true); v5Gestures(R); }
+  R.addEventListener('click', (ev) => { const t = ev.target.closest('[data-a]'); if (!t) return; const a = t.dataset.a;
+    if (a === 'pfsh') { SHX_PF[x.key] = t.dataset.k === 'all' ? null : +t.dataset.k; paint(); return; }
+    if (a === 'prat-go') { if (!x.mine) { SHX_PFX[x.key] = !SHX_PFX[x.key]; paint(); return; }
+      const S5 = v5S(); S5.tab = 'livros'; S5.sub = null; v5P().shView = 'prat'; v5P().shF = 'todos'; v5Save(); try { v.hidden = true; goTab('estante'); } catch {} return; }
+    if (a === 'v5book') { const e = v5Book(t.dataset.id); if (e) openBookPage(e); return; }
+    if (a === 'shxvb') { const b = x.B && x.B[t.dataset.id]; if (b) try { openAnyBook(b.t, b.a, b.img); } catch {} } });
+}
+// segurar abre o menu do livro; o toque que solta logo depois não abre o livro
+function v5ClickLongGuard(ev) { const r = ev.currentTarget; if (r.dataset.longAt && Date.now() - Number(r.dataset.longAt) < 700) { ev.preventDefault(); ev.stopImmediatePropagation(); } }
+// resumo publicado: só as estantes públicas (mesma regra do perfil), com a arrumação e a decoração; fotos de lombada até ~90 KB
+function shSnap() { const L = typeof window.v6ProfOrder === 'function' ? window.v6ProfOrder() : shSh().filter((s) => !s.priv);
+  const sh = L.map((s) => ({ n: s.name, ids: (s.bookIds || []).map(String).filter((id) => v5Book(id)) })).filter((x) => x.ids.length);
+  const ids = [...new Set(sh.flatMap((x) => x.ids))].slice(0, 400), set = new Set(ids); sh.forEach((x) => { x.ids = x.ids.filter((id) => set.has(id)); });
+  const b = {}; ids.forEach((id) => { const e = v5Book(id); b[id] = { t: String(e.title || '').slice(0, 120), a: String(e.author || '').slice(0, 80), st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || 0, img: e.cover && !/^data:/.test(e.cover) && e.cover.length < 600 ? e.cover : null }; });
+  const C = shc(), pick = (o) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => set.has(k)));
+  let budget = 90000; const sp = {}; ids.forEach((id) => { const u = C.sp && C.sp[id]; if (u && u.length < budget) { sp[id] = u; budget -= u.length; } });
+  return { v: 1, sh, b, C: { ed: pick(C.ed), sp, ord: (C.ord || []).filter((id) => set.has(id)), lay: pick(C.lay), manual: C.manual ? 1 : 0, deco: C.deco, wood: C.wood, wall: C.wall, lt: C.lt, spMode: C.spMode } }; }
+{ const _ps = profShelvesSnap; profShelvesSnap = function (snapshot) { const r = _ps.apply(this, arguments); try { if (snapshot && snapshot.shelf) snapshot.shelf.prat = shSnap(); } catch (err) { console.warn('prateleira no resumo', err); } return r; }; }
+// --- wk_v2_estante_decorar.js ---
+// Prateleira, parte 2 (Bia, 21/11; porta do protótipo v186): Organizar, Decorar, edição do exemplar e foto da lombada.
+// 1) Edição do exemplar: Brochura · Capa dura · Edição especial (filetes e corte dourados) · Bordas pintadas (cor do corte).
+// 2) Foto da lombada (menu do livro › Mais): tirar foto, galeria ou foto de exemplo, com editor de corte na proporção da
+//    lombada. Sai um JPEG pequeno (até 300 px de altura, ~10 KB) guardado em prefs.shx.sp; no máximo 60 fotos.
+// 3) Organizar: arrastar entre posições e prateleiras com prévia no lugar; por cima de uma pilha deita o livro nela; segurar
+//    0,6 s no meio de um livro em pé empilha os dois; tocar num livro abre Deitar/Levantar e Mover para o começo/fim.
+// 4) Decorar: enfeites do universo do app (pôr, trocar, tirar, arrastar), madeira, parede, luzinhas e lombadas da capa/desenhadas.
+const SHX_CSS2 = `.v4ler .bsh .sp.cvs{background-color:var(--c);background-size:auto 100%;background-position:0 0;background-repeat:no-repeat}
+.v4ler .bsh .sp.cvs .tp{position:absolute;left:13%;right:13%;border-radius:1px;background:color-mix(in srgb,var(--c) 84%,transparent);box-shadow:0 0 0 .5px rgba(255,255,255,.14),0 1px 2px rgba(0,0,0,.25)}
+.v4ler .bsh .sp.cvs .tt{text-shadow:0 0 1.5px rgba(0,0,0,.25)}
+.v4ler .bsh .sp.cvs .au{text-shadow:0 0 2px rgba(0,0,0,.7)}
+.v4ler .bsh .sp.ph{background-color:#333;background-size:100% 100%;background-position:center}
+.v4ler .bsh .sp.ph::after{display:none}
+.v4ler .bsh .sp .eg{position:absolute;left:0;right:0;top:0;height:3px;border-radius:1.5px 1.5px 0 0;background:var(--eg);box-shadow:inset 0 -1px 0 rgba(0,0,0,.25);z-index:2}
+.v4ler .bsh .sp.ep{border-radius:2.5px 2.5px 1px 1px}
+.v4ler .bsh .sp.ep .fb{background:#e2bd62;opacity:.95}
+.v4ler .bsh .sp .orn{position:absolute;left:50%;width:5px;height:5px;margin-left:-3.5px;border:1px solid #e2bd62;transform:rotate(45deg);z-index:1}
+.v4ler .bsh .pb.fe{background:var(--eg);background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.22) 0 .6px,transparent .6px 1.8px),linear-gradient(180deg,var(--c) 0 2px,transparent 2px calc(100% - 2px),var(--c) calc(100% - 2px))}
+.v4ler .bsh .pb.fe::before{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(0,0,0,0) 40%,rgba(0,0,0,.18))}
+.v4ler .bsh.org .sp,.v4ler .bsh.org .pb,.v4ler .bsh.org .face{cursor:grab;touch-action:none;outline:1px dashed color-mix(in srgb,var(--acc) 70%,transparent);outline-offset:1px}
+.v4ler .bsh.org .sp:hover{transform:translateY(-4px)}
+.v4ler .bsh .drg{opacity:.25}
+.v4ler .bsh.deco .dec.u{pointer-events:auto;cursor:grab;touch-action:none;border-radius:6px;outline:1.5px dashed color-mix(in srgb,var(--acc) 75%,transparent);outline-offset:3px}
+.v4ler .bsh.deco .dec.u:focus-visible{outline-style:solid}
+.v4ler .shghost{position:fixed;z-index:9999;pointer-events:none;margin:0;transform:rotate(-3deg) scale(1.06);filter:drop-shadow(0 12px 14px rgba(0,0,0,.45));opacity:.96}
+.v4ler .shind{position:fixed;z-index:10000;width:4px;border-radius:2px;background:var(--acc);box-shadow:0 0 10px var(--acc);pointer-events:none}
+.v4ler .shtools{display:flex;gap:8px;margin:0 2px 10px}
+.v4ler .shtools button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:800;font-size:14px;cursor:pointer}
+.v4ler .shtools svg{width:18px;height:18px}
+.v4ler .shban{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:10px 12px;border-radius:14px;background:var(--ink);color:var(--bg);box-shadow:0 8px 18px rgba(0,0,0,.22)}
+.v4ler .shban b{flex:1;font-size:13.5px;line-height:1.25}
+.v4ler .shban small{display:block;font-weight:600;opacity:.82;font-size:11.5px;margin-top:2px}
+.v4ler .shban>button{min-height:38px;padding:0 15px;border:0;border-radius:10px;background:var(--acc);color:#fff;font:inherit;font-weight:800;cursor:pointer;flex:none}
+.v4ler .shban small button{background:none;border:0;padding:0;color:inherit;text-decoration:underline;font:inherit;font-weight:800;cursor:pointer}
+.v4ler .bsh.w-linho{background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.024) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(0,0,0,.018) 0 1px,transparent 1px 4px)}
+.v4ler .bsh.w-ceu{--bk-wall:#111a36;--bk-back:#0b1230;--bk-hint:#bdb4dc;background-image:radial-gradient(1.2px 1.2px at 12% 18%,rgba(255,255,255,.55),transparent 70%),radial-gradient(1px 1px at 38% 62%,rgba(255,255,255,.4),transparent 70%),radial-gradient(1.5px 1.5px at 72% 26%,rgba(255,248,220,.7),transparent 70%),radial-gradient(1px 1px at 88% 78%,rgba(255,255,255,.45),transparent 70%),radial-gradient(1px 1px at 55% 8%,rgba(255,255,255,.4),transparent 70%);background-size:140px 140px}
+.v4ler .bsh.w-ceu .bay{background:linear-gradient(180deg,rgba(0,0,0,.32),rgba(0,0,0,0) 22px),radial-gradient(120% 60% at 50% 105%,var(--bk-glow),transparent 70%),radial-gradient(1px 1px at 20% 30%,rgba(255,255,255,.45),transparent 70%),radial-gradient(1px 1px at 65% 55%,rgba(255,255,255,.35),transparent 70%),radial-gradient(1.3px 1.3px at 85% 20%,rgba(255,246,214,.6),transparent 70%),var(--bk-back);background-size:auto,auto,110px 90px,110px 90px,110px 90px,auto}
+.v4ler .bsh.w-liso{--bk-wall:var(--bg);--bk-back:color-mix(in srgb,var(--bg) 90%,#000)}
+.v4ler .bsh.w-papel{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><g fill='none' stroke='%23b08a4a' stroke-opacity='.3' stroke-width='.8'><path d='M14 20l18 10 16-6 10 14'/><path d='M70 82l16-8 14 12 8-10'/></g><g fill='%23b08a4a' fill-opacity='.5'><circle cx='14' cy='20' r='1.5'/><circle cx='32' cy='30' r='1.1'/><circle cx='48' cy='24' r='1.4'/><circle cx='58' cy='38' r='1'/><circle cx='70' cy='82' r='1.3'/><circle cx='86' cy='74' r='1'/><circle cx='100' cy='86' r='1.5'/><circle cx='108' cy='76' r='1'/><circle cx='96' cy='18' r='.8'/><circle cx='24' cy='96' r='.8'/></g></svg>");background-size:120px 120px}
+.v4ler .bsh.lt-off{--bk-glow:transparent}
+.v4ler .bsh.lt-fria{--bk-glow:rgba(170,205,255,.14)}
+.v4ler .bsh.lt-fria .lt i{background:radial-gradient(circle at 50% 40%,#fff,#d6ebff 55%,#86b4ea);box-shadow:0 0 4px 1px rgba(175,212,255,.7),0 0 12px 4px rgba(150,195,255,.2)}
+.v4ler .bsh.lt-cor{--bk-glow:rgba(255,170,210,.12)}
+.v4ler .bsh.lt-cor .lt i:nth-of-type(4n+1){background:radial-gradient(circle at 50% 40%,#fff,#ffa3b1 55%,#e0506a);box-shadow:0 0 4px 1px rgba(255,120,150,.6),0 0 10px 3px rgba(255,120,150,.18)}
+.v4ler .bsh.lt-cor .lt i:nth-of-type(4n+2){background:radial-gradient(circle at 50% 40%,#fff,#a6f0bf 55%,#3fae6a);box-shadow:0 0 4px 1px rgba(110,220,150,.6),0 0 10px 3px rgba(110,220,150,.18)}
+.v4ler .bsh.lt-cor .lt i:nth-of-type(4n+3){background:radial-gradient(circle at 50% 40%,#fff,#a9c8ff 55%,#4b7ee0);box-shadow:0 0 4px 1px rgba(120,160,255,.6),0 0 10px 3px rgba(120,160,255,.18)}
+.v4ler .dkpan{position:fixed;left:0;right:0;bottom:var(--shx-tab,0px);z-index:9400;max-width:560px;margin:0 auto;box-sizing:border-box;background:var(--card);color:var(--ink);border-radius:20px 20px 0 0;box-shadow:0 -12px 32px rgba(0,0,0,.28);padding:8px max(14px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px));max-height:52%;display:flex;flex-direction:column}
+.v4ler .dkpan .grab{width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 8px}
+.v4ler .dkpan .dtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border-radius:13px;background:var(--soft);margin-bottom:8px}
+.v4ler .dkpan .dtabs button{min-height:38px;border:0;border-radius:10px;background:none;color:var(--ink2);font:inherit;font-weight:800;font-size:13px;cursor:pointer}
+.v4ler .dkpan .dtabs button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.v4ler .dkpan .dbody{overflow-y:auto;padding:2px 1px 4px;scrollbar-width:none}
+.v4ler .dkpan .dkh{margin:0 0 8px;font-size:12.5px;color:var(--ink2);font-weight:600}
+.v4ler .dkgrid{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;margin:0 -2px;padding:0 2px 2px}
+.v4ler .dkgrid::-webkit-scrollbar{display:none}
+.v4ler .dkgrid button{flex:0 0 82px;scroll-snap-align:start;display:grid;justify-items:center;align-content:end;gap:4px;padding:8px 2px 7px;border-radius:12px;border:1px solid var(--line);background:var(--soft);font:inherit;font-size:10.5px;font-weight:700;line-height:1.15;color:var(--ink);cursor:pointer;min-height:92px;text-align:center}
+.v4ler .dkgrid .th{height:50px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+.v4ler .dkgrid .th svg{margin:0!important}
+.v4ler .dkgrid button .n{display:inline-block;min-width:16px;padding:0 4px;border-radius:8px;background:var(--acc);color:#fff;font-size:10px}
+.v4ler .dsw{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.v4ler .dsw button{display:grid;gap:6px;justify-items:center;padding:7px 4px;border-radius:12px;border:1px solid var(--line);background:none;font:inherit;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer}
+.v4ler .dsw .sw{width:100%;height:44px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.v4ler .dsw button.on,.v4ler .dkgrid button.on{border-color:var(--acc);box-shadow:inset 0 0 0 1.5px var(--acc)}
+.v4ler .dkpan .dsec{margin:12px 0 6px;font-size:11.5px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.v4ler .dkfoot{display:flex;gap:8px;margin-top:8px}
+.v4ler .dkfoot .btn{flex:1;min-height:44px}
+.v4ler .shprev{margin:4px 0 10px!important;padding:12px 0 0!important;border-radius:14px;overflow:hidden}
+.v4ler .shprev .case{margin:0 auto!important;width:max-content;min-width:150px}
+.v4ler .shprev .brow{justify-content:center;height:176px!important}
+.v4ler .edopt{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.v4ler .edopt button{display:grid;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:800;font-size:14px;cursor:pointer}
+.v4ler .edopt button small{font-weight:600;color:var(--ink2);font-size:11.5px}
+.v4ler .edopt button.on{border-color:var(--acc);box-shadow:inset 0 0 0 1.5px var(--acc)}
+.v4ler .edcor{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 2px}
+.v4ler .edcor button{width:36px;height:36px;border-radius:50%;border:2px solid var(--card);box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.v4ler .edcor button.on{box-shadow:0 0 0 2.5px var(--acc)}
+.v4ler .spl{display:grid;gap:8px}
+.v4ler .spl label,.v4ler .spl button{display:flex;align-items:center;gap:12px;min-height:50px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:800;font-size:14.5px;cursor:pointer;text-align:left}
+.v4ler .spl svg{width:20px;height:20px;flex:none}
+.v4ler .spl .dng{color:var(--danger,#c0392b)}
+.v4ler .shcrop{position:fixed;inset:0;z-index:9999;background:#0c0a12;color:#fff;display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:14px max(16px,env(safe-area-inset-left,0px)) calc(14px + env(safe-area-inset-bottom,0px))}
+.v4ler .shcrop .shc-top{display:grid;gap:2px;text-align:center}
+.v4ler .shcrop .shc-top b{font-size:17px}
+.v4ler .shcrop .shc-top small{opacity:.75;font-size:12.5px}
+.v4ler .shcrop .shc-stage{position:relative;flex:1;overflow:hidden;touch-action:none;border-radius:12px;background:#000;cursor:grab}
+.v4ler .shcrop .shc-stage img{position:absolute;left:0;top:0;max-width:none;user-select:none;-webkit-user-drag:none;pointer-events:none;transform-origin:0 0}
+.v4ler .shcrop .shc-frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 9999px rgba(0,0,0,.62);outline:1.5px solid #fff;border-radius:2px;pointer-events:none}
+.v4ler .shcrop .shc-frame::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 33%,rgba(255,255,255,.25) 33% calc(33% + 1px),transparent calc(33% + 1px) 66%,rgba(255,255,255,.25) 66% calc(66% + 1px),transparent calc(66% + 1px))}
+.v4ler .shcrop .shc-ctl{display:flex;align-items:center;gap:10px}
+.v4ler .shcrop .shc-ctl input{flex:1;accent-color:#e9b56a}
+.v4ler .shcrop .shc-bt{display:flex;gap:8px}
+.v4ler .shcrop .shc-bt .btn{flex:1;min-height:48px}
+.v4ler .shcrop .btn.s{background:#1f1b2a;border-color:#3a3350;color:#fff}
+@media (prefers-reduced-motion: reduce){.v4ler .shghost{transform:none}
+}
+
+.v4ler .bsh .spph{display:inline-block;align-self:flex-end;flex:none;border-radius:3px;border:2px dashed var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);animation:shphIn .16s ease-out}
+.v4ler .bsh .pbph{display:block;border-radius:3px;border:2px dashed var(--acc);background:color-mix(in srgb,var(--acc) 22%,transparent);animation:shphIn2 .16s ease-out;margin-left:4px}
+.v4ler .bsh .pile.pdrop{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--acc) 70%,transparent))}
+.v4ler .bsh .sp.hold,.v4ler .bsh .face.hold{outline:3px solid var(--acc);outline-offset:2px;border-radius:3px}
+.v4ler .shholdtip{position:fixed;z-index:10001;padding:6px 10px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:12px;font-weight:800;pointer-events:none;white-space:nowrap;transform:translate(-50%,-130%)}
+@keyframes shphIn{from{width:0;opacity:0}}
+@keyframes shphIn2{from{transform:scaleX(.3);opacity:0}}
+@media (prefers-reduced-motion: reduce){.v4ler .bsh .spph,.v4ler .bsh .pbph{animation:none}
+}
+
+`;
+let SHX_DKT = 'enf', SHX_DKS = null, SHX_EDT = null, SHX_JD = 0;
+const SH_EDN = { pb: 'Brochura', hc: 'Capa dura', ep: 'Edição especial', bp: 'Bordas pintadas' };
+const shTitle = (id) => { const b = shById(id); return b ? b.t : 'Livro'; };
+// ----- painel Decorar -----
+function shDecoInit() { const C0 = shc(); if (C0.deco) return; const DECS = ['planta', 'lua', null, 'globo', 'quadro', null, 'telescopio', 'lua', null, 'vela'];
+  const sr = shBibRoot(), domN = sr ? sr.querySelectorAll('.bsh:not(.sm) .bay').length : 0, n = domN || Math.max(3, Math.ceil(lib().length / 12));
+  C0.deco = []; for (let r = 0; r < n; r++) { const d = DECS[r % DECS.length]; if (d) C0.deco.push({ k: d, r, p: (d === 'lua' || r % 2) ? 99 : 0 }); } }
+function shThumb(k) { const h = SH_DH[k] || 60; return SH_DEC[k](Math.min(1, 48 / h)); }
+function dkPanel() { const C0 = shc(), t = SHX_DKT || 'enf', cnt = {}; (C0.deco || []).forEach((d) => { cnt[d.k] = (cnt[d.k] || 0) + 1; });
+  const tabs = [['enf', 'Enfeites'], ['mad', 'Madeira'], ['par', 'Parede'], ['luz', 'Luzinhas']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${t === k}" class="${t === k ? 'on' : ''}" data-a="dktab" data-k="${k}">${l}</button>`).join('');
+  let body = '';
+  if (t === 'enf') body = `<p class="dkh">${SHX_DKS != null ? 'Escolha o enfeite que entra no lugar.' : 'Toque para pôr na estante. Lá, toque num enfeite para trocar ou tirar, ou arraste.'}</p><div class="dkgrid">${SH_CAT.map(([k, n]) => `<button type="button" data-a="dkadd" data-k="${k}" aria-label="${SHX_DKS != null ? 'Trocar por' : 'Pôr na estante:'} ${esc(n)}${cnt[k] ? ', ' + cnt[k] + ' na estante' : ''}"><span class="th">${shThumb(k)}</span>${esc(n)}${cnt[k] ? ` <span class="n">${cnt[k]}</span>` : ''}</button>`).join('')}</div>`;
+  if (t === 'mad') { const W0 = C0.wood || 'auto';
+    const sw = [['auto', 'Do tema', 'linear-gradient(135deg,#d6aa76 50%,#6b4a32 50%)'], ['clara', 'Clara', 'linear-gradient(180deg,#e8c597,#d6aa76 30%,#b98551)'], ['escura', 'Escura', 'linear-gradient(180deg,#7d5a3e,#6b4a32 30%,#4d3322)'], ['branca', 'Branca', 'linear-gradient(180deg,#fcfaf6,#f2eee7 30%,#ddd6ca)'], ['tema', 'Cor do app', 'linear-gradient(180deg,color-mix(in srgb,var(--acc) 50%,#f3d7a8),color-mix(in srgb,var(--acc) 58%,#6b4a2a) 30%,color-mix(in srgb,var(--acc) 44%,#3e2716))']];
+    body = `<div class="dsw" role="radiogroup" aria-label="Madeira">${sw.map(([k, l, g]) => `<button type="button" role="radio" aria-checked="${W0 === k}" class="${W0 === k ? 'on' : ''}" data-a="dkwood" data-k="${k}"><span class="sw" style="background:${g}"></span>${l}</button>`).join('')}</div>
+    <div class="dsec">Lombadas</div><div class="dsw" style="grid-template-columns:1fr 1fr" role="radiogroup" aria-label="Lombadas">${[['capa', 'Da capa', 'a cor e a faixa da capa de cada livro'], ['desenho', 'Desenhadas', 'tipografia e cores de lombada']].map(([k, l, s]) => `<button type="button" role="radio" aria-checked="${(C0.spMode || 'capa') === k}" class="${(C0.spMode || 'capa') === k ? 'on' : ''}" data-a="dksp" data-k="${k}" style="text-align:center"><b>${l}</b><small style="font-weight:600;color:var(--ink2);font-size:11px">${s}</small></button>`).join('')}</div>`; }
+  if (t === 'par') { const W0 = C0.wall || 'linho';
+    const sw = [['linho', 'Linho', 'repeating-linear-gradient(0deg,rgba(0,0,0,.05) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(0,0,0,.04) 0 1px,transparent 1px 4px),#efe7da'], ['ceu', 'Céu noturno', 'radial-gradient(1.4px 1.4px at 20% 30%,#fff,transparent 70%),radial-gradient(1px 1px at 70% 60%,#fff,transparent 70%),radial-gradient(1.2px 1.2px at 45% 80%,#fff8e0,transparent 70%),#111a36'], ['liso', 'Lisa', 'var(--bg)'], ['papel', 'Papel de parede', `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><g fill='none' stroke='%23b08a4a' stroke-opacity='.5' stroke-width='.8'><path d='M6 8l10 6 10-3 6 9'/></g><g fill='%23b08a4a'><circle cx='6' cy='8' r='1.2'/><circle cx='16' cy='14' r='1'/><circle cx='26' cy='11' r='1.2'/><circle cx='32' cy='20' r='.9'/></g></svg>"),#efe7da`]];
+    body = `<div class="dsw" role="radiogroup" aria-label="Parede">${sw.map(([k, l, g]) => `<button type="button" role="radio" aria-checked="${W0 === k}" class="${W0 === k ? 'on' : ''}" data-a="dkwall" data-k="${k}"><span class="sw" style="background:${g}"></span>${l}</button>`).join('')}</div>`; }
+  if (t === 'luz') { const L = C0.lt || { on: 1, c: 'quente' }, cur = L.on === 0 ? 'off' : L.c;
+    body = `<p class="dkh">O cordão aceso na borda das prateleiras.</p><div class="dsw" role="radiogroup" aria-label="Luzinhas">${[['off', 'Apagadas', 'linear-gradient(90deg,transparent 48%,rgba(120,110,100,.5) 48% 52%,transparent 52%),#2a2233'], ['quente', 'Quentes', 'radial-gradient(circle at 30% 50%,#ffd37a 3px,transparent 4px),radial-gradient(circle at 70% 50%,#ffd37a 3px,transparent 4px),#2a2233'], ['fria', 'Frias', 'radial-gradient(circle at 30% 50%,#d6ebff 3px,transparent 4px),radial-gradient(circle at 70% 50%,#d6ebff 3px,transparent 4px),#2a2233'], ['cor', 'Coloridas', 'radial-gradient(circle at 20% 50%,#ff8fa3 3px,transparent 4px),radial-gradient(circle at 45% 50%,#8fe0ae 3px,transparent 4px),radial-gradient(circle at 70% 50%,#9ab8ff 3px,transparent 4px),radial-gradient(circle at 90% 50%,#ffd37a 3px,transparent 4px),#2a2233']].map(([k, l, g]) => `<button type="button" role="radio" aria-checked="${cur === k}" class="${cur === k ? 'on' : ''}" data-a="dkltc" data-k="${k}"><span class="sw" style="background:${g}"></span>${l}</button>`).join('')}</div>`; }
+  return `<div class="dkpan" role="region" aria-label="Decorar a estante"><div class="grab"></div><div class="dtabs" role="tablist">${tabs}</div><div class="dbody">${body}</div><div class="dkfoot"><button type="button" class="btn s" data-a="dkreset">Restaurar padrão</button><button type="button" class="btn p" data-a="shdone">Concluir</button></div></div>`; }
+// ----- menu do livro › Mais: Edição na estante · Foto da lombada -----
+{ const _bm = v5BmHTML; v5BmHTML = function (e) { let h = _bm.apply(this, arguments);
+    try { const row = (a, ic, t, sm) => `<button type="button" class="li" data-a="${a}">${v4ic(ic, 20)}<span class="t">${t}<small>${sm}</small></span><span class="r">${v4ic('chev', 16)}</span></button>`;
+      h = h.replace(/(<button class="li v5more[^>]*>[\s\S]*?<small>)([^<]*)(<\/small>)/, (m, a, b, c) => a + b + (b ? ' · ' : '') + 'Edição na estante · Foto da lombada' + c);
+      if (v4State().v5more) { const i = h.indexOf('<button class="li dng" data-a="sheet" data-s="v5rm"'); const add = row('shxed', 'estante', 'Edição na estante', 'brochura, capa dura, especial ou bordas pintadas') + row('shxsp', 'scan', 'Foto da lombada', 'a lombada do seu exemplar na Prateleira');
+        h = i >= 0 ? h.slice(0, i) + add + h.slice(i) : h + add; } } catch (err) { console.warn('menu da estante', err); }
+    return h; }; }
+// ----- folhas: Edição do seu exemplar · Foto da lombada -----
+function shSheetHTML2(k) { const id = String(v4State().sheetE || ''), b = shById(id); if (!b) return '<p class="mut">Livro não encontrado.</p>'; const C0 = shc(); let h = '';
+  const prev = () => { const m0 = SHX_MODE; SHX_MODE = null; const html = `<div class="bsh shprev${shDark() ? ' dk' : ''} w-${C0.wall || 'linho'}" style="${shWoodVars(C0.wood)}"><div class="case"><div class="crown"></div><div class="bay"><div class="brow">${spnHTML({ ...b, lean: 0 }, false).replace(/ data-a="[^"]*"| data-id="[^"]*"| data-long="[^"]*"/g, '').replace('<button type="button"', '<span').replace(/<\/button>$/, '</span>')}</div></div><div class="bpl"></div></div></div>`; SHX_MODE = m0; return html; };
+  if (k === 'shxed') { const ov = shEdOf(b), cur = SHX_EDT || (SHX_EDT = { t: ov.t === 'auto' ? (spnGeo(b).hc ? 'hc' : 'pb') : ov.t, e: ov.e || '#b3283f' });
+    const keep = C0.ed[b.id]; C0.ed[b.id] = { t: cur.t, e: cur.e }; const pv = prev(); if (keep) C0.ed[b.id] = keep; else delete C0.ed[b.id];
+    h = `<h3 style="margin-bottom:2px">Edição do seu exemplar</h3><p class="mut" style="margin:0 0 6px">${esc(b.t)} · muda a lombada na Prateleira</p>${pv}
+      <div class="edopt" role="radiogroup" aria-label="Tipo de edição">${[['pb', 'Brochura', 'capa mole, a mais comum'], ['hc', 'Capa dura', 'mais alta, com filetes'], ['ep', 'Edição especial', 'douração e corte dourado'], ['bp', 'Bordas pintadas', 'corte das páginas colorido']].map(([k2, l, sm]) => `<button type="button" role="radio" aria-checked="${cur.t === k2}" class="${cur.t === k2 ? 'on' : ''}" data-a="shedt" data-k="${k2}">${l}<small>${sm}</small></button>`).join('')}</div>
+      ${cur.t === 'bp' ? `<div class="lbl" style="margin-top:12px">Cor do corte</div><div class="edcor" role="radiogroup" aria-label="Cor do corte">${[['#b3283f', 'vinho'], ['#d9534a', 'coral'], ['#e9a83a', 'mostarda'], ['#3f8f6b', 'verde'], ['#2f6fb0', 'azul'], ['#6a4fb3', 'violeta'], ['#e58fb0', 'rosa'], ['#1d1d1f', 'preto']].map(([c2, n]) => `<button type="button" role="radio" aria-checked="${cur.e === c2}" aria-label="${n}" class="${cur.e === c2 ? 'on' : ''}" data-a="shedc" data-k="${c2}" style="background:${c2}"></button>`).join('')}</div>` : ''}
+      <div class="row" style="gap:8px;margin-top:14px"><button type="button" class="btn s" style="flex:1" data-a="shedauto">Automática</button><button type="button" class="btn p" style="flex:2" data-a="shedok">Salvar</button></div>`; }
+  if (k === 'shxsp') { const has = C0.sp && C0.sp[b.id];
+    h = `<h3 style="margin-bottom:2px">Foto da lombada</h3><p class="mut" style="margin:0 0 6px">${has ? 'Esta é a lombada do seu exemplar na estante.' : 'Fotografe a lombada do seu exemplar; ela entra no lugar da lombada da capa.'}</p>${prev()}
+      <div class="spl"><label>${v4ic('scan', 20)}Tirar foto<input type="file" accept="image/*" capture="environment" data-shin="${esc(b.id)}" data-nosrc="1" hidden></label><label>${v4ic('estante', 20)}Escolher da galeria<input type="file" accept="image/*" data-shin="${esc(b.id)}" data-nosrc="1" hidden></label><button type="button" data-a="shspex" data-id="${esc(b.id)}">${v4ic('eye', 20)}Ver com uma foto de exemplo</button>${has ? `<button type="button" class="dng" data-a="shsprm" data-id="${esc(b.id)}">${v4ic('x', 20)}Tirar a foto e voltar à lombada da capa</button>` : ''}</div>`; }
+  return h; }
+// ----- editor de corte da foto da lombada (proporção alta e estreita, a da lombada do livro) -----
+function shCrop(src, id) { const b = shById(id); if (!b) return; const G = spnGeo(b, false), ar = G.w / G.h; const R0 = v4Root(), SR = R0.getRootNode(); SR.querySelectorAll('.shcropw').forEach((x) => x.remove());
+  const wrapC = document.createElement('div'); wrapC.className = 'v4ler shxr shcropw';
+  const ov = document.createElement('div'); ov.className = 'shcrop'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Ajustar a foto da lombada');
+  ov.innerHTML = `<div class="shc-top"><b>Ajuste a lombada</b><small>Arraste para posicionar · aproxime com dois dedos ou a barra</small></div><div class="shc-stage"><img alt=""><div class="shc-frame"></div></div><div class="shc-ctl"><button type="button" class="btn s" data-c="rot" aria-label="Girar 90 graus">↻ Girar</button><input type="range" min="1" max="5" step="0.01" value="1" aria-label="Aproximar"></div><div class="shc-bt"><button type="button" class="btn s" data-c="x">Cancelar</button><button type="button" class="btn p" data-c="ok">Usar foto</button></div>`;
+  wrapC.append(ov); SR.append(wrapC); const st = ov.querySelector('.shc-stage'), im = ov.querySelector('img'), fr = ov.querySelector('.shc-frame'), rg = ov.querySelector('input');
+  let FW = 0, FH = 0, iw = 0, ih = 0, s0 = 1, z = 1, tx = 0, ty = 0; const ptrs = new Map(); let pinch = null;
+  const layout = () => { const R = st.getBoundingClientRect(); FH = Math.min(R.height - 24, 520); FW = Math.max(28, Math.round(FH * ar)); fr.style.width = FW + 'px'; fr.style.height = FH + 'px'; return R; };
+  const clamp = () => { const s = s0 * z, W2 = iw * s, H2 = ih * s; tx = Math.min(0, Math.max(FW - W2, tx)); ty = Math.min(0, Math.max(FH - H2, ty)); };
+  const paint = () => { const R = st.getBoundingClientRect(), fl = (R.width - FW) / 2, ft = (R.height - FH) / 2, s = s0 * z; clamp(); im.style.width = iw * s + 'px'; im.style.height = ih * s + 'px'; im.style.transform = `translate(${fl + tx}px,${ft + ty}px)`; };
+  const load = (u) => { im.onload = () => { iw = im.naturalWidth; ih = im.naturalHeight; layout(); s0 = Math.max(FW / iw, FH / ih); z = 1; rg.value = 1; tx = (FW - iw * s0) / 2; ty = (FH - ih * s0) / 2; paint(); }; im.src = u; };
+  const zoomAt = (nz, cx, cy) => { const R = st.getBoundingClientRect(), fl = (R.width - FW) / 2, ft = (R.height - FH) / 2, px = cx - R.left - fl, py = cy - R.top - ft, s1 = s0 * z; nz = Math.max(1, Math.min(5, nz)); const s2 = s0 * nz; tx = px - (px - tx) * s2 / s1; ty = py - (py - ty) * s2 / s1; z = nz; rg.value = z; paint(); };
+  st.addEventListener('pointerdown', (e) => { st.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (ptrs.size === 2) { const [a, c] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - c.x, a.y - c.y), z }; } });
+  st.addEventListener('pointermove', (e) => { const p = ptrs.get(e.pointerId); if (!p) return; if (ptrs.size === 1) { tx += e.clientX - p.x; ty += e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; paint(); return; }
+    p.x = e.clientX; p.y = e.clientY; const [a, c] = [...ptrs.values()]; if (pinch) zoomAt(pinch.z * Math.hypot(a.x - c.x, a.y - c.y) / pinch.d, (a.x + c.x) / 2, (a.y + c.y) / 2); });
+  const up = (e) => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
+  st.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(z * (e.deltaY < 0 ? 1.08 : 1 / 1.08), e.clientX, e.clientY); }, { passive: false });
+  rg.addEventListener('input', () => { const R = st.getBoundingClientRect(); zoomAt(+rg.value, R.left + R.width / 2, R.top + R.height / 2); });
+  const onRs = () => { if (wrapC.isConnected && iw) { layout(); paint(); } };
+  const close = () => { wrapC.remove(); document.removeEventListener('keydown', esc1); window.removeEventListener('resize', onRs); }; const esc1 = (e) => { if (e.key === 'Escape') close(); }; document.addEventListener('keydown', esc1);
+  ov.addEventListener('click', (e) => { const k = e.target.closest('[data-c]'); if (!k) return; e.stopPropagation(); const c = k.dataset.c;
+    if (c === 'x') return close();
+    if (c === 'rot') { const cn = document.createElement('canvas'); cn.width = ih; cn.height = iw; const x = cn.getContext('2d'); x.translate(ih, 0); x.rotate(Math.PI / 2); x.drawImage(im, 0, 0); return load(cn.toDataURL('image/jpeg', 0.92)); }
+    if (c === 'ok') { const C0 = shc(); C0.sp = C0.sp || {}; if (!C0.sp[id] && Object.keys(C0.sp).length >= 60) return toast('Limite de 60 fotos de lombada. Tire uma antes.');
+      // foto pequena: vai junto com a conta (prefs), então sai com até 300 px de altura e no máximo ~40 KB
+      const s = s0 * z, enc = (H, q) => { const ch = H, cw = Math.max(8, Math.round(H * FW / FH)), cn = document.createElement('canvas'); cn.width = cw; cn.height = ch; const x = cn.getContext('2d'); x.drawImage(im, -tx / s, -ty / s, FW / s, FH / s, 0, 0, cw, ch); return cn.toDataURL('image/jpeg', q); };
+      let u = enc(300, 0.8); if (u.length > 40000) u = enc(240, 0.66); if (u.length > 40000) u = enc(180, 0.6);
+      C0.sp[id] = u; shSave(); close(); v5SheetClose(); v5Redraw(); toast('Foto da lombada salva'); } });
+  window.addEventListener('resize', onRs);
+  load(src); setTimeout(() => ov.querySelector('[data-c="ok"]')?.focus(), 50); }
+// foto de exemplo: uma lombada fotografada (tecido, douração, título), com fundo de estante ao redor para dar o que cortar
+function shSamplePhoto(b) { const W = 360, H = 900, cn = document.createElement('canvas'); cn.width = W; cn.height = H; const x = cn.getContext('2d');
+  const bg = x.createLinearGradient(0, 0, W, 0); bg.addColorStop(0, '#3b2a1e'); bg.addColorStop(0.5, '#5a3f2b'); bg.addColorStop(1, '#2e2117'); x.fillStyle = bg; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#7d4b2a'; x.fillRect(40, 40, 60, H - 80); x.fillStyle = '#244a55'; x.fillRect(262, 60, 56, H - 120);
+  const sx = 120, sw = 120, sy = 40, sh = H - 70, g = x.createLinearGradient(sx, 0, sx + sw, 0); g.addColorStop(0, '#0f2a2e'); g.addColorStop(0.18, '#1f5158'); g.addColorStop(0.5, '#1a454b'); g.addColorStop(0.85, '#13363b'); g.addColorStop(1, '#0b2023');
+  x.fillStyle = g; x.fillRect(sx, sy, sw, sh); for (let i = 0; i < 2400; i++) { x.fillStyle = `rgba(255,255,255,${Math.random() * 0.05})`; x.fillRect(sx + Math.random() * sw, sy + Math.random() * sh, 1, 1); }
+  x.strokeStyle = '#d9b45a'; x.lineWidth = 2; [sy + 22, sy + 30, sy + sh - 30, sy + sh - 22].forEach((y) => { x.beginPath(); x.moveTo(sx + 10, y); x.lineTo(sx + sw - 10, y); x.stroke(); });
+  x.save(); x.translate(sx + sw / 2, sy + 70); x.rotate(Math.PI / 2); x.fillStyle = '#e8c870'; x.font = 'bold 44px Georgia, serif'; x.textBaseline = 'middle'; x.fillText(String(b.t).toUpperCase().slice(0, 22), 0, 0); x.font = 'italic 28px Georgia, serif'; x.fillStyle = '#efdcae'; x.fillText(String(b.a || ''), Math.min(560, 40 + String(b.t).length * 30), 0); x.restore();
+  x.fillStyle = '#e8c870'; x.beginPath(); x.arc(sx + sw / 2, sy + sh - 60, 10, 0, Math.PI * 2); x.fill(); x.fillStyle = '#1a454b'; x.beginPath(); x.arc(sx + sw / 2 + 5, sy + sh - 63, 8, 0, Math.PI * 2); x.fill();
+  const vg = x.createRadialGradient(W / 2, H / 2, H / 4, W / 2, H / 2, H / 1.1); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.45)'); x.fillStyle = vg; x.fillRect(0, 0, W, H);
+  return cn.toDataURL('image/jpeg', 0.9); }
+// ----- toques da camada das folhas -----
+function shV4Click(ev) { const t = ev.target.closest && ev.target.closest('[data-a]'); if (!t) return; const a = t.dataset.a, d = t.dataset;
+  const own = ['shfil', 'shxed', 'shxsp', 'shedt', 'shedc', 'shedok', 'shedauto', 'shspex', 'shsprm']; if (!own.includes(a)) return; ev.stopImmediatePropagation(); ev.preventDefault();
+  const C0 = shc(), id = String(v4State().sheetE || '');
+  if (a === 'shfil') { v5P().shF = d.k; v5Save(); v5SheetClose(); return v5Redraw(); }
+  if (a === 'shxed') { const e = v5Book(id); SHX_EDT = null; return shOpen('shxed', { e }); }
+  if (a === 'shxsp') { const e = v5Book(id); return shOpen('shxsp', { e }); }
+  if (a === 'shedt') { SHX_EDT = { ...(SHX_EDT || {}), t: d.k }; if (!SHX_EDT.e) SHX_EDT.e = '#b3283f'; return v4Draw(); }
+  if (a === 'shedc') { SHX_EDT = { ...(SHX_EDT || {}), e: d.k }; return v4Draw(); }
+  if (a === 'shedok') { if (id && SHX_EDT) { C0.ed[id] = { t: SHX_EDT.t, ...(SHX_EDT.t === 'bp' ? { e: SHX_EDT.e } : {}) }; shSave(); } const nm = C0.ed[id] ? SH_EDN[C0.ed[id].t] : ''; SHX_EDT = null; v5SheetClose(); v5Redraw(); return toast('Edição salva: ' + nm); }
+  if (a === 'shedauto') { if (id) { delete C0.ed[id]; shSave(); } SHX_EDT = null; v5SheetClose(); v5Redraw(); return toast('Edição automática, pelo formato do livro'); }
+  if (a === 'shspex') { const b = shById(d.id); if (b) shCrop(shSamplePhoto(b), d.id); return; }
+  if (a === 'shsprm') { delete C0.sp[d.id]; shSave(); v4Draw(); v5Redraw(); return toast('A lombada voltou a sair da capa'); } }
+function shV4Change(ev) { const id = ev.target.dataset && ev.target.dataset.shin; if (!id) return; ev.stopImmediatePropagation(); const f = ev.target.files && ev.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => shCrop(rd.result, id); rd.readAsDataURL(f); }
+// ----- folha de opções rápida (Organizar: deitar/levantar e mover; Decorar: trocar/tirar) -----
+function shX(title, items) { const sr = shBibRoot(), R = sr && sr.querySelector('.v5est'); if (!R) return; R.querySelectorAll('.shx-sx').forEach((x) => x.remove());
+  const w = document.createElement('div'); w.className = 'shx-sx'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', title);
+  w.innerHTML = `<div><b>${esc(title)}</b>${items.map(([l], i) => `<button type="button" class="btn ${i === 0 ? 'p' : ''}" data-sx="${i}">${esc(l)}</button>`).join('')}<button type="button" class="btn" data-sx="x">Cancelar</button></div>`;
+  w.addEventListener('click', (ev) => { ev.stopPropagation(); const t = ev.target.closest('[data-sx]'); if (ev.target === w || (t && t.dataset.sx === 'x')) return w.remove(); if (!t) return; w.remove(); items[+t.dataset.sx][1](); });
+  R.append(w); w.querySelector('button')?.focus(); }
+// ----- ordem: mover dentro do que está à vista (vale dentro do filtro) -----
+function shMove(id, ref, after) { const C0 = shc(), sr = shBibRoot(), shown = [...new Set([...(sr ? sr.querySelectorAll('.bsh:not(.sm) [data-bid]') : [])].map((e) => e.dataset.bid))];
+  const vis = shown.filter((x) => x !== id); let at = ref == null ? (after ? vis.length : 0) : vis.indexOf(ref) + (after ? 1 : 0); if (at < 0) at = vis.length; vis.splice(at, 0, id);
+  let full = (C0.ord || []).slice(); shAllIds().concat(shown).forEach((x) => { if (!full.includes(x)) full.push(x); });
+  const set = new Set(vis), slots = []; full.forEach((x, i) => { if (set.has(x)) slots.push(i); }); slots.forEach((i, j) => { full[i] = vis[j]; });
+  C0.ord = full; C0.manual = 1; shSave(); }
+// rolagem da página (a estante vive numa raiz própria): o primeiro ancestral que rola
+function shScroller() { const sr = shBibRoot(); let n = sr && sr.host; while (n) { if (n.nodeType === 1) { const cs = getComputedStyle(n); if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight + 2) return n; } n = n.parentElement || (n.getRootNode && n.getRootNode().host) || null; } return document.scrollingElement || document.documentElement; }
+function shScrollToShelf(off) { const sr = shBibRoot(), e = sr && sr.querySelector('.bsh:not(.sm)'); if (!e) return; const sc = shScroller(), top = sc === document.scrollingElement || sc === document.documentElement ? 0 : sc.getBoundingClientRect().top;
+  sc.scrollTop = Math.max(0, e.getBoundingClientRect().top - top + sc.scrollTop - off); }
+// ----- toques da Biblioteca (Prateleira) -----
+function shClick(ev, sr) { const md = SHX_MODE;
+  if (SHX_JD) { SHX_JD = 0; ev.stopImmediatePropagation(); ev.preventDefault(); return; }
+  if (ev.target.closest && ev.target.closest('.shx-sx')) return;
+  if (md === 'org') { const el = ev.target.closest('.bsh:not(.sm) [data-bid]'); if (el) { ev.stopImmediatePropagation(); ev.preventDefault(); const id = el.dataset.bid, C0 = shc(), lay = !!(C0.lay && C0.lay[id]);
+      return shX(shTitle(id), [[lay ? 'Levantar (fica em pé)' : 'Deitar (vira pilha)', () => { C0.lay = C0.lay || {}; if (lay) delete C0.lay[id]; else C0.lay[id] = 1; C0.manual = 1; shSave(); v5Redraw(); toast(lay ? 'Livro em pé' : 'Livro deitado'); }], ['Mover para o começo da estante', () => { shMove(id, null, false); v5Redraw(); }], ['Mover para o fim da estante', () => { shMove(id, null, true); v5Redraw(); }]]); } }
+  if (md === 'deco') { const el = ev.target.closest('.bsh .dec[data-dk]'); if (el) { ev.stopImmediatePropagation(); ev.preventDefault(); const i = +el.dataset.dk, C0 = shc(), d = C0.deco[i];
+      return shX(SH_DN[d.k] || 'Enfeite', [['Trocar por outro', () => { SHX_DKS = i; SHX_DKT = 'enf'; v5Redraw(); }], ['Tirar da estante', () => { C0.deco.splice(i, 1); shSave(); v5Redraw(); toast('Enfeite tirado'); }]]); } }
+  const t = ev.target.closest && ev.target.closest('[data-a]'); if (!t) return; const a = t.dataset.a, d = t.dataset, C0 = shc();
+  const own = ['shxview', 'shxsheet', 'shmode', 'shdone', 'shreset', 'dktab', 'dkadd', 'dkwood', 'dkwall', 'dkltc', 'dksp', 'dkreset']; if (!own.includes(a)) return; ev.stopImmediatePropagation(); ev.preventDefault();
+  if (a === 'shxview') return shGo(d.v);
+  if (a === 'shxsheet') return shOpen(d.s);
+  if (a === 'shmode') { SHX_MODE = d.v; if (d.v === 'deco') { shDecoInit(); SHX_DKT = SHX_DKT || 'enf'; SHX_DKS = null; } v5Redraw(); shScrollToShelf(d.v === 'org' ? 84 : 8); return; }
+  if (a === 'shdone') { const was = SHX_MODE; SHX_MODE = null; SHX_DKS = null; shSave(); v5Redraw(); return toast(was === 'org' ? 'Ordem salva' : 'Estante decorada'); }
+  if (a === 'shreset') { C0.ord = null; C0.lay = {}; C0.manual = 0; shSave(); v5Redraw(); return toast('A estante voltou a se arrumar sozinha'); }
+  if (a === 'dktab') { SHX_DKT = d.k; return v5Redraw(); }
+  if (a === 'dkadd') { C0.deco = C0.deco || []; if (SHX_DKS != null && C0.deco[SHX_DKS]) { C0.deco[SHX_DKS].k = d.k; SHX_DKS = null; shSave(); v5Redraw(); return toast(SH_DN[d.k] + ' no lugar'); }
+    const n = Math.max(3, sr.querySelectorAll('.bsh:not(.sm) .bay').length), cnt = Array.from({ length: n }, (_, r) => C0.deco.filter((x) => x.r === r).length);
+    let r = -1, best = 9; cnt.forEach((c, i) => { if (c < best) { best = c; r = i; } }); if (best >= 2) return toast('As prateleiras já têm dois enfeites cada. Tire um antes.');
+    C0.deco.push({ k: d.k, r, p: best ? 0 : 99 }); shSave(); v5Redraw(); const el = shBibRoot()?.querySelector(`.bsh .bay[data-r="${r}"]`); if (el) el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); return toast(SH_DN[d.k] + ' na ' + (r + 1) + 'ª prateleira'); }
+  if (a === 'dkwood') { C0.wood = d.k; shSave(); return v5Redraw(); }
+  if (a === 'dkwall') { C0.wall = d.k; shSave(); return v5Redraw(); }
+  if (a === 'dkltc') { C0.lt = d.k === 'off' ? { ...(C0.lt || { c: 'quente' }), on: 0 } : { on: 1, c: d.k }; shSave(); return v5Redraw(); }
+  if (a === 'dksp') { C0.spMode = d.k; shSave(); return v5Redraw(); }
+  if (a === 'dkreset') { C0.deco = null; C0.wood = 'auto'; C0.wall = 'linho'; C0.lt = { on: 1, c: 'quente' }; C0.spMode = 'capa'; shSave(); v5Redraw(); shDecoInit(); shSave(); v5Redraw(); return toast('Decoração padrão de volta'); } }
+// ----- Organizar mais esperto: prévia no lugar, empilhar, desempilhar, segurar para empilhar -----
+function shPrevClear(D) { const sr = shBibRoot(); if (sr) { sr.querySelectorAll('.bsh .spph,.bsh .pbph,.shholdtip').forEach((e) => e.remove()); sr.querySelectorAll('.bsh .pdrop,.bsh .hold').forEach((e) => e.classList.remove('pdrop', 'hold')); } if (D) { clearTimeout(D.holdT); D.holdT = 0; D.key = null; } }
+function shOrgMove(D, ev, under) {
+  if (under && (under.classList.contains('spph') || under.classList.contains('pbph'))) return; // em cima da própria prévia: mantém
+  const pile = under && under.closest('.bsh:not(.sm) .pile');
+  let t = under && under.closest('.bsh:not(.sm) [data-bid]'); if (t === D.el) t = null;
+  // 1) por cima de uma pilha (ou de um livro deitado): prévia deitada em cima da pilha
+  if (pile) { const books = [...pile.querySelectorAll('[data-bid]')].filter((e) => e !== D.el); const top = books[books.length - 1];
+    if (top) { const key = 'p:' + top.dataset.bid; if (D.key === key) return; shPrevClear(D); D.key = key;
+      if (books.length >= 5) { D.tgt = { kind: 'pile', ref: top.dataset.bid, full: 1 }; pile.classList.add('pdrop'); shTip(ev, 'Pilha cheia: soltar começa outra'); return; }
+      const ph = document.createElement('span'); ph.className = 'pbph'; ph.style.width = Math.round(books[0].getBoundingClientRect().width * 0.92) + 'px'; ph.style.height = Math.max(13, Math.min(24, Math.round((D.lay0 ? D.h0 : D.w0 * 0.8) || 18))) + 'px';
+      pile.insertBefore(ph, books[0]); pile.classList.add('pdrop'); D.tgt = { kind: 'pile', ref: top.dataset.bid }; return; } }
+  // 2) por cima de um livro em pé: perto das bordas insere ao lado; no meio, segurar 0,6 s empilha os dois
+  if (t && !t.closest('.pile')) { const r = t.getBoundingClientRect(), rel = (ev.clientX - r.left) / Math.max(1, r.width), mid = rel > 0.3 && rel < 0.7;
+    if (mid) { const key = 'm:' + t.dataset.bid; if (D.key === key) return; shPrevClear(D); D.key = key; D.tgt = { kind: 'between', ref: t.dataset.bid, after: rel >= 0.5 };
+      t.classList.add('hold'); const pt = { clientX: ev.clientX, clientY: ev.clientY };
+      D.holdT = setTimeout(() => { if (D.key !== key) return; D.tgt = { kind: 'stack', ref: t.dataset.bid }; shTip(pt, 'Soltar para empilhar'); try { navigator.vibrate && navigator.vibrate(12); } catch (e) {} }, 600); return; }
+    const after = rel >= 0.5, key = 'b:' + t.dataset.bid + (after ? '>' : '<'); if (D.key === key) return; shPrevClear(D); D.key = key;
+    shSlot(D, t, after); D.tgt = { kind: 'between', ref: t.dataset.bid, after }; return; }
+  // 3) vão vazio da prateleira: encosta no último livro dela
+  const bay = under && under.closest('.bsh:not(.sm) .bay'); const its = bay ? [...bay.querySelectorAll('.brow > [data-bid], .brow > .pile')].filter((e) => e !== D.el && e.style.display !== 'none') : [];
+  if (its.length) { const last = its[its.length - 1], lb = last.matches('[data-bid]') ? last : [...last.querySelectorAll('[data-bid]')].filter((e) => e !== D.el).pop(); if (!lb) return; const key = 'e:' + lb.dataset.bid; if (D.key === key) return; shPrevClear(D); D.key = key;
+    shSlot(D, last, true); D.tgt = { kind: 'between', ref: lb.dataset.bid, after: true, end: 1 }; return; }
+  if (D.key !== 'none') { shPrevClear(D); D.key = 'none'; D.tgt = null; } }
+function shSlot(D, el, after) { const ph = document.createElement('span'); ph.className = 'spph'; ph.style.width = (D.lay0 ? 18 : D.w0 || 18) + 'px'; ph.style.height = (D.lay0 ? Math.round((D.w0 || 120) * 0.95) : D.h0 || 130) + 'px'; el.parentNode.insertBefore(ph, after ? el.nextSibling : el); }
+function shTip(ev, txt) { const sr = shBibRoot(), R = sr && sr.querySelector('.v5est'); if (!R) return; R.querySelector('.shholdtip')?.remove(); const tp = document.createElement('div'); tp.className = 'shholdtip'; tp.textContent = txt; tp.style.left = ev.clientX + 'px'; tp.style.top = ev.clientY - 30 + 'px'; R.appendChild(tp); }
+function shOrgDrop(d) { const C0 = shc(), id = d.el.dataset.bid, t = d.tgt; C0.lay = C0.lay || {}; if (!t) return;
+  // 1ª arrumação manual: as pilhas que a estante montou sozinha viram pilhas da pessoa (nada pula de lugar)
+  if (!C0.manual) shBibRoot()?.querySelectorAll('.bsh:not(.sm) .pile [data-bid]').forEach((e) => { if (e !== d.el) C0.lay[e.dataset.bid] = 1; });
+  if (t.kind === 'pile') { shMove(id, t.ref, true); C0.lay[id] = 1; C0.manual = 1; shSave(); v5Redraw(); return toast(t.full ? 'Pilha cheia: começou outra pilha' : 'Livro deitado na pilha'); }
+  if (t.kind === 'stack') { shMove(id, t.ref, true); C0.lay[id] = 1; C0.lay[t.ref] = 1; C0.manual = 1; shSave(); v5Redraw(); return toast('Pilha nova com os dois livros'); }
+  const was = !!C0.lay[id]; shMove(id, t.ref, t.after); delete C0.lay[id]; C0.manual = 1; shSave(); v5Redraw(); toast(was ? 'Livro de pé no novo lugar' : 'Livro no novo lugar'); }
+// ----- arrastar (Organizar: livros; Decorar: enfeites) -----
+let SHX_D = null, SHX_DW = 0;
+function shDragArm(sr) {
+  sr.addEventListener('pointerdown', (ev) => { const md = SHX_MODE; if (!md || ev.button > 0) return;
+    const el = md === 'org' ? ev.target.closest('.bsh:not(.sm) [data-bid]') : ev.target.closest('.bsh .dec[data-dk]'); if (!el) return;
+    SHX_D = { el, md, x: ev.clientX, y: ev.clientY, on: false, pid: ev.pointerId, tgt: null, vy: 0 }; }, true);
+  if (SHX_DW) return; SHX_DW = 1; let raf = 0;
+  // ouvintes da janela uma vez só; a raiz é sempre a da Biblioteca aberta agora
+  const SRn = () => shBibRoot(), R = () => { const x = SRn(); return x && x.querySelector('.v5est'); };
+  const ind = () => R().querySelector('.shind') || R().appendChild(Object.assign(document.createElement('div'), { className: 'shind' }));
+  const stop = () => { cancelAnimationFrame(raf); const x = SRn(); if (x) x.querySelectorAll('.shind,.shghostw').forEach((n) => n.remove()); if (SHX_D && SHX_D.el) { SHX_D.el.classList.remove('drg'); SHX_D.el.style.display = ''; } shPrevClear(SHX_D); };
+  const loop = () => { const D = SHX_D; if (!D || !D.on) return; const sc = shScroller(); if (sc && D.vy) sc.scrollTop += D.vy; raf = requestAnimationFrame(loop); };
+  window.addEventListener('pointermove', (ev) => { const D = SHX_D; if (!D || ev.pointerId !== D.pid || !D.el.isConnected || !R()) return; const dx = ev.clientX - D.x, dy = ev.clientY - D.y;
+    if (!D.on) { if (Math.hypot(dx, dy) < 7) return; D.on = true; const Rb = D.el.getBoundingClientRect(); D.R = Rb; const g = D.el.cloneNode(true); g.className += ' shghost'; g.removeAttribute('data-bid'); g.removeAttribute('data-dk');
+      g.style.left = Rb.left + 'px'; g.style.top = Rb.top + 'px'; g.style.width = Rb.width + 'px'; g.style.height = Rb.height + 'px'; const wrap = document.createElement('div'); wrap.className = D.el.closest('.bsh').className.replace(/(org|deco)/g, ''); wrap.style.cssText = 'position:fixed;inset:0;pointer-events:none;background:none;margin:0;padding:0;z-index:9999'; wrap.appendChild(g); wrap.classList.add('shghostw');
+      R().appendChild(wrap); D.g = g; D.el.classList.add('drg'); if (D.md === 'org') { D.lay0 = !!D.el.closest('.pile'); D.w0 = Math.round(Rb.width); D.h0 = Math.round(Rb.height); D.el.style.display = 'none'; } raf = requestAnimationFrame(loop); try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} }
+    ev.preventDefault(); D.g.style.left = D.R.left + dx + 'px'; D.g.style.top = D.R.top + dy + 'px';
+    const sc = shScroller(), SR = sc && sc !== document.scrollingElement && sc !== document.documentElement ? sc.getBoundingClientRect() : { top: 0, bottom: innerHeight }; D.vy = ev.clientY < SR.top + 70 ? -10 : ev.clientY > SR.bottom - 90 ? 10 : 0;
+    const under = SRn().elementFromPoint(ev.clientX, ev.clientY), I = ind();
+    if (D.md === 'org') { I.style.display = 'none'; shOrgMove(D, ev, under); }
+    else { const bay = under && under.closest('.bsh:not(.sm) .bay'); if (bay) { const br = bay.querySelector('.brow'), kids = [...br.children].filter((c) => !c.classList.contains('dec') && !c.classList.contains('ghost')), p = kids.filter((c) => { const r = c.getBoundingClientRect(); return r.left + r.width / 2 < ev.clientX; }).length, R2 = bay.getBoundingClientRect();
+        D.tgt = { r: +bay.dataset.r, p }; I.style.left = Math.max(R2.left + 2, Math.min(R2.right - 4, ev.clientX)) + 'px'; I.style.top = R2.top + 8 + 'px'; I.style.height = R2.height - 10 + 'px'; I.style.display = 'block'; } else { D.tgt = null; I.style.display = 'none'; } } }, { passive: false });
+  const end = (ev) => { const D = SHX_D; if (!D || (ev && ev.pointerId !== D.pid)) return; const d = D; stop(); SHX_D = null; if (!d.on) return; SHX_JD = 1; setTimeout(() => { SHX_JD = 0; }, 350);
+    if (!d.tgt) return; const C0 = shc();
+    if (d.md === 'org') { shOrgDrop(d); }
+    else { const i = +d.el.dataset.dk, others = C0.deco.filter((x, j) => j !== i && x.r === d.tgt.r).length; if (others >= 2) return toast('Essa prateleira já tem dois enfeites');
+      C0.deco[i] = { ...C0.deco[i], r: d.tgt.r, p: d.tgt.p }; shSave(); v5Redraw(); } };
+  window.addEventListener('pointerup', end, true); window.addEventListener('pointercancel', end, true); }
 // --- x0_v2_vocabulario.js ---
 // Vocabulário único (Bia, 20/11; glossário aprovado): os textos dos blocos v2 já foram trocados na fonte.
 // Aqui ficam só as frases que ainda moram no código antigo (fora de v2src/r2) e aparecem em telas que a v2 abre.
