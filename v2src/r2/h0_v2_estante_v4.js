@@ -188,6 +188,7 @@ function v5BmHTML(e) {
   ${v5li('v5shelves', 'estante', 'Estantes', shN.length ? esc(shN.slice(0, 2).join(', ')) + (shN.length > 2 ? ' e mais ' + (shN.length - 2) : '') : 'em nenhuma estante')}
   ${v5li('sheet', 'pag', 'Trocar edição', 'capa, páginas, formato e idioma', ' data-s="v5edicao"')}
   ${v5li('sheet', 'send', 'Compartilhar', soc ? 'indicar a alguém ou postar' : 'indicar a alguém', ' data-s="v5share"')}
+  ${typeof COVM !== 'undefined' && COVM.admin ? v5li('v5covmod', 'pen', 'Trocar capa para todos', 'moderação') : ''}
   ${v5li('sheet', 'trash', 'Remover livro', '', ' data-s="v5rm"', 'dng')}</div>
   <p class="mut" style="margin:10px 0 0;font-size:12px">Meu exemplar fica na página do livro, em Minha leitura.</p>`;
 }
@@ -364,6 +365,7 @@ function v5V4Click(ev) {
   if (a === 'v5retro') return ext(() => openRetro(e));
   if (a === 'v5lend') return ext(() => exSheet(e, 'loan'));
   if (a === 'v5buy') return ext(() => whereToBuy(e));
+  if (a === 'v5covmod') return ext(() => modCoverSheet(e));
   if (a === 'v5shelves') return ext(() => moveToShelf(e));
   if (a === 'v5fila') { withUndo(`“${e.title}” voltou para Quero ler`, () => { setLibStatus(e, 'QUERO'); v5Save(); }); return done(); }
   if (a === 'v5pause') { withUndo(`Pausado na pág. ${libProgress(e)}`, () => { if (e.dueAt) { e.dueOff = e.dueAt; delete e.dueAt; } setLibStatus(e, 'HIBERNANDO'); v5Save(); }); return done(); }

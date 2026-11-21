@@ -9938,6 +9938,8 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
@@ -11515,14 +11517,14 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .pv-ask b{display:block;font-size:.92rem}.pv-ask small{font-size:.8rem;color:var(--ink-2)}
 .pv-msg{font-size:.84rem;color:var(--ink-2);margin:.2rem 0 .6rem}
 `; TR.append(st); }
-// Primeiro acesso em 3 passos (16/11): gêneros → top 5 → histórico de outro app (importa ali mesmo). Depois, "Seus gostos" é uma página só.
+// Primeiro acesso em 3 passos (16/11): gêneros → top 3 → histórico de outro app (importa ali mesmo). Depois, "Seus gostos" é uma página só.
 function openTaste(first, prof) {
   S.gsHist = ''; S.gsSeen = 0; let step = 1;
   const v = $('#shelflist'), t0 = tasteOf() || {}, sel = new Set(t0.genres || []), books = [...(t0.books || [])];
   const keep = () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, ...(sel.size || books.length ? { taste: { genres: [...sel], books, at: new Date().toISOString() } } : {}) }; save(); try { localStorage.removeItem('bear.pv'); } catch {} };
   const chips = () => '<div class="gs-chips">' + TASTE_G.map(([k, n]) => '<button type="button" class="gs-ch' + (sel.has(k) ? ' on' : '') + '" data-k="' + k + '" aria-pressed="' + sel.has(k) + '">' + esc(n) + '</button>').join('') + '</div>';
   const bookList = () => '<div class="gs-bks">' + books.map((b, i) => '<div class="gs-bk">' + cvh(b.title, b.cover) + '<span><b>' + esc(b.title) + '</b><small>' + esc(b.author || '') + '</small></span><button type="button" data-rm="' + i + '" aria-label="Tirar ' + esc(b.title) + '">×</button></div>').join('')
-    + (books.length < 5 ? '<button type="button" class="gs-add" id="gs-add">+ Adicionar livro</button>' : '') + '</div>';
+    + (books.length < 3 ? '<button type="button" class="gs-add" id="gs-add">+ Adicionar livro</button>' : '') + '</div>';
   const bear = (img, title, text) => '<div class="gs-hi gs-noimg"><div class="gs-bub">' + (title ? '<b>' + title + '</b>' : '') + '<span>' + text + '</span></div></div>';
   const slots = () => '<div class="gs-top">' + [0, 1, 2, 3, 4].map((i) => { const b = books[i];
     return b ? '<div class="gs-bk gs-rk"><em>' + (i + 1) + '</em>' + cvh(b.title, b.cover) + '<span><b>' + esc(b.title) + '</b><small>' + esc(b.author || '') + '</small></span><button type="button" data-rm="' + i + '" aria-label="Tirar ' + esc(b.title) + '">×</button></div>'
@@ -11532,15 +11534,15 @@ function openTaste(first, prof) {
     let body, okTxt, skipTxt, okOn = true, top;
     if (!first) {
       top = '<button type="button" class="sl-back">‹ Voltar</button><b>O que você gosta de ler?</b><span></span>';
-      body = '<p class="gs-intro">Conte seus gêneros e livros favoritos e o app indica leituras para você.</p><div class="gs-h">Gêneros</div>' + chips() + '<div class="gs-h">Livros que você amou <small style="font-weight:600;opacity:.7">(até 5)</small></div>' + bookList();
+      body = '<p class="gs-intro">Conte seus gêneros e livros favoritos e o app indica leituras para você.</p><div class="gs-h">Gêneros</div>' + chips() + '<div class="gs-h">Livros que você amou <small style="font-weight:600;opacity:.7">(até 3)</small></div>' + bookList();
       okTxt = 'Salvar'; skipTxt = 'Cancelar'; okOn = !!(sel.size || books.length);
     } else {
       top = '<span></span><b>Primeiros passos</b><span></span>';
       const dots = '<div class="gs-steps" aria-label="Passo ' + step + ' de 3">' + [1, 2, 3].map((i) => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '<small>Passo ' + step + ' de 3</small></div>';
       if (step === 1) body = bear('bear_celebrating', 'Boas-vindas' + (prof ? ', @' + esc(prof.handle) : '') + '!', 'Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.')
         + dots + '<h2 class="gs-t">Quais gêneros você mais gosta?</h2><p class="gs-intro">Marque quantos quiser.</p>' + chips();
-      else if (step === 2) body = bear('bear_reading_chair', '', books.length ? (books.length < 5 ? 'Ótima escolha! Quer colocar mais algum?' : 'Que top 5! Já sei bem o que te indicar.') : 'Agora me conta: quais livros marcaram você? Com eles eu acho leituras parecidas.')
-        + dots + '<h2 class="gs-t">Seus livros do coração</h2><p class="gs-intro">Monte seu top 5. Pode ser só um, ou nenhum.</p>' + slots();
+      else if (step === 2) body = bear('bear_reading_chair', '', books.length ? (books.length < 3 ? 'Ótima escolha! Quer colocar mais algum?' : 'Que top 3! Já sei bem o que te indicar.') : 'Agora me conta: quais livros marcaram você? Com eles eu acho leituras parecidas.')
+        + dots + '<h2 class="gs-t">Seus livros do coração</h2><p class="gs-intro">Monte seu Top 3. Pode ser só um, ou nenhum.</p>' + slots();
       else body = bear('bear_running_books', '', S.gsHist ? 'Pronto, já coloquei seus livros na estante!' : 'Última pergunta, prometo!') + dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Se sim, traga seus livros do Goodreads, Skoob, StoryGraph ou de uma planilha: exporte o arquivo por lá e importe aqui. Assim sua estante já começa cheia.</p>'
         + '<div class="gs-hist">' + (S.gsHist ? '<small class="gs-hok">✓ ' + esc(S.gsHist) + '</small>' : '<small>No Goodreads: My Books › Import and export › Export library. Planilha: colunas título, autor e, se quiser, ano, nota e status.</small>')
         + '<button type="button" class="gs-add" id="gs-hist">' + (S.gsHist ? 'Importar outro arquivo' : 'Importar arquivo (CSV)') + '</button></div>';
@@ -19357,7 +19359,7 @@ function v3Wire(v, d, hd, x) {
   on('pags', () => { if (d.self) v3Go(v, d, 'stats'); });
   on('maior', () => { if (!x.maior) return; const e = d.self && lib().find((y) => normT(y.title) === normT(x.maior.t)); if (e) openBookPage(e); else openAnyBook(x.maior.t); });
   hd.querySelectorAll('[data-lag]').forEach((b) => b.addEventListener('click', () => { const t = x.lendo[+b.dataset.lag]; if (!t) return; const e = t.id && byId(t.id); if (e) openBookPage(e); else openAnyBook(t.title, t.author, t.cover); }));
-  on('msg', () => { try { openChat(d.handle); } catch { toast('Mensagens: abra pelo menu'); } });
+  on('msg', () => { try { openChat(d.handle); } catch { toast('Não consegui abrir a conversa. Tente pelo sino › Mensagens'); } });
   on('junto', () => { if (typeof ljOpen === 'function') return ljOpen(d); const f = ((SOC.fr && SOC.fr.friends) || []).find((y) => y.handle === d.handle); if (f) friendReadTogether(f); });
   on('amz', () => { const f = ((SOC.fr && SOC.fr.friends) || []).find((y) => y.handle === d.handle); if (!f) return; popMenu(hd.querySelector('[data-v3=amz]'), [{ label: 'Desfazer amizade', danger: true, fn: () => friendUnfriend(f, () => { v.hidden = true; }) }]); });
   on('add', async () => { const r = await sapi('POST', '/v1/friends/requests', { handle: d.handle }).catch(() => null); toast(r && r.status < 300 ? 'Pedido de amizade enviado' : 'Não consegui agora'); });
@@ -20341,6 +20343,7 @@ function v5BmHTML(e) {
   ${v5li('v5shelves', 'estante', 'Estantes', shN.length ? esc(shN.slice(0, 2).join(', ')) + (shN.length > 2 ? ' e mais ' + (shN.length - 2) : '') : 'em nenhuma estante')}
   ${v5li('sheet', 'pag', 'Trocar edição', 'capa, páginas, formato e idioma', ' data-s="v5edicao"')}
   ${v5li('sheet', 'send', 'Compartilhar', soc ? 'indicar a alguém ou postar' : 'indicar a alguém', ' data-s="v5share"')}
+  ${typeof COVM !== 'undefined' && COVM.admin ? v5li('v5covmod', 'pen', 'Trocar capa para todos', 'moderação') : ''}
   ${v5li('sheet', 'trash', 'Remover livro', '', ' data-s="v5rm"', 'dng')}</div>
   <p class="mut" style="margin:10px 0 0;font-size:12px">Meu exemplar fica na página do livro, em Minha leitura.</p>`;
 }
@@ -20517,6 +20520,7 @@ function v5V4Click(ev) {
   if (a === 'v5retro') return ext(() => openRetro(e));
   if (a === 'v5lend') return ext(() => exSheet(e, 'loan'));
   if (a === 'v5buy') return ext(() => whereToBuy(e));
+  if (a === 'v5covmod') return ext(() => modCoverSheet(e));
   if (a === 'v5shelves') return ext(() => moveToShelf(e));
   if (a === 'v5fila') { withUndo(`“${e.title}” voltou para Quero ler`, () => { setLibStatus(e, 'QUERO'); v5Save(); }); return done(); }
   if (a === 'v5pause') { withUndo(`Pausado na pág. ${libProgress(e)}`, () => { if (e.dueAt) { e.dueOff = e.dueAt; delete e.dueAt; } setLibStatus(e, 'HIBERNANDO'); v5Save(); }); return done(); }
@@ -21653,7 +21657,7 @@ function openLembretes() {
     fds.forEach((b) => { if (HID().includes(b.dataset.fid)) b.classList.add('v6hid'); if (b.dataset.v6) return; b.dataset.v6 = '1';
       longPress(b, () => { try { popMenu(b, [{ label: 'Ocultar', fn: () => { HID().push(b.dataset.fid); L.fdHidden = HID().slice(-200); saveL(); b.classList.add('v6hid'); toast('Novidade oculta'); } }]); } catch {} }); });
     if (fds.length && !body.querySelector('.v6nofd')) { const all = body.querySelector('#nt-all'), x = document.createElement('button'); x.type = 'button'; x.className = 'v6nofd'; x.textContent = 'Não mostrar novidades aqui';
-      x.addEventListener('click', () => { try { closeEd(); } catch {} setTimeout(() => { try { feedPrefsSheet(); } catch { toast('Ajustes › Novidades no feed'); } }, 60); }); (all || fds[fds.length - 1]).after(x); }
+      x.addEventListener('click', () => { try { closeEd(); } catch {} setTimeout(() => { try { feedPrefsSheet(); } catch { toast('Comunidade › engrenagem › Novidades no feed'); } }, 60); }); (all || fds[fds.length - 1]).after(x); }
   };
   const _on = openNotif; openNotif = function () { const r = _on.apply(this, arguments); const b = ed && ed.querySelector('.ed-body'); if (b) delete b.dataset.v6; setTimeout(enhance, 0); setTimeout(enhance, 120); return r; };
 }
@@ -23421,6 +23425,57 @@ document.addEventListener('click', async (ev) => {
       const tmp = document.createElement('div'); tmp.innerHTML = v9LikeBtn({ id, liked: !!r.data.liked, likes: r.data.likes }); b.replaceWith(tmp.firstElementChild); }
     else toast(r && r.status === 403 ? 'Chegue nesta página para curtir' : 'Não deu para curtir agora'); }
   catch { toast('Não deu para curtir agora'); } finally { delete b.dataset.busy; } }, true);
+// --- w1_v2_paridade.js ---
+// Paridade produção × v2 (Bia, 20/11), decisões sobre o relatório:
+// 1) Conquistas saíram do app: nada de aviso "Conquista nova", "Ver conquistas" nem envio à API (quem já ganhou não perde nada no banco).
+// 2) Sons de interface (toque, página, folha) desligados: o interruptor saiu dos Ajustes. O som ambiente da sessão Ler continua (é escolha da pessoa).
+// 3) Silenciar: uma lista só, guardada na conta (/v1/mutes). O "Silenciar @x" do post grava no aparelho e este bloco espelha na conta;
+//    o que já estava só no aparelho sobe uma vez. A lista fica em Ajustes › Silenciadas; a engrenagem da Comunidade não repete
+//    Silenciadas nem Denúncias (Denúncias fica em Ajustes › Moderação).
+// 4) Excluir conta só em Ajustes (sai de Editar perfil).
+// 5) Ajustes › Importar histórico abre direto o arquivo (Goodreads/StoryGraph); ao terminar, leva para Ajustar leituras para conferir.
+checkAchievements = function () {};
+try { SFX.play = function () {}; } catch {}
+// ---------- silenciar: uma lista só ----------
+const v2MuLoc = () => [...new Set(((db.prefs && db.prefs.rdMuteU) || []).map((x) => String(x).toLowerCase()))];
+let v2MuBusy = false;
+async function v2MuSync(pull) {
+  if (v2MuBusy) return; try { if (!connected() || !socialProfile) return; } catch { return; }
+  const L = v2MuLoc(), Sy = db.prefs && Array.isArray(db.prefs.rdMuteSy) ? db.prefs.rdMuteSy : null;
+  const add = Sy ? L.filter((h) => !Sy.includes(h)) : L, rem = Sy ? Sy.filter((h) => !L.includes(h)) : [];
+  if (!pull && !add.length && !rem.length && Sy) return;
+  v2MuBusy = true; let ok = true;
+  try {
+    for (const h of add) { const r = await sapi('POST', '/v1/mutes/' + encodeURIComponent(h)).catch(() => null); if (!r) ok = false; }
+    for (const h of rem) { const r = await sapi('DELETE', '/v1/mutes/' + encodeURIComponent(h)).catch(() => null); if (!r) ok = false; }
+    if (!ok) return; // sem rede: tenta de novo depois, sem perder nada
+    if (pull || !Sy) { const r = await sapi('GET', '/v1/mutes').catch(() => null);
+      if (r && r.status === 200 && r.data) { const A = (r.data.items || []).map((x) => String(x.handle).toLowerCase()); db.prefs = { ...(db.prefs || {}), rdMuteU: A, rdMuteSy: A }; save(); return; } }
+    db.prefs = { ...(db.prefs || {}), rdMuteSy: v2MuLoc() }; save();
+  } finally { v2MuBusy = false; }
+}
+setTimeout(() => v2MuSync(true), 4000);
+setInterval(() => v2MuSync(false), 20000);
+TR.addEventListener('click', (ev) => { const desf = ev.target.closest && ev.target.closest('.v2mu [data-i]'); setTimeout(() => v2MuSync(!!desf), desf ? 900 : 500); }, true);
+{ const _t = v2MuteToggle; v2MuteToggle = async function (d) { const r = await _t.apply(this, arguments);
+  try { const h = String(d.handle).toLowerCase(), L = v2MuLoc().filter((x) => x !== h), N = d.muted ? [...L, h] : L; db.prefs = { ...(db.prefs || {}), rdMuteU: N, rdMuteSy: N }; save(); } catch {}
+  return r; }; }
+{ const _s = v2MutesSheet; v2MutesSheet = function () { const r = _s.apply(this, arguments); v2MuSync(false); return r; }; }
+// engrenagem da Comunidade: sem Silenciadas e Denúncias (ficam em Ajustes)
+{ const _rf = rdFiltersSheet; rdFiltersSheet = function () { const r = _rf.apply(this, arguments);
+  try { const w = [...document.querySelectorAll('.rdf-sheet'), ...TR.querySelectorAll('.rdf-sheet')].pop(); if (w) { w.querySelector('#rdf-mu')?.remove(); w.querySelector('#rdf-mod')?.remove(); } } catch {}
+  return r; }; }
+// ---------- Ajustes: Excluir conta só em Ajustes; Importar histórico abre o arquivo ----------
+{ const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
+  try {
+    if (S.ajMode === 'perfil') { box.querySelectorAll('#aj-del, #aj-v4del').forEach((b) => { const c = b.closest('.aj-card'); const g = c && c.previousElementSibling; b.remove(); if (c && !c.querySelector('button, .aj-row')) { c.remove(); if (g && g.classList.contains('aj-g')) g.remove(); } }); }
+    const hl = box.querySelector('#aj-hl');
+    if (hl && !hl.dataset.w1) { const nb = hl.cloneNode(true); nb.dataset.w1 = '1'; nb.addEventListener('click', () => { S.impAj = Date.now(); importCSV(); }); hl.replaceWith(nb); }
+  } catch (err) { console.warn('ajustes w1', err); }
+  return r; }; }
+{ const _ai = window.lvAfterImport; window.lvAfterImport = (n) => {
+  if (S.impAj && Date.now() - S.impAj < 10 * 60e3) { S.impAj = 0; if (n) { setTimeout(() => { try { openFixReads(); } catch {} }, 1200); return; } }
+  return _ai && _ai(n); }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 

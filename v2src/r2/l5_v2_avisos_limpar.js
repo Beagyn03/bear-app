@@ -49,7 +49,7 @@
     fds.forEach((b) => { if (HID().includes(b.dataset.fid)) b.classList.add('v6hid'); if (b.dataset.v6) return; b.dataset.v6 = '1';
       longPress(b, () => { try { popMenu(b, [{ label: 'Ocultar', fn: () => { HID().push(b.dataset.fid); L.fdHidden = HID().slice(-200); saveL(); b.classList.add('v6hid'); toast('Novidade oculta'); } }]); } catch {} }); });
     if (fds.length && !body.querySelector('.v6nofd')) { const all = body.querySelector('#nt-all'), x = document.createElement('button'); x.type = 'button'; x.className = 'v6nofd'; x.textContent = 'Não mostrar novidades aqui';
-      x.addEventListener('click', () => { try { closeEd(); } catch {} setTimeout(() => { try { feedPrefsSheet(); } catch { toast('Ajustes › Novidades no feed'); } }, 60); }); (all || fds[fds.length - 1]).after(x); }
+      x.addEventListener('click', () => { try { closeEd(); } catch {} setTimeout(() => { try { feedPrefsSheet(); } catch { toast('Comunidade › engrenagem › Novidades no feed'); } }, 60); }); (all || fds[fds.length - 1]).after(x); }
   };
   const _on = openNotif; openNotif = function () { const r = _on.apply(this, arguments); const b = ed && ed.querySelector('.ed-body'); if (b) delete b.dataset.v6; setTimeout(enhance, 0); setTimeout(enhance, 120); return r; };
 }

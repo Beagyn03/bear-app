@@ -71,14 +71,14 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .pv-ask b{display:block;font-size:.92rem}.pv-ask small{font-size:.8rem;color:var(--ink-2)}
 .pv-msg{font-size:.84rem;color:var(--ink-2);margin:.2rem 0 .6rem}
 `; TR.append(st); }
-// Primeiro acesso em 3 passos (16/11): gêneros → top 5 → histórico de outro app (importa ali mesmo). Depois, "Seus gostos" é uma página só.
+// Primeiro acesso em 3 passos (16/11): gêneros → top 3 → histórico de outro app (importa ali mesmo). Depois, "Seus gostos" é uma página só.
 function openTaste(first, prof) {
   S.gsHist = ''; S.gsSeen = 0; let step = 1;
   const v = $('#shelflist'), t0 = tasteOf() || {}, sel = new Set(t0.genres || []), books = [...(t0.books || [])];
   const keep = () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, ...(sel.size || books.length ? { taste: { genres: [...sel], books, at: new Date().toISOString() } } : {}) }; save(); try { localStorage.removeItem('bear.pv'); } catch {} };
   const chips = () => '<div class="gs-chips">' + TASTE_G.map(([k, n]) => '<button type="button" class="gs-ch' + (sel.has(k) ? ' on' : '') + '" data-k="' + k + '" aria-pressed="' + sel.has(k) + '">' + esc(n) + '</button>').join('') + '</div>';
   const bookList = () => '<div class="gs-bks">' + books.map((b, i) => '<div class="gs-bk">' + cvh(b.title, b.cover) + '<span><b>' + esc(b.title) + '</b><small>' + esc(b.author || '') + '</small></span><button type="button" data-rm="' + i + '" aria-label="Tirar ' + esc(b.title) + '">×</button></div>').join('')
-    + (books.length < 5 ? '<button type="button" class="gs-add" id="gs-add">+ Adicionar livro</button>' : '') + '</div>';
+    + (books.length < 3 ? '<button type="button" class="gs-add" id="gs-add">+ Adicionar livro</button>' : '') + '</div>';
   const bear = (img, title, text) => '<div class="gs-hi gs-noimg"><div class="gs-bub">' + (title ? '<b>' + title + '</b>' : '') + '<span>' + text + '</span></div></div>';
   const slots = () => '<div class="gs-top">' + [0, 1, 2, 3, 4].map((i) => { const b = books[i];
     return b ? '<div class="gs-bk gs-rk"><em>' + (i + 1) + '</em>' + cvh(b.title, b.cover) + '<span><b>' + esc(b.title) + '</b><small>' + esc(b.author || '') + '</small></span><button type="button" data-rm="' + i + '" aria-label="Tirar ' + esc(b.title) + '">×</button></div>'
@@ -88,15 +88,15 @@ function openTaste(first, prof) {
     let body, okTxt, skipTxt, okOn = true, top;
     if (!first) {
       top = '<button type="button" class="sl-back">‹ Voltar</button><b>O que você gosta de ler?</b><span></span>';
-      body = '<p class="gs-intro">Conte seus gêneros e livros favoritos e o app indica leituras para você.</p><div class="gs-h">Gêneros</div>' + chips() + '<div class="gs-h">Livros que você amou <small style="font-weight:600;opacity:.7">(até 5)</small></div>' + bookList();
+      body = '<p class="gs-intro">Conte seus gêneros e livros favoritos e o app indica leituras para você.</p><div class="gs-h">Gêneros</div>' + chips() + '<div class="gs-h">Livros que você amou <small style="font-weight:600;opacity:.7">(até 3)</small></div>' + bookList();
       okTxt = 'Salvar'; skipTxt = 'Cancelar'; okOn = !!(sel.size || books.length);
     } else {
       top = '<span></span><b>Primeiros passos</b><span></span>';
       const dots = '<div class="gs-steps" aria-label="Passo ' + step + ' de 3">' + [1, 2, 3].map((i) => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '<small>Passo ' + step + ' de 3</small></div>';
       if (step === 1) body = bear('bear_celebrating', 'Boas-vindas' + (prof ? ', @' + esc(prof.handle) : '') + '!', 'Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.')
         + dots + '<h2 class="gs-t">Quais gêneros você mais gosta?</h2><p class="gs-intro">Marque quantos quiser.</p>' + chips();
-      else if (step === 2) body = bear('bear_reading_chair', '', books.length ? (books.length < 5 ? 'Ótima escolha! Quer colocar mais algum?' : 'Que top 5! Já sei bem o que te indicar.') : 'Agora me conta: quais livros marcaram você? Com eles eu acho leituras parecidas.')
-        + dots + '<h2 class="gs-t">Seus livros do coração</h2><p class="gs-intro">Monte seu top 5. Pode ser só um, ou nenhum.</p>' + slots();
+      else if (step === 2) body = bear('bear_reading_chair', '', books.length ? (books.length < 3 ? 'Ótima escolha! Quer colocar mais algum?' : 'Que top 3! Já sei bem o que te indicar.') : 'Agora me conta: quais livros marcaram você? Com eles eu acho leituras parecidas.')
+        + dots + '<h2 class="gs-t">Seus livros do coração</h2><p class="gs-intro">Monte seu Top 3. Pode ser só um, ou nenhum.</p>' + slots();
       else body = bear('bear_running_books', '', S.gsHist ? 'Pronto, já coloquei seus livros na estante!' : 'Última pergunta, prometo!') + dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Se sim, traga seus livros do Goodreads, Skoob, StoryGraph ou de uma planilha: exporte o arquivo por lá e importe aqui. Assim sua estante já começa cheia.</p>'
         + '<div class="gs-hist">' + (S.gsHist ? '<small class="gs-hok">✓ ' + esc(S.gsHist) + '</small>' : '<small>No Goodreads: My Books › Import and export › Export library. Planilha: colunas título, autor e, se quiser, ano, nota e status.</small>')
         + '<button type="button" class="gs-add" id="gs-hist">' + (S.gsHist ? 'Importar outro arquivo' : 'Importar arquivo (CSV)') + '</button></div>';
