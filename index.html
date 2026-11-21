@@ -26752,6 +26752,19 @@ function shDragArm(sr) {
     else { const i = +d.el.dataset.dk, others = C0.deco.filter((x, j) => j !== i && x.r === d.tgt.r).length; if (others >= 2) return toast('Essa prateleira já tem dois enfeites');
       C0.deco[i] = { ...C0.deco[i], r: d.tgt.r, p: d.tgt.p }; shSave(); v5Redraw(); } };
   window.addEventListener('pointerup', end, true); window.addEventListener('pointercancel', end, true); }
+// --- wl_v2_estante_sem_barra.js ---
+// Organizar e Decorar sem a barra de abas (teste de estresse, 21/11): o painel do Decorar encostava no botão central "Ler".
+// Enquanto um dos dois modos está aberto na Biblioteca, a barra de abas some e o painel desce até o fim da tela; ao concluir, volta.
+{ const st = document.createElement('style'); st.textContent = '#tabbar.shx-off{display:none!important}'; TR.append(st);
+  let raf = 0;
+  const sync = () => { raf = 0; const tb = TR.querySelector('#tabbar'); if (!tb) return; let m = null; try { m = SHX_MODE; } catch {}
+    const on = (m === 'org' || m === 'deco') && S.tab === 'estante'; if (tb.classList.contains('shx-off') !== on) tb.classList.toggle('shx-off', on);
+    if (!on) return; const rs = [TR]; TR.querySelectorAll('*').forEach((h) => { if (h.shadowRoot) rs.push(h.shadowRoot); });
+    rs.forEach((r) => r.querySelectorAll('[style*="--shx-tab"]').forEach((el) => { if (el.style.getPropertyValue('--shx-tab') !== '0px') el.style.setProperty('--shx-tab', '0px'); })); };
+  const mo = new MutationObserver(() => { if (!raf) raf = requestAnimationFrame(sync); }); mo.observe(TR, { childList: true, subtree: true });
+  // a estante desenha dentro de um shadow root (.v5host): observar também os que aparecerem
+  const seen = new WeakSet(); setInterval(() => { TR.querySelectorAll('*').forEach((h) => { if (h.shadowRoot && !seen.has(h.shadowRoot)) { seen.add(h.shadowRoot); mo.observe(h.shadowRoot, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] }); } }); }, 1500);
+  const _gt = goTab; goTab = function () { const r = _gt.apply(this, arguments); try { if (!raf) raf = requestAnimationFrame(sync); } catch {} return r; }; }
 // --- x0_v2_vocabulario.js ---
 // Vocabulário único (Bia, 20/11; glossário aprovado): os textos dos blocos v2 já foram trocados na fonte.
 // Aqui ficam só as frases que ainda moram no código antigo (fora de v2src/r2) e aparecem em telas que a v2 abre.
@@ -27679,6 +27692,15 @@ searchSheet = function (opts) {
   // caminho antigo (rdMenu: feed da Rede, página do livro): o próprio card abre a mesma folha
   if (typeof rdMenu === 'function') { const _rm = rdMenu; rdMenu = function (it, after, anchor) { if (mineCard(it) && typeof v6Sheet === 'function') return v6Sheet('v6my', { it }); return _rm.apply(this, arguments); }; }
   window.zfApagarFeed = apagar; window.zfAbrir = (it) => { try { v6Sheet('v6my', { it }); } catch (e) { console.warn('zf', e); } }; }
+// --- z2_v2_abertura_garantida.js ---
+// Boas-vindas garantidas na conta nova (teste de estresse, 21/11): no cadastro real, a primeira sincronização com o servidor
+// podia trocar as preferências antes do primeiro acesso abrir, apagando a marca do guia (pp) — e a abertura de 3 telas não aparecia.
+// Guarda a marca fora das preferências durante 2 minutos depois do cadastro e devolve se ela sumir.
+{ let fresh = 0, keep = null;
+  const _ar = afterRegister; afterRegister = function () { fresh = Date.now(); const r = _ar.apply(this, arguments); try { keep = { ...(ppS() || {}) }; } catch {} return r; };
+  const restore = () => { if (!fresh || Date.now() - fresh > 120000 || !keep) return; try { if (!ppS()) { db.prefs = { ...(db.prefs || {}), pp: { ...keep } }; save(); } } catch {} };
+  const _ot = openTaste; openTaste = function (first) { restore(); return _ot.apply(this, arguments); };
+  setInterval(restore, 700); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
