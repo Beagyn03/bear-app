@@ -8,7 +8,7 @@
 // - Menu do livro (em todo o app): por situação, + Emprestar, Estantes, Trocar edição (com formato e duração de audiolivro),
 //   Compartilhar, Remover (fica 30 dias em Ajustes › Removidos recentemente). Parar de ler, Não terminei, Ler de novo.
 // Tocar numa capa abre a página do livro; segurar (ou clique direito) abre o menu.
-const V5CSS = `.v5est{position:static!important;inset:auto!important;z-index:auto!important;padding:0 0 24px}
+const V5CSS = `.v5hd{display:flex;align-items:center;gap:6px}.v5hd .sh-go{flex:1;min-width:0}.v5share{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:14px;background:none;color:var(--ink);cursor:pointer}.v5more .r{transition:transform .15s}.v5est{position:static!important;inset:auto!important;z-index:auto!important;padding:0 0 24px}
 .v5est .bk,.v5est .tq,.v5est .shelf{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .v5est .selbar{position:sticky;bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .v5est .sub{display:flex;align-items:center;gap:8px;margin:6px 0 10px}.v5est .sub h2{font-family:var(--f-disp);font-size:20px;margin:0;flex:1}
@@ -170,27 +170,35 @@ function v5TqTog(k) { const S5 = v5S(); if (!S5.sel) return; S5.sel = S5.sel.inc
 // ---------- folhas (camada V4) ----------
 function v5Sheet(k, ctx) {  const st = v4State(); st.v5 = ctx || {}; if (ctx && ctx.e) st.sheetE = ctx.e.id; st.sheet = k; v5Arm(v4Root()); v4Draw(); }
 function v5SheetClose() { const st = v4State(); st.sheet = null; if (!st.view) v4Close(); else v4Draw(); }
-function v5Menu(e) { if (!e) return; v5Sheet('v5bm', { e }); }
+function v5Menu(e) { if (!e) return; v4State().v5more = false; v5Sheet('v5bm', { e }); }
 const v5li = (a, ic, t, sm, more, cls) => `<button class="li${cls ? ' ' + cls : ''}" data-a="${a}"${more || ''}>${v4ic(ic, 20)}<span class="t">${t}${sm ? `<small>${sm}</small>` : ''}</span>${/^v5go|sheet/.test(a) ? `<span class="r">${v4ic('chev', 16)}</span>` : ''}</button>`;
 const v5hd = (e, h, sub) => `<div class="sh-bk">${v4cv(e)}<div><h3>${h}</h3><span class="mut">${sub}</span></div></div>`;
 function v5BmHTML(e) {
   const st = e.status, pg = libProgress(e), tot = Number(e.totalPages) || 0, due = (() => { try { return v4Due(e); } catch { return null; } })(), soc = v4On('comunidade');
   const shN = v5Shelves().filter((s) => (s.bookIds || []).includes(e.id)).map((s) => s.name);
-  const top = st === 'LENDO' ? [v5li('v5upd', 'pag', 'Atualizar página'), v5li('v5fim', 'ok', 'Terminei', 'nota, datas e o que sentiu'), vFn('junto') ? v5li('v5junto', 'friends', 'Ler junto') : '', vFn('prazos') && v5li('v5prazo', 'cal', e.dueAt ? 'Prazo' : 'Definir prazo', e.dueAt ? (due && !due.done ? `hoje, até a pág. ${due.target}` : 'mudar a data ou tirar') : 'quando quer terminar?'), v5li('sheet', 'stop', 'Parar de ler', 'pausar, desistir ou marquei por engano', ' data-s="v5stop"')]
-    : st === 'QUERO' ? [v5li('v5start', 'ler', 'Começar a ler'), v5li('v5prio', 'sort', 'Prioridade', { 1: 'alta', 2: 'normal', 3: 'baixa' }[e.prio || 2]), v5li('v5fim', 'ok', 'Já li', 'nota e quando leu'), v5FilaLivre(e) ? v5li('v5tirafila', 'x', 'Tirar da fila', 'sai na hora; dá para desfazer') : '']
-    : st === 'LIDO' ? [v5li('v5fim', 'quote', 'Minha avaliação', 'nota, emoções e níveis do enredo'), v5li('v5retro', 'cal', 'Retrospectiva'), v5li('sheet', 'swap', 'Ler de novo', 'a leitura anterior fica no histórico', ' data-s="v5reler"'), v5li('sheet', 'undo', 'Não terminei', 'marquei como lido por engano', ' data-s="v5unlido"')]
-    : st === 'HIBERNANDO' ? [v5li('v5start', 'ler', 'Voltar a ler', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5aband', 'stop', 'Desistir', 'vai para Abandonados'), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')]
-    : [v5li('v5start', 'ler', 'Voltar a ler', pg ? 'volta para o Hoje na pág. ' + pg : ''), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')];
-  return `<button class="sh-bk sh-go" data-a="v5open" aria-label="Abrir página do livro">${v4cv(e)}<div style="flex:1;min-width:0;text-align:left"><h3>${esc(e.title)}</h3><span class="mut">${esc(e.author || '')}${e.author ? ' · ' : ''}${V5ST[st] || ''}${st === 'LENDO' && pg ? ' · pág. ' + pg + (tot ? ' de ' + tot : '') : ''}</span><small class="sh-lk">Ver página do livro</small></div><span class="r">${v4ic('chev', 18)}</span></button>
+  // Menu do livro aprovado (Bia, 20/11; protótipo v161): no topo as ações do status, sempre na mesma ordem; "Mais" abre no lugar,
+  // em ordem fixa (o que não se aplica some, nada troca de lugar); Compartilhar é botão fixo no cabeçalho; Remover livro separado no fim.
+  const top = st === 'LENDO' ? [v5li('v5upd', 'pag', 'Atualizar página'), v5li('v5fim', 'ok', 'Terminei', 'nota, datas e o que sentiu'), vFn('prazos') && v5li('v5prazo', 'cal', e.dueAt ? 'Prazo' : 'Definir prazo', e.dueAt ? (due && !due.done ? `hoje, até a pág. ${due.target}` : 'mudar a data ou tirar') : 'quando quer terminar?'), v5li('sheet', 'stop', 'Parar de ler', 'pausar, desistir ou marquei por engano', ' data-s="v5stop"')]
+    : st === 'QUERO' ? [v5li('v5start', 'ler', 'Começar a ler', 'vira o livro do Hoje'), v5li('v5fim', 'ok', 'Já li', 'leitura antiga: nota e quando leu'), v5li('v5prio', 'sort', 'Prioridade', { 1: 'alta', 2: 'normal', 3: 'baixa' }[e.prio || 2]), v5FilaLivre(e) ? v5li('v5tirafila', 'x', 'Tirar da fila', 'sai na hora; dá para desfazer') : '']
+    : st === 'LIDO' ? [v5li('v5fim', 'quote', 'Minha avaliação', 'nota, emoções e níveis do enredo'), v5li('sheet', 'swap', 'Ler de novo', 'a leitura anterior fica no histórico', ' data-s="v5reler"'), v5li('sheet', 'undo', 'Não terminei', 'marquei como lido por engano', ' data-s="v5unlido"'), v5li('v5retro', 'cal', 'Retrospectiva')]
+    : st === 'HIBERNANDO' ? [v5li('v5start', 'ler', 'Voltar a ler', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler'), v5li('v5aband', 'stop', 'Desistir', 'vai para Abandonados')]
+    : [v5li('v5start', 'ler', 'Voltar a ler', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')];
+  const tem = (e.ex || {}).own === 'tenho';
+  const mais = [
+    v5li('v5shelves', 'estante', 'Estantes', shN.length ? esc(shN.slice(0, 2).join(', ')) + (shN.length > 2 ? ' e mais ' + (shN.length - 2) : '') : 'em nenhuma estante'),
+    (st === 'QUERO' || st === 'LENDO') && vFn('junto') ? v5li('v5junto', 'friends', 'Ler junto', 'convidar ou pedir para entrar') : '',
+    st !== 'LENDO' && tem && v4On('emprest') ? v5li('v5lend', 'swap', 'Emprestar', 'seu exemplar, para uma amizade ou alguém de fora') : '',
+    st === 'QUERO' ? v5li('v5buy', 'cart', 'Onde comprar', 'comparar preços nas lojas') : '',
+    st !== 'ABANDONEI' ? v5li('sheet', 'pag', 'Trocar edição', 'capa, páginas, formato e idioma', ' data-s="v5edicao"') : '',
+    typeof COVM !== 'undefined' && COVM.admin ? v5li('v5covmod', 'pen', 'Trocar capa para todos', 'moderação') : ''].filter(Boolean);
+  const maisN = { v5shelves: 'Estantes', v5junto: 'Ler junto', v5lend: 'Emprestar', v5buy: 'Onde comprar', sheet: 'Trocar edição', v5covmod: 'Trocar capa' };
+  const maisTxt = mais.map((h) => { const m = h.match(/data-a="([^"]+)"/); return m ? maisN[m[1]] : ''; }).filter(Boolean).join(' · ');
+  const open = !!v4State().v5more;
+  return `<div class="v5hd"><button class="sh-bk sh-go" data-a="v5open" aria-label="Abrir página do livro">${v4cv(e)}<div style="flex:1;min-width:0;text-align:left"><h3>${esc(e.title)}</h3><span class="mut">${esc(e.author || '')}${e.author ? ' · ' : ''}${V5ST[st] || ''}${st === 'LENDO' && pg ? ' · pág. ' + pg + (tot ? ' de ' + tot : '') : ''}</span><small class="sh-lk">Ver página do livro</small></div></button><button type="button" class="v5share" data-a="sheet" data-s="v5share" aria-label="Compartilhar" title="${soc ? 'Indicar a alguém ou postar' : 'Indicar a alguém'}">${v4ic('send', 20)}</button></div>
   <div class="list">${top.filter(Boolean).join('')}
-  ${v4On('emprest') ? v5li('v5lend', 'swap', 'Emprestar', 'para uma amizade ou alguém de fora') : ''}
-  ${v5li('v5buy', 'cart', 'Onde comprar', 'comparar preços nas lojas')}
-  ${v5li('v5shelves', 'estante', 'Estantes', shN.length ? esc(shN.slice(0, 2).join(', ')) + (shN.length > 2 ? ' e mais ' + (shN.length - 2) : '') : 'em nenhuma estante')}
-  ${v5li('sheet', 'pag', 'Trocar edição', 'capa, páginas, formato e idioma', ' data-s="v5edicao"')}
-  ${v5li('sheet', 'send', 'Compartilhar', soc ? 'indicar a alguém ou postar' : 'indicar a alguém', ' data-s="v5share"')}
-  ${typeof COVM !== 'undefined' && COVM.admin ? v5li('v5covmod', 'pen', 'Trocar capa para todos', 'moderação') : ''}
-  ${v5li('sheet', 'trash', 'Remover livro', '', ' data-s="v5rm"', 'dng')}</div>
-  <p class="mut" style="margin:10px 0 0;font-size:12px">Meu exemplar fica na página do livro, em Minha leitura.</p>`;
+  ${mais.length ? `<button class="li v5more${open ? ' on' : ''}" data-a="v5more" aria-expanded="${open}">${v4ic('dots', 20)}<span class="t">Mais<small>${maisTxt}</small></span><span class="r" style="transform:rotate(${open ? -90 : 90}deg)">${v4ic('chev', 16)}</span></button>` : ''}
+  ${open ? mais.join('') : ''}
+  ${v5li('sheet', 'trash', 'Remover livro', 'some de tudo; fica 30 dias em Removidos recentemente', ' data-s="v5rm"', 'dng')}</div>`;
 }
 const v4SheetHTML_v5 = v4SheetHTML;
 v4SheetHTML = function (k) {
@@ -360,6 +368,7 @@ function v5V4Click(ev) {
   const ext = (fn) => { v5SheetClose(); setTimeout(() => { try { fn(); } catch (err) { console.warn('menu do livro', err); } }, 30); };
   if (a === 'sheet') { if (d.s === 'v5tqnew' && !st.v5tq) st.v5tq = v5TqInit(); if (d.g) st.v5 = { ...c, grp: d.g }; st.sheet = d.s; return v4Draw(); }
   // menu do livro
+  if (a === 'v5more') { st.v5more = !st.v5more; return v4Draw(); }
   if (a === 'v5open') return ext(() => openBookPage(e));
   if (a === 'v5upd') { st.sheet = 'upd'; st.sheetE = e.id; st.e = st.e || e.id; v4UpdInit(); return v4Draw(); }
   if (a === 'v5fim') return ext(() => v4FimOpen(e));
