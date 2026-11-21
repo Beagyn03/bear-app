@@ -133,7 +133,7 @@ const PP_PAGINA = [
 ];
 const PP_HOJE = [
   { go: () => ppTab('inicio'), sel: () => ppFindAny('#lista:not(.lista-snap) .v3ring'), t: 'Seu progresso', x: 'O anel mostra quanto você já leu. Toque nele para abrir o livro.', adv: 'btn' },
-  { sel: () => { const b = ppFindAny('#lista:not(.lista-snap) .v3qa.p'); return b ? b.parentElement : null; }, t: 'Atalhos do livro', x: 'Atualizar: diga a página se leu fora do app. Ao lado: Terminei, Trecho, Ler junto e Mais.', adv: 'btn' },
+  { sel: () => { const b = ppFindAny('#lista:not(.lista-snap) .v3qa.p'); return b ? b.parentElement : null; }, t: 'Atalhos do livro', x: 'Atualizar: diga em que página você está. Ao lado: Terminei, Trecho, Ler junto e Mais.', adv: 'btn' },
   { sel: '#tabbar [data-tab=ler]', t: 'Ler', x: 'Abre a sessão de leitura: conta o tempo e silencia o resto. No caminho, ecos de quem já passou.', adv: 'btn',
     // tocar no próprio Ler também segue para a sessão guiada (como "Experimentar agora")
     tapGo: () => { ppG.sn = 0; ppG.steps.push(...PP_SESSAO); ppNext(); },
