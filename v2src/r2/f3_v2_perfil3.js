@@ -143,6 +143,8 @@ function v3Build(v, d) {
   // perfil de outra pessoa (protótipo perfilx): Estantes · Top 3 · Desejos · Atividade; o seu: Sobre · Estantes · Desejos · Atividade
   const ro = self && !!S.v3prev; // prévia "como as amizades veem": igual ao perfil de outra pessoa, só leitura
   const tabsOk = (self && !ro ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
+  // (Bia, 21/11) aba Desejos some para quem não recebe a estante (privacidade só amizades) e não é amizade
+  if (!self && !d.isFriend && !(d.shelf && Array.isArray(d.shelf.wish))) { const k = tabsOk.findIndex(([x]) => x === 'des'); if (k >= 0) tabsOk.splice(k, 1); if (S.v3tab === 'des') S.v3tab = 'est'; }
   if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self && !ro ? 'sobre' : 'est';
   body.classList.toggle('v6prev', ro); const pv0 = ro ? ((socialProfile && socialProfile.privacy) || {}) : {}; body.classList.toggle('v6noread', ro && pv0.reading === false);
   v.classList.add('v3pf-on');

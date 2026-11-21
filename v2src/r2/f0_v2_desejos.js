@@ -204,13 +204,14 @@ async function v2WishPaint(v, d, host) {
     const prev = !!d._prev; // prévia "como as amizades veem" do próprio perfil: só leitura, sem consultar reservas
     if (L.length && connected() && !prev) { try { const g = await sapi('GET', gfPath(d.handle)); if (g && g.status === 200 && g.data) claims = new Map((g.data.claims || []).map((c) => [String(c.bookKey).replace(/[^a-z0-9]/g, ''), c])); } catch {} }
     if (S.fpData !== (d._prev || d)) return;
-    p.innerHTML = v2WishLinkHTML(d) + (L.length && !prev ? tip('tipWf', 'ao tocar em “Vou dar”, o livro fica reservado para você até a data que escolher. As outras amizades veem só “Alguém já vai dar”, e ' + esc(who) + ' não vê nada.') : '')
+    p.innerHTML = v2WishLinkHTML(d) + (L.length && !prev && d.isFriend ? tip('tipWf', 'ao tocar em “Vou dar”, o livro fica reservado para você até a data que escolher. As outras amizades veem só “Alguém já vai dar”, e ' + esc(who) + ' não vê nada.') : '')
       + (L.length ? '<div class="v2wgrid">' + L.map((b, i) => { const c = claims.get(exKey(b.title));
-          const st = c && c.mine ? '<button type="button" class="v2wg on" data-g="' + i + '"><i class=v3e data-i=gift></i>Você vai dar</button>' + (c.due ? '<small class="v2wdt">até ' + exD(c.due) + '</small>' : '')
+          const st = !d.isFriend && !prev ? '<button type="button" class="v2wg" data-buy="' + i + '"><i class=v3e data-i=cart></i>Onde comprar</button>' : c && c.mine ? '<button type="button" class="v2wg on" data-g="' + i + '"><i class=v3e data-i=gift></i>Você vai dar</button>' + (c.due ? '<small class="v2wdt">até ' + exD(c.due) + '</small>' : '')
             : c ? '<span class="v2wg taken"><i class=v3e data-i=gift></i>Alguém já vai dar</span>' + (c.watching ? '<button type="button" class="v2wlk" data-w="' + i + '" data-on="1">aviso pedido · cancelar</button>' : '<button type="button" class="v2wlk" data-w="' + i + '">Me avise se liberar</button>')
             : '<button type="button" class="v2wg" data-g="' + i + '"><i class=v3e data-i=gift></i>Vou dar</button>';
           return '<div class="v2wi"><button type="button" class="cvb" data-i="' + i + '">' + cvh(b.title, b.cover, '') + '</button><b>' + esc(b.title) + '</b><small>' + esc(String(b.author || '').split(',')[0]) + '</small>' + st + '</div>'; }).join('') + '</div>'
         : '<p class="v2wempty">' + esc(who) + ' ainda não marcou livros em “Quero ter”.</p>');
+    p.querySelectorAll('[data-buy]').forEach((bt) => bt.addEventListener('click', () => { const b = L[+bt.dataset.buy]; try { whereToBuy({ title: b.title, author: b.author, cover: b.cover }); } catch {} }));
     if (prev) p.querySelectorAll('[data-g],[data-w]').forEach((bt) => { bt.disabled = true; bt.setAttribute('aria-disabled', 'true'); bt.title = 'Prévia: é assim que as amizades veem'; });
     p.querySelectorAll('[data-g]').forEach((bt) => bt.addEventListener('click', () => { if (prev) return; const b = L[+bt.dataset.g], c = claims.get(exKey(b.title)), redo = () => { if (S.fpData === d) v2WishPaint(v, d, p.parentElement); };
       if (c && c.mine) gfManage({ h: d.handle, name: d.displayName || d.handle, title: b.title, author: b.author, cover: b.cover, due: c.due || null }, redo);
