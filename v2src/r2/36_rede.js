@@ -406,6 +406,7 @@ function openRdThread(it) {
 // ---------- postar ----------
 const RD_SPOIL_RE = /\b(morre|morreu|morrem|mata|matou|assassin[oa] (é|era)|no final|o final|final (é|foi)|descobre que|revela que|reviravolta|plot twist|termina com|acaba com|no fim)\b/i;
 function rdPlaceholder(k, b) {
+  if (!b && (k === 'comment' || !k)) return 'O que você quer compartilhar?'; // post sem livro (Bia, 21/11)
   const t = b ? `“${b.title}”` : 'esse livro';
   return k === 'quote' ? 'O que esse trecho fez com você?' : k === 'question' ? (b ? `Pergunte à comunidade sobre ${t}` : 'Alguém leu…? Me indiquem um…') : k === 'rec' ? 'Por que quem gostou de um vai gostar do outro?' : `O que ${t} te fez sentir?`;
 }
@@ -425,6 +426,14 @@ function rdShrink(file) { // foto: no máximo 1280 px, JPEG, até ~300 KB
     if (out.length > 390000) { const c2 = document.createElement('canvas'); c2.width = Math.round(w * .7); c2.height = Math.round(h * .7); c2.getContext('2d').drawImage(c, 0, 0, c2.width, c2.height); out = c2.toDataURL('image/jpeg', .7); }
     res(out); }; im.src = fr.result; }; fr.readAsDataURL(file); });
 }
+// Spoiler do post (Bia, 21/11): um interruptor só; o app decide até onde cobre. Trecho compartilhado é sempre spoiler.
+function rdAutoSp(R) {
+  if (R.kind === 'quote' && R.book) { const pg = Math.round(Number(R.page)) || 0; return { on: true, forced: true, spoiler: pg > 0 ? { kind: 'page', at: pg } : { kind: 'yes' }, line: 'Trechos compartilhados ficam cobertos para quem ainda não chegou nesta parte.' }; }
+  if (!R.sp) return { on: false, line: R.book ? 'Ligue se o post contar algo do enredo.' : 'Ligue se o post contar algo de algum livro.' };
+  const e = R.book ? myBookByKey(normT(R.book.title)) : null;
+  if (e && e.status === 'LENDO') { const pg = Number(libProgress(e)) || 0; if (pg > 0) return { on: true, spoiler: { kind: 'page', at: pg }, line: `Fica coberto para quem ainda não chegou na pág. ${pg}.` }; }
+  return { on: true, spoiler: e && e.status === 'LIDO' ? { kind: 'end' } : { kind: 'yes' }, line: 'Fica coberto para quem não terminou o livro.' };
+}
 function openRdComposer(pre = {}) {
   const v = $('#shelflist');
   const R = Object.assign({ kind: 'comment', book: null, book2: null, text: '', quote: '', page: '', feelings: [], paws: null, image: null, vis: 'public', sp: false, spk: 'page', spat: '' }, pre);
@@ -443,29 +452,25 @@ function openRdComposer(pre = {}) {
     let me = ''; try { me = socialProfile && socialProfile.handle ? '@' + socialProfile.handle : ''; } catch {}
     v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Novo post</b><span></span></div>
       <div class="rdc2">
-        ${R.kind === 'question' ? `<div class="rdc2-l">Sobre qual livro? <small>(opcional)</small></div>` : ''}${bkLine(R.book, 1, R.kind === 'question' ? 'Escolher livro (opcional)' : 'Escolher o livro')}
+        ${bkLine(R.book, 1, R.kind === 'quote' || R.kind === 'rec' || R.paws || R.feelings.length ? 'Escolher o livro' : 'Escolher livro (opcional)')}
         ${R.kind === 'rec' ? `<div class="rdc2-rec"><span>Se você gostou deste, leia:</span>${bkLine(R.book2, 2, 'Escolher o livro indicado')}</div>` : ''}
         ${R.kind === 'quote' ? `<div class="rdc2-q"><textarea id="rdc-q" rows="3" maxlength="600" placeholder="Copie aqui a frase do livro">${esc(R.quote)}</textarea><label>pág. <input type="number" id="rdc-pg" min="1" inputmode="numeric" value="${esc(R.page)}"></label></div>` : ''}
+        ${R.desafio ? `<div class="rdc2-tags rdc-des"><span>Desafio da semana · ${esc(R.desafio)}<button type="button" id="rdc-desx" aria-label="Tirar a marca do desafio">×</button></span></div>` : ''}
         <div class="rdc2-tx"><textarea id="rdc-t" rows="4" maxlength="320" placeholder="${esc(rdPlaceholder(R.kind, R.book))}">${esc(R.text)}</textarea><div class="rdc-cnt" id="rdc-c"></div></div>
         ${fNames.length && !OPEN.fe ? `<div class="rdc2-tags">${fNames.map((n) => `<span>${esc(n)}</span>`).join('')}</div>` : ''}
         ${R.paws && !OPEN.pw ? `<div class="rdc2-tags"><span>★ nota ${R.paws}</span></div>` : ''}
-        ${R.image ? `<div class="rdc2-ph"><img src="${R.image}" alt="Foto escolhida"><button type="button" id="rdc-rmph" aria-label="Tirar a foto">×</button></div>` : ''}
+        ${R.image ? `<div class="rdc2-ph"><img src="${R.image}" alt="Foto escolhida"><button type="button" id="rdc-rmph" aria-label="Tirar a foto">×</button><button type="button" id="rdc-edph" class="rdc-edph">Editar</button></div>` : ''}
         <div class="rdc2-l">Acrescentar</div>
         <div class="rdc2-tools">
           ${tool('quote', '<i class=v3e data-i=quote></i>', 'Trecho', R.kind === 'quote')}${tool('question', '<i class=v3e data-i=ask></i>', 'Pergunta', R.kind === 'question')}${tool('rec', '<i class=v3e data-i=arrow></i>', 'Indicar outro livro', R.kind === 'rec')}
-          ${tool('fe', '<i class=v3e data-i=heart></i>', R.feelings.length ? 'Sentimentos · ' + R.feelings.length : 'Sentimentos', OPEN.fe || R.feelings.length > 0, R.kind === 'question')}${tool('pw', '<i class=v3e data-i=star></i>', 'Nota', OPEN.pw || !!R.paws, R.kind !== 'comment')}
-          ${tool('ph', '<i class=v3e data-i=scan></i>', 'Foto', !!R.image)}${tool('sp', '<i class=v3e data-i=alert></i>', 'Spoiler', R.sp)}
+          ${tool('fe', '<i class=v3e data-i=heart></i>', R.feelings.length ? 'Sentimentos · ' + R.feelings.length : 'Sentimentos', OPEN.fe || R.feelings.length > 0, R.kind === 'question' || !R.book)}${tool('pw', '<i class=v3e data-i=star></i>', 'Nota', OPEN.pw || !!R.paws, R.kind !== 'comment' || !R.book)}
+          ${tool('ph', '<i class=v3e data-i=scan></i>', 'Foto', !!R.image)}
         </div>
         <p class="rdc2-hint">${HINT[R.kind]}</p>
         ${OPEN.fe && R.kind !== 'question' ? `<div class="rdc2-box"><div class="rdc2-l">O que você sentiu? <small>(até 3)</small></div><div class="rdc-chips" id="rdc-fe">${QT_PICK.map((y) => qtFeel(y[0], 'rdf', R.feelings.includes(y[0]))).join('')}</div></div>` : ''}
         ${OPEN.pw && R.kind === 'comment' ? `<div class="rdc2-box"><div class="rdc2-l">Sua nota <small>(toque de novo para tirar)</small></div><div class="rdc2-st">${stars}</div></div>` : ''}
         <input type="file" id="rdc-file" accept="image/*" hidden>
-        ${R.sp ? `<div class="rdc2-box rdc-sp"><input type="checkbox" id="rdc-sp" checked hidden><div class="rdc2-l">Até onde vai o spoiler?</div>
-            <label><input type="radio" name="spk" value="page"${R.spk === 'page' ? ' checked' : ''}> Até a página <input type="number" id="rdc-spat" min="1" inputmode="numeric" value="${R.spk === 'page' ? esc(R.spat) : ''}"${R.spk === 'page' ? '' : ' disabled'}></label>
-            <label><input type="radio" name="spk" value="pct"${R.spk === 'pct' ? ' checked' : ''}> Até <input type="number" id="rdc-spat2" min="1" max="100" inputmode="numeric" value="${R.spk === 'pct' ? esc(R.spat) : ''}"${R.spk === 'pct' ? '' : ' disabled'}>% do livro</label>
-            <label><input type="radio" name="spk" value="end"${R.spk === 'end' ? ' checked' : ''}> Conta o final</label>
-            <label><input type="radio" name="spk" value="yes"${R.spk === 'yes' ? ' checked' : ''}> Tem spoiler, não sei dizer até onde</label>
-            <small>Quem ainda não chegou nesse ponto vê o post embaçado. Quem já leu vê normal.</small></div>` : '<input type="checkbox" id="rdc-sp" hidden>'}
+        ${(() => { const A = rdAutoSp(R); return `<div class="rdc2-box rdc-sp"><label class="rdc-spt"><span><b>Tem spoiler</b><small id="rdc-spl">${esc(A.line)}</small></span><input type="checkbox" id="rdc-sp" role="switch"${A.on ? ' checked' : ''}${A.forced ? ' disabled' : ''}></label></div>`; })()}
         <div class="rdc2-foot"><button type="button" class="rdc2-vis" id="rdc-vis" aria-label="Quem vê: ${R.vis === 'friends' ? 'Só amizades' : 'Toda a comunidade'}">${R.vis === 'friends' ? '<i class=v3e data-i=friends></i>Amizades' : '<i class=v3e data-i=globe></i>Comunidade'} <i>▾</i></button><button type="button" class="rdc-go" id="rdc-go">Publicar</button></div>
         ${me ? `<p class="rdc2-me">Publicando como ${esc(me)}</p>` : ''}
       </div>`;
@@ -483,9 +488,11 @@ function openRdComposer(pre = {}) {
     $$('#rdc-fe [data-fe]', v).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.fe; if (R.feelings.includes(k)) R.feelings = R.feelings.filter((x) => x !== k); else if (R.feelings.length < 3) R.feelings.push(k); else return toast('Até 3 sentimentos'); draw(); }));
     $$('[data-pw]', v).forEach((b) => b.addEventListener('click', () => { const n = +b.dataset.pw; R.paws = R.paws === n ? null : n; draw(); }));
     $('#rdc-vis', v).addEventListener('click', (ev) => popMenu(ev.currentTarget, [{ label: '<i class=v3e data-i=globe></i>Toda a comunidade', fn: () => { R.vis = 'public'; draw(); } }, { label: '<i class=v3e data-i=friends></i>Só amizades', fn: () => { R.vis = 'friends'; draw(); } }]));
-    $$('input[name=spk]', v).forEach((b) => b.addEventListener('change', () => { R.spk = b.value; R.spat = ''; draw(); }));
-    $('#rdc-spat2', v)?.addEventListener('input', (ev) => { R.spat = ev.target.value; });
+    $('#rdc-sp', v)?.addEventListener('change', (ev) => { R.sp = ev.target.checked; draw(); });
+    $('#rdc-pg', v)?.addEventListener('change', () => { if (R.kind === 'quote') draw(); });
     $('#rdc-rmph', v)?.addEventListener('click', () => { R.image = null; draw(); });
+    $('#rdc-edph', v)?.addEventListener('click', () => { const i = $('#rdc-file', v); if (!(window.lvReeditPhoto && i && window.lvReeditPhoto(i, 'post'))) i && i.click(); });
+    $('#rdc-desx', v)?.addEventListener('click', () => { R.desafio = null; draw(); });
     $('#rdc-file', v).addEventListener('change', async (ev) => { const f = ev.target.files && ev.target.files[0]; if (!f) return; try { R.image = await rdShrink(f); draw(); } catch { toast('Não consegui usar essa foto'); } });
     go.addEventListener('click', () => publish(false));
     paintCv(v);
@@ -493,15 +500,19 @@ function openRdComposer(pre = {}) {
   const publish = async (skipCheck) => {
     if (busy) return; const t = $('#rdc-t', v); R.text = t.value.trim(); const q = $('#rdc-q', v); if (q) R.quote = q.value.trim(); const pg = $('#rdc-pg', v); if (pg) R.page = pg.value;
     const sa = $('#rdc-spat', v); if (sa && !sa.disabled) R.spat = sa.value;
-    if (R.kind !== 'question' && !R.book) return toast('Escolha o livro');
+    // livro é opcional para texto, foto e enquete; obrigatório para trecho, indicação, nota e sentimentos (Bia, 21/11)
+    if (!R.book && (R.kind === 'quote' || R.kind === 'rec' || R.paws || R.feelings.length)) return toast('Escolha o livro');
     if (R.kind === 'rec' && !R.book2) return toast('Escolha o livro indicado');
     if (R.kind === 'quote' && !R.quote) return toast('Escreva o trecho');
-    if (!R.text && !R.quote && !R.image && !R.book2) return toast('Escreva alguma coisa');
+    if (!R.text && !R.quote && !R.image && !R.book2 && !R.poll) return toast('Escreva alguma coisa');
     if (R.text.length > 280) return toast('Use até 280 letras');
-    if (!skipCheck && !R.sp && RD_SPOIL_RE.test(`${R.text} ${R.quote}`)) return sheet('Isso conta algo da história?', [['Sim, marcar como spoiler', () => { R.sp = true; R.spk = 'yes'; draw(); toast('Ajuste até onde vai o spoiler e publique'); }], ['Não, publicar assim', () => publish(true)]]);
-    let spoiler = null;
-    if (R.sp) { const n = Math.round(Number(R.spat)); spoiler = (R.spk === 'page' || R.spk === 'pct') && n > 0 ? { kind: R.spk, at: R.spk === 'pct' ? Math.min(100, n) : n } : { kind: R.spk === 'end' ? 'end' : 'yes' }; }
-    const body = { kind: R.kind, text: R.text, visibility: R.vis, feelings: R.feelings, ...(R.book ? { book: R.book } : {}), ...(R.kind === 'rec' ? { book2: R.book2 } : {}),
+    const AS = rdAutoSp(R);
+    // spoiler = um interruptor (Bia, 21/11): desligado e com livro, confirma antes de publicar
+    if (!skipCheck && !AS.on && R.book) return sheet('Seu post não conta nada do enredo?', [['Não tem spoiler, publicar', () => publish(true)], ['Marcar como spoiler', () => { R.sp = true; publish(true); }]]);
+    const AS2 = rdAutoSp(R); const spoiler = AS2.on ? AS2.spoiler : null;
+    const desPre = R.desafio ? `Desafio da semana: ${R.desafio}\n` : '';
+    if ((desPre + R.text).length > 280) return toast(`Use até ${280 - desPre.length} letras`);
+    const body = { kind: R.kind, text: desPre + R.text, visibility: R.vis, feelings: R.feelings, ...(R.book ? { book: R.book } : {}), ...(R.kind === 'rec' ? { book2: R.book2 } : {}),
       ...(R.kind === 'quote' ? { quote: R.quote.slice(0, 600), ...(Number(R.page) > 0 ? { page: Math.round(Number(R.page)) } : {}) } : {}), ...(R.paws ? { paws: R.paws } : {}), ...(spoiler ? { spoiler } : {}), ...(R.image ? { image: R.image } : {}), ...(R.book && readerPctOf(R.book.title) != null ? { readerPct: readerPctOf(R.book.title) } : {}) };
     busy = true; const go = $('#rdc-go', v); if (go) { go.disabled = true; go.textContent = 'Publicando…'; }
     try {
@@ -575,7 +586,7 @@ function segPaint() {
 .rdc2-t span{font-size:.95rem;line-height:1}.rdc2-t.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--panel));color:var(--acc)}.rdc2-t:disabled{opacity:.35;cursor:default}
 .rdc2-hint{margin:-.2rem 0 0;font-size:.78rem;color:var(--ink-2)}
 .rdc2-box{display:grid;gap:.45rem;padding:.7rem;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
-.rdc2-box.rdc-sp label{display:flex;align-items:center;gap:.4rem;font-size:.86rem}.rdc2-box.rdc-sp input[type=number]{width:80px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;padding:.2rem .4rem}.rdc2-box.rdc-sp small{font-size:.74rem;color:var(--ink-2)}
+.rdc2-ph .rdc-edph{position:absolute;left:6px;bottom:6px;top:auto;right:auto;width:auto;height:auto;min-height:36px;padding:0 12px;border:0;border-radius:99px;background:rgba(0,0,0,.6);color:#fff;font:inherit;font-weight:800;cursor:pointer}.rdc-des span{display:inline-flex;align-items:center;gap:.4rem}.rdc-des button{border:0;background:none;color:inherit;font-size:1.1rem;min-width:32px;min-height:32px;cursor:pointer}.rdc-spt{display:flex!important;align-items:center;justify-content:space-between;gap:.8rem;cursor:pointer}.rdc-spt span{display:grid;gap:.15rem}.rdc-spt small{color:var(--ink-2);font-size:.8rem;line-height:1.3}.rdc-spt input{flex:none;width:44px;height:26px;accent-color:var(--acc);cursor:pointer}.rdc2-box.rdc-sp label{display:flex;align-items:center;gap:.4rem;font-size:.86rem}.rdc2-box.rdc-sp input[type=number]{width:80px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;padding:.2rem .4rem}.rdc2-box.rdc-sp small{font-size:.74rem;color:var(--ink-2)}
 .rdc2-st{display:flex;gap:.2rem}.rdc2-st button{border:0;background:none;font-size:2rem;line-height:1;color:color-mix(in srgb,var(--ink) 18%,transparent);cursor:pointer;padding:0 .1rem}.rdc2-st button.on{color:#f5b82e}
 .rdc2-foot{display:flex;gap:.5rem;align-items:center;position:sticky;bottom:0;padding:.5rem 0;background:var(--bg)}
 .rdc2-vis{flex:1;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:.65rem .8rem;font:inherit;font-weight:800;font-size:.86rem;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rdc2-vis i{font-style:normal;margin-left:.3rem;color:var(--ink-2)}
