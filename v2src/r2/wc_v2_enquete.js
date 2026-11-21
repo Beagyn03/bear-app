@@ -36,6 +36,8 @@ const LVP_CSS = `
 { const st = document.createElement('style'); st.textContent = LVP_CSS; TR.append(st); }
 
 const PL_CACHE = {}; // pollId -> poll (o que veio da API por último)
+const PL_FRESH = {}; // pollId -> resposta do voto (vale sobre listas antigas na memória ao redesenhar)
+const plCur = (p) => (p && PL_FRESH[p.id]) || p;
 let plPending = null;  // enquete a anexar no próximo POST (post ou conversa)
 const plDurs = [['1d', '1 dia', 864e5], ['3d', '3 dias', 3 * 864e5], ['7d', '1 semana', 7 * 864e5], ['0', 'Sem prazo', 0]];
 const plCloses = (k) => { const d = plDurs.find((x) => x[0] === k); return d && d[2] ? new Date(Date.now() + d[2]).toISOString() : null; };
@@ -60,7 +62,7 @@ function plHTML(p) {
     <div class="lvpl-f"><span>${foot.join(' · ')}</span>${open && p.myVote ? `<button type="button" data-plun="${esc(p.id)}">Tirar meu voto</button>` : ''}${open && p.mine ? `<button type="button" data-plend="${esc(p.id)}">Encerrar agora</button>` : ''}</div></div>`;
 }
 const plRoots = () => { const r = [TR]; TR.querySelectorAll('.v6host').forEach((h) => { if (h.shadowRoot) r.push(h.shadowRoot); }); return r; };
-const plRefresh = (p) => { PL_CACHE[p.id] = p; plRoots().forEach((root) => root.querySelectorAll(`.lvpl[data-poll="${CSS.escape(p.id)}"]`).forEach((n) => { const t = document.createElement('div'); t.innerHTML = plHTML(p); n.replaceWith(t.firstElementChild); try { paintCv(root); } catch {} }));
+const plRefresh = (p) => { PL_CACHE[p.id] = p; PL_FRESH[p.id] = p; plRoots().forEach((root) => root.querySelectorAll(`.lvpl[data-poll="${CSS.escape(p.id)}"]`).forEach((n) => { const t = document.createElement('div'); t.innerHTML = plHTML(p); n.replaceWith(t.firstElementChild); try { paintCv(root); } catch {} }));
   try { (S.rd && S.rd.items || []).forEach((it) => { if (it.poll && it.poll.id === p.id) it.poll = p; }); } catch {} };
 TR.addEventListener('click', async (ev) => {
   const b = ev.composedPath().find((n) => n instanceof Element && n.matches('[data-pv],[data-plun],[data-plend],[data-pladd]')); if (!b) return;
@@ -80,7 +82,7 @@ TR.addEventListener('click', async (ev) => {
   if (!it || !it.poll) return h;
   h = h.replace(/(<span class="rd-tag[^"]*">)Pergunta(<\/span>)/, '$1Enquete$2');
   const covered = it.spoiler && !it.mine && !(S.rdOpen && S.rdOpen.has(it.type + it.id));
-  const block = covered ? '<p class="lvpl-f">Enquete coberta pelo spoiler. Abra o post para votar.</p>' : plHTML(it.poll);
+  const block = covered ? '<p class="lvpl-f">Enquete coberta pelo spoiler. Abra o post para votar.</p>' : plHTML(plCur(it.poll));
   const i = h.lastIndexOf('<footer'); return i > 0 ? h.slice(0, i) + block + h.slice(i) : h.replace(/<\/article>\s*$/, block + '</article>');
 }; }
 
@@ -144,7 +146,7 @@ const PL_BY_MSG = {};
 const plBuddy = () => {
   const v = TR.querySelector('#shelflist:not([hidden])'); if (!v || !v.querySelector('.bj-compose')) return;
   v.querySelectorAll('[data-c]').forEach((m) => { const pid = PL_BY_MSG[m.dataset.c]; if (!pid || m.querySelector(':scope > .lvpl')) return;
-    const p = PL_CACHE[pid]; if (!p) return; const t = document.createElement('div'); t.innerHTML = plHTML(p); const anchor = m.querySelector(':scope > p') || m.querySelector('header'); if (anchor) anchor.after(t.firstElementChild); try { paintCv(m); } catch {} });
+    const p = plCur(PL_CACHE[pid]); if (!p) return; const t = document.createElement('div'); t.innerHTML = plHTML(p); const anchor = m.querySelector(':scope > p') || m.querySelector('header'); if (anchor) anchor.after(t.firstElementChild); try { paintCv(m); } catch {} });
   const cp = v.querySelector('.bj-compose'); if (cp && !cp.querySelector('.bj-poll') && cp.querySelector('.bj-send')) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'bj-poll'; b.innerHTML = '<i class=v3e data-i=ask></i>Votar o próximo livro'; cp.prepend(b);
     b.addEventListener('click', () => plBuddyEditor(v));
@@ -176,7 +178,7 @@ if (typeof v6PostHTML === 'function') { const _v = v6PostHTML; v6PostHTML = func
   let h = _v.apply(this, arguments); if (!it || !it.poll) return h;
   h = h.replace('Perguntou', 'Fez uma enquete');
   const covered = h.includes('class="spz"');
-  const block = covered ? '<p class="lvpl-f">Enquete coberta pelo spoiler. Abra o post para votar.</p>' : plHTML(it.poll);
+  const block = covered ? '<p class="lvpl-f">Enquete coberta pelo spoiler. Abra o post para votar.</p>' : plHTML(plCur(it.poll));
   const i = h.lastIndexOf('<div class="acts">'); return i > 0 ? h.slice(0, i) + block + h.slice(i) : h;
 }; }
 if (typeof v6Paint === 'function') { const _p = v6Paint; v6Paint = function () { const r = _p.apply(this, arguments);
