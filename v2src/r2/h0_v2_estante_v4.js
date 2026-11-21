@@ -32,7 +32,7 @@ const v5S = () => (S.v5 = S.v5 || { tab: 'livros', tqG: 'livro', tqF: '', sel: n
 const v5P = () => (db.prefs = db.prefs || {});
 const v5Save = () => { try { save(); } catch {} };
 const v5Redraw = () => { try { if (S.tab === 'estante') drawEstante($('#lista')); } catch (err) { console.warn('estante v4', err); } };
-const v5Paws = (e) => Number((reviewOfLib(e) || {}).paws) || 0;
+const v5Paws = (e) => (e && e.status === 'LIDO' ? Number((reviewOfLib(e) || {}).paws) || 0 : 0); // nota só em livro lido (Bia, 21/11: Battle Royale em Quero ler aparecia com ★★★★)
 const v5Stars = (n) => { const r = Math.round(n); return `<span class="stars" aria-label="nota ${String(n).replace('.', ',')}">${'★'.repeat(r)}<i>${'★'.repeat(5 - r)}</i></span>`; };
 const V5ST = { LENDO: 'lendo', QUERO: 'quero ler', LIDO: 'lido', HIBERNANDO: 'pausado', ABANDONEI: 'abandonado' };
 const v5Pct = (e) => { const t = Number(e.totalPages) || 0; return t ? Math.min(100, Math.round(libProgress(e) / t * 100)) : 0; };

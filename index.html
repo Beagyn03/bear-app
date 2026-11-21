@@ -19386,7 +19386,7 @@ function v3Top3(x, self) {
 }
 function v3Ativ(d, host) {
   const f = S.v3atf || 'tudo', self = !!d.self; let L = [];
-  if (self) { lib().forEach((e) => { const r = reviewOfLib(e); if (r && (r.paws || String(r.texto || '').trim()) && r.share !== false) L.push({ k: 'aval', t: e.title, c: e.cover, pill: v3Pill(e.status, r.paws, (() => { try { return readingInfo(e).now || 0; } catch { return 0; } })(), null), tx: String(r.texto || '').trim(), at: e.finishedAt || e.statusAt || '' }); });
+  if (self) { lib().forEach((e) => { const r = e.status === 'LIDO' ? reviewOfLib(e) : null; if (r && (r.paws || String(r.texto || '').trim()) && r.share !== false) L.push({ k: 'aval', t: e.title, c: e.cover, pill: v3Pill(e.status, r.paws, (() => { try { return readingInfo(e).now || 0; } catch { return 0; } })(), null), tx: String(r.texto || '').trim(), at: e.finishedAt || e.statusAt || '' }); });
     lib().filter((e) => e.status === 'LENDO').forEach((e) => L.push({ k: 'prog', t: e.title, c: e.cover, pill: 'Lendo · ' + Math.round(readingInfo(e).pct || 0) + '%', tx: '', at: (e.readLog && e.readLog.length ? e.readLog[e.readLog.length - 1].date : e.startedAt) || '' })); }
   else { (d.reviews || []).forEach((r) => L.push({ k: 'aval', t: (r.book && r.book.title) || r.title || '', c: (r.book && r.book.cover) || r.cover || null, pill: v3Pill(r.bookStatus || r.status, r.paws, r.page || 0, r.readerPct != null ? r.readerPct : null), tx: r.spoiler ? 'Tem spoiler: abra o livro para ver.' : String(r.text || r.body || '').trim(), at: String(r.updatedAt || r.createdAt || '').slice(0, 10) }));
     (d.reading || []).forEach((b) => L.push({ k: 'prog', t: b.title, c: b.cover, pill: 'Lendo · ' + Math.round(Number(b.pct) || 0) + '%', tx: '', at: '' })); }
@@ -20314,7 +20314,7 @@ const v5S = () => (S.v5 = S.v5 || { tab: 'livros', tqG: 'livro', tqF: '', sel: n
 const v5P = () => (db.prefs = db.prefs || {});
 const v5Save = () => { try { save(); } catch {} };
 const v5Redraw = () => { try { if (S.tab === 'estante') drawEstante($('#lista')); } catch (err) { console.warn('estante v4', err); } };
-const v5Paws = (e) => Number((reviewOfLib(e) || {}).paws) || 0;
+const v5Paws = (e) => (e && e.status === 'LIDO' ? Number((reviewOfLib(e) || {}).paws) || 0 : 0); // nota só em livro lido (Bia, 21/11: Battle Royale em Quero ler aparecia com ★★★★)
 const v5Stars = (n) => { const r = Math.round(n); return `<span class="stars" aria-label="nota ${String(n).replace('.', ',')}">${'★'.repeat(r)}<i>${'★'.repeat(5 - r)}</i></span>`; };
 const V5ST = { LENDO: 'lendo', QUERO: 'quero ler', LIDO: 'lido', HIBERNANDO: 'pausado', ABANDONEI: 'abandonado' };
 const v5Pct = (e) => { const t = Number(e.totalPages) || 0; return t ? Math.min(100, Math.round(libProgress(e) / t * 100)) : 0; };
@@ -21455,7 +21455,7 @@ v2FuncoesSheet = function () {
   const _ps = profShelvesSnap; profShelvesSnap = function (snapshot) { const r = _ps.apply(this, arguments);
     try { const L = lib(); (snapshot.shelf.extra || []).forEach((x) => { const all = profShelfBooks(x.key); x.n = all.length;
       x.books = (x.books || []).map((b) => { const e = all.find((y) => normT(y.title) === normT(b.title)) || L.find((y) => normT(y.title) === normT(b.title)); if (!e) return b;
-        const rv = reviewOfLib(e) || {}, pct = e.status === 'LENDO' ? (() => { try { return Math.round(readingInfo(e).pct) || 0; } catch { return 0; } })() : null;
+        const rv = (e.status === 'LIDO' && reviewOfLib(e)) || {}, pct = e.status === 'LENDO' ? (() => { try { return Math.round(readingInfo(e).pct) || 0; } catch { return 0; } })() : null;
         return { ...b, st: ST[e.status] || null, ...(rv.paws ? { nota: rv.paws } : {}), ...(pct != null ? { pct } : {}) }; }); }); } catch (err) { console.warn('estantes no resumo', err); }
     return r; }; }
 { const st = document.createElement('style'); st.textContent = `
@@ -21967,7 +21967,7 @@ try { Object.assign(V3EMO, { sort: '<path d="M4 7h10M4 12h7M4 17h4M18 5v14M15 16
       const sig = JSON.stringify(L.map((s) => [s.id, s.name, s.priv, (s.bookIds || []).slice(0, 7), (s.bookIds || []).length]));
       if (pE.dataset.mysig === sig && pE.querySelector(':scope > .v4mysh-bar')) return r;
       pE.dataset.mysig = sig;
-      const st = (e) => { const ST = { LIDO: 'lido', LENDO: 'lendo', QUERO: 'quero', HIBERNANDO: 'pausado' }; let pct = 0, nota = 0; try { pct = readingInfo(e).pct || 0; } catch {} try { nota = Number((reviewOfLib(e) || {}).paws) || 0; } catch {} return { st: ST[e.status] || '', pct, nota }; };
+      const st = (e) => { const ST = { LIDO: 'lido', LENDO: 'lendo', QUERO: 'quero', HIBERNANDO: 'pausado' }; let pct = 0, nota = 0; try { pct = readingInfo(e).pct || 0; } catch {} try { nota = e.status === 'LIDO' ? Number((reviewOfLib(e) || {}).paws) || 0 : 0; } catch {} return { st: ST[e.status] || '', pct, nota }; };
       const card = (s) => { const B = v5ShBooks(s), X = B.map(st), cnt = (() => { try { return v4ShCount(X); } catch { return ''; } })();
         return '<button type="button" class="pshelf" data-sh="' + esc(String(s.id)) + '"><div class="hd"><b>' + esc(s.name) + '</b><small>' + plural(B.length, 'livro', 'livros') + ' · ' + (s.priv ? '<i class=v3e data-i=lock></i> só você' : 'pública') + '</small></div><div class="covers">'
           + B.slice(0, 7).map((e, i) => '<span class="scv">' + cvh(e.title, e.cover, '') + (() => { try { return v4ShBadge(X[i]); } catch { return ''; } })() + '</span>').join('') + '</div>' + (cnt ? '<small class="scount">' + cnt + '</small>' : '') + '</button>'; };
@@ -22770,7 +22770,7 @@ function v9Data(d, M) {
   const D = { n: first, h: d.handle, am: !!d.isFriend, priv: !d.shelf, lidos: [mine.length, theirK.size], venn: [a, b, c] };
   D.vc = both.slice(0, 3).map((k) => { const e = mineK.get(k), t = theirK.get(k); return { title: e.title, cover: (t && t.cover) || e.cover || null }; });
   // notas: livros que as duas leram e avaliaram
-  D.rg = both.map((k) => { const e = mineK.get(k), m = Number((reviewOfLib(e) || {}).paws) || 0, t = Number(theirK.get(k).p) || 0; return m && t ? { title: e.title, cover: theirK.get(k).cover || e.cover, m, e: t } : null; }).filter(Boolean);
+  D.rg = both.map((k) => { const e = mineK.get(k), m = e && e.status === 'LIDO' ? Number((reviewOfLib(e) || {}).paws) || 0 : 0, t = Number(theirK.get(k).p) || 0; return m && t ? { title: e.title, cover: theirK.get(k).cover || e.cover, m, e: t } : null; }).filter(Boolean);
   D.agree = D.rg.filter((x) => Math.abs(x.m - x.e) <= 0.5).length;
   // gêneros (radar com os 5 eixos mais fortes das duas)
   let myD = null; try { myD = v2DnaOf(mine); } catch {}
@@ -23186,7 +23186,7 @@ saveQuote = function (e) {
       if (!host.isConnected) return;
       let L = local(); if (c && c.api) L = L.concat(c.api.map(fromApi));
       else { // sem resposta da API: as avaliações da estante (como antes), para a aba não ficar vazia
-        try { lib().forEach((e) => { const r = reviewOfLib(e); if (r && (r.paws || String(r.texto || '').trim()) && r.share !== false) L.push({ f: 'aval', c: 'av2', a: 'Avaliou ' + (r.paws ? stars(r.paws) : ''), t: e.title, cv: e.cover, tx: String(r.texto || '').trim(), at: e.finishedAt || e.statusAt || '', v: 'local', e }); }); } catch {} }
+        try { lib().forEach((e) => { const r = e.status === 'LIDO' ? reviewOfLib(e) : null; if (r && (r.paws || String(r.texto || '').trim()) && r.share !== false) L.push({ f: 'aval', c: 'av2', a: 'Avaliou ' + (r.paws ? stars(r.paws) : ''), t: e.title, cv: e.cover, tx: String(r.texto || '').trim(), at: e.finishedAt || e.statusAt || '', v: 'local', e }); }); } catch {} }
       if (c) L = L.concat((c.ecos || []).map((x) => { const e = byTitle(x.title); return { f: 'ecos', c: 'eco', a: '<span class="mst2"></span>Eco · pág. ' + x.page + ((typeof v9EcoStat === 'function' && v9EcoStat(x)) ? ' · ' + v9EcoStat(x) : ''), t: x.title, cv: e && e.cover, tx: '“' + (x.text || '') + '”', at: x.createdAt, v: 'rede', eco: x }; }));
       if (ro) { const pv = (socialProfile && socialProfile.privacy) || {}; L = L.filter((x) => x.v !== 'local' || (x.f === 'prog' && pv.reading !== false)); }
       L.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
@@ -24180,6 +24180,31 @@ try { for (const t of TOUR) { if (t[1] === 'Hoje') t[2] = 'Seu dia de leitura: o
     } catch {}
   }, 2500);
 }
+// --- w8_v2_avaliacao_guardada.js ---
+// Avaliação guardada fora de Lido (Bia, 21/11: Battle Royale em Quero ler aparecia com ★★★★ na grade da Biblioteca).
+// A nota só aparece em livro lido (grade, perfil, atividade, estantes, Vocês combinam). Quando o livro sai de Lido, a avaliação
+// fica guardada e volta se terminar (G1); em Minha leitura aparece uma linha discreta dizendo isso, com "Apagar".
+{ const st = document.createElement('style'); st.textContent = `
+.v9guard{display:flex;align-items:center;gap:10px;margin:8px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:14px;color:var(--ink-2);font-size:.86rem;line-height:1.35}
+.v9guard span{flex:1;min-width:0}.v9guard button{flex:none;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:none;color:var(--red,#c0392b);font:inherit;font-weight:800;cursor:pointer}`; TR.append(st); }
+{ let tm = 0;
+  const has = (e) => { const r = (e && reviewOfLib(e)) || null; return !!(r && (Number(r.paws) > 0 || String(r.texto || r.text || '').trim())); };
+  const fix = () => { tm = 0; const v = TR.querySelector('#shelflist'); if (!v || v.hidden) return;
+    const t = ((v.querySelector('.bp-ht h2') || v.querySelector('.bp-hero h2') || {}).textContent || '').trim(); if (!t) return;
+    let e = null; try { e = lib().find((x) => normT(x.title) === normT(t)); } catch {}
+    const old = v.querySelector('.v9guard'), want = !!e && e.status !== 'LIDO' && has(e);
+    if (!want) { if (old) old.remove(); return; }
+    if (old && old.dataset.id === String(e.id)) return; if (old) old.remove();
+    const rate = v.querySelector('.sl-body > .bp-card [data-a=rate]'); const card = rate && rate.closest('.bp-card'); if (!card) return;
+    const d = document.createElement('div'); d.className = 'v9guard'; d.dataset.id = String(e.id);
+    d.innerHTML = '<span>Você tem uma avaliação guardada · volta se terminar</span><button type="button" data-a="v9guarddel">Apagar</button>';
+    card.after(d); };
+  new MutationObserver(() => { if (!tm) tm = setTimeout(fix, 80); }).observe(TR, { childList: true, subtree: true });
+  TR.addEventListener('click', (ev) => { const p = ev.composedPath ? ev.composedPath() : []; const b = p.find((n) => n && n.dataset && n.dataset.a === 'v9guarddel'); if (!b) return;
+    ev.stopPropagation(); ev.preventDefault(); const row = b.closest('.v9guard'); const e = row && lib().find((x) => String(x.id) === row.dataset.id); if (!e) return;
+    const go = () => { try { v9DelReview(e); } catch (err) { console.warn('apagar avaliação guardada', err); } try { row.remove(); } catch {} toast('Avaliação apagada'); };
+    if (typeof lvDialog === 'function') lvDialog({ title: 'Apagar avaliação guardada?', html: '<p style="margin:.4rem 0 0;line-height:1.45">A nota e o texto deste livro serão apagados.</p>', actions: [{ label: 'Apagar', cls: 'dng', fn: go }, { label: 'Cancelar' }] });
+    else go(); }, true); }
 // --- x0_v2_vocabulario.js ---
 // Vocabulário único (Bia, 20/11; glossário aprovado): os textos dos blocos v2 já foram trocados na fonte.
 // Aqui ficam só as frases que ainda moram no código antigo (fora de v2src/r2) e aparecem em telas que a v2 abre.

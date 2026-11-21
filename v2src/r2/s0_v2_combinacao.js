@@ -126,7 +126,7 @@ function v9Data(d, M) {
   const D = { n: first, h: d.handle, am: !!d.isFriend, priv: !d.shelf, lidos: [mine.length, theirK.size], venn: [a, b, c] };
   D.vc = both.slice(0, 3).map((k) => { const e = mineK.get(k), t = theirK.get(k); return { title: e.title, cover: (t && t.cover) || e.cover || null }; });
   // notas: livros que as duas leram e avaliaram
-  D.rg = both.map((k) => { const e = mineK.get(k), m = Number((reviewOfLib(e) || {}).paws) || 0, t = Number(theirK.get(k).p) || 0; return m && t ? { title: e.title, cover: theirK.get(k).cover || e.cover, m, e: t } : null; }).filter(Boolean);
+  D.rg = both.map((k) => { const e = mineK.get(k), m = e && e.status === 'LIDO' ? Number((reviewOfLib(e) || {}).paws) || 0 : 0, t = Number(theirK.get(k).p) || 0; return m && t ? { title: e.title, cover: theirK.get(k).cover || e.cover, m, e: t } : null; }).filter(Boolean);
   D.agree = D.rg.filter((x) => Math.abs(x.m - x.e) <= 0.5).length;
   // gêneros (radar com os 5 eixos mais fortes das duas)
   let myD = null; try { myD = v2DnaOf(mine); } catch {}

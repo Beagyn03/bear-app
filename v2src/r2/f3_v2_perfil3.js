@@ -124,7 +124,7 @@ function v3Top3(x, self) {
 }
 function v3Ativ(d, host) {
   const f = S.v3atf || 'tudo', self = !!d.self; let L = [];
-  if (self) { lib().forEach((e) => { const r = reviewOfLib(e); if (r && (r.paws || String(r.texto || '').trim()) && r.share !== false) L.push({ k: 'aval', t: e.title, c: e.cover, pill: v3Pill(e.status, r.paws, (() => { try { return readingInfo(e).now || 0; } catch { return 0; } })(), null), tx: String(r.texto || '').trim(), at: e.finishedAt || e.statusAt || '' }); });
+  if (self) { lib().forEach((e) => { const r = e.status === 'LIDO' ? reviewOfLib(e) : null; if (r && (r.paws || String(r.texto || '').trim()) && r.share !== false) L.push({ k: 'aval', t: e.title, c: e.cover, pill: v3Pill(e.status, r.paws, (() => { try { return readingInfo(e).now || 0; } catch { return 0; } })(), null), tx: String(r.texto || '').trim(), at: e.finishedAt || e.statusAt || '' }); });
     lib().filter((e) => e.status === 'LENDO').forEach((e) => L.push({ k: 'prog', t: e.title, c: e.cover, pill: 'Lendo · ' + Math.round(readingInfo(e).pct || 0) + '%', tx: '', at: (e.readLog && e.readLog.length ? e.readLog[e.readLog.length - 1].date : e.startedAt) || '' })); }
   else { (d.reviews || []).forEach((r) => L.push({ k: 'aval', t: (r.book && r.book.title) || r.title || '', c: (r.book && r.book.cover) || r.cover || null, pill: v3Pill(r.bookStatus || r.status, r.paws, r.page || 0, r.readerPct != null ? r.readerPct : null), tx: r.spoiler ? 'Tem spoiler: abra o livro para ver.' : String(r.text || r.body || '').trim(), at: String(r.updatedAt || r.createdAt || '').slice(0, 10) }));
     (d.reading || []).forEach((b) => L.push({ k: 'prog', t: b.title, c: b.cover, pill: 'Lendo · ' + Math.round(Number(b.pct) || 0) + '%', tx: '', at: '' })); }

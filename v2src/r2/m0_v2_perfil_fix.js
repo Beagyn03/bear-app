@@ -20,7 +20,7 @@ try { Object.assign(V3EMO, { sort: '<path d="M4 7h10M4 12h7M4 17h4M18 5v14M15 16
       const sig = JSON.stringify(L.map((s) => [s.id, s.name, s.priv, (s.bookIds || []).slice(0, 7), (s.bookIds || []).length]));
       if (pE.dataset.mysig === sig && pE.querySelector(':scope > .v4mysh-bar')) return r;
       pE.dataset.mysig = sig;
-      const st = (e) => { const ST = { LIDO: 'lido', LENDO: 'lendo', QUERO: 'quero', HIBERNANDO: 'pausado' }; let pct = 0, nota = 0; try { pct = readingInfo(e).pct || 0; } catch {} try { nota = Number((reviewOfLib(e) || {}).paws) || 0; } catch {} return { st: ST[e.status] || '', pct, nota }; };
+      const st = (e) => { const ST = { LIDO: 'lido', LENDO: 'lendo', QUERO: 'quero', HIBERNANDO: 'pausado' }; let pct = 0, nota = 0; try { pct = readingInfo(e).pct || 0; } catch {} try { nota = e.status === 'LIDO' ? Number((reviewOfLib(e) || {}).paws) || 0 : 0; } catch {} return { st: ST[e.status] || '', pct, nota }; };
       const card = (s) => { const B = v5ShBooks(s), X = B.map(st), cnt = (() => { try { return v4ShCount(X); } catch { return ''; } })();
         return '<button type="button" class="pshelf" data-sh="' + esc(String(s.id)) + '"><div class="hd"><b>' + esc(s.name) + '</b><small>' + plural(B.length, 'livro', 'livros') + ' · ' + (s.priv ? '<i class=v3e data-i=lock></i> só você' : 'pública') + '</small></div><div class="covers">'
           + B.slice(0, 7).map((e, i) => '<span class="scv">' + cvh(e.title, e.cover, '') + (() => { try { return v4ShBadge(X[i]); } catch { return ''; } })() + '</span>').join('') + '</div>' + (cnt ? '<small class="scount">' + cnt + '</small>' : '') + '</button>'; };

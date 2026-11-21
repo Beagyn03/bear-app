@@ -263,7 +263,7 @@ v2FuncoesSheet = function () {
   const _ps = profShelvesSnap; profShelvesSnap = function (snapshot) { const r = _ps.apply(this, arguments);
     try { const L = lib(); (snapshot.shelf.extra || []).forEach((x) => { const all = profShelfBooks(x.key); x.n = all.length;
       x.books = (x.books || []).map((b) => { const e = all.find((y) => normT(y.title) === normT(b.title)) || L.find((y) => normT(y.title) === normT(b.title)); if (!e) return b;
-        const rv = reviewOfLib(e) || {}, pct = e.status === 'LENDO' ? (() => { try { return Math.round(readingInfo(e).pct) || 0; } catch { return 0; } })() : null;
+        const rv = (e.status === 'LIDO' && reviewOfLib(e)) || {}, pct = e.status === 'LENDO' ? (() => { try { return Math.round(readingInfo(e).pct) || 0; } catch { return 0; } })() : null;
         return { ...b, st: ST[e.status] || null, ...(rv.paws ? { nota: rv.paws } : {}), ...(pct != null ? { pct } : {}) }; }); }); } catch (err) { console.warn('estantes no resumo', err); }
     return r; }; }
 { const st = document.createElement('style'); st.textContent = `
