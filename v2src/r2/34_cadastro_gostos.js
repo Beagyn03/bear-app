@@ -76,8 +76,8 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .pv-msg{font-size:.84rem;color:var(--ink-2);margin:.2rem 0 .6rem}
 `; TR.append(st); }
 // Primeiro acesso em 3 passos (16/11): gêneros → top 3 → histórico de outro app (importa ali mesmo). Depois, "Seus gostos" é uma página só.
-function openTaste(first, prof) {
-  S.gsHist = ''; S.gsSeen = 0; let step = 1, fav = false, favKey = ''; const favCh = {};
+function openTaste(first, prof, start) {
+  S.gsHist = ''; S.gsSeen = 0; let step = first && start >= 1 && start <= 3 ? Math.floor(start) : 1, fav = false, favKey = ''; const favCh = {};
   const v = $('#shelflist'), t0 = tasteOf() || {}, sel = new Set(t0.genres || []), books = [...(t0.books || [])];
   const keep = () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, ...(sel.size || books.length ? { taste: { genres: [...sel], books, at: new Date().toISOString() } } : {}) }; save(); try { localStorage.removeItem('bear.pv'); } catch {} };
   const chips = () => '<div class="gs-chips">' + TASTE_G.map(([k, n]) => '<button type="button" class="gs-ch' + (sel.has(k) ? ' on' : '') + '" data-k="' + k + '" aria-pressed="' + sel.has(k) + '">' + esc(n) + '</button>').join('') + '</div>';
@@ -95,6 +95,8 @@ function openTaste(first, prof) {
       body = '<p class="gs-intro">Conte seus gêneros e livros favoritos e o app indica leituras para você.</p><div class="gs-h">Gêneros</div>' + chips() + '<div class="gs-h">Livros que você amou <small style="font-weight:600;opacity:.7">(até 3)</small></div>' + bookList();
       okTxt = 'Salvar'; skipTxt = 'Cancelar'; okOn = !!(sel.size || books.length);
     } else {
+      // guarda o passo do primeiro acesso: se o app recarregar no meio, ele volta daqui (teste real 21/11, item 1)
+      try { const pp = (db.prefs || {}).pp; if (pp && pp.fs !== 'ok' && pp.fs !== step) { pp.fs = step; save(); } } catch {}
       top = '<span></span><b>Primeiros passos</b><span></span>';
       const dots = '<div class="gs-steps" aria-label="Passo ' + step + ' de 3">' + [1, 2, 3].map((i) => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '<small>Passo ' + step + ' de 3</small></div>';
       const inLib = (b) => lib().find((x) => normT(x.title) === normT(b.title));
@@ -106,12 +108,12 @@ function openTaste(first, prof) {
               : '<div class="gs-fvo" role="radiogroup" aria-label="Como ' + esc(b.title) + ' entra">' + OPT.map(([k, n]) => '<button type="button" role="radio" aria-checked="' + (ch === k) + '" class="' + (ch === k ? 'on' : '') + '" data-fi="' + i + '" data-fk="' + k + '">' + n + '</button>').join('') + '</div>') + '</div></div>'; }).join('') + '</div>';
         okTxt = 'Colocar na Biblioteca'; skipTxt = 'Agora não';
       }
-      else if (step === 1) body = bear('bear_celebrating', 'Boas-vindas' + (prof ? ', @' + esc(prof.handle) : '') + '!', 'Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.')
+      else if (step === 1) body = bear('bear_celebrating', 'Boas-vindas' + ((() => { const n = String((prof && prof.displayName) || (socialProfile && socialProfile.displayName) || '').trim().split(/\s+/)[0]; return n ? ', ' + esc(n) : ''; })()) + '!', 'Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.')
         + dots + '<h2 class="gs-t">Quais gêneros você mais gosta?</h2><p class="gs-intro">Marque quantos quiser.</p>' + chips();
       else if (step === 2) body = bear('bear_reading_chair', '', books.length ? (books.length < 3 ? 'Ótima escolha! Quer colocar mais algum?' : 'Que top 3! Já sei bem o que te indicar.') : 'Agora me conta: quais livros marcaram você? Com eles eu acho leituras parecidas.')
         + dots + '<h2 class="gs-t">Seus livros do coração</h2><p class="gs-intro">Monte seu Top 3. Pode ser só um, ou nenhum.</p>' + slots();
-      else body = bear('bear_running_books', '', S.gsHist ? 'Pronto, já coloquei seus livros na estante!' : 'Última pergunta, prometo!') + dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Se sim, traga seus livros do Goodreads, StoryGraph ou de uma planilha (Skoob ainda não): exporte o arquivo por lá e importe aqui. Assim sua estante já começa cheia.</p>'
-        + '<div class="gs-hist">' + (S.gsHist ? '<small class="gs-hok">✓ ' + esc(S.gsHist) + '</small>' : '<small>No Goodreads: My Books › Import and export › Export library. Planilha: colunas título, autor e, se quiser, ano, nota e status.</small>')
+      else body = bear('bear_running_books', '', S.gsHist ? 'Pronto, seus livros estão na Biblioteca!' : 'Última pergunta, prometo!') + dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Apps de leitura deixam baixar seu histórico de leitura num arquivo (.csv). No Goodreads, pelo site no computador: My Books › Import and export › Export Library. Em outros apps, procure por exportar nas configurações. Depois é só voltar aqui e selecionar o arquivo baixado.</p>'
+        + '<div class="gs-hist">' + (S.gsHist ? '<small class="gs-hok">✓ ' + esc(S.gsHist) + '</small>' : '')
         + '<button type="button" class="gs-add" id="gs-hist">' + (S.gsHist ? 'Importar outro arquivo' : 'Importar arquivo (CSV)') + '</button></div>';
       if (!(step === 2 && fav)) { okTxt = step < 3 ? 'Continuar' : 'Começar a usar'; skipTxt = step < 3 ? 'Pular' : (S.gsHist ? '' : 'Agora não'); }
     }
@@ -130,7 +132,9 @@ function openTaste(first, prof) {
     $$('.gs-slot', v).forEach((b) => b.addEventListener('click', pickBook));
     $('#gs-hist', v)?.addEventListener('click', () => { // importa ali mesmo, sem sair do passo
       const before = lib().length, old = S.listRedraw;
-      S.listRedraw = () => { S.listRedraw = old; if (v.hidden || !v.querySelector('#gs-hist')) return old && old(); const n = lib().length - before; S.gsHist = n > 0 ? plural(n, 'livro importado', 'livros importados') : 'Nenhum livro novo nesse arquivo'; draw(); };
+      // só escreve quando os livros entraram de fato (a prévia redesenha antes da importação; Bia, 21/11, item B)
+      S.listRedraw = () => { if (v.hidden || !v.querySelector('#gs-hist')) { S.listRedraw = old; return old && old(); } const n = lib().length - before; if (n <= 0) return old && old();
+        S.listRedraw = old; S.gsHist = (n === 1 ? '1 livro entrou' : n + ' livros entraram') + ' na sua Biblioteca'; draw(); };
       importCSV(); });
     $('#gs-skip', v)?.addEventListener('click', () => { if (!first) return done(); if (fav) return afterFav(false); keep(); if (step < 3) { step++; draw(); } else done(); });
     $('#gs-ok', v).addEventListener('click', () => {
@@ -140,7 +144,7 @@ function openTaste(first, prof) {
       keep(); if (sel.size || books.length) toast(first ? 'Tudo pronto' : 'Gostos salvos'); done();
     });
   };
-  const done = () => { if (!first && S.nav.st.length) return navBack(); v.hidden = true; try { if (S.tab === 'inicio') drawTab(); else goTab('inicio'); } catch {} };
+  const done = () => { if (first) { try { const pp = (db.prefs || {}).pp; if (pp) { pp.fs = 'ok'; save(); } } catch {} } if (!first && S.nav.st.length) return navBack(); v.hidden = true; try { if (S.tab === 'inicio') drawTab(); else goTab('inicio'); } catch {} };
   v.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && fav) { ev.stopPropagation(); fav = false; draw(); } }, true);
   S.listRedraw = draw; S.navView = { t: 'taste', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle();
 }
@@ -154,7 +158,7 @@ function favToLib(books, ch) {
     db.library = db.library || [];
     const have = new Set(lib().map((x) => normT(x.title))), added = [];
     books.forEach((b) => { const k = normT((b && b.title) || ''), st = ch[k] ?? 'LIDO'; if (!k || !st || have.has(k)) return;
-      const e = { id: uid(), title: b.title, author: b.author || null, totalPages: null, status: st, addedAt: todayISO() };
+      const e = { id: uid(), title: b.title, author: b.author || null, totalPages: null, status: st, addedAt: todayISO(), fromTop3: 1 };
       if (b.cover) e.cover = b.cover;
       if (st === 'LIDO') e.noDate = true;
       if (st === 'LENDO') e.startedAt = todayISO();

@@ -96,7 +96,7 @@ deleteAccountSheet = function () {
 };
 // aviso no login depois de sair ou excluir; e garante que nada da conta anterior ficou na memória (biblioteca, perfil)
 { let f = '';
-  try { if (sessionStorage.getItem('lv.excluida') || sessionStorage.getItem('lv.saiu')) { lvWipeUser(false); try { resetLocal(); } catch {} try { socialProfile = undefined; socialStats = {}; SOC.fr = { friends: [], incoming: [], outgoing: [] }; SOC.ok = false; SOC.frOk = false; } catch {} lvWipeUser(false); } } catch {} try { f = sessionStorage.getItem('lv.excluida') ? 'Sua conta foi excluída. Obrigada por ter lido com a gente.' : sessionStorage.getItem('lv.saiu') ? 'Você saiu da conta.' : ''; sessionStorage.removeItem('lv.excluida'); sessionStorage.removeItem('lv.saiu'); } catch {}
+  try { if (sessionStorage.getItem('lv.excluida') || sessionStorage.getItem('lv.saiu')) { lvWipeUser(false); try { resetLocal(); } catch {} try { socialProfile = undefined; socialStats = {}; SOC.fr = { friends: [], incoming: [], outgoing: [] }; SOC.ok = false; SOC.frOk = false; } catch {} lvWipeUser(false); } } catch {} try { f = sessionStorage.getItem('lv.excluida') ? 'Sua conta foi excluída. Que bom que você leu com a gente.' : sessionStorage.getItem('lv.saiu') ? 'Você saiu da conta.' : ''; sessionStorage.removeItem('lv.excluida'); sessionStorage.removeItem('lv.saiu'); } catch {}
   const g = document.getElementById('auth-gate'); if (f && g) { const p = document.createElement('p'); p.className = 'lv-gmsg'; p.setAttribute('role', 'status'); p.textContent = f; const h3 = g.querySelector('h3'); if (h3) h3.before(p); } }
 // entrou com outra conta neste aparelho (token venceu e outra pessoa entrou): apaga o que era da anterior e recarrega
 { let seen = ''; try { seen = (localStorage.getItem('bear.owner') || '').toLowerCase(); } catch {}
@@ -250,14 +250,20 @@ function lvEyes(root) {
     const I = S.lvImp; S.lvImp = null;
     const touched = [];
     if (I) { for (const e of (db.library || [])) if (!I.before.has(e.id) && !e.impSrc) e.impSrc = S.lvSrc || 'outro app';
+      // "Date Added" é quando a pessoa adicionou o livro no outro app, não quando começou a ler (teste real 21/11, item 13)
+      for (const e of (db.library || [])) if (!I.before.has(e.id) && e.startedAt && e.addedAt && e.startedAt === e.addedAt) delete e.startedAt;
       for (const e of (db.library || [])) { const t = (e.review && e.review.texto) || ''; if (t && t !== I.before.get(e.id)) { touched.push(e); if (!I.pub) e.review.share = false; else delete e.review.share; } } try { save(); } catch {} if (I.pub) touched.forEach((e) => { try { publishReview(e); } catch {} }); }
-    try { if (_ai) _ai(n); } catch (err) { console.warn(err); }
-    if (!I) return;
+    // um diálogo por vez (teste real 21/11, item 2): no fluxo com prévia, o resumo já leva ao Completar histórico; a folha
+    // "Faltou completar…" antiga só aparece em importação fora desse fluxo
+    if (!I) { try { if (_ai) _ai(n); } catch (err) { console.warn(err); } return; }
+    S.ppImpAt = Date.now();
     const novos = Math.max(0, (db.library || []).length - I.n0), atual = Math.max(0, n - novos);
-    setTimeout(() => lvDialog({ title: 'Importação concluída', html: `<div class="lvnums"><span><b>${novos}</b><small>${novos === 1 ? 'livro novo' : 'livros novos'}</small></span><span><b>${atual}</b><small>atualizados</small></span><span><b>${touched.length}</b><small>${touched.length === 1 ? 'resenha' : 'resenhas'}</small></span></div><p>${touched.length ? (I.pub ? 'As resenhas foram publicadas na Comunidade.' : 'As resenhas ficaram só para você.') : ''} Confira datas, páginas e notas em Completar histórico.</p>`,
-      actions: [{ label: 'Conferir minhas leituras', cls: 'pri' }, { label: 'Desfazer importação', fn: () => {
+    let miss = 0; try { const c = fxCount(); miss = c.ini + c.fim + c.pag; } catch {}
+    const inFirst = (() => { try { const v = $('#shelflist'); return !!(v && !v.hidden && v.querySelector('#gs-hist')); } catch { return false; } })();
+    setTimeout(() => lvDialog({ title: 'Importação concluída', html: `<div class="lvnums"><span><b>${novos}</b><small>${novos === 1 ? 'livro novo' : 'livros novos'}</small></span><span><b>${atual}</b><small>atualizados</small></span><span><b>${touched.length}</b><small>${touched.length === 1 ? 'resenha' : 'resenhas'}</small></span></div><p>${touched.length ? (I.pub ? 'As resenhas foram publicadas na Comunidade.' : 'As resenhas ficaram só para você.') : ''} ${miss ? (inFirst ? 'Datas, páginas e notas que faltaram você confere depois, em Completar histórico.' : 'Alguns vieram sem data, páginas ou nota.') : ''}</p>`,
+      actions: [miss && !inFirst ? { label: 'Conferir minhas leituras', cls: 'pri', fn: () => { setTimeout(() => { try { openFixReads(); } catch (e) { console.warn(e); } }, 60); } } : { label: inFirst ? 'Continuar' : 'Ver minha Biblioteca', cls: 'pri', fn: () => { if (!inFirst) { try { goTab('estante'); } catch {} } } }, { label: 'Desfazer importação', fn: () => {
         try { if (I.pub) touched.forEach((e) => { sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`).catch(() => {}); }); } catch {}
-        db = JSON.parse(I.snap); try { save(); refresh(); } catch {} try { S.listRedraw && S.listRedraw(); } catch {} toast('Importação desfeita'); } }] }), 350);
+        db = JSON.parse(I.snap); S.gsHist = ''; try { save(); refresh(); } catch {} try { S.listRedraw && S.listRedraw(); } catch {} toast('Importação desfeita'); } }] }), 350);
   };
 }
 

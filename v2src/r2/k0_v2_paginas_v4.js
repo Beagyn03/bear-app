@@ -91,13 +91,14 @@ openFixReads = function (filter) {
   const ST = { LIDO: 'Lido', LENDO: 'Lendo', QUERO: 'Quero ler', HIBERNANDO: 'Pausado', ABANDONEI: 'Abandonado' };
   const lidos = () => lib().filter((e) => e.status === 'LIDO');
   // quem entra na conta "completos": os lidos que tinham algo faltando quando a página abriu
-  const pend0 = new Set(lidos().filter((e) => KS.some((k) => fxOpen(e, k))).map((e) => String(e.id)));
+  // progresso conta cada dado que faltava (livro × campo): "Não lembro" e cada campo salvo avançam (teste real 21/11, item 13)
+  const pend0 = new Set(); lidos().forEach((e) => KS.forEach((k) => { if (fxOpen(e, k)) pend0.add(String(e.id) + '|' + k); }));
   let f = filter && KS.includes(filter) ? filter : (S.v4fxF || null), page = 0;
   const counts = () => { const c = { fim: 0, ini: 0, pag: 0, nota: 0 }; lidos().forEach((e) => KS.forEach((k) => { if (fxOpen(e, k)) c[k]++; })); return c; };
   const dt = (d) => { if (!d) return ''; const m = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][+String(d).slice(5, 7) - 1]; return m ? m + '/' + String(d).slice(0, 4) : String(d).slice(0, 4); };
   const draw = () => {
     const c = counts(); if (!f || !c[f]) f = KS.find((k) => c[k]) || f || 'fim';
-    const tot = pend0.size, feitos = [...pend0].filter((id) => { const e = lib().find((y) => String(y.id) === id); return !e || !KS.some((k) => fxOpen(e, k)); }).length;
+    const tot = pend0.size, feitos = [...pend0].filter((pk) => { const i = pk.lastIndexOf('|'), id = pk.slice(0, i), k = pk.slice(i + 1); const e = lib().find((y) => String(y.id) === id); return !e || !fxOpen(e, k); }).length;
     const all = lidos().filter((e) => fxOpen(e, f)).sort((a, z) => String(z.finishedAt || z.addedAt || '').localeCompare(String(a.finishedAt || a.addedAt || '')));
     const pages = Math.max(1, Math.ceil(all.length / PER)); if (page >= pages) page = pages - 1; const list = all.slice(page * PER, page * PER + PER);
     const known = (e) => { const rv = reviewOfLib(e) || {}, out = [ST[e.status] || 'Lido'];
@@ -128,7 +129,7 @@ openFixReads = function (filter) {
     v.querySelectorAll('.fx-pg button').forEach((b) => b.addEventListener('click', () => { page += Number(b.dataset.pg); draw(); }));
     v.querySelectorAll('.v4fx').forEach((row) => {
       const e = lib().find((y) => String(y.id) === row.dataset.id); if (!e) return; const ok = row.querySelector('.ok');
-      const done = () => { save(); try { publishSnapshotSoon(); } catch {} if (ok) ok.hidden = false; setTimeout(() => { try { draw(); } catch {} }, 900); };
+      const done = () => { save(); try { publishSnapshotSoon(); } catch {} if (ok) ok.hidden = false; toast('Salvo'); setTimeout(() => { try { draw(); } catch {} }, 1600); };
       row.querySelectorAll('.v4st button').forEach((b) => b.addEventListener('click', () => { const n = +b.dataset.n; let rv = reviewOfLib(e); if (!rv) { e.review = { paws: n, mel: [], frase: '' }; rv = e.review; } else rv.paws = n;
         row.querySelectorAll('.v4st button').forEach((x) => x.classList.toggle('on', +x.dataset.n <= n)); try { publishReview(e); } catch {} done(); }));
       row.querySelector('[data-a=nao]')?.addEventListener('click', () => { fxNo(e)[f] = 1; save(); toast('Tirado desta lista. Nada foi apagado'); draw(); });
@@ -182,7 +183,7 @@ v2FuncoesSheet = function () {
       b.querySelector('button').addEventListener('click', (ev) => { db.prefs = db.prefs || {}; db.prefs.spNever = !db.prefs.spNever; save(); ev.currentTarget.classList.toggle('on', !db.prefs.spNever); ev.currentTarget.setAttribute('aria-checked', String(!db.prefs.spNever)); toast(db.prefs.spNever ? 'Não vamos mais perguntar' : 'Vamos perguntar antes de publicar'); });
       return b; })();
     const tq = get('aj-tq'); if (tq) { const nb = tq.cloneNode(true); nb.addEventListener('click', () => { const v = $('#shelflist'); if (v) v.hidden = true; try { v5S().tab = 'trechos'; } catch {} goTab('estante'); }); tq.replaceWith(nb); }
-    const hl = get('aj-hl'); if (hl) { const b = hl.querySelector('b'), s = hl.querySelector('small'); if (b) b.textContent = 'Importar histórico'; if (s) s.textContent = 'Goodreads e StoryGraph'; }
+    const hl = get('aj-hl'); if (hl) { const b = hl.querySelector('b'), s = hl.querySelector('small'); if (b) b.textContent = 'Importar histórico'; if (s) s.textContent = 'de outro app de leitura (ex.: Goodreads)'; }
     const fix = mk('aj-v4fix', 'Completar histórico', (() => { try { const L = lib().filter((e) => e.status === 'LIDO' && ['fim', 'ini', 'pag', 'nota'].some((k) => fxOpen(e, k))).length; return L ? L + ' livros com dados faltando' : 'datas, páginas e notas dos lidos'; } catch { return ''; } })(), () => openFixReads());
     const del = connected() ? mk('aj-v4del', 'Excluir conta', 'apaga tudo, não tem volta', () => { try { deleteAccountSheet(); } catch {} }) : null; if (del) del.classList.add('danger');
     const tema = rowByText(/^Tema/), sons = get('aj-sound') ? get('aj-sound').closest('.aj-row, label, div') : rowByText(/^Sons/);

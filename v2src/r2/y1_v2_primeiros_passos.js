@@ -76,7 +76,8 @@ TR.addEventListener('click', (ev) => {
 }, true);
 // etapas que se completam sozinhas (pelo que a pessoa faz, mesmo fora do guia)
 setInterval(() => { const p = ppS(); if (!p || !p.on || p.off || (typeof ppG !== 'undefined' && ppG)) return; let L; try { L = lib(); } catch { return; } const d = ppArr('done');
-  if (!d.includes('biblio') && L.length) ppDone('biblio');
+  // o Top 3 do primeiro acesso não conclui a etapa 1 (ela é trazer ou buscar livros)
+  if (!d.includes('biblio') && L.some((e) => !e.fromTop3)) ppDone('biblio');
   if (!d.includes('fim') && L.some((e) => e.status === 'LIDO' && e.finishedAt && p.at && e.finishedAt >= p.at && e.review)) ppDone('fim');
 }, 2500);
 // ---------- dicas por evento: uma vez cada, mesmo fora da ordem ----------
@@ -86,18 +87,21 @@ const PP_TIPS = {
   sessao: ['Ecos', 'Frases de quem já passou por esta página aparecem na sessão. Em Deixar um eco, você deixa o seu.'],
   terminei: ['Sua avaliação', 'Aparece na Comunidade do livro e em Minha leitura. No ••• dela, edite ou apague.'],
 };
-function ppTip(k) { const p = ppS(); if (!p || !p.on || (typeof ppG !== 'undefined' && ppG)) return; const T = ppArr('tips'); if (T.includes(k)) return; T.push(k); ppPut({ tips: T });
+// dicas por evento só depois do primeiro acesso e nunca por causa de uma importação (teste real 21/11, itens 2 e 5)
+const ppQuiet = () => { const p = ppS() || {}; if (p.fs && p.fs !== 'ok') return true; if (Date.now() - (S.ppImpAt || 0) < 20000) return true;
+  return !!document.querySelector('.lvdlg-bg, .ppab, .sheet') || !!TR.querySelector('#shelflist:not([hidden]) #gs-ok'); };
+function ppTip(k) { const p = ppS(); if (!p || !p.on || (typeof ppG !== 'undefined' && ppG) || ppQuiet()) return; const T = ppArr('tips'); if (T.includes(k)) return; T.push(k); ppPut({ tips: T });
   const [t, x] = PP_TIPS[k]; try { ppBalloon({ t, x, btns: [['Entendi', () => ppClose()]], solo: true }); } catch {} }
 { let n0 = null, l0 = null, f0 = null;
   setInterval(() => { const p = ppS(); if (!p || !p.on) return; let L; try { L = lib(); } catch { return; }
     const n = L.length, l = L.filter((e) => e.status === 'LENDO').length, f = L.filter((e) => e.status === 'LIDO' && e.review).length;
-    if (n0 !== null && (typeof ppG === 'undefined' || !ppG)) {
+    if (n0 !== null && (typeof ppG === 'undefined' || !ppG) && !ppQuiet()) {
       if (n0 === 0 && n > 0) ppTip('livro');
       else if (l > l0) ppTip('lendo');
       else if (f > f0) ppTip('terminei');
     }
     n0 = n; l0 = l; f0 = f;
-    const eco = ppFind('[data-a=ecoed]'); if (eco && (typeof ppG === 'undefined' || !ppG)) ppTip('sessao');
+    const eco = ppFind('[data-a=ecoed]'); if (eco && (typeof ppG === 'undefined' || !ppG) && !ppQuiet()) ppTip('sessao');
   }, 1500); }
 // ---------- Completar seu perfil: convite no Você ----------
 function ppPerfilOk() { const q = (db.prefs || {}).perfil || {}; return !!q.ok; }

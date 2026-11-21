@@ -51,7 +51,7 @@ function inSemana() {
 }
 function inComece() {
   return `<section class="in-sec" data-in="comece"><div class="in-h"><b>Comece por aqui</b></div><div class="in-go">
-    <button type="button" data-go="hist"><b>Trazer meu histórico</b><small>Goodreads, StoryGraph ou planilha</small></button>
+    <button type="button" data-go="hist"><b>Trazer meu histórico</b><small>de outro app de leitura, pelo arquivo</small></button>
     <button type="button" data-go="meta"><b>Meta do ano</b><small>Quantos livros em ${todayISO().slice(0, 4)}?</small></button>
     <button type="button" data-go="amigos"><b>Encontrar amigos</b><small>Leia junto e troque indicações</small></button></div></section>`;
 }

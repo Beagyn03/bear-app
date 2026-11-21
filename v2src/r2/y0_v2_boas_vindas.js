@@ -24,7 +24,18 @@ function ppVars(el) { try { const cs = getComputedStyle(TR.host || document.body
   el.style.setProperty('--ppink2', g('--ink-2', '#b9aecf')); el.style.setProperty('--ppacc', g('--acc', '#e0a060')); el.style.setProperty('--ppline', g('--line', '#3a3150'));
   // texto sobre o botão de destaque: branco em cor escura, escuro em cor clara (contraste)
   const acc = g('--acc', '#e0a060'), m = acc.match(/^#?([0-9a-f]{6})$/i); let lum = 0.6; if (m) { const n = parseInt(m[1], 16); lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; }
-  el.style.setProperty('--ppon', lum < 0.55 ? '#fff' : '#2a1709'); } catch {} }
+  el.style.setProperty('--ppon', lum < 0.55 ? '#fff' : '#2a1709');
+  // balão com superfície própria, destacada do fundo em todos os temas, e texto com contraste AA (Bia, 21/11, item C)
+  const rgb = (c) => { c = String(c || '').trim(); let m = c.match(/^#([0-9a-f]{6})$/i); if (m) { const n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+      m = c.match(/^#([0-9a-f]{3})$/i); if (m) return m[1].split('').map((x) => parseInt(x + x, 16)); m = c.match(/rgba?\(([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)/); return m ? [+m[1], +m[2], +m[3]] : null; },
+    L = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); },
+    CR = (a, b) => { const x = L(a), y = L(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); },
+    mix = (a, b, t) => a.map((v, i) => Math.round(v * (1 - t) + b[i] * t)), hex = (c) => '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('');
+  const bg = rgb(g('--bg', '#151022')) || [21, 16, 34], pan = rgb(g('--panel', '#1f1a2e')) || bg, dark = L(bg) < 0.2;
+  const surf = dark ? mix(pan, [255, 255, 255], 0.14) : [255, 255, 255];
+  let ink = rgb(g('--ink', '#f3ecff')) || (dark ? [243, 236, 255] : [33, 26, 20]); if (CR(ink, surf) < 7) ink = dark ? [255, 255, 255] : [24, 18, 12];
+  let sub = mix(ink, surf, 0.22); if (CR(sub, surf) < 4.6) sub = mix(ink, surf, 0.1); if (CR(sub, surf) < 4.6) sub = ink;
+  el.style.setProperty('--ppsurf', hex(surf)); el.style.setProperty('--ppbal-ink', hex(ink)); el.style.setProperty('--ppsub', hex(sub)); } catch {} }
 const PP_AB = [
   ['estante', 'Boas-vindas ao Livroverso', 'Sua leitura organizada: uma Biblioteca com o que você lê, quer ler e já leu. Prazo, metas e a órbita dos dias seguidos ajudam a manter o ritmo.'],
   ['ler', 'A sessão de leitura', 'Um botão conta o tempo e silencia o resto. No caminho aparecem ecos: frases de quem já passou por aquela página.'],
@@ -43,7 +54,17 @@ function ppAbertura(done) {
   document.addEventListener('keydown', key, true); document.body.append(ov); draw();
 }
 // conta nova: marca o guia; a abertura vem antes do primeiro acesso
-{ const _ar = afterRegister; afterRegister = function () { const t = todayISO(); db.prefs = { ...(db.prefs || {}), pp: { on: 1, at: t, ab: 0, done: [], skip: [], tips: [] } }; try { save(); } catch {} return _ar.apply(this, arguments); }; }
+{ const _ar = afterRegister; afterRegister = function () { const t = todayISO(); db.prefs = { ...(db.prefs || {}), pp: { on: 1, at: t, ab: 0, fs: 1, done: [], skip: [], tips: [] }, tipCapa: 1, tipEst5: 1 }; // dicas antigas que repetem o tour não aparecem para conta nova (item E)
+    // conta nova começa no tema Sistema (teste real 21/11, item 11)
+    try { localStorage.setItem('lv.temaSis', '1'); T().theme = 'sistema'; applyTheme('sistema', true); } catch {}
+    try { save(); } catch {} return _ar.apply(this, arguments); }; }
+// se o app recarregar no meio das boas-vindas ou do primeiro acesso, ele volta de onde parou (teste real 21/11, item 1)
+{ let tries = 0; const resume = () => { tries++; const p = ppS(); if (!p || !p.on || !p.fs || p.fs === 'ok') return;
+    let ready = false; try { ready = connected() && socialProfile !== undefined && !document.querySelector('.ppab'); } catch {}
+    if (!ready) { if (tries < 40) setTimeout(resume, 500); return; }
+    const v = TR.querySelector('#shelflist'); if (v && !v.hidden && v.querySelector('#gs-ok')) return;
+    try { goTab('inicio'); } catch {} try { openTaste(true, socialProfile, p.fs); } catch (e) { console.warn('retomar primeiro acesso', e); } };
+  setTimeout(resume, 1500); }
 { const _ot = openTaste; openTaste = function (first) { const p = ppS(), a = arguments, me = this;
     if (first && p && p.on && !p.ab) { ppAbertura(() => _ot.apply(me, a)); return; }
     return _ot.apply(this, arguments); }; }
@@ -58,8 +79,15 @@ TR.addEventListener('click', (ev) => { const r = ev.target.closest && ev.target.
 // Avisos › Notificações: as boas-vindas ficam registradas (só no aparelho/conta; sem tipo novo na API)
 { const st = document.createElement('style'); st.textContent = `.ppwel{display:flex;align-items:center;gap:.7rem;width:100%;padding:.75rem .85rem;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);font:inherit;text-align:left;cursor:pointer;min-height:56px}
 .ppwel .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acc)}
-.ppwel b{display:block;font-size:.92rem}.ppwel small{display:block;font-size:.78rem;color:var(--ink-2)}`; TR.append(st);
+.ppwel b{display:block;font-size:.92rem}.ppwel small{display:block;font-size:.78rem;color:var(--ink-2)}
+#editor.ntpage:has(.ppwel) .nt-empty{display:none!important}`; TR.append(st);
   new MutationObserver(() => { const p = ppS(); if (!p || !p.on) return; const L = TR.querySelector('#editor.ntpage .nt-list'); if (!L || L.querySelector('.ppwel')) return;
     const w = document.createElement('button'); w.type = 'button'; w.className = 'ppwel';
     w.innerHTML = `<span class="ic" aria-hidden="true">${v4ic('orb', 18)}</span><span><b>Boas-vindas ao Livroverso</b><small>Seus primeiros passos estão no Hoje</small></span>`;
     w.addEventListener('click', () => ppReabrir()); L.prepend(w); }).observe(TR, { childList: true, subtree: true }); }
+// primeiro acesso em tela cheia: sem a barra de baixo e sem lupa/sino até terminar (Bia, 21/11, item A)
+{ const st = document.createElement('style'); st.textContent = ':host(.ppfull) #tabbar,:host(.ppfull) #g-find,:host(.ppfull) #g-bell,:host(.ppfull) .v3-fab{display:none!important}'; TR.append(st);
+  let tm = 0; const sync = () => { tm = 0; const v = TR.querySelector('#shelflist'); const on = !!(v && !v.hidden && v.querySelector('#gs-ok') && !v.querySelector('.sl-back'));
+    const h = TR.host; if (h && h.classList.contains('ppfull') !== on) h.classList.toggle('ppfull', on); };
+  new MutationObserver(() => { if (!tm) tm = setTimeout(sync, 40); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+

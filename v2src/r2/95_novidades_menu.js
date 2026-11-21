@@ -14,7 +14,7 @@
         { label: 'Ocultar esta novidade', fn: () => { rdSetPref('rdHide', [...rdPrefs().hide, 'fd' + id].slice(-300)); a.style.display = 'none'; toast('Ocultado'); } },
         ...(h0 ? [{ label: 'Silenciar @' + h0, fn: () => { rdSetPref('rdMuteU', [...new Set([...rdPrefs().muteU, h0])].slice(-300)); paint(); toast('Você não verá mais as novidades de @' + h0); } }] : []),
         ...(isRev ? [{ label: 'Denunciar', fn: () => sheet('Por que denunciar?', [['Spoiler sem aviso', 'spoiler'], ['Ofensa ou ataque', 'ofensa'], ['Spam ou propaganda', 'spam'], ['Outro motivo', 'outro']].map(([t, k]) => [t, async () => {
-          const r = await sapi('POST', '/v1/report/review/' + id, { reason: k }); toast(r.status < 300 ? 'Denúncia enviada. Obrigado!' : 'Não consegui enviar agora');
+          const r = await sapi('POST', '/v1/report/review/' + id, { reason: k }); toast(r.status < 300 ? 'Denúncia enviada. Vamos analisar.' : 'Não consegui enviar agora');
           if (r.status < 300) { rdSetPref('rdHide', [...rdPrefs().hide, 'fd' + id].slice(-300)); a.style.display = 'none'; } }])) }] : []),
         ...(title ? [{ label: 'Ver o livro', fn: () => openAnyBook(title) }] : []),
       ]; popMenu(b, items); });

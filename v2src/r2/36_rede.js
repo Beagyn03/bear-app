@@ -353,7 +353,7 @@ function rdMenu(it, after, anchor) {
     items.push(['Ocultar este post', () => { rdSetPref('rdHide', [...rdPrefs().hide, it.type + it.id].slice(-300)); toast('Post ocultado'); after(); }]);
     if (u.handle) items.push([`Silenciar @${u.handle}`, () => { rdSetPref('rdMuteU', [...new Set([...rdPrefs().muteU, String(u.handle).toLowerCase()])].slice(-300)); toast(`Você não verá mais os posts de @${u.handle}`); after(); }]); // silenciar = parar de ver a pessoa (Bia, 17/11)
     items.push(['Denunciar', () => sheet('Por que denunciar?', [['Spoiler sem aviso', 'spoiler'], ['Ofensa ou ataque', 'ofensa'], ['Spam ou propaganda', 'spam'], ['Outro motivo', 'outro']].map(([t, k]) => [t, async () => {
-      const r = await sapi('POST', `/v1/report/${it.type}/${it.id}`, { reason: k }); toast(r.status < 300 ? 'Denúncia enviada. Obrigado!' : 'Não consegui enviar agora');
+      const r = await sapi('POST', `/v1/report/${it.type}/${it.id}`, { reason: k }); toast(r.status < 300 ? 'Denúncia enviada. Vamos analisar.' : 'Não consegui enviar agora');
       if (r.status < 300) { rdSetPref('rdHide', [...rdPrefs().hide, it.type + it.id].slice(-300)); after(); } }]))]);
     if (u.handle) items.push([`Bloquear @${u.handle}`, async () => {
       if (!confirm(`Bloquear @${u.handle}? Vocês deixam de ver os posts um do outro e a amizade é desfeita.`)) return;

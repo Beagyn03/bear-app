@@ -16,7 +16,9 @@
     let last = 0; try { last = Number(localStorage.getItem(KEY)) || 0; } catch {}
     if (last || document.querySelector('.inst-pop')) return; // já respondeu uma vez: não volta
     // não atrapalha telas por cima (diário, folhas, tour)
-    const busy = document.querySelector('.sheet') || (TR.querySelector('#editor') && !TR.querySelector('#editor').hidden) || document.querySelector('.tour, .tr-ov');
+    const busy = document.querySelector('.sheet') || (TR.querySelector('#editor') && !TR.querySelector('#editor').hidden) || document.querySelector('.tour, .tr-ov')
+      || document.querySelector('.ppab, .ppbal, .lvdlg-bg') || TR.querySelector('#shelflist:not([hidden]) #gs-ok') // primeiro acesso e balões do tour (teste real 21/11)
+      || (() => { try { const p = (db.prefs || {}).pp; return !!(p && p.on && p.fs && p.fs !== 'ok'); } catch { return false; } })();
     if (busy) return setTimeout(show, 8000);
     const w = document.createElement('div'); w.className = 'inst-pop'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-label', 'Instalar o Livroverso');
     w.innerHTML = '<img src="icon-192.png" alt=""><span><b>Instale o Livroverso</b><small>Abre como app no seu celular, funciona sem internet e te avisa na hora de ler.</small></span><div class="inst-bt"><button type="button" class="inst-no">Agora não</button><button type="button" class="inst-yes">Instalar</button></div>';
@@ -29,3 +31,5 @@
   window.addEventListener('appinstalled', () => { document.querySelector('.inst-pop')?.remove(); }); }
 // se o diário ou outra tela abrir por cima, o popup sai da frente (sem contar como "Agora não")
 { const ed = TR.querySelector('#editor'); if (ed) new MutationObserver(() => { if (!ed.hidden) document.querySelector('.inst-pop')?.remove(); }).observe(ed, { attributes: true, attributeFilter: ['hidden'] }); }
+// se o primeiro acesso ou um balão do tour abrir por cima, o aviso sai da frente (volta numa próxima abertura)
+new MutationObserver(() => { const w = document.querySelector('.inst-pop'); if (w && (document.querySelector('.ppab, .ppbal') || TR.querySelector('#shelflist:not([hidden]) #gs-ok'))) w.remove(); }).observe(document.body, { childList: true, subtree: true });
