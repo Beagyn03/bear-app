@@ -28,7 +28,7 @@ function vFn(k) { try { const m = v2Mods(); if (V6SUB[k] && m[V6SUB[k]] === fals
       v.querySelectorAll('.v2fn-tg').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; if (V6SUB[k] && !v4Mod(V6SUB[k])) return toast('Ligue a Comunidade primeiro');
         const mods = { ...((db.prefs || {}).mods || {}) }; if (mods.presentes === undefined) mods.presentes = mods.emprest !== false;
         const now = k === 'presentes' ? v4Mod('presentes') : mods[k] !== false; mods[k] = !now; db.prefs = { ...(db.prefs || {}), mods }; save(); v2ModsApply(); try { drawTabbar(); } catch {}
-        if (k === 'prazos') { try { if (mods.prazos === false) sapi('DELETE', '/v1/me/reminder').catch(() => {}); else { const R = reading(); reminderSync(R && R.e); } } catch {} }
+        if (k === 'prazos') { try { if (mods.prazos === false) sapi('DELETE', '/v1/me/reminder').catch(() => {}); else { reminderSync(typeof remindOwner === 'function' ? remindOwner() : null); } } catch {} }
         try { refresh(); } catch {} draw(); }));
     };
     S.listRedraw = draw; draw();

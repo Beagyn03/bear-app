@@ -39,11 +39,18 @@ async function reminderSync(e) { try { if (!connected()) return; if (!e || !e.re
   return r;
 }; }
 // mantém a página e o prazo em dia na API (a conta do "faltam X" usa onde você está)
+// (Bia, 21/11) o lembrete é do LIVRO que tem prazo, não do "livro do Hoje": antes, quando outro livro passava a ser o atual
+// (começar outro livro, trocar o cartão do Hoje), este laço apagava o lembrete do servidor sem a pessoa pedir.
+// Agora só apaga quando o livro com lembrete deixa de estar em Lendo ou perde o prazo; se houver mais de um com lembrete,
+// fica o do livro atual (ou o primeiro válido) e os outros perdem só a marca local.
+const remindOk = (x) => x && x.remind && x.status === 'LENDO' && x.dueAt;
+const remindOwner = () => { const R = reading(), cur = R && R.e, own = lib().filter((x) => x.remind); return own.find((x) => x === cur && remindOk(x)) || own.find(remindOk) || null; };
 setInterval(() => { try {
-  const R = reading(); const e = R && R.e;
-  for (const x of lib()) if (x.remind && (x !== e || x.status !== 'LENDO' || !x.dueAt)) { delete x.remind; save(); reminderSync(null); }
-  if (!e || !e.remind || !e.dueAt) return; const b = reminderBody(e); if (!b) return;
-  if (e.remind.sent !== b.page + '|' + b.dueAt + '|' + b.hour + ':' + b.minute + '|' + b.off.join('')) reminderSync(e);
+  const keep = remindOwner(); let changed = false;
+  for (const x of lib()) if (x.remind && x !== keep) { delete x.remind; changed = true; }
+  if (changed) { save(); if (!keep) reminderSync(null); }
+  if (!keep) return; const b = reminderBody(keep); if (!b) return;
+  if (keep.remind.sent !== b.page + '|' + b.dueAt + '|' + b.hour + ':' + b.minute + '|' + b.off.join('')) reminderSync(keep);
 } catch {} }, 30000);
 // a notificação abre o app no "Atualizar leitura"
 const openUpd = () => { try { const R = reading(); if (R) editLeitura(); } catch {} };
