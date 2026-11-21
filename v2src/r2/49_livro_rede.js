@@ -31,22 +31,25 @@ S.bkRede = S.bkRede || {}; S.bkF = S.bkF || { tipo: 'tudo', nota: '', semSp: fal
       const net = b && b.status === 200 && b.data ? b.data : {};
       const seen = new Set(); const revs = [];
       const asRev = (x, mine) => ({ type: 'review', id: x.id, user: x.user, paws: x.paws, text: x.text, spoiler: !!x.spoiler, createdAt: x.updatedAt, mine: !!mine, readerPct: x.readerPct ?? null, bookStatus: x.bookStatus || null });
-      if (net.mine) { revs.push(asRev(net.mine, true)); seen.add(net.mine.id); }
+      const lrNow = lib().find((x) => normT(x.title) === normT(title));
+      if (net.mine && (!lrNow || lrNow.status === 'LIDO')) { revs.push(asRev(net.mine, true)); seen.add(net.mine.id); }
       for (const x of [...(net.friends || []), ...(net.public || [])]) if (!seen.has(x.id)) { seen.add(x.id); revs.push(asRev(x, false)); }
       data = { posts, revs, avg: net.avg ?? null, count: net.count || 0, at: Date.now() }; S.bkRede[key] = data;
     }
     if (!sec.isConnected) return;
     // a sua avaliação aparece mesmo se for privada (só você vê)
     const lr = lib().find((x) => normT(x.title) === normT(title)), my = lr && reviewOfLib(lr);
-    const mineLocal = !data.revs.some((r) => r.mine) && my && (my.paws || my.texto) ? [{ type: 'review', id: 'me-local', user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME }, paws: my.paws || null, text: my.texto || null, spoiler: !!my.spoiler, createdAt: lr.finishedAt || todayISO(), mine: true, local: true, readerPct: readerPctOf(title) }] : [];
+    // avaliação só de leitura concluída (Bia, 20/11; reteste G1): fora de Lido a sua avaliação guardada não aparece; a hora é o meio-dia do dia em que terminou (antes, meia-noite UTC virava "1 d")
+    const mineLocal = !data.revs.some((r) => r.mine) && lr && lr.status === 'LIDO' && my && (my.paws || my.texto) ? [{ type: 'review', id: 'me-local', user: { handle: socialProfile.handle, displayName: socialProfile.displayName || NAME }, paws: my.paws || null, text: my.texto || null, spoiler: !!my.spoiler, createdAt: lr.finishedAt && /^\d{4}-\d{2}-\d{2}$/.test(lr.finishedAt) ? lr.finishedAt + 'T12:00:00' : (lr.finishedAt || todayISO()), mine: true, local: true, readerPct: readerPctOf(title) }] : [];
     const draw = () => {
       const F = S.bkF; F.nota = ''; // filtro por nota saiu (Bia, 20/11; protótipo: Tudo · Avaliações · Sem spoiler)
-      let list = [...mineLocal, ...data.revs, ...data.posts].map((x) => ({ ...x, mine: !!(x.mine || (x.user && socialProfile && x.user.handle === socialProfile.handle)) }));
+      const lido = !lr || lr.status === 'LIDO';
+      let list = [...mineLocal, ...data.revs.filter((r) => lido || !(r.mine || (r.user && socialProfile && r.user.handle === socialProfile.handle))), ...data.posts].map((x) => ({ ...x, mine: !!(x.mine || (x.user && socialProfile && x.user.handle === socialProfile.handle)) }));
       if (F.tipo === 'aval') list = list.filter((x) => x.type === 'review'); else if (F.tipo === 'com') list = list.filter((x) => x.type !== 'review');
       if (F.nota) list = list.filter((x) => { const p = Number(x.paws) || 0; return F.nota === '5' ? p >= 5 : F.nota === '4' ? p >= 4 && p < 5 : F.nota === '3' ? p >= 3 && p < 4 : p > 0 && p < 3; });
       if (F.semSp) list = list.filter((x) => x.mine || !(x.spoiler || x.spoilerKind));
       list.sort((a, z) => new Date(z.createdAt) - new Date(a.createdAt)); // por ordem de postagem (mais recente primeiro)
-      const total = mineLocal.length + data.revs.length + data.posts.length;
+      const total = mineLocal.length + data.revs.filter((r) => lido || !(r.mine || (r.user && socialProfile && r.user.handle === socialProfile.handle))).length + data.posts.length;
       sec.innerHTML = (total ? '<div class="br-f">' + [['tudo', 'Tudo'], ['aval', 'Avaliações']].map(([k, n]) => '<button type="button" data-t="' + k + '" class="' + (F.tipo === k ? 'on' : '') + '">' + n + '</button>').join('')
           + '<button type="button" data-sp class="' + (F.semSp ? 'on' : '') + '">Sem spoiler</button></div>' : '')
         + (list.length ? list.map((it, i) => rdCardHTML({ ...it, book: null }, i, it.local ? { noFoot: true } : {})).join('')

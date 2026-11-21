@@ -196,12 +196,17 @@ function v6V4Click(ev) {
 function v6V4Input(ev) { const t = ev.target; if (t && t.id === 'v6ta') { const st = v4State(); st.v6.t = t.value; const c = t.getRootNode().getElementById('v6cnt'); if (c) c.textContent = t.value.length + '/280'; } }
 
 // ---------- Pergunta do dia (API /v1/qday) ----------
-let V6QD = null, V6QDAt = 0, V6QDBusy = false;
+// a pergunta e o seu voto do dia ficam guardados no aparelho: o Hoje já abre com eles (reteste G4: abria com outra pergunta,
+// sem voto e capas vazias, e trocava sozinho segundos depois). Sem nada guardado, o cartão espera a resposta em vez de chutar.
+const V6QDK = 'lv.qday';
+let V6QD = (() => { try { const c = JSON.parse(localStorage.getItem(V6QDK) || 'null'); return c && c.d === todayISO() && c.q && c.q.question ? c.q : null; } catch { return null; } })(), V6QDAt = 0, V6QDBusy = false;
+const v6QdKeep = () => { try { if (V6QD && V6QD.question) localStorage.setItem(V6QDK, JSON.stringify({ d: todayISO(), q: V6QD })); } catch {} };
 async function v6QdLoad(force) {
   if (!connected() || !socialProfile || V6QDBusy || (!force && Date.now() - V6QDAt < 10 * 60000)) return; V6QDBusy = true;
   // falha ou resposta sem pergunta também conta como tentativa (nova tentativa em 1 min): antes, cada redesenho pedia de novo e o Hoje e a página da pergunta entravam em laço
   let ok = false; const before = JSON.stringify(V6QD);
   try { const r = await sapi('GET', '/v1/qday'); if (r.status === 200 && r.data && r.data.question) { V6QD = r.data; ok = true; } } catch {} finally { V6QDBusy = false; V6QDAt = ok ? Date.now() : Date.now() - 9 * 60000; }
+  if (ok) v6QdKeep(); else if (!V6QD) { V6QD = { failed: true }; } // sem resposta: usa a pergunta local (não fica esperando para sempre)
   if (JSON.stringify(V6QD) !== before) v6QdRefresh();
 }
 function v6QdRefresh() { try { if (S.tab === 'inicio' && typeof v2HojeEnsure === 'function') v2HojeEnsure(); } catch {} const st = v4State(); if (st.view === 'v6qday') v4Draw(); }
@@ -211,7 +216,11 @@ const v6QdRow = (x, tot, i, mine) => { const pc = tot ? Math.round(x.votes / tot
 v2QdayHTML = function () {
   v6QdLoad();
   let q0 = '', from = 'lidos'; try { [q0, from] = v2QOfDay(); } catch {}
-  const Q = V6QD, q = (Q && Q.question) || q0;
+  let Q = V6QD;
+  // ainda sem resposta do servidor (nem guardada): reserva o lugar do cartão, sem mostrar uma pergunta que vai trocar
+  try { if (!Q && connected() && socialProfile !== null) { if (!v2QdayHTML.t) v2QdayHTML.t = setTimeout(() => { v2QdayHTML.t = 0; v6QdLoad(); if (!V6QD && !V6QDBusy) { V6QD = { failed: true }; v6QdRefresh(); } }, 6000); return `<section class="v2-qd v6qd-wait" data-v2qd="1" aria-busy="true"><div class="k">Pergunta do dia</div><div class="q">&nbsp;</div><div class="qpicks" style="min-height:96px"></div><div class="qft"><span>&nbsp;</span></div></section>`; } } catch {}
+  if (Q && Q.failed) Q = null;
+  const q = (Q && Q.question) || q0;
   if (Q && Q.mine) return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div><div class="v6ql">${(Q.top || []).map((x, i) => v6QdRow(x, Q.total, i, Q.mine)).join('')}</div>
     <div class="qft"><span>${Q.total} ${Q.total === 1 ? 'voto' : 'votos'} · você votou em <b>${esc(Q.mine.title)}</b></span><button type="button" data-q6go="1">Mais votados ›</button></div></section>`;
   const bks = (() => { try { return v2QBooks(from); } catch { return []; } })();
@@ -222,7 +231,7 @@ v2QdayHTML = function () {
 async function v6Vote(book) {
   if (!connected() || !socialProfile) return toast('Entre na sua conta para votar');
   try { const r = await sapi('POST', '/v1/qday/vote', { book: { title: String(book.title).slice(0, 300), author: book.author ? String(book.author).slice(0, 300) : null, cover: /^https:\/\//.test(book.cover || '') ? String(book.cover).slice(0, 2000) : null } });
-    if (r.status === 200 && r.data && r.data.question) { V6QD = r.data; V6QDAt = Date.now(); toast('Voto registrado'); v6QdRefresh(); return; }
+    if (r.status === 200 && r.data && r.data.question) { V6QD = r.data; V6QDAt = Date.now(); v6QdKeep(); toast('Voto registrado'); v6QdRefresh(); return; }
     toast(r.status === 403 ? 'Sua conta não pode votar agora' : 'Não consegui votar agora'); } catch { toast('Não consegui votar agora'); }
 }
 v2QAnswer = function (id) {

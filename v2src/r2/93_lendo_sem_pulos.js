@@ -22,11 +22,14 @@
     if (mode === 'snap' && !snap && l.childElementCount && !l.classList.contains('v3-wait')) {
       const w = l.getBoundingClientRect().width; snap = l.cloneNode(true); snap.classList.add('lista-snap'); snap.removeAttribute('id'); snap.setAttribute('aria-hidden', 'true'); snap.style.pointerEvents = 'none';
       snap.id = 'lista'; l.after(snap); l.style.width = w + 'px'; l.classList.add('v3-back');
-    } else if (mode === 'fade') l.classList.add('v3-wait');
+    } else if (mode === 'fade') { l.style.transition = 'none'; l.classList.add('v3-wait'); requestAnimationFrame(() => { l.style.transition = ''; }); }
     settle(); };
   const _dt = drawTab; drawTab = function () {
     const l = L(), home = S.tab === 'inicio';
-    if (home && l && !l.hidden) start(l.querySelector('.v3-now') ? 'snap' : 'fade');
+    // o Hoje novo (v2) não tem .v3-now: sem isto ia pelo "fade", e o layout antigo aparecia meio transparente por um instante (reteste M8)
+    // na v2, congelar a tela só quando ela já é a nova: a 1ª cópia era do layout antigo (meta, estante, números) e ficava 1,6 s na frente
+    const v2 = typeof v2HojeEnsure === 'function';
+    if (home && l && !l.hidden) start(l.querySelector(v2 ? '.v2hero, .v3x, .v8dia' : '.v3-now') ? 'snap' : 'fade');
     return _dt.apply(this, arguments); };
   new MutationObserver((ms) => { if (!(snap || (L() && L().classList.contains('v3-wait')))) return; if (ms.some((m) => !(m.target.closest && m.target.closest('.lista-snap')))) { last = Date.now(); settle(); } }).observe(TR, { childList: true, subtree: true });
   // ao trocar de aba enquanto espera, mostra na hora

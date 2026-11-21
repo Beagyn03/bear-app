@@ -51,7 +51,9 @@ function v9DelReview(e) {
 { const _rm = rdMenu; rdMenu = function (it, after, anchor) {
     const inBook = !!(anchor && anchor.closest && anchor.closest('.bp-rede'));
     if (inBook && it && it.mine && it.type === 'review') {
-      const le = lib().find((x) => x.id === it.libId) || (it.book ? lib().find((x) => normT(x.title) === normT(it.book.title)) : null); if (!le) return _rm.apply(this, arguments);
+      // o cartão da Comunidade do livro não traz o livro (book: null); o título vem da própria página (reteste G3: o ••• não abria nada)
+      const pt = ((anchor.closest('#shelflist') || TR).querySelector('.bp-hero h2') || {}).textContent || '';
+      const le = lib().find((x) => x.id === it.libId) || (it.book ? lib().find((x) => normT(x.title) === normT(it.book.title)) : null) || (pt ? lib().find((x) => normT(x.title) === normT(pt)) : null); if (!le) return _rm.apply(this, arguments);
       return popMenu(anchor, [{ label: 'Editar avaliação', fn: () => { try { v4FimOpen(le); } catch { rateForm(le, { logs: [] }, () => {}); } } },
         { label: 'Apagar avaliação', fn: () => sheet('Apagar sua avaliação de “' + le.title + '”?', [['Apagar avaliação', () => { v9DelReview(le); toast('Avaliação apagada'); }]]) }]); }
     return _rm.apply(this, arguments); }; }

@@ -42,6 +42,8 @@
   };
   // a estante muda (Terminei, Não terminei, novo livro): sobe em poucos segundos e os números do livro se refazem (teste 14)
   setTimeout(push, 6000); setInterval(push, 5000);
+  // mudou o status (Terminei, Não terminei, Começar): sobe na hora, para os números do livro não mostrarem "0 leram, 1 lendo" (reteste M6)
+  { const _sls = setLibStatus; setLibStatus = function () { const r = _sls.apply(this, arguments); setTimeout(push, 250); return r; }; }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') push(); }); }
 // ---------- números do livro, abaixo do topo (perfil do livro; Bia, 20/11) ----------
 var v8Bust = () => {};
