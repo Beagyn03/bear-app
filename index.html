@@ -24505,6 +24505,8 @@ var ppG = null; // caminho guiado em andamento
 // procura nos lugares onde o app desenha: documento, interface principal e as telas v4/v5/v6 (shadow roots internos)
 function ppRoots() { const R = [document, TR]; try { TR.querySelectorAll('*').forEach((x) => { if (x.shadowRoot) R.push(x.shadowRoot); }); } catch {} return R; }
 const ppVis = (x) => { if (!x || !x.isConnected || (x.closest && x.closest('#lista.v3-wait, #lista.v3-back, .lista-snap'))) return false; const r = x.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return false; const cs = getComputedStyle(x); return cs.visibility !== 'hidden' && cs.display !== 'none' && r.bottom > 0 && r.top < innerHeight; };
+function ppFindAny(sel) { for (const r of ppRoots()) { let L; try { L = r.querySelectorAll(sel); } catch { continue; }
+    for (const x of L) { if (!x.isConnected || (x.closest && x.closest('.ppbal, #lista.v3-wait, #lista.v3-back, .lista-snap'))) continue; const b = x.getBoundingClientRect(); if (b.width > 2 && b.height > 2 && getComputedStyle(x).visibility !== 'hidden') return x; } } return null; }
 function ppFind(sel, txt) { for (const r of ppRoots()) { let L; try { L = r.querySelectorAll(sel); } catch { continue; }
     for (const x of L) { if (x.closest && x.closest('.ppbal')) continue; if (txt && !(txt instanceof RegExp ? txt.test(x.textContent) : x.textContent.includes(txt))) continue; if (ppVis(x)) return x; } } return null; }
 function ppClose() { document.querySelectorAll('.ppbal,.ppring,.ppscrim').forEach((x) => x.remove()); if (ppClose.raf) cancelAnimationFrame(ppClose.raf); ppClose.raf = 0; }
@@ -24610,8 +24612,8 @@ const PP_PAGINA = [
   { sel: '#shelflist .v5hdots, #shelflist [data-v9=more], #shelflist .v5dots', opt: 1, t: 'Mais opções', x: 'Mais opções deste livro.', adv: 'btn', btn: 'Concluir' },
 ];
 const PP_HOJE = [
-  { go: () => ppTab('inicio'), sel: '#lista:not(.lista-snap) .v3ring', t: 'Seu progresso', x: 'O anel mostra quanto você já leu. Toque nele para abrir o livro.', adv: 'btn' },
-  { sel: () => { const b = ppFind('#lista:not(.lista-snap) .v3qa.p'); return b ? b.parentElement : null; }, t: 'Atalhos do livro', x: 'Atualizar: diga a página se leu fora do app. Ao lado: Terminei, Trecho, Ler junto e Mais.', adv: 'btn' },
+  { go: () => ppTab('inicio'), sel: () => ppFindAny('#lista:not(.lista-snap) .v3ring'), t: 'Seu progresso', x: 'O anel mostra quanto você já leu. Toque nele para abrir o livro.', adv: 'btn' },
+  { sel: () => { const b = ppFindAny('#lista:not(.lista-snap) .v3qa.p'); return b ? b.parentElement : null; }, t: 'Atalhos do livro', x: 'Atualizar: diga a página se leu fora do app. Ao lado: Terminei, Trecho, Ler junto e Mais.', adv: 'btn' },
   { sel: '#tabbar [data-tab=ler]', t: 'Ler', x: 'Abre a sessão de leitura: conta o tempo e silencia o resto. No caminho, ecos de quem já passou.', adv: 'btn',
     btns: [['Depois', () => ppFinish()], ['Experimentar agora', () => { ppG.sn = 0; ppG.steps.push(...PP_SESSAO); ppNext(); }]] },
 ];
@@ -24624,7 +24626,7 @@ const PP_SESSAO0 = [
   { keep: 1, sel: () => ppFind('[aria-label="Deslizar até a página"]') || ppFind('[data-a=ust]'), t: 'Diga a página e salve', x: 'Ajuste a página em que parou e salve. Descartar não guarda nada.', adv: 'none',
     until: () => !ppFind('[data-a=ust]') && !ppFind('[data-a=ecoed]') },
   // fecha a tela Ler e aponta o Atualizar do cartão no Hoje (teste real 21/11, item 3)
-  { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, wait: 9000, sel: () => (S.v4 ? null : ppFind('#lista:not(.lista-snap) .v3qa.p')), t: 'Leu fora da sessão?', x: 'Toque em Atualizar e diga onde parou.', adv: 'btn', btn: 'Concluir' },
+  { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, wait: 9000, sel: () => (S.v4 ? null : ppFindAny('#lista:not(.lista-snap) .v3qa.p')), t: 'Leu fora da sessão?', x: 'Toque em Atualizar e diga onde parou.', adv: 'btn', btn: 'Concluir' },
 ];
 const PP_SESSAO = PP_SESSAO0.map((x) => ({ ...x, sub: 1 }));
 function ppPaths(id) {
@@ -24646,7 +24648,7 @@ function ppPaths(id) {
     ...PP_MENU_LER];
   if (id === 'hoje2') return [...PP_HOJE];
   if (id === 'fim') return [
-    { go: () => ppTab('inicio'), sel: '#lista:not(.lista-snap) [data-h3=fim]', t: 'Toque em Terminei', x: 'Abre a nota, as datas e o que sentiu.', until: () => !!ppFind('[data-a=fimn]') },
+    { go: () => ppTab('inicio'), sel: () => ppFindAny('#lista:not(.lista-snap) [data-h3=fim]'), t: 'Toque em Terminei', x: 'Abre a nota, as datas e o que sentiu.', until: () => !!ppFind('[data-a=fimn]') },
     { keep: 1, go: () => { ppG.f0 = lib().filter((e) => e.status === 'LIDO').length; }, sel: () => ppStars(), t: 'Dê a nota e salve', x: 'Toque nas estrelas (meia vale) e salve.', adv: 'none',
       until: () => lib().filter((e) => e.status === 'LIDO').length > (ppG.f0 || 0) && !ppFind('[data-a=fimn]') },
     { go: () => { try { ppDone('fim'); } catch {} const L = lib().filter((e) => e.status === 'LIDO').sort((a, b) => String(b.finishedAt || '').localeCompare(String(a.finishedAt || '')));
