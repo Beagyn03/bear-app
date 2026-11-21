@@ -177,7 +177,7 @@ function v5BmHTML(e) {
   const st = e.status, pg = libProgress(e), tot = Number(e.totalPages) || 0, due = (() => { try { return v4Due(e); } catch { return null; } })(), soc = v4On('comunidade');
   const shN = v5Shelves().filter((s) => (s.bookIds || []).includes(e.id)).map((s) => s.name);
   // Menu do livro aprovado (Bia, 20/11; protótipo v161): no topo as ações do status, sempre na mesma ordem; "Mais" abre no lugar,
-  // em ordem fixa (o que não se aplica some, nada troca de lugar); Compartilhar é botão fixo no cabeçalho; Remover livro separado no fim.
+  // em ordem fixa (o que não se aplica some, nada troca de lugar); Compartilhar é botão fixo no cabeçalho; Remover da Biblioteca separado no fim.
   const top = st === 'LENDO' ? [v5li('v5upd', 'pag', 'Atualizar página'), v5li('v5fim', 'ok', 'Terminei', 'nota, datas e o que sentiu'), vFn('prazos') && v5li('v5prazo', 'cal', e.dueAt ? 'Prazo' : 'Definir prazo', e.dueAt ? (due && !due.done ? `hoje, até a pág. ${due.target}` : 'mudar a data ou tirar') : 'quando quer terminar?'), v5li('sheet', 'stop', 'Parar de ler', 'pausar, desistir ou marquei por engano', ' data-s="v5stop"')]
     : st === 'QUERO' ? [v5li('v5start', 'ler', 'Começar a ler', 'vira o livro do Hoje'), v5li('v5fim', 'ok', 'Já li', 'leitura antiga: nota e quando leu'), v5li('v5prio', 'sort', 'Prioridade', { 1: 'alta', 2: 'normal', 3: 'baixa' }[e.prio || 2]), v5FilaLivre(e) ? v5li('v5tirafila', 'x', 'Tirar da fila', 'sai na hora; dá para desfazer') : '']
     : st === 'LIDO' ? [v5li('v5fim', 'quote', 'Minha avaliação', 'nota, emoções e níveis do enredo'), v5li('sheet', 'swap', 'Ler de novo', 'a leitura anterior fica no histórico', ' data-s="v5reler"'), v5li('sheet', 'undo', 'Não terminei', 'marquei como lido por engano', ' data-s="v5unlido"'), v5li('v5retro', 'cal', 'Retrospectiva')]
@@ -198,7 +198,7 @@ function v5BmHTML(e) {
   <div class="list">${top.filter(Boolean).join('')}
   ${mais.length ? `<button class="li v5more${open ? ' on' : ''}" data-a="v5more" aria-expanded="${open}">${v4ic('dots', 20)}<span class="t">Mais<small>${maisTxt}</small></span><span class="r" style="transform:rotate(${open ? -90 : 90}deg)">${v4ic('chev', 16)}</span></button>` : ''}
   ${open ? mais.join('') : ''}
-  ${v5li('sheet', 'trash', 'Remover livro', 'some de tudo; fica 30 dias em Removidos recentemente', ' data-s="v5rm"', 'dng')}</div>`;
+  ${v5li('sheet', 'trash', 'Remover da Biblioteca', 'some de tudo; fica 30 dias em Removidos recentemente', ' data-s="v5rm"', 'dng')}</div>`;
 }
 const v4SheetHTML_v5 = v4SheetHTML;
 v4SheetHTML = function (k) {
@@ -220,7 +220,7 @@ v4SheetHTML = function (k) {
       ${v5li('v5ul_nada', 'undo', 'Nem comecei', 'volta para Quero ler, sem página.')}</div>
       <button class="btn s w" data-a="sheet" data-s="v5bm" style="margin-top:10px">Voltar</button>`;
     if (k === 'v5rm') { const msg = { QUERO: 'O livro sai do Quero ler, da Biblioteca e das suas estantes.', LENDO: 'O livro sai do Hoje e da Biblioteca, junto com páginas, trechos e anotações. Se só quer parar, use Parar de ler: pausar ou desistir guarda o histórico.', LIDO: 'O livro sai da Biblioteca, da meta do ano e das estatísticas, junto com nota, avaliação e trechos. Se marcou como lido por engano, use Não terminei.', HIBERNANDO: 'O livro sai da Biblioteca e das estatísticas, junto com páginas e trechos. Se só quer parar de ver em Pausados, use Desistir: o histórico fica.' }[e.status] || 'O livro sai da Biblioteca e das suas estantes.';
-      return `${v5hd(e, 'Remover este livro?', esc(e.title))}<p class="mut" style="margin:0 0 12px">${msg}</p>
+      return `${v5hd(e, 'Remover da Biblioteca?', esc(e.title))}<p class="mut" style="margin:0 0 12px">${msg}</p>
       <div class="sh-due">${v4ic('undo', 18)}<span>Nada se perde na hora: o livro fica <b>30 dias</b> em Você › Ajustes › Removidos recentemente, com tudo o que tinha, e volta com um toque.</span></div>
       <div class="row" style="gap:8px"><button class="btn s" style="flex:1" data-a="sheet" data-s="v5bm">Voltar</button><button class="btn p" style="flex:1" data-a="v5rmok">Remover</button></div>`; }
     if (k === 'v5reler') { const n = v5Paws(e), y = String(e.finishedAt || '').slice(0, 4), yr = todayISO().slice(0, 4);

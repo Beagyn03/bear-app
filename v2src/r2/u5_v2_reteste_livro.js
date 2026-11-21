@@ -1,13 +1,13 @@
 // Reteste no navegador (Bia, 20/11), página do livro:
 // - M2: "Minha leitura › Biblioteca › Tirar daqui" abria a janela do navegador com outro aviso. Agora é a mesma ação do menu
-//   ("Remover livro", folha do app, 30 dias em Removidos recentemente) e com o mesmo nome.
+//   ("Remover da Biblioteca", folha do app, 30 dias em Removidos recentemente) e com o mesmo nome.
 { const bookHere = () => { const t = ((TR.querySelector('#shelflist .bp-hero h2') || {}).textContent || '').trim(); if (!t) return null; try { return lib().find((x) => normT(x.title) === normT(t)) || null; } catch { return null; } };
   TR.addEventListener('click', (ev) => {
     const p = ev.composedPath ? ev.composedPath() : []; const b = p.find((n) => n && n.dataset && n.dataset.a === 'rmlib'); if (!b) return;
     const e = bookHere(); if (!e) return; ev.stopPropagation(); ev.preventDefault();
     try { v5Sheet('v5rm', { e }); } catch (err) { console.warn('remover livro', err); } }, true);
   const v = $('#shelflist'); let tm = 0;
-  const fix = () => { tm = 0; if (!v || v.hidden) return; v.querySelectorAll('.bp-adj[data-a=rmlib] b').forEach((x) => { if (x.textContent !== 'Remover livro') x.textContent = 'Remover livro'; }); };
+  const fix = () => { tm = 0; if (!v || v.hidden) return; v.querySelectorAll('.bp-adj[data-a=rmlib] b').forEach((x) => { if (x.textContent !== 'Remover da Biblioteca') x.textContent = 'Remover da Biblioteca'; }); };
   if (v) new MutationObserver(() => { if (!tm) tm = setTimeout(fix, 60); }).observe(v, { childList: true, subtree: true }); }
 // - M7: estante aberta a partir do Você herdava a marca do perfil (mine-page): ficava sem seta de voltar e sem o "•••".
 //   Excluir de dentro da página agora fecha a página na hora (antes ficava presa numa tela "Estante" vazia).
