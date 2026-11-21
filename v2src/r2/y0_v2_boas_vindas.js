@@ -86,8 +86,10 @@ TR.addEventListener('click', (ev) => { const r = ev.target.closest && ev.target.
     w.innerHTML = `<span class="ic" aria-hidden="true">${v4ic('orb', 18)}</span><span><b>Boas-vindas ao Livroverso</b><small>Seus primeiros passos estão no Hoje</small></span>`;
     w.addEventListener('click', () => ppReabrir()); L.prepend(w); }).observe(TR, { childList: true, subtree: true }); }
 // primeiro acesso em tela cheia: sem a barra de baixo e sem lupa/sino até terminar (Bia, 21/11, item A)
-{ const st = document.createElement('style'); st.textContent = ':host(.ppfull) #tabbar,:host(.ppfull) #g-find,:host(.ppfull) #g-bell,:host(.ppfull) .v3-fab{display:none!important}'; TR.append(st);
+{ const st = document.createElement('style'); st.textContent = ':host(.ppfull) #tabbar,:host(.ppfull) #g-find,:host(.ppfull) #g-bell,:host(.ppfull) .v3-fab{display:none!important}:host(.ppfull) #shelflist{bottom:0!important;padding-bottom:calc(16px + env(safe-area-inset-bottom))!important;z-index:60}'; TR.append(st);
   let tm = 0; const sync = () => { tm = 0; const v = TR.querySelector('#shelflist'); const on = !!(v && !v.hidden && v.querySelector('#gs-ok') && !v.querySelector('.sl-back'));
-    const h = TR.host; if (h && h.classList.contains('ppfull') !== on) h.classList.toggle('ppfull', on); };
+    const h = TR.host; if (h && h.classList.contains('ppfull') !== on) { h.classList.toggle('ppfull', on);
+      // saiu do primeiro acesso por qualquer caminho: ele está concluído (dicas e aviso de instalar voltam a valer)
+      if (!on) { try { const p = (db.prefs || {}).pp; if (p && p.fs && p.fs !== 'ok' && !document.querySelector('.ppab')) { p.fs = 'ok'; save(); } } catch {} } } };
   new MutationObserver(() => { if (!tm) tm = setTimeout(sync, 40); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 

@@ -42,7 +42,10 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .gs-bk{display:grid;grid-template-columns:38px 1fr auto;gap:.6rem;align-items:center;border:1px solid var(--line);border-radius:12px;padding:.4rem .5rem;background:var(--panel)}
 .gs-bk .cv{width:38px;height:56px;border-radius:5px;font-size:.5rem}
 .gs-bk b{font-size:.88rem;display:block}.gs-bk small{font-size:.76rem;color:var(--ink-2)}
-.gs-bk button{border:0;background:none;color:var(--ink-2);font-size:1.2rem;width:36px;height:36px}
+.gs-bk button{border:0;background:none;color:var(--ink-2);font-size:1.2rem;width:40px;height:40px}
+.gs-t3{display:block;margin-top:.25rem;font-size:.76rem;color:var(--ink-2)}.gs-t3 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.gs-t3 select{min-height:34px;max-width:100%;padding:0 .5rem;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-size:.78rem;font-weight:800}
+.gs-t3ok{margin:.6rem 0 0;font-size:.8rem;color:var(--ink-2)}
 .gs-add{width:100%;height:42px;border-radius:12px;border:1.5px dashed var(--line);background:none;color:var(--ink);font:inherit;font-weight:800}
 .gs-hist{display:grid;gap:.35rem;border:1px solid var(--line);border-radius:14px;padding:.75rem;background:var(--panel);margin-top:.9rem}.gs-hist b{font-size:.92rem}.gs-hist small{font-size:.8rem;color:var(--ink-2)}
 .gs-btns{position:sticky;bottom:0;display:grid;gap:.3rem;padding:.8rem 0 .4rem;background:linear-gradient(transparent,var(--bg) 30%)}
@@ -85,9 +88,21 @@ function openTaste(first, prof, start) {
     + (books.length < 3 ? '<button type="button" class="gs-add" id="gs-add">+ Adicionar livro</button>' : '') + '</div>';
   const bear = (img, title, text) => '<div class="gs-hi gs-noimg"><div class="gs-bub">' + (title ? '<b>' + title + '</b>' : '') + '<span>' + text + '</span></div></div>';
   const slots = () => '<div class="gs-top">' + [0, 1, 2].map((i) => { const b = books[i];
-    return b ? '<div class="gs-bk gs-rk"><em>' + (i + 1) + '</em>' + cvh(b.title, b.cover) + '<span><b>' + esc(b.title) + '</b><small>' + esc(b.author || '') + '</small></span><button type="button" data-rm="' + i + '" aria-label="Tirar ' + esc(b.title) + '">×</button></div>'
+    return b ? '<div class="gs-bk gs-rk"><em>' + (i + 1) + '</em>' + cvh(b.title, b.cover) + '<span><b>' + esc(b.title) + '</b><small>' + esc(b.author || '') + '</small>' + (first ? t3Sel(b, i) : '') + '</span><button type="button" data-rm="' + i + '" aria-label="Tirar ' + esc(b.title) + '">×</button></div>'
       : '<button type="button" class="gs-slot" data-slot="' + i + '"' + (i > books.length ? ' disabled' : '') + '><em>' + (i + 1) + '</em><span>' + (i === books.length ? (i ? 'Mais um que você amou' : 'Escolher o primeiro livro') : '') + '</span>' + (i === books.length ? '<i>+</i>' : '') + '</button>'; }).join('') + '</div>';
-  const pickBook = () => searchSheet({ title: 'Um livro que você amou', onPick: (it) => { if (it && it.title && !books.some((x) => normT(x.title) === normT(it.title))) books.push({ title: String(it.title).slice(0, 200), author: it.author || null, cover: typeof it.cover === 'string' && /^https:/.test(it.cover) ? it.cover : null }); draw(); } });
+  // Top 3 do primeiro acesso entra na Biblioteca ao escolher (Lido, sem data); a vaga tem "Lido ▾" para mudar ali mesmo (Bia, 21/11)
+  const t3Has = (e) => !!(e && ((e.quotes && e.quotes.length) || e.note || e.notes || (e.diary && e.diary.length) || (e.log && e.log.length) || e.review || e.loan || e.own));
+  const t3Find = (b) => lib().find((x) => normT(x.title) === normT(b.title));
+  const t3Put = (b, st) => { try { db.library = db.library || []; const k = normT(b.title), e = t3Find(b);
+      if (e && !e.fromTop3) { favCh[k] = 'keep'; return; }
+      if (!st) { if (e && !t3Has(e)) db.library = db.library.filter((x) => x !== e); favCh[k] = ''; save(); return; }
+      if (e) { delete e.noDate; delete e.startedAt; } const x = e || { id: uid(), title: b.title, author: b.author || null, totalPages: null, addedAt: todayISO(), fromTop3: 1 };
+      x.status = st; if (b.cover && !x.cover) x.cover = b.cover; if (st === 'LIDO') x.noDate = true; if (st === 'LENDO') x.startedAt = todayISO(); if (!e) db.library.push(x); favCh[k] = st; save(); } catch (err) { console.warn('top 3 na biblioteca', err); } };
+  const T3O = [['LIDO', 'Lido'], ['QUERO', 'Quero ler'], ['LENDO', 'Lendo'], ['', 'Não colocar na Biblioteca']];
+  const t3Sel = (b, i) => { const k = normT(b.title), e = t3Find(b), ch = favCh[k];
+    if (ch === 'keep' || (e && !e.fromTop3)) return '<small class="gs-t3">já está na sua Biblioteca · ' + esc(String(LIB_LABEL[(e || {}).status] || '').toLowerCase()) + '</small>';
+    const cur = ch === undefined ? 'LIDO' : ch; return '<label class="gs-t3"><span class="sr">Na Biblioteca como</span><select data-t3="' + i + '" aria-label="' + esc(b.title) + ' na Biblioteca como">' + T3O.map(([v, n]) => '<option value="' + v + '"' + (v === cur ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>'; };
+  const pickBook = () => searchSheet({ title: 'Um livro que você amou', onPick: (it) => { if (it && it.title && !books.some((x) => normT(x.title) === normT(it.title))) { const b = { title: String(it.title).slice(0, 200), author: it.author || null, cover: typeof it.cover === 'string' && /^https:/.test(it.cover) ? it.cover : null }; books.push(b); if (first) t3Put(b, 'LIDO'); } draw(); } });
   const draw = () => {
     let body, okTxt, skipTxt, okOn = true, top;
     if (!first) {
@@ -111,7 +126,7 @@ function openTaste(first, prof, start) {
       else if (step === 1) body = bear('bear_celebrating', 'Boas-vindas' + ((() => { const n = String((prof && prof.displayName) || (socialProfile && socialProfile.displayName) || '').trim().split(/\s+/)[0]; return n ? ', ' + esc(n) : ''; })()) + '!', 'Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.')
         + dots + '<h2 class="gs-t">Quais gêneros você mais gosta?</h2><p class="gs-intro">Marque quantos quiser.</p>' + chips();
       else if (step === 2) body = bear('bear_reading_chair', '', books.length ? (books.length < 3 ? 'Ótima escolha! Quer colocar mais algum?' : 'Que top 3! Já sei bem o que te indicar.') : 'Agora me conta: quais livros marcaram você? Com eles eu acho leituras parecidas.')
-        + dots + '<h2 class="gs-t">Seus livros do coração</h2><p class="gs-intro">Monte seu Top 3. Pode ser só um, ou nenhum.</p>' + slots();
+        + dots + '<h2 class="gs-t">Seus livros do coração</h2><p class="gs-intro">Monte seu Top 3. Pode ser só um, ou nenhum.</p>' + slots() + (books.some((b) => { const c = favCh[normT(b.title)]; return c && c !== 'keep'; }) ? '<p class="gs-t3ok">Seus favoritos já estão na Biblioteca</p>' : '');
       else body = bear('bear_running_books', '', S.gsHist ? 'Pronto, seus livros estão na Biblioteca!' : 'Última pergunta, prometo!') + dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Apps de leitura deixam baixar seu histórico de leitura num arquivo (.csv). No Goodreads, pelo site no computador: My Books › Import and export › Export Library. Em outros apps, procure por exportar nas configurações. Depois é só voltar aqui e selecionar o arquivo baixado.</p>'
         + '<div class="gs-hist">' + (S.gsHist ? '<small class="gs-hok">✓ ' + esc(S.gsHist) + '</small>' : '')
         + '<button type="button" class="gs-add" id="gs-hist">' + (S.gsHist ? 'Importar outro arquivo' : 'Importar arquivo (CSV)') + '</button></div>';
@@ -123,11 +138,12 @@ function openTaste(first, prof, start) {
     const back = v.querySelector('.sl-back');
     $('#gs-prev', v)?.addEventListener('click', () => { if (fav) { fav = false; return draw(); } step = Math.max(1, step - 1); draw(); });
     $$('[data-fk]', v).forEach((b) => b.addEventListener('click', () => { const i = b.dataset.fi, k = b.dataset.fk; favCh[normT(books[+i].title)] = k; draw(); v.querySelector('[data-fi="' + i + '"][data-fk="' + k + '"]')?.focus(); }));
-    const needFav = () => { const k = books.map((b) => normT(b.title)).join('|'); return first && step === 2 && !fav && books.length && k !== favKey && books.some((b) => !lib().some((x) => normT(x.title) === normT(b.title))); };
+    const needFav = () => false; const needFavOld = () => { const k = books.map((b) => normT(b.title)).join('|'); return first && step === 2 && !fav && books.length && k !== favKey && books.some((b) => !lib().some((x) => normT(x.title) === normT(b.title))); };
     const afterFav = (put) => { favKey = books.map((b) => normT(b.title)).join('|'); if (put) favToLib(books, favCh); fav = false; step = 3; draw(); };
     if (back) back.addEventListener('click', () => { v.hidden = true; });
     $$('.gs-ch', v).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; sel.has(k) ? sel.delete(k) : sel.add(k); b.classList.toggle('on', sel.has(k)); b.setAttribute('aria-pressed', sel.has(k)); if (!first) $('#gs-ok', v).disabled = !(sel.size || books.length); }));
-    $$('[data-rm]', v).forEach((b) => b.addEventListener('click', () => { books.splice(+b.dataset.rm, 1); draw(); }));
+    $$('[data-rm]', v).forEach((b) => b.addEventListener('click', () => { const x = books[+b.dataset.rm]; if (first && x) t3Put(x, null); books.splice(+b.dataset.rm, 1); if (x) delete favCh[normT(x.title)]; draw(); }));
+    $$('[data-t3]', v).forEach((sl) => sl.addEventListener('change', () => { const x = books[+sl.dataset.t3]; if (x) t3Put(x, sl.value); draw(); v.querySelector('[data-t3="' + sl.dataset.t3 + '"]')?.focus(); }));
     $('#gs-add', v)?.addEventListener('click', pickBook);
     $$('.gs-slot', v).forEach((b) => b.addEventListener('click', pickBook));
     $('#gs-hist', v)?.addEventListener('click', () => { // importa ali mesmo, sem sair do passo

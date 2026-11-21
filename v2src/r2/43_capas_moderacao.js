@@ -18,7 +18,7 @@ async function loadCovers(force) {
   } catch {}
 }
 setTimeout(() => loadCovers(), 2500); setInterval(() => loadCovers(), 30 * 60000);
-{ const _sb = searchBooks; searchBooks = async function () { const r = await _sb.apply(this, arguments); if (!COVM.map.size || !Array.isArray(r)) return r; return r.map((it) => { const ov = it && COVM.map.get(covKey(it.title)); return ov ? { ...it, coverUrl: ov } : it; }); }; }
+// (Bia, 21/11) na busca a capa é a da edição: a troca por título não vale ali (pegava livros de outros autores com o mesmo título)
 // folha da moderação: escolher uma capa das edições encontradas ou colar o link de uma imagem
 async function modCoverSheet(x) {
   if (!COVM.admin) return toast('Só a moderação troca a capa para todo mundo');

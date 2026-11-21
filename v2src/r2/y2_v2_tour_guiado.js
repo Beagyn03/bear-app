@@ -96,7 +96,7 @@ function ppStep() {
     if (el) { if (!shown || g.cur !== el) { g.cur = el; show(el); } return; }
     waited += 300;
     if (shown && g.cur && !g.cur.isConnected) { g.cur = null; shown = null; }
-    if (!shown && (!s.sel || waited >= (s.opt ? 1200 : 3500))) { if (!s.sel && s.hidden) return; if (s.opt && s.sel && waited < 2500) return; if (s.opt && s.sel) { clearInterval(g.tm); g.tm = 0; return ppNext(); } g.cur = null; show(null); } };
+    if (!shown && (!s.sel || waited >= (s.opt ? 1200 : (s.wait || 3500)))) { if (!s.sel && s.hidden) return; if (s.opt && s.sel && waited < 2500) return; if (s.opt && s.sel) { clearInterval(g.tm); g.tm = 0; return ppNext(); } g.cur = null; show(null); } };
   g.cur = null; g.tm = setInterval(tick, 300); tick();
 }
 // ---------- caminhos ----------
@@ -143,7 +143,7 @@ const PP_SESSAO0 = [
   { keep: 1, sel: () => ppFind('[aria-label="Deslizar até a página"]') || ppFind('[data-a=ust]'), t: 'Diga a página e salve', x: 'Ajuste a página em que parou e salve. Descartar não guarda nada.', adv: 'none',
     until: () => !ppFind('[data-a=ust]') && !ppFind('[data-a=ecoed]') },
   // fecha a tela Ler e aponta o Atualizar do cartão no Hoje (teste real 21/11, item 3)
-  { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, sel: () => (S.v4 ? null : ppFind('#lista:not(.lista-snap) .v3qa.p')), t: 'Leu fora da sessão?', x: 'Toque em Atualizar e diga onde parou.', adv: 'btn', btn: 'Concluir' },
+  { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, wait: 9000, sel: () => (S.v4 ? null : ppFind('#lista:not(.lista-snap) .v3qa.p')), t: 'Leu fora da sessão?', x: 'Toque em Atualizar e diga onde parou.', adv: 'btn', btn: 'Concluir' },
 ];
 const PP_SESSAO = PP_SESSAO0.map((x) => ({ ...x, sub: 1 }));
 function ppPaths(id) {
