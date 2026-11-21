@@ -187,8 +187,9 @@ const PP_HOJE = [
 ];
 // ramo "Atualizar página" (Bia, 21/11): no lugar de entrar no silêncio, a pessoa escolheu só marcar a página
 const PP_UPD = [
-  { keep: 1, sel: () => ppFindAny('[aria-label="Deslizar até a página"]') || ppFindAny('[data-a=ust]'), also: '#v4upc', t: 'Diga a página', x: 'Ajuste em que página você está. O comentário é opcional.', adv: 'btn', until: () => !ppFindAny('[data-a=savepg]') },
-  { keep: 1, sel: () => ppFindAny('[data-a=savepg]'), t: 'Salve', x: 'Toque em Salvar. Descartar não guarda nada.', until: () => !ppFindAny('[data-a=savepg]') },
+  { keep: 1, sel: () => ppFindAny('.v4ler .upseg') || ppFindAny('[data-a=ust]'), t: 'Mude a página e salve', x: 'Conte por página, %, posição ou capítulo. Deslize a régua ou digite.', adv: 'btn', until: () => !ppFindAny('[data-a=savepg]') },
+  { keep: 1, opt: 1, sel: () => ppFindAny('.v4ler .updet'), t: 'Adicionar detalhes', x: 'Emoções, comentário, trecho e anotação, se quiser. Tudo opcional.', adv: 'btn', until: () => !ppFindAny('[data-a=savepg]') },
+  { keep: 1, sel: () => ppFindAny('[data-a=savepg]'), t: 'Salve', x: 'Toque em Salvar para registrar a página.', until: () => !ppFindAny('[data-a=savepg]') },
   { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, wait: 6000, sel: '#tabbar [data-tab=ler]', t: 'Pronto', x: 'A sessão de leitura fica para quando quiser: toque em Ler.', adv: 'btn', btn: 'Concluir' },
 ];
 const PP_ALT_UPD = [{ when: () => !!ppFindAny('[data-a=savepg]') && !ppFindAny('[data-a=start]') && !(typeof v4Ses === 'function' && v4Ses()), steps: PP_UPD }];
@@ -198,10 +199,11 @@ const PP_SESSAO0 = [
   { sel: '[data-a=ecoed]', t: 'Ecos', x: 'Frases de quem já passou por esta página aparecem aqui. Em Deixar um eco, você deixa o seu.', adv: 'btn' },
   { sel: '.v6luzb', opt: 1, t: 'Luz', x: 'Esmaece a tela para ler no escuro.', adv: 'btn' },
   { sel: '[data-a=sheet]', txt: 'Encerrar', t: 'Encerrar', x: 'No fim, diga a página em que parou.' },
-  { keep: 1, sel: () => ppFind('[aria-label="Deslizar até a página"]') || ppFind('[data-a=ust]'), also: '#v4upc', t: 'Diga a página e salve', x: 'Ajuste a página e salve. O comentário é opcional; Descartar não guarda nada.', adv: 'none',
-    until: () => !ppFind('[data-a=ust]') && !ppFind('[data-a=ecoed]') },
+  { keep: 1, sel: () => ppFind('.v4ler .upseg') || ppFind('[data-a=ust]'), t: 'Mude a página e salve', x: 'Conte por página, %, posição ou capítulo. Deslize a régua ou digite.', adv: 'btn', until: () => !ppFind('[data-a=ust]') && !ppFind('[data-a=ecoed]') },
+  { keep: 1, opt: 1, sel: () => ppFind('.v4ler .updet'), t: 'Adicionar detalhes', x: 'Emoções, comentário, trecho e anotação, se quiser. Tudo opcional.', adv: 'btn', until: () => !ppFind('[data-a=savepg]') },
+  { keep: 1, sel: () => ppFind('[data-a=savepg]'), t: 'Salve', x: 'Toque em Salvar. Descartar sessão, lá em cima, não guarda nada.', adv: 'none', until: () => !ppFind('[data-a=savepg]') && !ppFind('[data-a=ecoed]') },
   // fecha a tela Ler e aponta o Atualizar do cartão no Hoje (teste real 21/11, item 3)
-  { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, wait: 9000, sel: () => (S.v4 ? null : ppFindAny('#lista:not(.lista-snap) .v3qa.p')), t: 'Leu fora da sessão?', x: 'Toque em Atualizar e diga onde parou.', adv: 'btn', btn: 'Concluir' },
+  { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, wait: 9000, sel: () => (S.v4 ? null : ppFindAny('#lista:not(.lista-snap) .v3qa.p')), t: 'Atualizar página', x: 'Leu mais depois? Toque em Atualizar e mude a página.', adv: 'btn', btn: 'Concluir' },
 ];
 const PP_SESSAO = PP_SESSAO0.map((x) => ({ ...x, sub: 1 }));
 function ppPaths(id) {

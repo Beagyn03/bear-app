@@ -228,39 +228,81 @@ function v4SheetHTML(k) {
 const V4_SP_RISCO = /\b(morre\w*|morreu|mata\w*|matou|no final|o final|fim do livro|na verdade|era (ele|ela)|traiu|trai[cç][aã]o|assassin\w*|descobre que|descobri que|revela\w*|acaba com|volta a vida|gr[aá]vida|plot twist|reviravolta|segredo)\b/i;
 const v4Risco = (t) => { const m = String(t || '').match(V4_SP_RISCO); return m ? m[0] : ''; };
 const V4MAIN = () => QT_GROUPS[0][1], V4ALL = () => QT_PICK;
+// Folha de atualizar nova (Bia, 21/11; protótipo v177): ATALHO (seletor Página · % · Posição · Capítulo, número + régua, "Adicionar
+// detalhes", Salvar) e DETALHES em página inteira (abas Atualizar | Histórico, datas, 4 botões Emoções · Comentar · Trecho · Anotação,
+// Terminei). Posição e Capítulo pedem o total uma vez (fica no livro: e.posTotal / e.capTotal); sem total guarda só o valor.
+// O último modo usado fica no livro (e.updU). Sem "Tempo" e sem a linha "Capítulo (opcional)": o capítulo vem do modo Capítulo.
+const v6DefU = (e) => (e && ['pg', 'pct', 'pos', 'cap'].includes(e.updU) ? e.updU : e && e.format === 'EBOOK' ? 'pos' : e && e.format === 'AUDIO' ? 'pct' : 'pg');
+const v6Tot = (e, u) => (u === 'pos' ? Number(e.posTotal) || 0 : u === 'cap' ? Number(e.capTotal) || 0 : 0);
 function v4UpdInit() {
   const st = v4State(), e = lib().find((x) => x.id === (st.sheetE || st.e)) || v4Books()[0]; if (!e) return; const s = v4Ses(), { now } = v4Info(e);
   const vis = (() => { try { return localStorage.getItem('lv.upVis') === 'friends' ? 'friends' : 'public'; } catch { return 'public'; } })();
-  st.upd = { u: 'pg', pg: st.sheet === 'end' && s && s.libId === e.id ? s.pg : now, fe: [], more: false, text: '', rec: false, pub: false, vis, sp: false, cap: (s && s.cap) || '' };
+  const u = v6DefU(e);
+  st.upd = { u, pg: st.sheet === 'end' && s && s.libId === e.id ? s.pg : now, raw: u === 'pos' ? (e.pos || '') : u === 'cap' ? (e.cap || '') : '', fe: [], more: false, text: '', rec: false, pub: false, vis, sp: false, cap: '',
+    full: false, tab: 'upd', pane: '', tre: '', treVis: 'eu', ano: '' };
 }
-const v4Fmt = (e, pg, u) => { const { total } = v4Info(e); if (u === 'pct') return String(total ? Math.round(pg / total * 100) : 0); if (u === 'min') { const m = Math.round(pg / total * e.audioMin); return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); } return String(pg); };
-const v4Parse = (e, raw, u) => { const { total } = v4Info(e); raw = String(raw || ''); let v; if (u === 'pct') v = Math.round(parseFloat(raw.replace(',', '.')) / 100 * total); else if (u === 'min') { const [h, m] = raw.split(':').map(Number); v = Math.round(((h || 0) * 60 + (m || 0)) / e.audioMin * total); } else v = parseInt(raw, 10); return isFinite(v) ? Math.max(0, total ? Math.min(total, v) : v) : null; };
-const v4UnitTail = (e, u) => { const { total } = v4Info(e); return u === 'pct' ? '%' : u === 'min' ? 'de ' + Math.floor(e.audioMin / 60) + ':' + String(e.audioMin % 60).padStart(2, '0') : total ? 'de ' + total : 'pág.'; };
+// valor na unidade (página, %, posição, capítulo) ↔ página equivalente
+const v4Fmt = (e, pg, u) => { const { total } = v4Info(e); if (u === 'pct') return String(total ? Math.round(pg / total * 100) : 0);
+  if (u === 'pos' || u === 'cap') { const T = v6Tot(e, u); if (!T || !total) { const U = v4State().upd; return String((U && U.raw) || ''); } return String(Math.round(pg / total * T)); } return String(pg); };
+const v4Parse = (e, raw, u) => { const { total } = v4Info(e); raw = String(raw || ''); let v;
+  if (u === 'pct') v = Math.round(parseFloat(raw.replace(',', '.')) / 100 * total);
+  else if (u === 'pos' || u === 'cap') { const T = v6Tot(e, u), n = parseInt(raw, 10); if (!T || !total) return null; v = Math.round(Math.min(T, n) / T * total); }
+  else v = parseInt(raw, 10);
+  return isFinite(v) ? Math.max(0, total ? Math.min(total, v) : v) : null; };
+const v4UnitTail = (e, u) => { const { total } = v4Info(e); if (u === 'pct') return '%'; if (u === 'pos' || u === 'cap') { const T = v6Tot(e, u); return T ? 'de ' + T : u === 'pos' ? 'pos.' : 'cap.'; } return total ? 'de ' + total : 'pág.'; };
+const v6Sub = (e, U) => { const { total } = v4Info(e); if ((U.u !== 'pos' && U.u !== 'cap') || !total) return ''; const T = v6Tot(e, U.u); if (!T) return '';
+  const ap = U.u === 'cap' ? 'aprox. ' : '≈ ';
+  return `${ap}pág. ${U.pg} de ${total} · ${U.u === 'cap' ? 'aprox. ' : ''}${Math.round(U.pg / total * 100)}% <button class="lnk" data-a="v6toted" data-k="${U.u}">${U.u === 'pos' ? 'total ' + T : T + ' capítulos'} · editar</button>`; };
 function v4FeChips(U) { const L = U.more ? V4ALL() : V4MAIN(); const extra = U.more ? [] : V4ALL().filter((y) => U.fe.includes(y[0]) && !V4MAIN().some((z) => z[0] === y[0]));
   return [...L, ...extra].map(([k, n]) => `<button class="chip ${U.fe.includes(k) ? 'on' : ''}" data-a="upf" data-e="${k}">${esc(n)}</button>`).join(''); }
-function v4UpdHTML(k, e, s) {
-  const st = v4State(), U = st.upd || (v4UpdInit(), st.upd), { now, total } = v4Info(e), com = v4On('comunidade');
-  const secs = s ? v4Clock(s).secs : 0;
-  return `<div class="sh-bk">${v4cv(e)}<div><h3>${k === 'end' ? 'Em que página você parou?' : 'Atualizar página'}</h3><span class="mut">${esc(e.title)} · estava na pág. ${k === 'end' && s ? s.pg0 : now}</span></div></div>
-    ${k === 'end' && s ? `<button class="btn s w v6cont" data-a="close" style="margin-top:10px">${v4ic('ler', 16)}Continuar lendo</button>` : ''}
-    ${k === 'end' && s ? `<button class="btn s w v6disc" data-a="sesdisc" style="margin-top:8px">${v4ic('x', 16)}${st.discAsk ? 'Tocar de novo para descartar' : 'Descartar sessão'}</button>` : ''}
-    ${k === 'end' && s ? `<p class="mut" id="v4sesn" data-pg0="${s.pg0}" style="margin:6px 0 0">Sessão de ${Math.max(1, Math.round(secs / 60))} min · ${(() => { const n = Math.max(0, (U.u === 'pg' ? U.pg : s.pg) - s.pg0); return n + (n === 1 ? ' página' : ' páginas'); })()}. Confira a página e salve.</p>` : ''}
-    <div class="pgin"><input id="v4pgv" inputmode="${U.u === 'min' ? 'text' : 'numeric'}" value="${v4Fmt(e, U.pg, U.u)}" aria-label="Posição"><span id="v4pgvu">${v4UnitTail(e, U.u)}</span></div>
-    <div class="pgsl up"><button data-a="ust" data-n="-1" aria-label="Voltar">−</button><input type="range" id="v4upr" min="0" max="${total || Math.max(500, U.pg + 100)}" value="${U.pg}" aria-label="Deslizar até a página"><button data-a="ust" data-n="1" aria-label="Avançar">+</button></div>
-    <div class="row" style="justify-content:space-between;align-items:center;gap:8px;margin-top:2px"><div class="chips" style="margin:0;padding:0">${[['pg', 'página'], ['pct', '%'], ...(v4IsAudio(e) ? [['min', 'tempo']] : [])].map(([u, n]) => `<button class="chip ${U.u === u ? 'on' : ''}" data-a="updu" data-u="${u}">${n}</button>`).join('')}</div></div>
-    <div class="v4caprow"><label for="v4cap">Capítulo <small>(opcional)</small></label><input class="fld cap" id="v4cap" inputmode="numeric" placeholder="ex.: 12" value="${esc(U.cap)}"><small class="mut">aparece no seu diário e no post</small></div>
-    <div class="lbl lblrow"><span>Como está sendo? <small>(até 3)</small></span><button data-a="upfmais">${U.more ? 'ver menos' : 'ver todas'}</button></div>
-    <div class="chips wrap emo" id="v4fe" style="margin:0;padding:2px 0">${v4FeChips(U)}</div>
-    <div class="lbl">Comentário <small>(opcional)</small></div>
-    <div class="cbox${U.rec ? ' rec' : ''}"><textarea id="v4upc" rows="2" placeholder="${U.rec ? 'Ouvindo… pode falar' : 'O que achou deste trecho?'}">${esc(U.text)}</textarea><button class="mic2" data-a="upmic" aria-label="Ditar">${U.rec ? '<i></i><i></i><i></i>' : v4ic('mic', 18)}</button></div>
-    <div class="row" style="justify-content:space-between;margin-top:10px;gap:10px">${com ? `<label class="tog"><input type="checkbox" ${U.pub ? 'checked' : ''} data-a="uppub"><span></span>Publicar na Comunidade<small id="v4pubs">${U.pub ? (U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê') : 'fica só no seu diário'}</small></label>` : ''}</div>
-    <div id="v4pubx"${com && U.pub ? '' : ' hidden'}><div class="seg sm" style="margin-top:10px"><button class="${U.vis !== 'friends' ? 'on' : ''}" data-a="upvis" data-k="public">Todos</button><button class="${U.vis === 'friends' ? 'on' : ''}" data-a="upvis" data-k="friends">Só amizades</button></div>
-    <label class="tog" style="margin-top:10px"><input type="checkbox" ${U.sp ? 'checked' : ''} data-a="upsp"><span></span>Tem spoiler<small id="v4sps">${U.sp ? `escondido para quem ainda não chegou na pág. ${U.pg}` : 'aparece aberto para todo mundo'}</small></label></div>
-    <div class="row" style="margin-top:14px;gap:8px"><button class="btn s" data-a="fim">Terminei</button><button class="btn p" style="flex:1" data-a="savepg">Salvar</button></div>`;
+function v6Pane(U, e) {
+  const lbl = (t, sm) => `<div class="lbl" style="margin-top:0">${t} <small>${sm}</small></div>`;
+  if (U.pane === 'emo') return `<div class="uppn"><div class="lbl lblrow" style="margin-top:0"><span>Como está sendo? <small>(até 3)</small></span><button data-a="upfmais">${U.more ? 'ver menos' : 'ver todas'}</button></div><div class="chips wrap emo" id="v4fe" style="margin:0;padding:2px 0">${v4FeChips(U)}</div></div>`;
+  if (U.pane === 'com') { const com = v4On('comunidade');
+    return `<div class="uppn">${lbl('Comentário', '(opcional)')}<div class="cbox${U.rec ? ' rec' : ''}"><textarea id="v4upc" rows="3" placeholder="${U.rec ? 'Ouvindo… pode falar' : 'O que achou deste trecho?'}">${esc(U.text)}</textarea><button class="mic2" data-a="upmic" aria-label="Ditar">${U.rec ? '<i></i><i></i><i></i>' : v4ic('mic', 18)}</button></div>
+      ${com ? `<label class="tog" style="margin-top:10px"><input type="checkbox" ${U.pub ? 'checked' : ''} data-a="uppub"><span></span>Publicar na Comunidade<small id="v4pubs">${U.pub ? (U.vis === 'friends' ? 'só suas amizades veem' : 'toda a comunidade vê') : 'desligado: fica só no seu diário'}</small></label>
+      <div id="v4pubx"${U.pub ? '' : ' hidden'}><div class="seg sm" style="margin-top:10px"><button class="${U.vis !== 'friends' ? 'on' : ''}" data-a="upvis" data-k="public">Toda a comunidade</button><button class="${U.vis === 'friends' ? 'on' : ''}" data-a="upvis" data-k="friends">Só amizades</button></div>
+      <label class="tog" style="margin-top:10px"><input type="checkbox" ${U.sp ? 'checked' : ''} data-a="upsp"><span></span>Tem spoiler<small id="v4sps">${U.sp ? 'fica coberto para quem ainda não chegou nesta parte' : 'aparece aberto para todo mundo'}</small></label></div>` : ''}</div>`; }
+  if (U.pane === 'tre') { const com = v4On('comunidade');
+    return `<div class="uppn">${lbl('Trecho', '(uma frase do livro)')}<div class="cbox"><textarea id="v4uptre" rows="3" placeholder="Copie ou dite a frase que quer guardar">${esc(U.tre)}</textarea></div><small class="mut">Vai para Meus trechos, na pág. ${U.pg}.</small>
+      ${com ? `<div class="lbl" style="margin-top:10px">Quem vê</div><div class="seg sm" role="group" aria-label="Quem vê o trecho">${[['eu', 'Só você'], ['friends', 'Amizades'], ['public', 'Comunidade']].map(([k, n]) => `<button class="${U.treVis === k ? 'on' : ''}" data-a="v6trevis" data-k="${k}" aria-pressed="${U.treVis === k}">${n}</button>`).join('')}</div>
+      ${U.treVis !== 'eu' ? `<p class="spfix">${v4ic('eye', 15)}<span>Trechos compartilhados ficam cobertos para quem ainda não chegou nesta parte.</span></p>` : ''}` : ''}</div>`; }
+  if (U.pane === 'ano') return `<div class="uppn">${lbl('Anotação', '(só você vê)')}<div class="cbox"><textarea id="v4upano" rows="3" placeholder="Uma ideia, uma teoria, um lembrete…">${esc(U.ano)}</textarea></div><small class="mut">Fica no Histórico deste livro, sem publicar.</small></div>`;
+  return '';
 }
-function v4UpdSync(e) { const U = v4State().upd, R = V4; if (!R) return; const i = R.querySelector('#v4pgv'), r = R.querySelector('#v4upr'), t = R.querySelector('#v4pgvu');
-  if (i && i.getRootNode().activeElement !== i) i.value = v4Fmt(e, U.pg, U.u); if (r) r.value = U.pg; if (t) t.textContent = v4UnitTail(e, U.u);
-  const sps = R.querySelector('#v4sps'); if (sps) sps.textContent = U.sp ? `escondido para quem ainda não chegou na pág. ${U.pg}` : 'aparece aberto para todo mundo'; }
+function v4UpdHTML(k, e, s) {
+  const st = v4State(), U = st.upd || (v4UpdInit(), st.upd), { now, total } = v4Info(e);
+  const secs = s ? v4Clock(s).secs : 0, full = !!U.full, tab = full && k === 'upd' ? U.tab : 'upd';
+  const T = v6Tot(e, U.u), ask = (U.u === 'pos' || U.u === 'cap') && (!T || !total);
+  const nE = U.fe.length, hasC = !!U.text.trim(), hasT = !!U.tre.trim(), hasA = !!U.ano.trim();
+  const tile = (key, icn, t, sm) => `<button class="uptile${U.pane === key ? ' on' : ''}" data-a="v6pane" data-k="${key}" aria-expanded="${U.pane === key}">${v4ic(icn, 20)}<b>${t}</b><small>${sm}</small></button>`;
+  const seg = `<div class="seg sm upseg" role="group" aria-label="Contar por">${[['pg', 'Página'], ['pct', '%'], ['pos', 'Posição'], ['cap', 'Capítulo']].map(([u, n]) => `<button class="${U.u === u ? 'on' : ''}" data-a="updu" data-u="${u}" aria-pressed="${U.u === u}">${n}</button>`).join('')}</div>`;
+  const askH = ask ? `<div class="totask"><label for="v6tot"><b>${U.u === 'pos' ? 'Quantas posições tem o livro?' : 'Quantos capítulos tem o livro?'}</b><small>${U.u === 'pos' ? 'No Kindle aparece como “Pos. 1234 de 5678”.' : 'Veja no sumário do livro.'} Fica guardado neste livro.</small></label>
+      <div class="row" style="gap:8px;margin-top:8px"><input class="fld" id="v6tot" inputmode="numeric" placeholder="${U.u === 'pos' ? '5678' : '30'}" style="flex:1"><button class="btn s" data-a="v6totok">Guardar</button></div>
+      <small class="mut">Sem o total, guardamos só ${U.u === 'pos' ? 'a posição' : 'o capítulo'}; o progresso fica em ${total ? Math.round(now / total * 100) : 0}% até você informar.</small></div>` : '';
+  const prev = total ? (now / total * 100).toFixed(1) : 0;
+  const body = `${seg}
+    <div class="pgin"><input id="v4pgv" inputmode="numeric" value="${v4Fmt(e, U.pg, U.u)}" aria-label="${U.u === 'pos' ? 'Posição' : U.u === 'cap' ? 'Capítulo' : U.u === 'pct' ? 'Porcentagem' : 'Página'}"><span id="v4pgvu">${v4UnitTail(e, U.u)}</span></div>
+    <div class="upsub" id="v6sub">${v6Sub(e, U)}</div>${askH}
+    ${ask ? '' : `<div class="pgsl up"><button data-a="ust" data-n="-1" aria-label="Voltar">−</button><span class="uprw" style="--prev:${prev}%"><input type="range" id="v4upr" min="0" max="${total || Math.max(500, U.pg + 100)}" value="${U.pg}" aria-label="Deslizar até a página"><i class="upprev" title="onde você estava" aria-hidden="true"></i></span><button data-a="ust" data-n="1" aria-label="Avançar">+</button></div>`}`;
+  const sum = [nE ? nE + (nE === 1 ? ' emoção' : ' emoções') : '', hasC ? 'comentário' : '', hasT ? 'trecho' : '', hasA ? 'anotação' : ''].filter(Boolean).join(' · ');
+  const det = !full ? `<button class="updet" data-a="upfull" aria-haspopup="dialog"><span class="updi" aria-hidden="true">${v4ic('heart', 17)}${v4ic('com', 17)}${v4ic('quote', 17)}${v4ic('lock', 17)}</span><span class="updt"><b>Adicionar detalhes</b><small>${sum || 'emoções · comentário · trecho · anotação'}</small></span>${v4ic('chev', 16)}</button>` : '';
+  const tiles = full ? `<div class="uptiles">${tile('emo', 'heart', 'Emoções', nE ? nE + (nE === 1 ? ' escolhida' : ' escolhidas') : 'até 3')}${tile('com', 'com', 'Comentar', hasC ? (U.pub ? 'vai para a Comunidade' : '1 comentário') : 'opcional')}${tile('tre', 'quote', 'Trecho', hasT ? '1 trecho' : 'guardar uma frase')}${tile('ano', 'lock', 'Anotação', hasA ? '1 anotação' : 'só você vê')}</div>${v6Pane(U, e)}` : '';
+  const started = (() => { const d = e.startedTs || e.startedAt || e.startDate; if (!d) return ''; const x = new Date(d); return isNaN(x) ? '' : 'Comecei em ' + String(x.getDate()).padStart(2, '0') + '/' + String(x.getMonth() + 1).padStart(2, '0'); })();
+  return `${k === 'end' && s ? `<div class="row" style="gap:8px;margin-bottom:12px"><button class="btn s v6cont" style="flex:1" data-a="close">${v4ic('ler', 16)}Continuar lendo</button><button class="btn s v6disc" style="flex:1" data-a="sesdisc">${v4ic('x', 16)}${st.discAsk ? 'Tocar de novo' : 'Descartar sessão'}</button></div>` : ''}
+    <div class="sh-bk">${v4cv(e)}<div><h3>${k === 'end' ? 'Em que página você parou?' : 'Atualizar página'}</h3><span class="mut">${esc(e.title)} · estava na pág. ${k === 'end' && s ? s.pg0 : now}${total ? ' de ' + total : ''}</span></div></div>
+    ${full && k === 'upd' ? `<div class="btab uptabs" role="tablist"><button class="${tab === 'upd' ? 'on' : ''}" role="tab" aria-selected="${tab === 'upd'}" data-a="v6tab" data-k="upd">Atualizar</button><button class="${tab === 'hist' ? 'on' : ''}" role="tab" aria-selected="${tab === 'hist'}" data-a="v6tab" data-k="hist">Histórico</button></div>` : ''}
+    ${tab === 'hist' ? `<div class="v6hist" id="v6hist"></div>` : `
+    ${k === 'end' && s ? `<p class="mut" id="v4sesn" data-pg0="${s.pg0}" style="margin:6px 0 0">Sessão de ${Math.max(1, Math.round(secs / 60))} min · ${(() => { const n = Math.max(0, U.pg - s.pg0); return n + (n === 1 ? ' página' : ' páginas'); })()}. Confira e salve.</p>` : ''}
+    ${full && k === 'upd' ? `<div class="row upmeta"><span class="mut">${started || 'Leitura de hoje'}${started ? ' · leitura de hoje' : ''}</span><button class="lnk" data-a="v6datas">Mudar datas</button></div>` : ''}
+    ${body}${det}${tiles}
+    <div class="row upfoot" style="margin-top:14px;gap:8px">${full ? '<button class="btn s" data-a="fim">Terminei</button>' : ''}<button class="btn p upsave" style="flex:1" data-a="savepg">Salvar</button></div>`}`;
+}
+function v4UpdSync(e) { const U = v4State().upd, R = V4; if (!R || !U) return; const i = R.querySelector('#v4pgv'), r = R.querySelector('#v4upr'), t = R.querySelector('#v4pgvu');
+  if (i && i.getRootNode().activeElement !== i) { const nv = v4Fmt(e, U.pg, U.u); if (i.value !== nv) { i.value = nv; i.classList.remove('bump'); void i.offsetWidth; i.classList.add('bump'); } } if (r) r.value = U.pg; if (t) t.textContent = v4UnitTail(e, U.u);
+  const sub = R.querySelector('#v6sub'); if (sub) sub.innerHTML = v6Sub(e, U);
+  const sn = R.querySelector('#v4sesn'); if (sn) { const n = Math.max(0, U.pg - Number(sn.dataset.pg0 || 0)); sn.firstChild && (sn.textContent = sn.textContent.replace(/· \d+ p[áa]ginas?\./, '· ' + n + (n === 1 ? ' página.' : ' páginas.'))); }
+  const sps = R.querySelector('#v4sps'); if (sps) sps.textContent = U.sp ? 'fica coberto para quem ainda não chegou nesta parte' : 'aparece aberto para todo mundo'; }
 function v4SpAsk(U) { const p = (db.prefs = db.prefs || {}); if (!U.pub || !U.text.trim() || U.sp || p.spNever || U.spOk) return false; const n = Number(p.spCount) || 0; return n < 3 || !!v4Risco(U.text); }
 function v4SpModal(U) {
   const p = (db.prefs = db.prefs || {}); p.spCount = (Number(p.spCount) || 0) + 1; save();
@@ -278,7 +320,12 @@ function v4SpModal(U) {
 function v4SpView(m, k) { m.querySelectorAll('.spview button').forEach((x) => x.classList.toggle('on', x.dataset.k === k)); m.querySelector('.spprev').classList.toggle('hid', k === 'com'); const t = m.querySelector('#v4sptip'); if (t) t.textContent = k === 'com' ? 'Assim, só vê quando chegar lá. Quem já passou vê normal.' : 'Assim, quem está antes descobre antes da hora.'; }
 async function v4UpdSave(k) {
   const st = v4State(), U = st.upd, e = lib().find((x) => x.id === (st.sheetE || st.e)); if (!e || !U) return;
-  const { now, total, g, gb } = v4Info(e), pg = U.pg, s = v4Ses(), inSes = k === 'end' && s && s.libId === e.id;
+  const { now, total, g, gb } = v4Info(e), s = v4Ses(), inSes = k === 'end' && s && s.libId === e.id;
+  // Posição/Capítulo: guarda o valor no livro; sem total, guarda só o valor e a página não muda
+  const T6 = v6Tot(e, U.u), noTot = (U.u === 'pos' || U.u === 'cap') && !(T6 && total);
+  let uv = null; if (U.u === 'pos' || U.u === 'cap') { uv = noTot ? parseInt(U.raw, 10) || null : Math.round(U.pg / total * T6); if (uv) { if (U.u === 'pos') e.pos = uv; else e.cap = uv; } }
+  e.updU = U.u; U.cap = U.u === 'cap' && uv ? String(uv) : '';
+  const pg = noTot ? now : U.pg;
   if (inSes && pg < s.pg0 && !confirm(`A página ${pg} é antes de onde você começou (${s.pg0}). Salvar mesmo assim?`)) return;
   try { localStorage.setItem('lv.upVis', U.vis); } catch {}
   let hits = [], secs = 0, min = 0;
@@ -287,6 +334,14 @@ async function v4UpdSave(k) {
     const before = new Set(((V4ECO.get(e.id) || {}).seen || []).map((x) => x.id)); const E = await v4EcoLoad(e, pg); if (E) hits = (E.seen || []).filter((x) => !x.mine && !before.has(x.id));
     v2SesPut(null); v4Stop(); v4AmbPlay(''); }
   const text = U.text.trim(), fe = [...U.fe];
+  // Trecho (sempre coberto quando compartilhado) e Anotação (só você vê), da página cheia
+  const tre = (U.tre || '').trim(), ano = (U.ano || '').trim();
+  if (tre) { e.quotes = [...(e.quotes || []), { t: tre.slice(0, 600), p: pg || null, at: new Date().toISOString() }].slice(-200); save();
+    if (U.treVis !== 'eu' && v4On('comunidade') && connected() && socialProfile) {
+      sapi('POST', '/v1/posts', { kind: 'quote', text: '', quote: tre.slice(0, 600), ...(pg > 0 ? { page: pg } : {}), visibility: U.treVis === 'friends' ? 'friends' : 'public', readerPct: total ? Math.min(100, Math.round(pg / total * 100)) : null,
+        book: { title: String(e.title).slice(0, 200), author: e.author ? String(e.author).slice(0, 120) : null, cover: /^https:\/\//.test(e.cover || '') ? e.cover : null },
+        spoiler: pg > 0 && total && pg < total ? { kind: 'page', at: pg } : total && pg >= total ? { kind: 'end' } : { kind: 'yes' } }).catch(() => {}); } }
+  if (ano) { try { addNote(e, ano, pg); } catch {} }
   if (text || fe.length) { const pct = total ? Math.round(pg / total * 100) : 0; e.diary = [...(e.diary || []), { d: todayISO(), page: pg, pct, text, fe, ...(U.cap ? { cap: U.cap } : {}) }].slice(-200); save();
     if (text && U.pub && v4On('comunidade') && connected() && socialProfile) {
       sapi('POST', '/v1/posts', { kind: 'comment', text: ((U.cap ? 'cap. ' + U.cap + ' · ' : '') + text).slice(0, 280), feelings: fe.slice(0, 3), visibility: U.vis === 'friends' ? 'friends' : 'public', readerPct: Math.min(100, pct),
@@ -299,6 +354,15 @@ async function v4UpdSave(k) {
   if (inSes) { st.sum = { min: secs < 60 ? 0 : min, pages: Math.max(0, pg - s.pg0), hits }; st.sheet = 'sum'; return v4Draw(); }
   st.sheet = null; if (st.view) v4Draw(); else v4Close();
   try { renderHome(todayISO()); } catch {}
+  v6SaveFx(e, now, pg, U.u, uv, noTot);
+}
+// retorno ao salvar (Bia, 21/11): "+7 páginas · faltam 100 para terminar" / "Pos. 2274 salva · ≈ pág. 120"; o anel do Hoje brilha
+function v6SaveFx(e, was, pg, u, uv, noTot) {
+  const { total } = v4Info(e), d = pg - was, falta = total ? Math.max(0, total - pg) : 0;
+  const msg = noTot ? (u === 'pos' ? 'Posição ' + (uv || '') + ' guardada · informe o total para ver o progresso' : 'Capítulo ' + (uv || '') + ' guardado · informe quantos capítulos tem')
+    : u === 'pos' && uv ? 'Pos. ' + uv + ' salva · ≈ pág. ' + pg : u === 'cap' && uv ? 'Cap. ' + uv + ' salvo · aprox. pág. ' + pg
+    : d > 0 ? '+' + d + (d === 1 ? ' página' : ' páginas') + (total ? (falta ? ' · faltam ' + falta + ' para terminar' : ' · última página!') : '') : 'Página salva';
+  setTimeout(() => { try { toast(msg); } catch {} try { const r = TR.querySelector('#lista:not(.lista-snap) .v3ring'); if (r) { r.classList.remove('svfx'); void r.offsetWidth; r.classList.add('svfx'); } } catch {} }, 350);
 }
 
 // ---------- Terminei / Minha avaliação (página inteira, protótipo "fim") ----------
@@ -494,8 +558,15 @@ function v4Click(ev) {
   if (a === 'sumok') return v4SumOk();
   // Atualizar / Encerrar
   const U = st.upd;
-  if (a === 'updu') { U.u = d.u; V4.querySelectorAll('.sheet .chip[data-a=updu]').forEach((x) => x.classList.toggle('on', x === b)); const i = V4.querySelector('#v4pgv'); if (i) { i.inputMode = U.u === 'min' ? 'text' : 'numeric'; i.value = v4Fmt(e, U.pg, U.u); } return v4UpdSync(e); }
-  if (a === 'ust') { const { total } = v4Info(e), stp = U.u === 'pct' && total ? Math.max(1, Math.round(total / 100)) : 1; U.pg = Math.max(0, Math.min(total || 99999, U.pg + Number(d.n) * stp)); const i = V4.querySelector('#v4pgv'); if (i) i.value = v4Fmt(e, U.pg, U.u); return v4UpdSync(e); }
+  if (a === 'updu') { U.u = d.u; U.raw = U.u === 'pos' ? (e.pos || '') : U.u === 'cap' ? (e.cap || '') : ''; return redraw(); }
+  if (a === 'v6totok') { const n = parseInt((V4.querySelector('#v6tot') || {}).value, 10); if (!(n > 0)) return toast(U.u === 'pos' ? 'Digite o total de posições' : 'Digite quantos capítulos tem'); if (U.u === 'pos') e.posTotal = n; else e.capTotal = n; save(); return redraw(); }
+  if (a === 'v6toted') { if (d.k === 'pos') delete e.posTotal; else delete e.capTotal; save(); return redraw(); }
+  if (a === 'upfull') { U.full = !U.full; if (!U.full) { U.tab = 'upd'; U.pane = ''; } return redraw(); }
+  if (a === 'v6tab') { U.tab = d.k; return redraw(); }
+  if (a === 'v6pane') { U.pane = U.pane === d.k ? '' : d.k; return redraw(); }
+  if (a === 'v6trevis') { U.treVis = d.k; return redraw(); }
+  if (a === 'v6datas') { const x = e; st.sheet = null; st.upd = null; v4Close(); try { return openBookPage(x, 'minha'); } catch {} return; }
+  if (a === 'ust') { const { total } = v4Info(e), T = v6Tot(e, U.u), stp = U.u === 'pct' && total ? Math.max(1, Math.round(total / 100)) : (U.u === 'pos' || U.u === 'cap') && T && total ? Math.max(1, Math.round(total / T)) : 1; U.pg = Math.max(0, Math.min(total || 99999, U.pg + Number(d.n) * stp)); return v4UpdSync(e); }
   if (a === 'upfmais') { U.more = !U.more; b.textContent = U.more ? 'ver menos' : 'ver todas'; V4.querySelector('#v4fe').innerHTML = v4FeChips(U); return; }
   if (a === 'upf') { const k = d.e, i = U.fe.indexOf(k); if (i >= 0) U.fe.splice(i, 1); else if (U.fe.length < 3) U.fe.push(k); else return toast('Escolha até 3'); b.classList.toggle('on', U.fe.includes(k)); return; }
   if (a === 'upmic') return v4Dictate((t) => { U.text = (U.text ? U.text + ' ' : '') + t; const ta = V4.querySelector('#v4upc'); if (ta) ta.value = U.text; }, (on) => { U.rec = on; const bx = V4.querySelector('.cbox'); if (bx) bx.classList.toggle('rec', on); const m = V4.querySelector('.cbox .mic2'); if (m) m.innerHTML = on ? '<i></i><i></i><i></i>' : v4ic('mic', 18); });
@@ -534,7 +605,9 @@ function v4Input(ev) {
   if (t.id === 'v4notat') { st.notaEd.t = t.value; return; }
   if (t.id === 'v6edpg') { const P = st.ed === 'eco' ? st.ecoEd : st.notaEd; if (!P) return; const n = parseInt(t.value, 10); if (n > 0) { P.pg = n; v4PgPaint(P, true); } return; }
   if (t.id === 'v4upr') { st.upd.pg = Number(t.value); const i = V4.querySelector('#v4pgv'); if (i) i.value = v4Fmt(e, st.upd.pg, st.upd.u); return v4UpdSync(e); }
-  if (t.id === 'v4pgv') { const v = v4Parse(e, t.value, st.upd.u); if (v != null) { st.upd.pg = v; const r = V4.querySelector('#v4upr'); if (r) r.value = v; const sps = V4.querySelector('#v4sps'); if (sps && st.upd.sp) sps.textContent = `escondido para quem ainda não chegou na pág. ${v}`; } return; }
+  if (t.id === 'v4pgv') { const U = st.upd; if ((U.u === 'pos' || U.u === 'cap') && !(v6Tot(e, U.u) && v4Info(e).total)) { U.raw = t.value.replace(/\D/g, '').slice(0, 7); return; } const v = v4Parse(e, t.value, U.u); if (v != null) { U.pg = v; const r = V4.querySelector('#v4upr'); if (r) r.value = v; const sub = V4.querySelector('#v6sub'); if (sub) sub.innerHTML = v6Sub(e, U); } return; }
+  if (t.id === 'v4uptre') { st.upd.tre = t.value; return; }
+  if (t.id === 'v4upano') { st.upd.ano = t.value; return; }
   if (t.id === 'v4upc') { st.upd.text = t.value; return; }
   if (t.id === 'v4cap') { st.upd.cap = t.value.trim().slice(0, 40); return; }
   if (t.id === 'v4vol') { st.vol = Number(t.value) / 100; if (V4A) V4A.master.gain.value = st.vol * 0.6; return; }
