@@ -1151,7 +1151,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 </style>
 </head>
 <body class="at-home">
-<script>(function(){var k="papel";try{k=localStorage.getItem("bear.theme")||"papel"}catch(e){}var h=document.documentElement;h.dataset.pal=k;if(k!=="papel")h.dataset.theme="dark"})()</script>
+<script>(function(){var k="papel";try{k=localStorage.getItem("bear.theme")||"papel"}catch(e){}var h=document.documentElement;h.dataset.pal=k;if(k!=="papel")h.dataset.theme="dark";/* v2 (bloco w4): app instalado abre com a mesma tela do sistema (fundo do manifest + ícone), não com a marca */try{if(matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone===true){h.dataset.sa="1";var st=document.createElement("style");st.textContent="html[data-sa] #splash{background:#2e0b33;z-index:2147483000}html[data-sa] #splash .wm{display:none}html[data-sa] #splash::before{content:\"\";width:min(160px,40vw);aspect-ratio:1;border-radius:22%;background:url(icon-512.png) center/cover no-repeat}";document.head.appendChild(st)}}catch(e){}})()</script>
 <div class="app-bg" aria-hidden="true"></div>
 <div class="splash" id="splash" aria-hidden="true"><div class="wm"><span class="lv-logo" role="img" aria-label="Livroverso">Livroverso</span><small>organizador de leituras</small></div></div>
 <div id="toca-host"></div>
@@ -11143,11 +11143,11 @@ drawProgresso = function (box) {
   const longest = fin.reduce((m, e) => ((Number(e.totalPages) || 0) > (Number(m && m.totalPages) || 0) ? e : m), null);
   const row = (label, n, max, cls = '') => `<div class="sx-row"><span title="${esc(label)}">${esc(label)}</span><span class="tr"><i class="${cls}" style="width:${max && n ? Math.max(4, Math.round((n / max) * 100)) : 0}%"></i></span><b>${n}</b></div>`;
   const top = (arr, n = 5) => Object.entries(arr.reduce((m, k) => { if (k) m[k] = (m[k] || 0) + 1; return m; }, {})).sort((a, b) => b[1] - a[1]).slice(0, n);
-  // pizzas de notas e formato
-  const PIE_C = { m5: '#b78cff', mo: '#e2b53e', mp: '#a9b3bc', mb: '#c07a43', mf: '#7d848b' }, PIE_F = { 'Físico': '#c46f2b', 'E-book': '#4f97d1', 'Audiolivro': '#4fae78', 'Outro': '#999' };
-  const pieHTML = (parts) => { const tot = parts.reduce((a, x) => a + x[1], 0) || 1; let acc = 0; const segs = parts.filter((x) => x[1]).map(([, n, c]) => { const a0 = acc; acc += n / tot * 360; return `${c} ${a0.toFixed(1)}deg ${acc.toFixed(1)}deg`; }).join(','); return `<div class="pie" style="background:conic-gradient(${segs || 'var(--line) 0 360deg'})"><span>${tot}</span></div><ul class="pie-l">${parts.filter((x) => x[1]).map(([l, n, c]) => `<li><i style="background:${c}"></i>${esc(l)}<b>${n}</b></li>`).join('')}</ul>`; };
+  // pizzas de notas e formato (fatias separadas por um fio, para cores vizinhas parecidas não se fundirem com daltonismo)
+  const PIE_C = { m5: '#b78cff', mo: '#e2b53e', mp: '#a9b3bc', mb: '#c07a43', mf: '#7d848b' }, PIE_F = { 'Físico': '#c46f2b', 'E-book': '#4f97d1', 'Audiolivro': '#c45fa0', 'Outro': '#999' };
+  const pieHTML = (parts) => { const tot = parts.reduce((a, x) => a + x[1], 0) || 1; let acc = 0; const PP = parts.filter((x) => x[1]), gap = PP.length > 1 ? 1.6 : 0; const segs = PP.map(([, n, c]) => { const a0 = acc; acc += n / tot * 360; const e = Math.max(a0, acc - gap); return `${c} ${a0.toFixed(1)}deg ${e.toFixed(1)}deg` + (gap ? `,var(--panel) ${e.toFixed(1)}deg ${acc.toFixed(1)}deg` : ''); }).join(','); return `<div class="pie" style="background:conic-gradient(${segs || 'var(--line) 0 360deg'})"><span>${tot}</span></div><ul class="pie-l">${parts.filter((x) => x[1]).map(([l, n, c]) => `<li><i style="background:${c}"></i>${esc(l)}<b>${n}</b></li>`).join('')}</ul>`; };
   // autores e editoras: 5 primeiros + Outros
-  const CAT = ['#c46f2b', '#4f97d1', '#4fae78', '#b78cff', '#e2b53e', '#a9b3bc'];
+  const CAT = ['#c46f2b', '#1f6fb2', '#e6c229', '#c45fa0', '#6cc0ee', '#8a8f96']; // paleta que continua distinguível com daltonismo (laranja, azul, amarelo, rosa, azul-claro, cinza); antes laranja e verde se confundiam
   const pieTop = (vals0) => { const nm = new Map(); const vals = vals0.map((x) => { const v = String(x).replace(/\s+/g, ' ').trim(), k = normT(v); if (!nm.has(k)) nm.set(k, v); return nm.get(k); }); const t = top(vals, 999), head = t.slice(0, 5), rest = t.slice(5).reduce((a, x) => a + x[1], 0); return [...head, ...(rest ? [['Outros', rest]] : [])].map(([k, n], i) => [k, n, CAT[i % CAT.length]]); };
   const autP = pieTop(fin.map((e) => String(e.author || '').split(',')[0].trim()).filter(Boolean));
   const pubOf = (e) => String(e.publisher || (e.meta && e.meta.pub) || '').trim();
@@ -23904,6 +23904,22 @@ document.addEventListener('input', (ev) => { const i = ev.composedPath && ev.com
   p.textContent = p.textContent.replace(/· \d+ páginas?\./, '· ' + n + (n === 1 ? ' página.' : ' páginas.')); } catch {} }, true);
 // perfil: as páginas contam também o que você já leu dos livros em andamento (item 19)
 { const _ms = myStatsSnap; myStatsSnap = function () { const r = _ms.apply(this, arguments); try { const extra = lib().filter((e) => e.status !== 'LIDO' && e.status !== 'QUERO').reduce((a, e) => { let p = 0; try { p = readingInfo(e).now || e.currentPage || 0; } catch { p = e.currentPage || 0; } return a + (Number(p) || 0); }, 0); if (r && typeof r.paginas === 'number') r.paginas += extra; } catch {} return r; }; }
+// --- w4_v2_abertura_unica.js ---
+// Uma abertura só (Bia, 20/11: "quando abro o app aparecem 2 logos, a logo do app e depois a logo da marca").
+// No app instalado o sistema mostra a própria abertura (fundo #2e0b33 do manifest + ícone). Logo depois vinha a abertura do app,
+// com outro fundo (bege) e a marca escrita: pareciam duas telas. Instalado, a abertura do app passa a começar IGUAL à do sistema
+// (mesmo fundo, mesmo ícone no centro) e some assim que o app desenha, sem esperar os 900 ms. No navegador comum (não há abertura
+// do sistema) continua a abertura com a marca.
+{ const sa = (() => { try { return matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true; } catch { return false; } })();
+  const sp = (typeof $ === 'function' && $('#splash')) || document.getElementById('splash');
+  // o visual igual ao do sistema vem do script do topo do index.html (html[data-sa]), que roda antes do primeiro desenho;
+  // aqui só se adianta a saída: some assim que o app desenhou, em vez de esperar 900 ms
+  if (sa && sp) {
+    // some assim que o app já desenhou , em vez de esperar 900 ms
+    const go = () => requestAnimationFrame(() => requestAnimationFrame(() => sp.classList.add('out')));
+    go(); // os blocos rodam antes do drawAll final; dois quadros depois o Hoje já está desenhado (ou com o esqueleto do bloco 93)
+  }
+}
 // --- x0_v2_vocabulario.js ---
 // Vocabulário único (Bia, 20/11; glossário aprovado): os textos dos blocos v2 já foram trocados na fonte.
 // Aqui ficam só as frases que ainda moram no código antigo (fora de v2src/r2) e aparecem em telas que a v2 abre.
