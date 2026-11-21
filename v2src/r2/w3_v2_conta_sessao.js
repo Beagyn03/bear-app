@@ -11,7 +11,7 @@
 //   (mesma regra da API) com medidor; olho para mostrar/esconder a senha (login, cadastro, trocar senha).
 // - Trocar senha em Ajustes › Conta e dados (PUT /v1/me/password; desconecta os outros aparelhos).
 // - Importar histórico: prévia antes, resenhas privadas por padrão, resumo no fim e "Desfazer importação".
-const LV_KEEP = new Set(['bear.theme', 'lv.temaSis', 'bear.sound', 'lv.instPop', 'lv.capaDica', 'bear.covers']);
+const LV_KEEP = new Set(['bear.theme', 'lv.temaSis', 'bear.sound', 'lv.instPop', 'lv.capaDica', 'bear.covers', 'lv.lastLogin', 'lv.rememberOff']); // lv.lastLogin: "Lembrar meu login" (w7), só e-mail/@, nunca senha
 function lvWipeUser(keepAuth) {
   const keep = {}; try { if (keepAuth) ['bear.api', 'bear.owner', 'bear.profile'].forEach((k) => { const v = localStorage.getItem(k); if (v != null) keep[k] = v; }); } catch {}
   try { const api = (apiCfg && apiCfg.api) || ''; Object.keys(localStorage).forEach((k) => { if (!LV_KEEP.has(k)) localStorage.removeItem(k); }); if (!keepAuth && api && api !== DEFAULT_API) localStorage.setItem(API_CFG, JSON.stringify({ api })); } catch {}
@@ -88,7 +88,7 @@ deleteAccountSheet = function () {
       btn.disabled = true; btn.textContent = 'Excluindo…';
       (async () => { let r = null; try { r = await sapi('DELETE', '/v1/me', { confirm: 'EXCLUIR' }); } catch {}
         if (!r || r.status !== 200) { btn.disabled = false; btn.textContent = 'Excluir minha conta para sempre'; const e = document.getElementById('lvdl-err'); if (e) { e.hidden = false; e.textContent = 'Não consegui excluir agora. Confira a internet e tente de novo.'; } return; }
-        try { clearTimeout(syncTimer); } catch {} apiCfg = {}; try { sessionStorage.setItem('lv.excluida', '1'); } catch {} lvWiping = false; lvWipeUser(false); location.replace(location.pathname); })();
+        try { clearTimeout(syncTimer); } catch {} apiCfg = {}; try { sessionStorage.setItem('lv.excluida', '1'); localStorage.removeItem('lv.lastLogin'); } catch {} lvWiping = false; lvWipeUser(false); location.replace(location.pathname); })();
       return false; } }, { label: 'Cancelar' }],
     onOpen: (box) => { const inp = box.querySelector('#lvdl-in'), go = box.querySelector('#lvdl-go'); go.disabled = true;
       inp.addEventListener('input', () => { go.disabled = inp.value.trim().toUpperCase() !== 'EXCLUIR'; });
