@@ -19,7 +19,7 @@
     const busy = document.querySelector('.sheet') || (TR.querySelector('#editor') && !TR.querySelector('#editor').hidden) || document.querySelector('.tour, .tr-ov');
     if (busy) return setTimeout(show, 8000);
     const w = document.createElement('div'); w.className = 'inst-pop'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-label', 'Instalar o Livroverso');
-    w.innerHTML = '<img src="icon-192.png" alt=""><span><b>Instale o Livroverso</b><small>Abre direto da tela inicial, funciona sem internet e avisa os lembretes do seu prazo.</small></span><div class="inst-bt"><button type="button" class="inst-no">Agora não</button><button type="button" class="inst-yes">Instalar</button></div>';
+    w.innerHTML = '<img src="icon-192.png" alt=""><span><b>Instale o Livroverso</b><small>Abre como app no seu celular, funciona sem internet e te avisa na hora de ler.</small></span><div class="inst-bt"><button type="button" class="inst-no">Agora não</button><button type="button" class="inst-yes">Instalar</button></div>';
     const close = () => { try { localStorage.setItem(KEY, String(Date.now())); } catch {} w.remove(); };
     w.querySelector('.inst-no').addEventListener('click', close);
     w.querySelector('.inst-yes').addEventListener('click', () => { close(); try { installApp(); } catch {} });
