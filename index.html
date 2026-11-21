@@ -9969,6 +9969,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
@@ -13850,11 +13851,18 @@ async function reminderSync(e) { try { if (!connected()) return; if (!e || !e.re
   return r;
 }; }
 // mantém a página e o prazo em dia na API (a conta do "faltam X" usa onde você está)
+// (Bia, 21/11) o lembrete é do LIVRO que tem prazo, não do "livro do Hoje": antes, quando outro livro passava a ser o atual
+// (começar outro livro, trocar o cartão do Hoje), este laço apagava o lembrete do servidor sem a pessoa pedir.
+// Agora só apaga quando o livro com lembrete deixa de estar em Lendo ou perde o prazo; se houver mais de um com lembrete,
+// fica o do livro atual (ou o primeiro válido) e os outros perdem só a marca local.
+const remindOk = (x) => x && x.remind && x.status === 'LENDO' && x.dueAt;
+const remindOwner = () => { const R = reading(), cur = R && R.e, own = lib().filter((x) => x.remind); return own.find((x) => x === cur && remindOk(x)) || own.find(remindOk) || null; };
 setInterval(() => { try {
-  const R = reading(); const e = R && R.e;
-  for (const x of lib()) if (x.remind && (x !== e || x.status !== 'LENDO' || !x.dueAt)) { delete x.remind; save(); reminderSync(null); }
-  if (!e || !e.remind || !e.dueAt) return; const b = reminderBody(e); if (!b) return;
-  if (e.remind.sent !== b.page + '|' + b.dueAt + '|' + b.hour + ':' + b.minute + '|' + b.off.join('')) reminderSync(e);
+  const keep = remindOwner(); let changed = false;
+  for (const x of lib()) if (x.remind && x !== keep) { delete x.remind; changed = true; }
+  if (changed) { save(); if (!keep) reminderSync(null); }
+  if (!keep) return; const b = reminderBody(keep); if (!b) return;
+  if (keep.remind.sent !== b.page + '|' + b.dueAt + '|' + b.hour + ':' + b.minute + '|' + b.off.join('')) reminderSync(keep);
 } catch {} }, 30000);
 // a notificação abre o app no "Atualizar leitura"
 const openUpd = () => { try { const R = reading(); if (R) editLeitura(); } catch {} };
@@ -22253,7 +22261,7 @@ function vFn(k) { try { const m = v2Mods(); if (V6SUB[k] && m[V6SUB[k]] === fals
       v.querySelectorAll('.v2fn-tg').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; if (V6SUB[k] && !v4Mod(V6SUB[k])) return toast('Ligue a Comunidade primeiro');
         const mods = { ...((db.prefs || {}).mods || {}) }; if (mods.presentes === undefined) mods.presentes = mods.emprest !== false;
         const now = k === 'presentes' ? v4Mod('presentes') : mods[k] !== false; mods[k] = !now; db.prefs = { ...(db.prefs || {}), mods }; save(); v2ModsApply(); try { drawTabbar(); } catch {}
-        if (k === 'prazos') { try { if (mods.prazos === false) sapi('DELETE', '/v1/me/reminder').catch(() => {}); else { const R = reading(); reminderSync(R && R.e); } } catch {} }
+        if (k === 'prazos') { try { if (mods.prazos === false) sapi('DELETE', '/v1/me/reminder').catch(() => {}); else { reminderSync(typeof remindOwner === 'function' ? remindOwner() : null); } } catch {} }
         try { refresh(); } catch {} draw(); }));
     };
     S.listRedraw = draw; draw();
@@ -25289,6 +25297,28 @@ function v6HistPaint(H, e) {
     const e = cur; b.addEventListener('click', () => { const s = v4State(); s.view = null; v4Sheet('upd', e); s.upd.full = true; s.upd.tab = 'hist'; v4Draw(); });
     body.prepend(b);
   } catch {} }, 60); }).observe(TR, { childList: true, subtree: true }); }
+// --- wf_v2_lembrete_servidor.js ---
+// Lembrete do prazo confere o servidor (Bia, 21/11: salvou "Me lembrar todo dia" e no dia seguinte estava desligado).
+// Ao abrir o app (e ao voltar para ele), lê GET /v1/me/reminder:
+//  - o servidor tem lembrete e o livro (mesmo título e prazo, em Lendo) perdeu a marca no aparelho → devolve a marca (o interruptor volta a aparecer ligado);
+//  - o aparelho tem lembrete válido e o servidor não → grava de novo no servidor.
+{ let busy = false, last = 0;
+  const check = async () => {
+    if (busy || Date.now() - last < 60000) return; busy = true; last = Date.now();
+    try {
+      if (!connected() || (typeof vFn === 'function' && !vFn('prazos'))) return;
+      const r = await sapi('GET', '/v1/me/reminder'); if (!r || r.status !== 200 || !r.data) return;
+      const s = r.data.reminder, own = typeof remindOwner === 'function' ? remindOwner() : null;
+      if (s) {
+        if (own) return;
+        const e = lib().find((x) => x.status === 'LENDO' && x.dueAt === s.dueAt && normT(x.title) === normT(s.title));
+        if (e && !e.remind) { e.remind = { hour: Number(s.hour) || 20, minute: Number(s.minute) || 0 }; save(); }
+      } else if (own) { own.remind.sent = ''; save(); reminderSync(own); }
+    } catch (err) { console.warn('lembrete servidor', err); } finally { busy = false; }
+  };
+  setTimeout(check, 6000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(check, 1500); });
+}
 // --- wf_v2_ler_junto_lista.js ---
 // Todas as leituras conjuntas (Bia, 21/11; protótipo v158 aprovado): atalho "Ler junto · N em andamento · N novas" em
 // Você › Minha leitura, em largura cheia, e uma página com as abas "Em andamento | Encerradas".
@@ -25445,6 +25475,50 @@ function openJuntos() {
 }
 // carrega em segundo plano quando o perfil próprio aparece, para o resumo do atalho
 { let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; if (TR.querySelector('.v3hub-lj')) { ljPaintSummary(); if (!LJ2.items || Date.now() - LJ2.at > 60000) ljLoad(); } }, 400); }).observe(TR, { childList: true, subtree: true }); }
+// --- wg_v2_folga_segura.js ---
+// Folga do prazo só de propósito (Bia, 21/11: Nunca minta ficou com sex, sáb e dom de folga sem ela marcar; o cartão do Hoje
+// mostrava "folga" em todos os dias e, ao mesmo tempo, "leia até a pág. 173 para bater a meta de hoje").
+// Causa: no plano do "Quando quer terminar?", os cartões dos dias parecem botões de escolher o dia; um toque marca folga.
+// 1) Tocar num dia não marca mais folga: é preciso ligar "Marcar folgas" (o texto muda para avisar que está no modo folga).
+// 2) Nunca todos os dias restantes de folga: o toque que deixaria todos de folga é recusado com aviso.
+// 3) Limpeza: livro cujo prazo tem todos os dias restantes de folga perde as folgas (o app já tratava assim no plano, mas o
+//    Hoje, a semana e o calendário mostravam tudo de folga). Corrige também os dados que já ficaram assim.
+const offAllRemaining = (e, off, due) => { if (!due || !off || !off.length) return false; const t = todayISO(); if (due < t) return false;
+  for (let d = t; d <= due; d = new Date(Date.parse(d) + 864e5).toISOString().slice(0, 10)) if (!off.includes(new Date(d + 'T12:00:00Z').getUTCDay())) return false; return true; };
+{ const SEL = '.dk[data-w], .dc-d[data-w], .dc-h[data-w]';
+  const formOf = (el) => el.closest && el.closest('form');
+  document.addEventListener('click', (ev) => {
+    const card = ev.target.closest && ev.target.closest(SEL); if (!card) return; const f = formOf(card); if (!f || !f.querySelector('input[name=due]')) return;
+    if (!f.dataset.folga) { ev.stopPropagation(); ev.preventDefault(); toast('Para marcar folga, toque em "Marcar folgas"'); return; }
+    // simula o efeito do toque para recusar "todos de folga"
+    const due = f.querySelector('input[name=due]').value, w = Number(card.dataset.w);
+    let cur; try { cur = JSON.parse(f.dataset.off || '[]'); } catch { cur = []; }
+    const next = cur.includes(w) ? cur.filter((x) => x !== w) : [...cur, w];
+    if (offAllRemaining(null, next, due)) { ev.stopPropagation(); ev.preventDefault(); toast('Deixe pelo menos um dia de leitura até o prazo'); return; }
+    f.dataset.off = JSON.stringify(next);
+  }, true);
+  const decorate = () => {
+    document.querySelectorAll('form').forEach((f) => {
+      const inp = f.querySelector('input[name=due]'); if (!inp) return;
+      const hint = [...f.querySelectorAll('small.hint')].find((x) => /marcar folga|folga/i.test(x.textContent)); if (!hint || hint.dataset.v2folga) return;
+      hint.dataset.v2folga = '1';
+      if (!f.dataset.off) { try { const e = (window.__dueBook || null); f.dataset.off = JSON.stringify((e && e.dueOff) || []); } catch { f.dataset.off = '[]'; } }
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'lnk v2-folga-bt';
+      b.style.cssText = 'margin:.3rem 0 0;font:inherit;font-weight:800;font-size:.84rem;color:var(--acc);background:none;border:0;padding:.5rem 0;min-height:40px;cursor:pointer';
+      const paint = () => { b.textContent = f.dataset.folga ? 'Pronto, terminei de marcar' : 'Marcar folgas'; hint.textContent = f.dataset.folga ? 'Toque nos dias em que não vai ler (vale para esse dia da semana até o prazo).' : 'Dias de folga não contam no plano.'; };
+      b.addEventListener('click', () => { if (f.dataset.folga) delete f.dataset.folga; else f.dataset.folga = '1'; paint(); });
+      hint.after(b); paint();
+    });
+  };
+  // guarda o livro da folha aberta para saber as folgas atuais
+  const _ds = dueSheet; dueSheet = function (e) { window.__dueBook = e; const r = _ds.apply(this, arguments); setTimeout(decorate, 0); return r; };
+  let raf = 0; new MutationObserver(() => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; decorate(); }); }).observe(document.body, { childList: true, subtree: true });
+}
+// limpeza: prazo com todos os dias restantes de folga → sem folga (e o lembrete reenviado)
+{ const fix = () => { try { let n = 0; for (const e of lib()) if (e.dueAt && offAllRemaining(e, e.dueOff, e.dueAt)) { delete e.dueOff; if (e.remind) e.remind.sent = ''; n++; } if (n) save(); } catch {} };
+  setTimeout(fix, 3000); setInterval(fix, 60000);
+  // ao salvar o prazo, aplica na hora (a folha ignora "todos de folga" e mostrava o plano sem folga, mas gravava o dueOff antigo)
+  document.addEventListener('submit', (ev) => { const f = ev.target; if (f && f.querySelector && f.querySelector('input[name=due]')) setTimeout(() => { fix(); try { const R = reading(); if (R && R.e && R.e.remind) { R.e.remind.sent = ''; } } catch {} }, 200); }, true); }
 // --- x0_v2_vocabulario.js ---
 // Vocabulário único (Bia, 20/11; glossário aprovado): os textos dos blocos v2 já foram trocados na fonte.
 // Aqui ficam só as frases que ainda moram no código antigo (fora de v2src/r2) e aparecem em telas que a v2 abre.
