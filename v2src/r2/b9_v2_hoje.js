@@ -123,7 +123,7 @@ function v2HojeEnsure() {
   if (off.includes('qday')) { qd && qd.remove(); return; }
   // a chave ignora o id da capa (data-cvk muda a cada desenho): antes o cartão era trocado sem parar e piscava com o "A seguir"
   const html = v2QdayHTML(), want = html.replace(/ data-cvk="c\d+"/g, '').replace(/\s+/g, ' ');
-  if (!qd || qd.dataset.k !== want) { const tmp = document.createElement('div'); tmp.innerHTML = html; const neu = tmp.firstElementChild; neu.dataset.k = want; if (qd) qd.replaceWith(neu); else box.append(neu); qd = neu; try { paintCv(neu); } catch {} }
+  if (!qd || qd.dataset.k !== want) { const tmp = document.createElement('div'); tmp.innerHTML = html; const neu = tmp.firstElementChild; neu.dataset.k = want; try { const col = now.parentElement; if ((qd && qd.classList.contains('v3mom')) || (col && col.classList.contains('v3h') && !col.querySelector(':scope > .ex-alert, :scope > .v2rs-card'))) neu.classList.add('v3mom'); } catch {} if (qd) qd.replaceWith(neu); else box.append(neu); qd = neu; try { paintCv(neu); } catch {} }
   // no Hoje novo (coluna .v3h) a posição é dada pela ordem do CSS: mover o cartão de novo a cada redesenho fazia ele sair e voltar sem parar
   if (qd.parentElement === now.parentElement && now.parentElement.classList.contains('v3h')) return;
   // posição: depois da última seção visível que vem antes dela na ordem; se nenhuma, logo depois da linha "Qual leio agora?"
@@ -133,4 +133,8 @@ function v2HojeEnsure() {
 }
 TR.addEventListener('click', (ev) => { const g = ev.target.closest && ev.target.closest('[data-v2qd] [data-qgo]'); if (!g) return; ev.stopPropagation(); S.comSeg = 'rede'; goTab('comunidade'); });
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('[data-v2qd] [data-qb]'); if (!b) return; ev.stopPropagation(); v2QAnswer(b.dataset.qb); setTimeout(v2HojeEnsure, 50); });
-{ let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(v2HojeEnsure, 180); }).observe(TR, { childList: true, subtree: true }); setTimeout(v2HojeEnsure, 1700); }
+{ let tm = 0, first = 0; new MutationObserver(() => { clearTimeout(tm); const now = Date.now(); if (!first) first = now; const run = () => { first = 0; v2HojeEnsure(); }; if (now - first > 600) { run(); return; } tm = setTimeout(run, 180); }) /* no máximo 600 ms de espera: mudanças seguidas na tela adiavam para sempre e a Pergunta do dia não voltava depois de um redesenho */.observe(TR, { childList: true, subtree: true }); setTimeout(v2HojeEnsure, 1700); }
+
+// o Hoje se redesenha de tempos em tempos (dados que chegam): a Pergunta do dia volta no mesmo instante, já no lugar e em destaque,
+// em vez de esperar o próximo ciclo (reteste da noite, 21/11: sumia e voltava)
+{ const _rh = renderHome; renderHome = function () { const r = _rh.apply(this, arguments); try { v2HojeEnsure(); } catch {} return r; }; }

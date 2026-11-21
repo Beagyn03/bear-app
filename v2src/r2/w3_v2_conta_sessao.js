@@ -277,10 +277,11 @@ try { for (const t of TOUR) { if (t[1] === 'Hoje') t[2] = 'Seu dia de leitura: o
     const lat = out.filter((x) => !alien(x.title) && !alien(x.author)); if (lat.length >= 6) out = lat;
     return out; } catch { return L; } }; }
 // sessão: o texto "Sessão de X min · N páginas" acompanha a página digitada (item 28)
-document.addEventListener('input', (ev) => { const i = ev.composedPath && ev.composedPath()[0]; if (!i || i.id !== 'v4pgv') return; try {
-  const root = i.getRootNode(), p = [...root.querySelectorAll('p.mut')].find((x) => /^Sessão de \d+ min · /.test(x.textContent)); if (!p) return;
-  const pg0 = Number(((root.querySelector('.sh-bk .mut') || {}).textContent || '').match(/estava na pág\. (\d+)/)?.[1]); const v = Number(String(i.value).replace(/\D/g, ''));
-  if (!Number.isFinite(pg0) || !Number.isFinite(v) || /%/.test(String(i.value))) return; const n = Math.max(0, v - pg0);
-  p.textContent = p.textContent.replace(/· \d+ páginas?\./, '· ' + n + (n === 1 ? ' página.' : ' páginas.')); } catch {} }, true);
+// (reteste da noite, 21/11: ainda ficava em "0 páginas") a contagem vem da página escolhida, ao digitar, ao deslizar e nos botões − e +
+{ const upd = (root) => { try { const p = root.querySelector('#v4sesn'); if (!p) return; const pg0 = Number(p.dataset.pg0); const i = root.querySelector('#v4pgv'), r = root.querySelector('#v4upr');
+    const raw = i ? String(i.value) : ''; if (/%|:/.test(raw)) return; let v = Number(raw.replace(/\D/g, '')); if (!raw && r) v = Number(r.value); if (!Number.isFinite(pg0) || !Number.isFinite(v)) return;
+    const n = Math.max(0, v - pg0), txt = '· ' + n + (n === 1 ? ' página.' : ' páginas.'); const nt = p.textContent.replace(/· \d+ páginas?\./, txt); if (nt !== p.textContent) p.textContent = nt; } catch {} };
+  document.addEventListener('input', (ev) => { const i = ev.composedPath && ev.composedPath()[0]; if (!i || (i.id !== 'v4pgv' && i.id !== 'v4upr')) return; const root = i.getRootNode(); if (i.id === 'v4upr') setTimeout(() => upd(root), 0); else upd(root); }, true);
+  document.addEventListener('click', (ev) => { const b = ev.composedPath && ev.composedPath()[0]; const x = b && b.closest && b.closest('[data-a=ust]'); if (x) { const root = x.getRootNode(); setTimeout(() => upd(root), 30); } }, true); }
 // perfil: as páginas contam também o que você já leu dos livros em andamento (item 19)
 { const _ms = myStatsSnap; myStatsSnap = function () { const r = _ms.apply(this, arguments); try { const extra = lib().filter((e) => e.status !== 'LIDO' && e.status !== 'QUERO').reduce((a, e) => { let p = 0; try { p = readingInfo(e).now || e.currentPage || 0; } catch { p = e.currentPage || 0; } return a + (Number(p) || 0); }, 0); if (r && typeof r.paginas === 'number') r.paginas += extra; } catch {} return r; }; }

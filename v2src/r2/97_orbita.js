@@ -65,7 +65,7 @@ const orbSub = (s) => s.today ? (s.cur > 1 ? 'Leitura de hoje registrada' : 'Pri
 { let tm = 0; const paint = () => {
     const bell = TR.querySelector('#g-msg'); if (!bell) return;
     let b = TR.querySelector('#g-orb'); if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'g-orb'; b.className = 'g-orb'; bell.before(b); b.addEventListener('click', () => openOrbita()); }
-    const s = orbStats(), html = ORB_SVG + s.cur; if (b.innerHTML !== html) b.innerHTML = html;
+    const s = orbStats(), html = ORB_SVG + s.cur; if (b.dataset.k !== html) { b.innerHTML = html; b.dataset.k = html; } // compara pela chave: o innerHTML de SVG volta serializado diferente e reescrevia o ícone sem parar (reteste 21/11: a Pergunta do dia sumia)
     b.classList.toggle('off', !s.today); b.setAttribute('aria-label', orbTxt(s) + '. Abrir sua órbita de leitura'); };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 120); }).observe(TR, { childList: true, subtree: true }); setTimeout(paint, 800); }
 // cartão do Hoje (logo depois do Lendo agora)

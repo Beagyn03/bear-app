@@ -3,9 +3,9 @@
 // Troca só texto de interface (curto, fora de posts, trechos, mensagens e campos), e para sozinha se algo redesenhar em laço.
 { const RX = [[/\b(à|na|da|À|Na|Da) minha biblioteca\b/g, '$1 Biblioteca'], [/\bMinha biblioteca\b/g, 'Biblioteca'], [/Personalizar Início/g, 'Personalizar Hoje'],
     [/Só amigos\b/g, 'Só amizades'], [/Retomar leitura/g, 'Voltar a ler'], [/Desistir de vez/g, 'Desistir'], [/\b(na|da|à) Estante\b(?!s)/g, '$1 Biblioteca'],
-    [/Adicionar à estante/g, 'Adicionar à Biblioteca'], [/^Estou lendo$/g, 'Lendo'], [/\bNa estante ·/g, 'Na Biblioteca ·']]; // (Bia, 21/11)
-  const QUICK = /minha biblioteca|Personalizar Início|Só amigos|Retomar leitura|Desistir de vez| Estante\b|Adicionar à estante|^Estou lendo$|Na estante ·/i;
-  const SKIP = 'textarea,input,[contenteditable],.rd-tx,.rd-body,.rd-text,.v2rv-tx,blockquote,.q-tx,.bq-t,.msg,.bub,.ms-b,.bd-msg,script,style';
+    [/Adicionar à estante/g, 'Adicionar à Biblioteca'], [/^Estou lendo$/g, 'Lendo'], [/\bNa estante ·/g, 'Na Biblioteca ·'], [/^(↺ )?Tentar de novo$/g, '$1Voltar a ler']]; // (Bia, 21/11; "Tentar de novo" do baú e dos menus antigos de abandonados: reteste da noite)
+  const QUICK = /minha biblioteca|Personalizar Início|Só amigos|Retomar leitura|Desistir de vez| Estante\b|Adicionar à estante|^Estou lendo$|Na estante ·|^(↺ )?Tentar de novo$/i;
+  const SKIP = '#fd-retry,#v3pf-retry,textarea,input,[contenteditable],.rd-tx,.rd-body,.rd-text,.v2rv-tx,blockquote,.q-tx,.bq-t,.msg,.bub,.ms-b,.bd-msg,script,style';
   let n = 0, t0 = Date.now(), off = 0;
   const fix = (node) => { const s = node.nodeValue; if (!s || s.length > 240 || !QUICK.test(s)) return; const p = node.parentElement; if (!p || p.closest(SKIP)) return;
     let v = s; RX.forEach(([a, b]) => { v = v.replace(a, b); }); if (v !== s) { node.nodeValue = v; n++; } };

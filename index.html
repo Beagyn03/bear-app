@@ -15572,7 +15572,7 @@ const orbSub = (s) => s.today ? (s.cur > 1 ? 'Leitura de hoje registrada' : 'Pri
 { let tm = 0; const paint = () => {
     const bell = TR.querySelector('#g-msg'); if (!bell) return;
     let b = TR.querySelector('#g-orb'); if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'g-orb'; b.className = 'g-orb'; bell.before(b); b.addEventListener('click', () => openOrbita()); }
-    const s = orbStats(), html = ORB_SVG + s.cur; if (b.innerHTML !== html) b.innerHTML = html;
+    const s = orbStats(), html = ORB_SVG + s.cur; if (b.dataset.k !== html) { b.innerHTML = html; b.dataset.k = html; } // compara pela chave: o innerHTML de SVG volta serializado diferente e reescrevia o ícone sem parar (reteste 21/11: a Pergunta do dia sumia)
     b.classList.toggle('off', !s.today); b.setAttribute('aria-label', orbTxt(s) + '. Abrir sua órbita de leitura'); };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 120); }).observe(TR, { childList: true, subtree: true }); setTimeout(paint, 800); }
 // cartão do Hoje (logo depois do Lendo agora)
@@ -17509,7 +17509,7 @@ function v2HojeEnsure() {
   if (off.includes('qday')) { qd && qd.remove(); return; }
   // a chave ignora o id da capa (data-cvk muda a cada desenho): antes o cartão era trocado sem parar e piscava com o "A seguir"
   const html = v2QdayHTML(), want = html.replace(/ data-cvk="c\d+"/g, '').replace(/\s+/g, ' ');
-  if (!qd || qd.dataset.k !== want) { const tmp = document.createElement('div'); tmp.innerHTML = html; const neu = tmp.firstElementChild; neu.dataset.k = want; if (qd) qd.replaceWith(neu); else box.append(neu); qd = neu; try { paintCv(neu); } catch {} }
+  if (!qd || qd.dataset.k !== want) { const tmp = document.createElement('div'); tmp.innerHTML = html; const neu = tmp.firstElementChild; neu.dataset.k = want; try { const col = now.parentElement; if ((qd && qd.classList.contains('v3mom')) || (col && col.classList.contains('v3h') && !col.querySelector(':scope > .ex-alert, :scope > .v2rs-card'))) neu.classList.add('v3mom'); } catch {} if (qd) qd.replaceWith(neu); else box.append(neu); qd = neu; try { paintCv(neu); } catch {} }
   // no Hoje novo (coluna .v3h) a posição é dada pela ordem do CSS: mover o cartão de novo a cada redesenho fazia ele sair e voltar sem parar
   if (qd.parentElement === now.parentElement && now.parentElement.classList.contains('v3h')) return;
   // posição: depois da última seção visível que vem antes dela na ordem; se nenhuma, logo depois da linha "Qual leio agora?"
@@ -17519,7 +17519,11 @@ function v2HojeEnsure() {
 }
 TR.addEventListener('click', (ev) => { const g = ev.target.closest && ev.target.closest('[data-v2qd] [data-qgo]'); if (!g) return; ev.stopPropagation(); S.comSeg = 'rede'; goTab('comunidade'); });
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('[data-v2qd] [data-qb]'); if (!b) return; ev.stopPropagation(); v2QAnswer(b.dataset.qb); setTimeout(v2HojeEnsure, 50); });
-{ let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(v2HojeEnsure, 180); }).observe(TR, { childList: true, subtree: true }); setTimeout(v2HojeEnsure, 1700); }
+{ let tm = 0, first = 0; new MutationObserver(() => { clearTimeout(tm); const now = Date.now(); if (!first) first = now; const run = () => { first = 0; v2HojeEnsure(); }; if (now - first > 600) { run(); return; } tm = setTimeout(run, 180); }) /* no máximo 600 ms de espera: mudanças seguidas na tela adiavam para sempre e a Pergunta do dia não voltava depois de um redesenho */.observe(TR, { childList: true, subtree: true }); setTimeout(v2HojeEnsure, 1700); }
+
+// o Hoje se redesenha de tempos em tempos (dados que chegam): a Pergunta do dia volta no mesmo instante, já no lugar e em destaque,
+// em vez de esperar o próximo ciclo (reteste da noite, 21/11: sumia e voltava)
+{ const _rh = renderHome; renderHome = function () { const r = _rh.apply(this, arguments); try { v2HojeEnsure(); } catch {} return r; }; }
 // --- c0_v2_visual.js ---
 // v2 fase visual (Bia, 19/11, branch livroverso-2): um padrão só para o app novo.
 //  - Cartão único: cantos 20px, borda fina, sombra suave, respiro igual entre seções.
@@ -19941,7 +19945,7 @@ function v4UpdHTML(k, e, s) {
   return `<div class="sh-bk">${v4cv(e)}<div><h3>${k === 'end' ? 'Em que página você parou?' : 'Atualizar página'}</h3><span class="mut">${esc(e.title)} · estava na pág. ${k === 'end' && s ? s.pg0 : now}</span></div></div>
     ${k === 'end' && s ? `<button class="btn s w v6cont" data-a="close" style="margin-top:10px">${v4ic('ler', 16)}Continuar lendo</button>` : ''}
     ${k === 'end' && s ? `<button class="btn s w v6disc" data-a="sesdisc" style="margin-top:8px">${v4ic('x', 16)}${st.discAsk ? 'Tocar de novo para descartar' : 'Descartar sessão'}</button>` : ''}
-    ${k === 'end' && s ? `<p class="mut" style="margin:6px 0 0">Sessão de ${Math.max(1, Math.round(secs / 60))} min · ${Math.max(0, s.pg - s.pg0)} páginas. Confira a página e salve.</p>` : ''}
+    ${k === 'end' && s ? `<p class="mut" id="v4sesn" data-pg0="${s.pg0}" style="margin:6px 0 0">Sessão de ${Math.max(1, Math.round(secs / 60))} min · ${(() => { const n = Math.max(0, (U.u === 'pg' ? U.pg : s.pg) - s.pg0); return n + (n === 1 ? ' página' : ' páginas'); })()}. Confira a página e salve.</p>` : ''}
     <div class="pgin"><input id="v4pgv" inputmode="${U.u === 'min' ? 'text' : 'numeric'}" value="${v4Fmt(e, U.pg, U.u)}" aria-label="Posição"><span id="v4pgvu">${v4UnitTail(e, U.u)}</span></div>
     <div class="pgsl up"><button data-a="ust" data-n="-1" aria-label="Voltar">−</button><input type="range" id="v4upr" min="0" max="${total || Math.max(500, U.pg + 100)}" value="${U.pg}" aria-label="Deslizar até a página"><button data-a="ust" data-n="1" aria-label="Avançar">+</button></div>
     <div class="row" style="justify-content:space-between;align-items:center;gap:8px;margin-top:2px"><div class="chips" style="margin:0;padding:0">${[['pg', 'página'], ['pct', '%'], ...(v4IsAudio(e) ? [['min', 'tempo']] : [])].map(([u, n]) => `<button class="chip ${U.u === u ? 'on' : ''}" data-a="updu" data-u="${u}">${n}</button>`).join('')}</div></div>
@@ -23959,11 +23963,12 @@ try { for (const t of TOUR) { if (t[1] === 'Hoje') t[2] = 'Seu dia de leitura: o
     const lat = out.filter((x) => !alien(x.title) && !alien(x.author)); if (lat.length >= 6) out = lat;
     return out; } catch { return L; } }; }
 // sessão: o texto "Sessão de X min · N páginas" acompanha a página digitada (item 28)
-document.addEventListener('input', (ev) => { const i = ev.composedPath && ev.composedPath()[0]; if (!i || i.id !== 'v4pgv') return; try {
-  const root = i.getRootNode(), p = [...root.querySelectorAll('p.mut')].find((x) => /^Sessão de \d+ min · /.test(x.textContent)); if (!p) return;
-  const pg0 = Number(((root.querySelector('.sh-bk .mut') || {}).textContent || '').match(/estava na pág\. (\d+)/)?.[1]); const v = Number(String(i.value).replace(/\D/g, ''));
-  if (!Number.isFinite(pg0) || !Number.isFinite(v) || /%/.test(String(i.value))) return; const n = Math.max(0, v - pg0);
-  p.textContent = p.textContent.replace(/· \d+ páginas?\./, '· ' + n + (n === 1 ? ' página.' : ' páginas.')); } catch {} }, true);
+// (reteste da noite, 21/11: ainda ficava em "0 páginas") a contagem vem da página escolhida, ao digitar, ao deslizar e nos botões − e +
+{ const upd = (root) => { try { const p = root.querySelector('#v4sesn'); if (!p) return; const pg0 = Number(p.dataset.pg0); const i = root.querySelector('#v4pgv'), r = root.querySelector('#v4upr');
+    const raw = i ? String(i.value) : ''; if (/%|:/.test(raw)) return; let v = Number(raw.replace(/\D/g, '')); if (!raw && r) v = Number(r.value); if (!Number.isFinite(pg0) || !Number.isFinite(v)) return;
+    const n = Math.max(0, v - pg0), txt = '· ' + n + (n === 1 ? ' página.' : ' páginas.'); const nt = p.textContent.replace(/· \d+ páginas?\./, txt); if (nt !== p.textContent) p.textContent = nt; } catch {} };
+  document.addEventListener('input', (ev) => { const i = ev.composedPath && ev.composedPath()[0]; if (!i || (i.id !== 'v4pgv' && i.id !== 'v4upr')) return; const root = i.getRootNode(); if (i.id === 'v4upr') setTimeout(() => upd(root), 0); else upd(root); }, true);
+  document.addEventListener('click', (ev) => { const b = ev.composedPath && ev.composedPath()[0]; const x = b && b.closest && b.closest('[data-a=ust]'); if (x) { const root = x.getRootNode(); setTimeout(() => upd(root), 30); } }, true); }
 // perfil: as páginas contam também o que você já leu dos livros em andamento (item 19)
 { const _ms = myStatsSnap; myStatsSnap = function () { const r = _ms.apply(this, arguments); try { const extra = lib().filter((e) => e.status !== 'LIDO' && e.status !== 'QUERO').reduce((a, e) => { let p = 0; try { p = readingInfo(e).now || e.currentPage || 0; } catch { p = e.currentPage || 0; } return a + (Number(p) || 0); }, 0); if (r && typeof r.paginas === 'number') r.paginas += extra; } catch {} return r; }; }
 // --- w4_v2_abertura_unica.js ---
@@ -23982,15 +23987,59 @@ document.addEventListener('input', (ev) => { const i = ev.composedPath && ev.com
     go(); // os blocos rodam antes do drawAll final; dois quadros depois o Hoje já está desenhado (ou com o esqueleto do bloco 93)
   }
 }
+// --- w5_v2_modal_inerte.js ---
+// Modais de verdade (reteste da noite, 21/11): com a tela de login, uma folha ou um diálogo aberto, o Tab focava botões do app
+// escondido atrás, e um script de teste clicou num botão de uma tela escondida. Agora:
+// - login (#auth-gate), folhas (.sheet) e diálogos de fora do app (.lvdlg-bg) deixam o app inteiro inerte (sem foco, sem clique) e escondido do leitor de tela;
+// - diálogos do próprio app (.v10dlg, dentro do shadow root) deixam inerte tudo o que está ao lado deles;
+// - telas escondidas com o atributo hidden ficam inertes enquanto escondidas.
+{ const host = TR.host || null;
+  const MODAL_OUT = '#auth-gate, body > .sheet, body > .lvdlg-bg';
+  let tm = 0;
+  const sync = () => { tm = 0;
+    try {
+      const out = !!document.querySelector(MODAL_OUT);
+      if (host) { if (out) { host.inert = true; host.setAttribute('aria-hidden', 'true'); } else if (host.inert) { host.inert = false; host.removeAttribute('aria-hidden'); } }
+      const dlg = TR.querySelector(':scope > .v10dlg');
+      [...TR.children].forEach((n) => { if (n.tagName === 'STYLE' || n.tagName === 'LINK') return; const want = !!dlg && n !== dlg; if (want && !n.inert) { n.inert = true; n.dataset.lvInert = '1'; } else if (!want && n.dataset.lvInert) { n.inert = false; delete n.dataset.lvInert; } });
+      TR.querySelectorAll('[hidden]').forEach((n) => { if (!n.inert) { n.inert = true; n.dataset.lvHid = '1'; } });
+      TR.querySelectorAll('[data-lv-hid]:not([hidden])').forEach((n) => { n.inert = false; delete n.dataset.lvHid; });
+    } catch (e) { console.warn('modal inerte', e); } };
+  const kick = () => { if (!tm) tm = setTimeout(sync, 30); };
+  new MutationObserver(kick).observe(document.body, { childList: true });
+  new MutationObserver(kick).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+  setTimeout(sync, 500); }
+// --- w6_v2_reteste_noite.js ---
+// Reteste da noite (21/11):
+// - apagar eco, mensagem e resposta abriam só um balão com o verbo, sem dizer o que se perde: agora abrem a folha do app
+//   com título, o que se perde e Apagar/Cancelar (mesmo padrão das outras confirmações);
+// - estante vazia mandava tocar em "+ Adicionar", que não existe nas telas novas: aponta para ••• › Adicionar livros.
+{ const INFO = {
+    'Apagar este eco': ['Apagar eco?', 'O eco sai da página para todo mundo, junto com as curtidas. Não dá para desfazer.'],
+    'Apagar mensagem': ['Apagar mensagem?', 'A mensagem some da conversa para as duas pessoas. Não dá para desfazer.'],
+    'Apagar resposta': ['Apagar resposta?', 'A resposta some da conversa para todo mundo. Não dá para desfazer.'] };
+  const _ask = v9Ask;
+  v9Ask = function (anchor, label, fn) {
+    const it = INFO[label]; if (!it || typeof lvDialog !== 'function') return _ask.apply(this, arguments);
+    lvDialog({ title: it[0], html: '<p style="margin:.4rem 0 0;line-height:1.45">' + esc(it[1]) + '</p>', actions: [{ label: 'Apagar', cls: 'dng', fn: () => { try { fn(); } catch (e) { console.warn('apagar', e); } } }, { label: 'Cancelar' }] }); }; }
+{ const RX = [[/Estante vazia\. Toque em “\+ Adicionar”\./, 'Estante vazia. Toque em ••• › Adicionar livros.'],
+    [/Toque em “\+ Adicionar” para colocar livros\./, 'Toque em ••• › Adicionar livros para colocar livros.']];
+  const fix = (n) => { const s = n.nodeValue; if (!s || s.indexOf('+ Adicionar”') < 0) return; let v = s; RX.forEach(([a, b]) => { v = v.replace(a, b); }); if (v !== s) n.nodeValue = v; };
+  const walk = (r) => { if (r.nodeType === 3) return fix(r); if (r.nodeType !== 1 && r.nodeType !== 11) return; const w = document.createTreeWalker(r, NodeFilter.SHOW_TEXT); let x; while ((x = w.nextNode())) fix(x); };
+  const mo = new MutationObserver((ms) => ms.forEach((m) => { if (m.type === 'characterData') fix(m.target); else m.addedNodes.forEach(walk); }));
+  [TR, document.body].forEach((r) => { try { walk(r); mo.observe(r, { childList: true, subtree: true, characterData: true }); } catch {} });
+  // página de uma estante sua, vazia: diz onde adicionar
+  const page = () => { const v = TR.querySelector('#shelflist'); if (!v || v.hidden) return; const e = v.querySelector('.sl-empty'); if (!e || e.dataset.lvHint || !/^Nenhum livro aqui ainda\.?$/.test(e.textContent.trim()) || !v.querySelector('.v6dots')) return; e.dataset.lvHint = '1'; e.textContent = 'Nenhum livro aqui ainda. Toque em ••• › Adicionar livros.'; };
+  let tm = 0; new MutationObserver(() => { if (!tm) tm = setTimeout(() => { tm = 0; page(); }, 120); }).observe(TR, { childList: true, subtree: true }); }
 // --- x0_v2_vocabulario.js ---
 // Vocabulário único (Bia, 20/11; glossário aprovado): os textos dos blocos v2 já foram trocados na fonte.
 // Aqui ficam só as frases que ainda moram no código antigo (fora de v2src/r2) e aparecem em telas que a v2 abre.
 // Troca só texto de interface (curto, fora de posts, trechos, mensagens e campos), e para sozinha se algo redesenhar em laço.
 { const RX = [[/\b(à|na|da|À|Na|Da) minha biblioteca\b/g, '$1 Biblioteca'], [/\bMinha biblioteca\b/g, 'Biblioteca'], [/Personalizar Início/g, 'Personalizar Hoje'],
     [/Só amigos\b/g, 'Só amizades'], [/Retomar leitura/g, 'Voltar a ler'], [/Desistir de vez/g, 'Desistir'], [/\b(na|da|à) Estante\b(?!s)/g, '$1 Biblioteca'],
-    [/Adicionar à estante/g, 'Adicionar à Biblioteca'], [/^Estou lendo$/g, 'Lendo'], [/\bNa estante ·/g, 'Na Biblioteca ·']]; // (Bia, 21/11)
-  const QUICK = /minha biblioteca|Personalizar Início|Só amigos|Retomar leitura|Desistir de vez| Estante\b|Adicionar à estante|^Estou lendo$|Na estante ·/i;
-  const SKIP = 'textarea,input,[contenteditable],.rd-tx,.rd-body,.rd-text,.v2rv-tx,blockquote,.q-tx,.bq-t,.msg,.bub,.ms-b,.bd-msg,script,style';
+    [/Adicionar à estante/g, 'Adicionar à Biblioteca'], [/^Estou lendo$/g, 'Lendo'], [/\bNa estante ·/g, 'Na Biblioteca ·'], [/^(↺ )?Tentar de novo$/g, '$1Voltar a ler']]; // (Bia, 21/11; "Tentar de novo" do baú e dos menus antigos de abandonados: reteste da noite)
+  const QUICK = /minha biblioteca|Personalizar Início|Só amigos|Retomar leitura|Desistir de vez| Estante\b|Adicionar à estante|^Estou lendo$|Na estante ·|^(↺ )?Tentar de novo$/i;
+  const SKIP = '#fd-retry,#v3pf-retry,textarea,input,[contenteditable],.rd-tx,.rd-body,.rd-text,.v2rv-tx,blockquote,.q-tx,.bq-t,.msg,.bub,.ms-b,.bd-msg,script,style';
   let n = 0, t0 = Date.now(), off = 0;
   const fix = (node) => { const s = node.nodeValue; if (!s || s.length > 240 || !QUICK.test(s)) return; const p = node.parentElement; if (!p || p.closest(SKIP)) return;
     let v = s; RX.forEach(([a, b]) => { v = v.replace(a, b); }); if (v !== s) { node.nodeValue = v; n++; } };
