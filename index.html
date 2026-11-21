@@ -9952,6 +9952,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
@@ -24000,6 +24001,7 @@ try { for (const t of TOUR) { if (t[1] === 'Hoje') t[2] = 'Seu dia de leitura: o
     try {
       const out = !!document.querySelector(MODAL_OUT);
       if (host) { if (out) { host.inert = true; host.setAttribute('aria-hidden', 'true'); } else if (host.inert) { host.inert = false; host.removeAttribute('aria-hidden'); } }
+      document.querySelectorAll('body > .inst-pop').forEach((n) => { n.inert = out; }); // o aviso de instalar também sai do Tab
       const dlg = TR.querySelector(':scope > .v10dlg');
       [...TR.children].forEach((n) => { if (n.tagName === 'STYLE' || n.tagName === 'LINK') return; const want = !!dlg && n !== dlg; if (want && !n.inert) { n.inert = true; n.dataset.lvInert = '1'; } else if (!want && n.dataset.lvInert) { n.inert = false; delete n.dataset.lvInert; } });
       TR.querySelectorAll('[hidden]').forEach((n) => { if (!n.inert) { n.inert = true; n.dataset.lvHid = '1'; } });
