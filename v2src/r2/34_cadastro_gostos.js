@@ -78,9 +78,64 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .pv-ask b{display:block;font-size:.92rem}.pv-ask small{font-size:.8rem;color:var(--ink-2)}
 .pv-msg{font-size:.84rem;color:var(--ink-2);margin:.2rem 0 .6rem}
 `; TR.append(st); }
-// Primeiro acesso em 3 passos (16/11): gêneros → top 3 → histórico de outro app (importa ali mesmo). Depois, "Seus gostos" é uma página só.
+// ---------- Passo 4 do primeiro acesso: meta do ano com projeção (Bia, 21/11; ideia vinda do Bookly, sem copiar) ----------
+// Sugestão: livros lidos este ano (inclui os importados) + ritmo do ano; sem histórico, 12. Curva leve do que já leu até a meta.
+// "Lembrete para ler" só fica guardado em db.prefs.dailyRemind (o lembrete diário ainda não existe).
+const GM = { n: 0, y: 0, rem: false };
+function gmStats() {
+  const y = new Date().getFullYear(), ys = String(y), L = lib(), read = L.filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').startsWith(ys)).length;
+  const pg = L.map((e) => Number(e.totalPages) || 0).filter((n) => n > 30 && n < 3000), avg = pg.length ? Math.round(pg.reduce((a, b) => a + b, 0) / pg.length) : 300;
+  const now = new Date(), start = new Date(y, 0, 1), end = new Date(y, 11, 31), doy = Math.max(1, Math.round((now - start) / 864e5) + 1), left = Math.max(1, Math.round((end - now) / 864e5) + 1);
+  const pace = read ? Math.round(read / doy * 365) : 0, sug = read ? Math.min(100, Math.max(read + 1, pace)) : Math.max(1, Math.min(12, Math.round(left / 20)));
+  return { y, read, avg, doy, left, sug };
+}
+function gmBody(dots) {
+  const st = gmStats(); if (!GM.y || GM.y !== st.y) { GM.y = st.y; GM.n = st.sug; GM.rem = !!((db.prefs || {}).dailyRemind || {}).on; }
+  const n = GM.n, rest = Math.max(0, n - st.read), ppd = rest ? Math.max(1, Math.round(rest * st.avg / st.left)) : 0;
+  const W = 300, H = 120, px = (d) => 8 + (W - 16) * d / 365, py = (b) => H - 14 - (H - 30) * Math.min(1, b / Math.max(n, 1));
+  const xNow = px(st.doy), yNow = py(st.read), xEnd = px(365), yEnd = py(n);
+  const svg = '<svg class="gm-ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Você leu ' + st.read + ' livros até hoje; a meta leva a ' + n + ' até 31 de dezembro">'
+    + '<line x1="8" y1="' + (H - 14) + '" x2="' + (W - 8) + '" y2="' + (H - 14) + '" class="gm-ax"/>'
+    + '<path d="M8 ' + (H - 14) + ' Q ' + ((8 + xNow) / 2) + ' ' + (H - 14) + ' ' + xNow + ' ' + yNow + '" class="gm-done"/>'
+    + '<path d="M' + xNow + ' ' + yNow + ' C ' + (xNow + (xEnd - xNow) * .45) + ' ' + yNow + ' ' + (xNow + (xEnd - xNow) * .55) + ' ' + yEnd + ' ' + xEnd + ' ' + yEnd + '" class="gm-proj"/>'
+    + '<circle cx="' + xNow + '" cy="' + yNow + '" r="5" class="gm-pt"/><circle cx="' + xEnd + '" cy="' + yEnd + '" r="6" class="gm-pt gm-end"/>'
+    + '<text x="' + Math.max(8, Math.min(xNow - 10, W - 120)) + '" y="' + Math.max(12, yNow - 10) + '" class="gm-tx">' + st.read + ' hoje</text>'
+    + '<text x="' + (xEnd - 4) + '" y="' + Math.max(12, yEnd - 12) + '" text-anchor="end" class="gm-tx gm-tb">' + n + ' livros</text></svg>';
+  return '<div class="gs-hi gs-noimg"><div class="gs-bub"><span>' + (st.read ? 'Você já leu ' + st.read + (st.read === 1 ? ' livro' : ' livros') + ' este ano. Bora ver até onde dá para chegar?' : 'Uma meta ajuda a manter o ritmo. Dá para mudar quando quiser.') + '</span></div></div>'
+    + dots + '<h2 class="gs-t">Sua meta de leitura</h2>'
+    + '<div class="gm-pick" role="group" aria-label="Meta de livros em ' + st.y + '"><button type="button" class="gm-b" data-gm="-1" aria-label="Diminuir a meta">−</button><b class="gm-n" aria-live="polite">' + n + '<small>livros em ' + st.y + '</small></b><button type="button" class="gm-b" data-gm="1" aria-label="Aumentar a meta">+</button></div>'
+    + '<div class="gm-q">' + [12, 24, 36].map((q) => '<button type="button" class="gs-ch' + (q === n ? ' on' : '') + '" data-gq="' + q + '" aria-pressed="' + (q === n) + '">' + q + '</button>').join('') + '</div>'
+    + '<div class="gm-card">' + svg + '<p class="gm-big">Até 31/12 você pode chegar a <b>' + n + ' livros</b></p><p class="gm-sm">' + (ppd ? 'Cerca de ' + ppd + ' páginas por dia' : 'Você já bateu essa meta: que tal subir?') + '</p></div>'
+    + '<label class="gm-rem"><span><b>Lembrete para ler</b><small>todo dia às 20:00 · avisamos quando ele estiver disponível</small></span><input type="checkbox" id="gm-rem"' + (GM.rem ? ' checked' : '') + '></label>';
+}
+function gmBind(v, draw) {
+  v.querySelectorAll('[data-gm]').forEach((b) => b.addEventListener('click', () => { GM.n = Math.max(1, Math.min(300, GM.n + Number(b.dataset.gm))); draw(); v.querySelector('[data-gm="' + b.dataset.gm + '"]')?.focus(); }));
+  v.querySelectorAll('[data-gq]').forEach((b) => b.addEventListener('click', () => { GM.n = Number(b.dataset.gq); draw(); v.querySelector('[data-gq="' + b.dataset.gq + '"]')?.focus(); }));
+  const r = v.querySelector('#gm-rem'); if (r) r.addEventListener('change', () => { GM.rem = r.checked; });
+}
+function gmSaveRemind() { try { db.prefs = { ...(db.prefs || {}), dailyRemind: { on: GM.rem ? 1 : 0, hour: 20, minute: 0, at: todayISO() } }; save(); } catch {} }
+function gmSave() {
+  try { const y = GM.y || new Date().getFullYear(); db.yearGoals = { ...(db.yearGoals || {}), [y]: GM.n }; db.yearGoalSet = { ...(db.yearGoalSet || {}) }; if (!db.yearGoalSet[y]) db.yearGoalSet[y] = todayISO(); save(); } catch (e) { console.warn('meta do primeiro acesso', e); }
+  gmSaveRemind();
+}
+{ const st = document.createElement('style'); st.textContent = `
+.gm-pick{display:flex;align-items:center;justify-content:center;gap:1.2rem;margin:.4rem 0 .2rem}
+.gm-b{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-size:1.5rem;font-weight:800;cursor:pointer}
+.gm-n{display:grid;justify-items:center;font-family:var(--v2-disp,serif);font-size:2.6rem;line-height:1;color:var(--ink)}.gm-n small{font-family:inherit;font-size:.8rem;font-weight:700;color:var(--ink-2);margin-top:.25rem}
+.gm-q{display:flex;justify-content:center;gap:.5rem;margin:.3rem 0 .8rem}.gm-q .gs-ch{min-width:56px;min-height:40px}
+.gm-card{border:1px solid var(--line);border-radius:18px;background:var(--panel);padding:.8rem .9rem .9rem;text-align:center}
+.gm-ch{width:100%;height:auto;display:block}.gm-ax{stroke:var(--line);stroke-width:1.5}
+.gm-done{fill:none;stroke:var(--acc);stroke-width:3;stroke-linecap:round}.gm-proj{fill:none;stroke:var(--acc);stroke-width:3;stroke-dasharray:6 6;stroke-linecap:round;opacity:.75;animation:gmIn 1.2s ease-out both}
+.gm-pt{fill:var(--panel);stroke:var(--acc);stroke-width:3}.gm-end{fill:var(--acc)}.gm-tx{font:700 11px var(--v2-font,sans-serif);fill:var(--ink-2)}.gm-tb{fill:var(--ink);font-size:12px}
+.gm-big{margin:.5rem 0 .1rem;font-weight:700;color:var(--ink)}.gm-big b{color:var(--acc)}.gm-sm{margin:0;font-size:.85rem;color:var(--ink-2)}
+.gm-rem{display:flex;align-items:center;justify-content:space-between;gap:.8rem;margin-top:.9rem;padding:.7rem .9rem;border:1px solid var(--line);border-radius:14px;cursor:pointer;min-height:44px}
+.gm-rem span{display:grid;text-align:left}.gm-rem small{font-size:.78rem;color:var(--ink-2)}.gm-rem input{width:22px;height:22px;accent-color:var(--acc);flex:none}
+@keyframes gmIn{from{opacity:0}to{opacity:.75}}
+@media (prefers-reduced-motion:reduce){.gm-proj{animation:none}}
+`; TR.append(st); }
+// Primeiro acesso em 4 passos (16/11; passo 4, meta, em 21/11): gêneros → top 3 → histórico de outro app (importa ali mesmo). Depois, "Seus gostos" é uma página só.
 function openTaste(first, prof, start) {
-  S.gsHist = ''; S.gsSeen = 0; let step = first && start >= 1 && start <= 3 ? Math.floor(start) : 1, fav = false, favKey = ''; const favCh = {};
+  S.gsHist = ''; S.gsSeen = 0; let step = first && start >= 1 && start <= 4 ? Math.floor(start) : 1, fav = false, favKey = ''; const favCh = {};
   const v = $('#shelflist'), t0 = tasteOf() || {}, sel = new Set(t0.genres || []), books = [...(t0.books || [])];
   const keep = () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, ...(sel.size || books.length ? { taste: { genres: [...sel], books, at: new Date().toISOString() } } : {}) }; save(); try { localStorage.removeItem('bear.pv'); } catch {} };
   const chips = () => '<div class="gs-chips">' + TASTE_G.map(([k, n]) => '<button type="button" class="gs-ch' + (sel.has(k) ? ' on' : '') + '" data-k="' + k + '" aria-pressed="' + sel.has(k) + '">' + esc(n) + '</button>').join('') + '</div>';
@@ -113,7 +168,7 @@ function openTaste(first, prof, start) {
       // guarda o passo do primeiro acesso: se o app recarregar no meio, ele volta daqui (teste real 21/11, item 1)
       try { const pp = (db.prefs || {}).pp; if (pp && pp.fs !== 'ok' && pp.fs !== step) { pp.fs = step; save(); } } catch {}
       top = '<span></span><b>Primeiros passos</b><span></span>';
-      const dots = '<div class="gs-steps" aria-label="Passo ' + step + ' de 3">' + [1, 2, 3].map((i) => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '<small>Passo ' + step + ' de 3</small></div>';
+      const dots = '<div class="gs-steps" aria-label="Passo ' + step + ' de 4">' + [1, 2, 3, 4].map((i) => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '<small>Passo ' + step + ' de 4</small></div>';
       const inLib = (b) => lib().find((x) => normT(x.title) === normT(b.title));
       if (step === 2 && fav) { // pergunta antes de colocar o Top 3 na Biblioteca (Bia, 21/11)
         const OPT = [['LIDO', 'Já li'], ['QUERO', 'Quero ler'], ['LENDO', 'Lendo'], ['', 'Não colocar']];
@@ -123,14 +178,15 @@ function openTaste(first, prof, start) {
               : '<div class="gs-fvo" role="radiogroup" aria-label="Como ' + esc(b.title) + ' entra">' + OPT.map(([k, n]) => '<button type="button" role="radio" aria-checked="' + (ch === k) + '" class="' + (ch === k ? 'on' : '') + '" data-fi="' + i + '" data-fk="' + k + '">' + n + '</button>').join('') + '</div>') + '</div></div>'; }).join('') + '</div>';
         okTxt = 'Colocar na Biblioteca'; skipTxt = 'Agora não';
       }
-      else if (step === 1) body = bear('bear_celebrating', 'Boas-vindas' + ((() => { const n = String((prof && prof.displayName) || (socialProfile && socialProfile.displayName) || '').trim().split(/\s+/)[0]; return n ? ', ' + esc(n) : ''; })()) + '!', 'Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.')
+      else if (step === 1) body = bear('bear_celebrating', 'Boas-vindas' + ((() => { const n = String((prof && prof.displayName) || (socialProfile && socialProfile.displayName) || '').trim().split(/\s+/)[0]; return n ? ', ' + esc(n) : ''; })()) + '!', 'Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 4 perguntinhas.')
         + dots + '<h2 class="gs-t">Quais gêneros você mais gosta?</h2><p class="gs-intro">Marque quantos quiser.</p>' + chips();
       else if (step === 2) body = bear('bear_reading_chair', '', books.length ? (books.length < 3 ? 'Ótima escolha! Quer colocar mais algum?' : 'Que top 3! Já sei bem o que te indicar.') : 'Agora me conta: quais livros marcaram você? Com eles eu acho leituras parecidas.')
         + dots + '<h2 class="gs-t">Seus livros do coração</h2><p class="gs-intro">Monte seu Top 3. Pode ser só um, ou nenhum.</p>' + slots() + (books.some((b) => { const c = favCh[normT(b.title)]; return c && c !== 'keep'; }) ? '<p class="gs-t3ok">Seus favoritos já estão na Biblioteca</p>' : '');
-      else body = bear('bear_running_books', '', S.gsHist ? 'Pronto, seus livros estão na Biblioteca!' : 'Última pergunta, prometo!') + dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Apps de leitura deixam baixar seu histórico de leitura num arquivo (.csv). No Goodreads, pelo site no computador: My Books › Import and export › Export Library. Em outros apps, procure por exportar nas configurações. Depois é só voltar aqui e selecionar o arquivo baixado.</p>'
+      else if (step === 3) body = bear('bear_running_books', '', S.gsHist ? 'Pronto, seus livros estão na Biblioteca!' : 'Quase lá!') + dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Apps de leitura deixam baixar seu histórico de leitura num arquivo (.csv). No Goodreads, pelo site no computador: My Books › Import and export › Export Library. Em outros apps, procure por exportar nas configurações. Depois é só voltar aqui e selecionar o arquivo baixado.</p>'
         + '<div class="gs-hist">' + (S.gsHist ? '<small class="gs-hok">✓ ' + esc(S.gsHist) + '</small>' : '')
         + '<button type="button" class="gs-add" id="gs-hist">' + (S.gsHist ? 'Importar outro arquivo' : 'Importar arquivo (CSV)') + '</button></div>';
-      if (!(step === 2 && fav)) { okTxt = step < 3 ? 'Continuar' : 'Começar a usar'; skipTxt = step < 3 ? 'Pular' : (S.gsHist ? '' : 'Agora não'); }
+      else body = gmBody(dots); // passo 4: meta do ano com projeção (Bia, 21/11)
+      if (!(step === 2 && fav)) { okTxt = step < 4 ? 'Continuar' : 'Definir meta'; skipTxt = step < 3 ? 'Pular' : step === 3 ? (S.gsHist ? '' : 'Agora não') : 'Pular'; }
     }
     v.querySelector('.sl-body').innerHTML = '<div class="sl-top">' + top + '</div>' + body
       + '<div class="gs-btns"><div class="gs-nav">' + (first && step > 1 ? '<button type="button" class="gs-prev" id="gs-prev">‹ Voltar</button>' : '') + '<button type="button" class="gs-ok" id="gs-ok"' + (okOn ? '' : ' disabled') + '>' + okTxt + '</button></div>' + (skipTxt ? '<button type="button" class="gs-skip" id="gs-skip">' + skipTxt + '</button>' : '') + '</div>';
@@ -144,6 +200,7 @@ function openTaste(first, prof, start) {
     $$('.gs-ch', v).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; sel.has(k) ? sel.delete(k) : sel.add(k); b.classList.toggle('on', sel.has(k)); b.setAttribute('aria-pressed', sel.has(k)); if (!first) $('#gs-ok', v).disabled = !(sel.size || books.length); }));
     $$('[data-rm]', v).forEach((b) => b.addEventListener('click', () => { const x = books[+b.dataset.rm]; if (first && x) t3Put(x, null); books.splice(+b.dataset.rm, 1); if (x) delete favCh[normT(x.title)]; draw(); }));
     $$('[data-t3]', v).forEach((sl) => sl.addEventListener('change', () => { const x = books[+sl.dataset.t3]; if (x) t3Put(x, sl.value); draw(); v.querySelector('[data-t3="' + sl.dataset.t3 + '"]')?.focus(); }));
+    if (first && step === 4) gmBind(v, draw);
     $('#gs-add', v)?.addEventListener('click', pickBook);
     $$('.gs-slot', v).forEach((b) => b.addEventListener('click', pickBook));
     $('#gs-hist', v)?.addEventListener('click', () => { // importa ali mesmo, sem sair do passo
@@ -152,11 +209,12 @@ function openTaste(first, prof, start) {
       S.listRedraw = () => { if (v.hidden || !v.querySelector('#gs-hist')) { S.listRedraw = old; return old && old(); } const n = lib().length - before; if (n <= 0) return old && old();
         S.listRedraw = old; S.gsHist = (n === 1 ? '1 livro entrou' : n + ' livros entraram') + ' na sua Biblioteca'; draw(); };
       importCSV(); });
-    $('#gs-skip', v)?.addEventListener('click', () => { if (!first) return done(); if (fav) return afterFav(false); keep(); if (step < 3) { step++; draw(); } else done(); });
+    $('#gs-skip', v)?.addEventListener('click', () => { if (!first) return done(); if (fav) return afterFav(false); keep(); if (step < 4) { step++; draw(); } else { gmSaveRemind(); done(); } });
     $('#gs-ok', v).addEventListener('click', () => {
       if (fav) return afterFav(true);
       if (needFav()) { keep(); fav = true; return draw(); }
-      if (first && step < 3) { keep(); step++; return draw(); }
+      if (first && step < 4) { keep(); step++; return draw(); }
+      if (first && step === 4) { keep(); gmSave(); toast('Meta de ' + GM.n + ' livros em ' + GM.y + ' · tudo pronto'); return done(); }
       keep(); if (sel.size || books.length) toast(first ? 'Tudo pronto' : 'Gostos salvos'); done();
     });
   };
