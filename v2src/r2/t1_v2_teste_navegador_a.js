@@ -48,7 +48,7 @@ addEventListener('click', (ev) => {
     let row = body.querySelector(':scope > .v9acts');
     if (mine || !add) { if (row) row.remove(); return; }
     const anchor = hero.nextElementSibling && hero.nextElementSibling.classList.contains('v8nc') ? hero.nextElementSibling : hero;
-    if (!row) { anchor.insertAdjacentHTML('afterend', '<div class="v9acts"><button type="button" class="pri" data-v9="add"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Adicionar à estante</button><button type="button" class="dots" data-v9="more" aria-label="Mais opções do livro">•••</button></div>');
+    if (!row) { anchor.insertAdjacentHTML('afterend', '<div class="v9acts"><button type="button" class="pri" data-v9="add"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Adicionar à Biblioteca</button><button type="button" class="dots" data-v9="more" aria-label="Mais opções do livro">•••</button></div>');
       row = body.querySelector(':scope > .v9acts');
       row.querySelector('[data-v9=add]').addEventListener('click', () => { const a = body.querySelector(':scope > .bp-btn[data-a=add]'); if (a) a.click(); });
       row.querySelector('[data-v9=more]').addEventListener('click', (ev) => { const cv = hero.querySelector('.bp-cv'), m = cv && String(cv.style.backgroundImage || '').match(/url\(["']?(.*?)["']?\)/); try { bookMenuOpen(ev.currentTarget, { title, author: ((hero.querySelector('.bp-ht small') || {}).textContent || '').trim() || null, cover: m ? m[1] : null }); } catch (err) { console.warn('menu do livro', err); } }); }

@@ -2,8 +2,9 @@
 // Aqui ficam só as frases que ainda moram no código antigo (fora de v2src/r2) e aparecem em telas que a v2 abre.
 // Troca só texto de interface (curto, fora de posts, trechos, mensagens e campos), e para sozinha se algo redesenhar em laço.
 { const RX = [[/\b(à|na|da|À|Na|Da) minha biblioteca\b/g, '$1 Biblioteca'], [/\bMinha biblioteca\b/g, 'Biblioteca'], [/Personalizar Início/g, 'Personalizar Hoje'],
-    [/Só amigos\b/g, 'Só amizades'], [/Retomar leitura/g, 'Voltar a ler'], [/Desistir de vez/g, 'Desistir'], [/\b(na|da|à) Estante\b(?!s)/g, '$1 Biblioteca']];
-  const QUICK = /minha biblioteca|Personalizar Início|Só amigos|Retomar leitura|Desistir de vez| Estante\b/i;
+    [/Só amigos\b/g, 'Só amizades'], [/Retomar leitura/g, 'Voltar a ler'], [/Desistir de vez/g, 'Desistir'], [/\b(na|da|à) Estante\b(?!s)/g, '$1 Biblioteca'],
+    [/Adicionar à estante/g, 'Adicionar à Biblioteca'], [/^Estou lendo$/g, 'Lendo'], [/\bNa estante ·/g, 'Na Biblioteca ·']]; // (Bia, 21/11)
+  const QUICK = /minha biblioteca|Personalizar Início|Só amigos|Retomar leitura|Desistir de vez| Estante\b|Adicionar à estante|^Estou lendo$|Na estante ·/i;
   const SKIP = 'textarea,input,[contenteditable],.rd-tx,.rd-body,.rd-text,.v2rv-tx,blockquote,.q-tx,.bq-t,.msg,.bub,.ms-b,.bd-msg,script,style';
   let n = 0, t0 = Date.now(), off = 0;
   const fix = (node) => { const s = node.nodeValue; if (!s || s.length > 240 || !QUICK.test(s)) return; const p = node.parentElement; if (!p || p.closest(SKIP)) return;

@@ -255,7 +255,7 @@ function lvEyes(root) {
     if (!I) return;
     const novos = Math.max(0, (db.library || []).length - I.n0), atual = Math.max(0, n - novos);
     setTimeout(() => lvDialog({ title: 'Importação concluída', html: `<div class="lvnums"><span><b>${novos}</b><small>${novos === 1 ? 'livro novo' : 'livros novos'}</small></span><span><b>${atual}</b><small>atualizados</small></span><span><b>${touched.length}</b><small>${touched.length === 1 ? 'resenha' : 'resenhas'}</small></span></div><p>${touched.length ? (I.pub ? 'As resenhas foram publicadas na Comunidade.' : 'As resenhas ficaram só para você.') : ''} Confira datas, páginas e notas em Completar histórico.</p>`,
-      actions: [{ label: 'Conferir livros', cls: 'pri' }, { label: 'Desfazer importação', fn: () => {
+      actions: [{ label: 'Conferir minhas leituras', cls: 'pri' }, { label: 'Desfazer importação', fn: () => {
         try { if (I.pub) touched.forEach((e) => { sapi('DELETE', `/v1/reviews/${encodeURIComponent(e.id)}`).catch(() => {}); }); } catch {}
         db = JSON.parse(I.snap); try { save(); refresh(); } catch {} try { S.listRedraw && S.listRedraw(); } catch {} toast('Importação desfeita'); } }] }), 350);
   };
