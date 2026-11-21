@@ -13664,8 +13664,12 @@ async function reminderSync(e) { try { if (!connected()) return; if (!e || !e.re
 }; }
 // mantém a página e o prazo em dia na API (a conta do "faltam X" usa onde você está)
 setInterval(() => { try {
-  const R = reading(); const e = R && R.e;
-  for (const x of lib()) if (x.remind && (x !== e || x.status !== 'LENDO' || !x.dueAt)) { delete x.remind; save(); reminderSync(null); }
+  // o lembrete pertence a UM livro (o dono): o livro atual, se tiver prazo e lembrete; senão o primeiro em Lendo com prazo e lembrete.
+  // Outros livros perdem só a marca local; o lembrete do servidor só é apagado quando nenhum livro válido tem lembrete (Bia, 21/11).
+  const R = reading(), cur = R && R.e, ok = (x) => x && x.remind && x.status === 'LENDO' && x.dueAt;
+  const e = ok(cur) ? cur : lib().find(ok);
+  let dropped = false; for (const x of lib()) if (x.remind && x !== e) { delete x.remind; dropped = true; }
+  if (dropped) { save(); if (!e) reminderSync(null); }
   if (!e || !e.remind || !e.dueAt) return; const b = reminderBody(e); if (!b) return;
   if (e.remind.sent !== b.page + '|' + b.dueAt + '|' + b.hour + ':' + b.minute + '|' + b.off.join('')) reminderSync(e);
 } catch {} }, 30000);
@@ -16873,6 +16877,29 @@ function openGifts() {
     sheet(it.type === 'achievement' ? 'Sua conquista' : 'Sua atividade', items.map((x) => [x.label, x.fn, x.danger ? 'danger' : '']));
   }; }
 // ==== 4.4 rodada 2 (fim) ====
+
+// ---------- Prazo: folgas nunca em todos os dias (Bia, 21/11) ----------
+// Tocar nos dias da folha do prazo marcava folga em todos os dias restantes; o cartão do Hoje mostrava tudo como folga.
+// Agora: não deixa marcar folga no último dia de leitura que sobrou, e prazo salvo com todos os dias de folga fica sem folga.
+{ const allOff = (due, off) => { if (!due || !off || !off.length) return false; const t = todayISO(); const n = Math.round((Date.parse(due) - Date.parse(t)) / 864e5) + 1; if (n < 1) return false;
+    for (let i = 0; i < n; i++) { const w = new Date(Date.parse(t) + i * 864e5).getUTCDay(); if (!off.includes(w)) return false; } return true; };
+  const fix = () => { let ch = false; for (const x of lib()) if (x.dueAt && x.dueOff && allOff(x.dueAt, x.dueOff)) { delete x.dueOff; ch = true; if (x.remind) { try { delete x.remind.sent; } catch {} } } if (ch) { save(); try { renderHome(todayISO()); } catch {} } };
+  setTimeout(fix, 1500); setInterval(fix, 60000);
+  const _ds = dueSheet; dueSheet = function (e) {
+    const r = _ds.apply(this, arguments);
+    try {
+      const wrap = [...document.querySelectorAll('body > .sheet')].pop(), f = wrap && wrap.querySelector('form'), inp = f && f.querySelector('input[name=due]'), out = f && f.querySelector('.dp'); if (!f || !inp || !out) return r;
+      let off = [...(e.dueOff || [])];
+      out.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('[data-w]'); if (!b || !out.contains(b)) return; const w = Number(b.dataset.w);
+        const nx = off.includes(w) ? off.filter((x) => x !== w) : [...off, w];
+        if (allOff(inp.value, nx)) { ev.stopImmediatePropagation(); ev.preventDefault(); toast('Deixe pelo menos um dia de leitura até o prazo'); return; }
+        off = nx; }, true);
+      f.querySelector('.dx')?.addEventListener('click', () => { off = []; });
+      f.addEventListener('submit', () => { setTimeout(() => { if (e.dueAt && e.dueOff && allOff(e.dueAt, e.dueOff)) { delete e.dueOff; if (e.remind) delete e.remind.sent; save(); try { renderHome(todayISO()); } catch {} } }, 0); });
+    } catch (err) { console.warn('folga segura', err); }
+    return r;
+  };
+}
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
 return { refresh, home, screen, library, poll, atHome, achievements: () => { home(); openAchList(); }, wake: () => setAwake(true) };
