@@ -194,7 +194,7 @@ function v3Build(v, d) {
   else if (pE.children.length > 1) pE.querySelector(':scope > .v2wempty')?.remove();
   pE.querySelectorAll('[data-v3=newsh]').forEach((b) => { if (b.dataset.on) return; b.dataset.on = 1; b.addEventListener('click', () => { try { shelfEditForm(); } catch { try { newEstante(); } catch {} } }); });
   // Desejos (bloco f0)
-  if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle + '|' + ro)) { pD.dataset.h = d.handle + '|' + ro; pD.innerHTML = ''; v2WishPaint(v, ro ? { ...d, self: false } : d, pD); }
+  if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle + '|' + ro)) { pD.dataset.h = d.handle + '|' + ro; pD.innerHTML = ''; v2WishPaint(v, ro ? v2WishPrevData(d) : d, pD); }
   // Atividade
   if (S.v3tab === 'ativ' && pA.dataset.h !== d.handle + '|' + (S.v3atf || '') + '|' + ro) { pA.dataset.h = d.handle + '|' + (S.v3atf || '') + '|' + ro; v3Ativ(d, pA); }
   if (!self) { const pm = body.querySelector('.v2pxm'), st = body.querySelector(':scope > .sl-top'); if (pm && st && pm.parentElement !== st) st.append(pm);

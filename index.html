@@ -9968,6 +9968,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
@@ -19054,7 +19055,7 @@ async function v2WishPaint(v, d, host) {
   const tip = (k, txt) => (P[k] ? '' : '<div class="v2tip"><span><b>Dica:</b> ' + txt + '</span><button type="button" data-tip="' + k + '" aria-label="Entendi">' + v10ic('x') + '</button></div>');
   if (mine) {
     const L = v2WishMine(), hide = !!P.wishHide;
-    p.innerHTML = tip('tipWm', 'suas amizades podem marcar “Vou dar” nesta lista. Você não fica sabendo quem, para não estragar a surpresa.')
+    p.innerHTML = v2WishLinkHTML(d, true) + tip('tipWm', 'suas amizades podem marcar “Vou dar” nesta lista. Você não fica sabendo quem, para não estragar a surpresa.')
       + '<div class="v2wgrid"><div class="v2wi"><button type="button" class="v2wadd" data-a="add"><i>+</i><span>Adicionar</span></button></div>'
       + L.map((e) => '<div class="v2wi"><button type="button" class="cvb" data-id="' + esc(String(e.id)) + '">' + cvh(e.title, e.cover, '') + '</button><b>' + esc(e.title) + '</b><small>' + esc(String(e.author || '').split(',')[0]) + '</small></div>').join('') + '</div>'
       + (L.length ? '' : '<p class="v2wempty" style="margin-top:.9rem">Marque “Quero ter” nos livros que você gostaria de ganhar. Eles aparecem aqui e no seu perfil.</p>')
@@ -19062,16 +19063,18 @@ async function v2WishPaint(v, d, host) {
   } else {
     const L = (d.shelf && d.shelf.wish) || [];
     let claims = new Map();
-    if (L.length && connected()) { try { const g = await sapi('GET', gfPath(d.handle)); if (g && g.status === 200 && g.data) claims = new Map((g.data.claims || []).map((c) => [String(c.bookKey).replace(/[^a-z0-9]/g, ''), c])); } catch {} }
-    if (S.fpData !== d) return;
-    p.innerHTML = (L.length ? tip('tipWf', 'ao tocar em “Vou dar”, o livro fica reservado para você até a data que escolher. As outras amizades veem só “Alguém já vai dar”, e ' + esc(who) + ' não vê nada.') : '')
+    const prev = !!d._prev; // prévia "como as amizades veem" do próprio perfil: só leitura, sem consultar reservas
+    if (L.length && connected() && !prev) { try { const g = await sapi('GET', gfPath(d.handle)); if (g && g.status === 200 && g.data) claims = new Map((g.data.claims || []).map((c) => [String(c.bookKey).replace(/[^a-z0-9]/g, ''), c])); } catch {} }
+    if (S.fpData !== (d._prev || d)) return;
+    p.innerHTML = v2WishLinkHTML(d) + (L.length && !prev ? tip('tipWf', 'ao tocar em “Vou dar”, o livro fica reservado para você até a data que escolher. As outras amizades veem só “Alguém já vai dar”, e ' + esc(who) + ' não vê nada.') : '')
       + (L.length ? '<div class="v2wgrid">' + L.map((b, i) => { const c = claims.get(exKey(b.title));
           const st = c && c.mine ? '<button type="button" class="v2wg on" data-g="' + i + '"><i class=v3e data-i=gift></i>Você vai dar</button>' + (c.due ? '<small class="v2wdt">até ' + exD(c.due) + '</small>' : '')
             : c ? '<span class="v2wg taken"><i class=v3e data-i=gift></i>Alguém já vai dar</span>' + (c.watching ? '<button type="button" class="v2wlk" data-w="' + i + '" data-on="1">aviso pedido · cancelar</button>' : '<button type="button" class="v2wlk" data-w="' + i + '">Me avise se liberar</button>')
             : '<button type="button" class="v2wg" data-g="' + i + '"><i class=v3e data-i=gift></i>Vou dar</button>';
           return '<div class="v2wi"><button type="button" class="cvb" data-i="' + i + '">' + cvh(b.title, b.cover, '') + '</button><b>' + esc(b.title) + '</b><small>' + esc(String(b.author || '').split(',')[0]) + '</small>' + st + '</div>'; }).join('') + '</div>'
         : '<p class="v2wempty">' + esc(who) + ' ainda não marcou livros em “Quero ter”.</p>');
-    p.querySelectorAll('[data-g]').forEach((bt) => bt.addEventListener('click', () => { const b = L[+bt.dataset.g], c = claims.get(exKey(b.title)), redo = () => { if (S.fpData === d) v2WishPaint(v, d, p.parentElement); };
+    if (prev) p.querySelectorAll('[data-g],[data-w]').forEach((bt) => { bt.disabled = true; bt.setAttribute('aria-disabled', 'true'); bt.title = 'Prévia: é assim que as amizades veem'; });
+    p.querySelectorAll('[data-g]').forEach((bt) => bt.addEventListener('click', () => { if (prev) return; const b = L[+bt.dataset.g], c = claims.get(exKey(b.title)), redo = () => { if (S.fpData === d) v2WishPaint(v, d, p.parentElement); };
       if (c && c.mine) gfManage({ h: d.handle, name: d.displayName || d.handle, title: b.title, author: b.author, cover: b.cover, due: c.due || null }, redo);
       else gfReserve(d.handle, d.displayName, b, redo); }));
     // me avise se liberar: quem reservou não fica sabendo; se várias pessoas pedirem, todas recebem, e quem reservar primeiro leva
@@ -19089,6 +19092,29 @@ async function v2WishPaint(v, d, host) {
     let e = lib().find((x) => normT(x.title) === normT(it.title)); if (!e) e = addToLibrary(it, null, 'QUERO', { quiet: true });
     if (!e) return; e.ex = { ...exOf(e), own: 'quero' }; save(); try { publishSnapshot(); } catch {} toast('“' + e.title + '” está nos seus Desejos'); v2WishPaint(v, d); } }));
 }
+
+// Prévia "como as amizades veem" (Bia, 21/11): o próprio perfil não tem shelf.wish (vem do resumo publicado); monta a mesma
+// lista que vai no resumo (b1_exemplar: Quero ter, até 24, vazia se escondida) e marca _prev para a pintura não sair cedo.
+function v2WishPrevData(d) {
+  const P = db.prefs || {}, wish = P.wishHide ? [] : v2WishMine().slice(0, 24).map((e) => ({ title: e.title, author: e.author, cover: e.cover }));
+  let extra = d.extra || (S.v3ext || {})[d.handle] || null;
+  if (!extra) { const q = P.perfil || {}; const s = typeof v3ExtSplit === 'function' ? v3ExtSplit(q.cidade) : { city: '', state: '' }; extra = { city: s.city || null, state: s.state || null, wishlistUrl: q.desejos || null }; }
+  return { ...d, self: false, _prev: d, extra, shelf: { ...(d.shelf || {}), wish } };
+}
+// Link da lista de desejos da loja no topo da aba Desejos (amizades e prévia); quem não é amizade não recebe o link da API.
+function v2WishLinkHTML(d, own) {
+  // (Bia, 21/11) lugar do link e da cidade: só no topo da aba Desejos (visitantes não têm aba Sobre)
+  if (!own && !d._prev && !d.isFriend) return ''; // só amizades (e a própria pessoa / prévia) veem cidade e link
+  let e = d.extra || (S.v3ext || {})[d.handle] || null;
+  if (!e && own) { const q = (db.prefs || {}).perfil || {}; const s = typeof v3ExtSplit === 'function' ? v3ExtSplit(q.cidade) : { city: '', state: '' }; e = { city: s.city || null, state: s.state || null, wishlistUrl: q.desejos || null }; }
+  const url = e && e.wishlistUrl && /^https:\/\//i.test(e.wishlistUrl) ? e.wishlistUrl : '', place = e ? [e.city, e.state].filter(Boolean).join(' · ') : '';
+  if (!url && !place) return '';
+  let host = ''; try { host = /amazon\./i.test(new URL(url).hostname) ? 'Amazon' : ''; } catch {}
+  const who = own ? 'você' : gfFirst(d.displayName || '@' + d.handle);
+  return '<div class="v2wext">' + (url ? '<a class="v2wlink" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer"><i class=v3e data-i=gift></i><span><b>Lista de desejos' + (host ? ' (' + host + ')' : '') + '</b><small>Compre por aqui e a loja entrega para ' + esc(who) + (place ? ' · ' + (own ? 'Você mora em ' : 'Mora em ') + esc(place) : '') + '</small></span></a>' : '')
+    + (!url && place ? '<p class="v2wplace">' + (own ? 'Você mora em ' : 'Mora em ') + esc(place) + '</p>' : '') + (own ? '<p class="v2wplace">Só amizades veem o link e a cidade.</p>' : '') + '</div>';
+}
+{ const st = document.createElement('style'); st.textContent = '.v2wext{margin:0 0 .9rem}.v2wplace{margin:.45rem .2rem 0;font-size:.8rem;color:var(--ink-2)}.v2wlink{display:flex;align-items:center;gap:.7rem;min-height:52px;margin:0;padding:.6rem .9rem;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);text-decoration:none}.v2wlink b{display:block;font-weight:800}.v2wlink small{display:block;font-size:.76rem;color:var(--ink-2)}.v2wi button[disabled]{opacity:.75;cursor:default}'; TR.append(st); }
 // --- f1_v2_denuncias.js ---
 // v2 Denúncias (Bia, 19/11/2026, branch livroverso-2; API migração 030).
 //  Perfil de outra pessoa ganha "•••" no topo: Copiar link do perfil, Denunciar, Bloquear.
@@ -19480,7 +19506,7 @@ function v3Build(v, d) {
   else if (pE.children.length > 1) pE.querySelector(':scope > .v2wempty')?.remove();
   pE.querySelectorAll('[data-v3=newsh]').forEach((b) => { if (b.dataset.on) return; b.dataset.on = 1; b.addEventListener('click', () => { try { shelfEditForm(); } catch { try { newEstante(); } catch {} } }); });
   // Desejos (bloco f0)
-  if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle + '|' + ro)) { pD.dataset.h = d.handle + '|' + ro; pD.innerHTML = ''; v2WishPaint(v, ro ? { ...d, self: false } : d, pD); }
+  if (S.v3tab === 'des' && (!pD.querySelector('.v2wish') || pD.dataset.h !== d.handle + '|' + ro)) { pD.dataset.h = d.handle + '|' + ro; pD.innerHTML = ''; v2WishPaint(v, ro ? v2WishPrevData(d) : d, pD); }
   // Atividade
   if (S.v3tab === 'ativ' && pA.dataset.h !== d.handle + '|' + (S.v3atf || '') + '|' + ro) { pA.dataset.h = d.handle + '|' + (S.v3atf || '') + '|' + ro; v3Ativ(d, pA); }
   if (!self) { const pm = body.querySelector('.v2pxm'), st = body.querySelector(':scope > .sl-top'); if (pm && st && pm.parentElement !== st) st.append(pm);
@@ -25899,7 +25925,8 @@ function v3ExtPaint(v, d) {
   if (!el) { el = document.createElement('div'); el.className = 'v3ext'; const after = hd.querySelector(':scope > .v3h'); after ? after.after(el) : hd.append(el); }
   if (el.dataset.h !== html) { el.dataset.h = html; el.innerHTML = html; }
 }
-{ const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments); try { v3ExtPaint(v, d); } catch (err) { console.warn('perfil extra', err); } return r; }; }
+// (Bia, 21/11) cidade e lista de desejos NÃO ficam no cabeçalho do perfil (poluído): vão para a aba Desejos (f0, v2WishLinkHTML).
+{ const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments); try { v && v.querySelectorAll('.sl-body > .v3pf > .v3ext').forEach((x) => x.remove()); } catch {} return r; }; }
 // textos da folha "Complete seu perfil": cidade e link agora são vistos por amizades
 for (const x of (typeof PP_PERF !== 'undefined' ? PP_PERF : [])) { if (x[0] === 'cidade') x[2] = 'opcional; ajuda em empréstimos e presentes · quem vê: só amizades'; if (x[0] === 'desejos') x[2] = 'ex.: Amazon: quem comprar por ali envia direto para você, sem a loja mostrar seu endereço (pode aparecer no rastreio) · quem vê: só amizades'; }
 // Aviso de boas-vindas do servidor: não abre a janela "Avisos" (as boas-vindas já aparecem na abertura); fica como item em

@@ -35,7 +35,8 @@ function v3ExtPaint(v, d) {
   if (!el) { el = document.createElement('div'); el.className = 'v3ext'; const after = hd.querySelector(':scope > .v3h'); after ? after.after(el) : hd.append(el); }
   if (el.dataset.h !== html) { el.dataset.h = html; el.innerHTML = html; }
 }
-{ const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments); try { v3ExtPaint(v, d); } catch (err) { console.warn('perfil extra', err); } return r; }; }
+// (Bia, 21/11) cidade e lista de desejos NÃO ficam no cabeçalho do perfil (poluído): vão para a aba Desejos (f0, v2WishLinkHTML).
+{ const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments); try { v && v.querySelectorAll('.sl-body > .v3pf > .v3ext').forEach((x) => x.remove()); } catch {} return r; }; }
 // textos da folha "Complete seu perfil": cidade e link agora são vistos por amizades
 for (const x of (typeof PP_PERF !== 'undefined' ? PP_PERF : [])) { if (x[0] === 'cidade') x[2] = 'opcional; ajuda em empréstimos e presentes · quem vê: só amizades'; if (x[0] === 'desejos') x[2] = 'ex.: Amazon: quem comprar por ali envia direto para você, sem a loja mostrar seu endereço (pode aparecer no rastreio) · quem vê: só amizades'; }
 // Aviso de boas-vindas do servidor: não abre a janela "Avisos" (as boas-vindas já aparecem na abertura); fica como item em
