@@ -25582,8 +25582,8 @@ const offAllRemaining = (e, off, due) => { if (!due || !off || !off.length) retu
   // ao salvar o prazo, aplica na hora (a folha ignora "todos de folga" e mostrava o plano sem folga, mas gravava o dueOff antigo)
   document.addEventListener('submit', (ev) => { const f = ev.target; if (f && f.querySelector && f.querySelector('input[name=due]')) setTimeout(() => { fix(); try { const R = reading(); if (R && R.e && R.e.remind) { R.e.remind.sent = ''; } } catch {} }, 200); }, true); }
 // --- wh_v2_capa_gerada.js ---
-// Capa padrão gerada (Bia, 21/11; ideia vinda do Bookly, sem copiar): livro sem capa ganha uma capa abstrata em SVG
-// (círculos, ondas, anéis, pontilhado) com a paleta do tema e variação por livro (semente = título + autor, sempre a mesma).
+// Capa padrão gerada (Bia, 21/11; ideia vinda do Bookly, sem copiar): livro sem capa ganha uma capa de UNIVERSO em SVG
+// (planeta com anel, lua crescente, constelação, nebulosa, cometa, órbitas, céu com horizonte, eclipse; Bia, 21/11) com os tons do tema e variação por livro (semente = título + autor, sempre a mesma).
 // O título continua sendo o texto do próprio elemento (fonte do app); o autor entra numa linha menor quando a capa é grande.
 // Vale para todo .cv sem imagem, no app e nas telas v4 (sombra própria). Quando a capa de verdade carrega (.img), ela manda.
 {
@@ -25611,32 +25611,62 @@ const offAllRemaining = (e, off, due) => { if (!due || !off || !off.length) retu
     if (cache.has(key)) return cache.get(key);
     const R = rng(hash(normT(title || '') + '|' + normT(author || '')));
     const [ah] = hexToHsl(th.acc);
-    const shifts = [0, -28, 32, 155, 200, -60, 60];
-    const h1 = ah + shifts[Math.floor(R() * shifts.length)] + (R() * 16 - 8), h2 = h1 + 25 + R() * 50, h3 = h1 + 150 + R() * 60;
-    const L0 = th.dark ? 22 + R() * 10 : 32 + R() * 12; // fundo escuro o bastante para o título branco (AA com o véu)
-    const bg1 = hsl(h1, 45 + R() * 20, L0), bg2 = hsl(h2, 40 + R() * 25, L0 - 8);
-    const c1 = hsl(h2, 55 + R() * 25, L0 + 22 + R() * 12, 0.9), c2 = hsl(h3, 50 + R() * 30, L0 + 30 + R() * 14, 0.85), c3 = hsl(h1 + 40, 70, 78, 0.75);
-    const kind = Math.floor(R() * 4); let art = '';
-    if (kind === 0) { // círculos grandes
-      art += `<circle cx="${40 + R() * 120}" cy="${40 + R() * 90}" r="${60 + R() * 50}" fill="${c1}"/>`;
-      art += `<circle cx="${60 + R() * 120}" cy="${170 + R() * 90}" r="${35 + R() * 40}" fill="${c2}"/>`;
-      art += `<circle cx="${R() * 200}" cy="${R() * 300}" r="${14 + R() * 18}" fill="none" stroke="${c3}" stroke-width="3"/>`;
-    } else if (kind === 1) { // ondas
-      for (let i = 0; i < 3; i++) { const y = 70 + i * 70 + R() * 30, a = 18 + R() * 26;
-        art += `<path d="M-10 ${y} C 40 ${y - a}, 90 ${y + a}, 140 ${y} S 230 ${y - a}, 230 ${y} L230 320 L-10 320Z" fill="${i % 2 ? c2 : c1}" opacity="${0.55 + i * 0.12}"/>`; }
-    } else if (kind === 2) { // anéis concêntricos (arco)
-      const cx = R() < 0.5 ? 0 : 200, cy = 60 + R() * 180;
-      for (let i = 0; i < 7; i++) art += `<circle cx="${cx}" cy="${cy}" r="${24 + i * 22}" fill="none" stroke="${i % 2 ? c1 : c2}" stroke-width="${6 + R() * 6}" opacity=".8"/>`;
-      art += `<circle cx="${200 - cx * 0.8}" cy="${40 + R() * 60}" r="${18 + R() * 14}" fill="${c3}"/>`;
-    } else { // blocos + pontilhado
-      art += `<rect x="${-20 + R() * 40}" y="${R() * 60}" width="${120 + R() * 80}" height="${110 + R() * 60}" rx="${R() * 60}" fill="${c1}" transform="rotate(${R() * 30 - 15} 100 150)"/>`;
-      art += `<path d="M0 ${200 + R() * 40} Q 100 ${150 + R() * 60} 200 ${210 + R() * 50} L200 300 L0 300Z" fill="${c2}"/>`;
-      const ox = 20 + R() * 110, oy = 30 + R() * 200;
-      for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) art += `<circle cx="${ox + i * 11}" cy="${oy + j * 11}" r="2.2" fill="${c3}"/>`;
+    // tons do céu derivados do tema: fundo profundo (título branco legível), brilhos claros na cor de destaque
+    const hs = [0, -30, 30, 200, 230, 260][Math.floor(R() * 6)];
+    // céu sem verde-oliva: matizes entre 55° e 170° vão para azul/violeta (o céu do app)
+    const sky = (h) => { h = ((h % 360) + 360) % 360; return h > 55 && h < 170 ? h + 140 : h; };
+    const h1 = sky(ah + hs + (R() * 14 - 7)), h2 = sky(h1 + 30 + R() * 40);
+    const L0 = th.dark ? 12 + R() * 8 : 20 + R() * 10;
+    const sky1 = hsl(h1, 45 + R() * 20, L0 + 6), sky2 = hsl(h2, 50 + R() * 20, L0 - 4);
+    const glow = hsl(ah + (R() * 40 - 20), 80, 70), glow2 = hsl(h2 + 120, 65, 72), pale = hsl(ah, 60, 88);
+    const r1 = (a, b) => a + R() * (b - a);
+    let stars = ''; for (let i = 0; i < 46; i++) { const big = R() < 0.12; stars += `<circle cx="${r1(0, 200).toFixed(1)}" cy="${r1(0, 300).toFixed(1)}" r="${big ? r1(1.1, 1.8).toFixed(1) : r1(0.35, 0.8).toFixed(2)}" fill="#fff" opacity="${r1(0.35, 0.95).toFixed(2)}"/>`; }
+    const sparkle = (x, y, r, c = '#fff') => `<path d="M${x} ${y - r}L${x + r * 0.22} ${y - r * 0.22}L${x + r} ${y}L${x + r * 0.22} ${y + r * 0.22}L${x} ${y + r}L${x - r * 0.22} ${y + r * 0.22}L${x - r} ${y}L${x - r * 0.22} ${y - r * 0.22}Z" fill="${c}"/>`;
+    const kind = Math.floor(R() * 8); let art = '', defs = '';
+    if (kind === 0) { // planeta com anel
+      const cx = r1(60, 140), cy = r1(70, 130), r = r1(34, 48), rot = r1(-30, -8);
+      defs += `<radialGradient id="p" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="${pale}"/><stop offset=".55" stop-color="${glow}"/><stop offset="1" stop-color="${hsl(h1, 50, 20)}"/></radialGradient>`;
+      art += `<ellipse cx="${cx}" cy="${cy}" rx="${r * 1.9}" ry="${r * 0.48}" fill="none" stroke="${glow2}" stroke-width="5" opacity=".55" transform="rotate(${rot} ${cx} ${cy})"/>`;
+      art += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#p)"/>`;
+      art += `<path d="M${cx - r * 1.9} ${cy} A ${r * 1.9} ${r * 0.48} 0 0 0 ${cx + r * 1.9} ${cy}" fill="none" stroke="${glow2}" stroke-width="5" opacity=".9" transform="rotate(${rot} ${cx} ${cy})"/>`;
+    } else if (kind === 1) { // lua crescente
+      const cx = r1(70, 140), cy = r1(60, 120), r = r1(30, 42), d = r * r1(0.45, 0.6);
+      defs += `<mask id="m"><rect width="200" height="300" fill="#fff"/><circle cx="${cx + d}" cy="${cy - d * 0.5}" r="${r}" fill="#000"/></mask><radialGradient id="h"><stop offset="0" stop-color="${pale}" stop-opacity=".45"/><stop offset="1" stop-color="${pale}" stop-opacity="0"/></radialGradient>`;
+      art += `<circle cx="${cx}" cy="${cy}" r="${r * 2}" fill="url(#h)"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="${pale}" mask="url(#m)"/>`;
+      art += sparkle(r1(20, 60), r1(150, 200), 6) + sparkle(r1(140, 185), r1(170, 230), 4);
+    } else if (kind === 2) { // constelação
+      const pts = []; let x = r1(25, 55), y = r1(40, 80); for (let i = 0; i < 6; i++) { pts.push([x, y]); x = Math.min(185, Math.max(15, x + r1(-10, 45))); y = Math.min(250, y + r1(18, 42)); }
+      art += `<polyline points="${pts.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="${pale}" stroke-width="1.2" opacity=".75"/>`;
+      pts.forEach(([px, py], i) => { art += `<circle cx="${px}" cy="${py}" r="${i % 2 ? 2.4 : 3.2}" fill="#fff"/>` + (i % 3 === 0 ? sparkle(px, py, 7, pale) : ''); });
+    } else if (kind === 3) { // nebulosa
+      defs += `<radialGradient id="n1"><stop offset="0" stop-color="${glow}" stop-opacity=".75"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></radialGradient><radialGradient id="n2"><stop offset="0" stop-color="${glow2}" stop-opacity=".65"/><stop offset="1" stop-color="${glow2}" stop-opacity="0"/></radialGradient>`;
+      art += `<ellipse cx="${r1(60, 140)}" cy="${r1(80, 140)}" rx="${r1(70, 100)}" ry="${r1(45, 70)}" fill="url(#n1)" transform="rotate(${r1(-40, 40)} 100 120)"/>`;
+      art += `<ellipse cx="${r1(70, 150)}" cy="${r1(130, 200)}" rx="${r1(55, 85)}" ry="${r1(35, 55)}" fill="url(#n2)" transform="rotate(${r1(-40, 40)} 100 160)"/>`;
+      art += sparkle(r1(60, 140), r1(100, 170), 8);
+    } else if (kind === 4) { // cometa
+      const x = r1(120, 165), y = r1(50, 100);
+      defs += `<linearGradient id="t" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pale}" stop-opacity=".95"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></linearGradient>`;
+      art += `<path d="M${x} ${y} L${x - 130} ${y + 120} L${x - 118} ${y + 128} Z" fill="url(#t)" opacity=".85"/><path d="M${x} ${y} L${x - 100} ${y + 120}" stroke="url(#t)" stroke-width="2" opacity=".7"/>`;
+      art += `<circle cx="${x}" cy="${y}" r="6" fill="#fff"/><circle cx="${x}" cy="${y}" r="13" fill="${pale}" opacity=".3"/>`;
+    } else if (kind === 5) { // órbitas concêntricas
+      const cx = r1(70, 130), cy = r1(90, 150);
+      art += `<circle cx="${cx}" cy="${cy}" r="12" fill="${glow}"/><circle cx="${cx}" cy="${cy}" r="22" fill="${glow}" opacity=".25"/>`;
+      for (let i = 1; i <= 4; i++) { const rx = 22 + i * 20, ry = rx * 0.55, a = R() * Math.PI * 2;
+        art += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="${pale}" stroke-width=".9" opacity=".55"/>`;
+        art += `<circle cx="${(cx + rx * Math.cos(a)).toFixed(1)}" cy="${(cy + ry * Math.sin(a)).toFixed(1)}" r="${r1(3, 6).toFixed(1)}" fill="${i % 2 ? glow2 : pale}"/>`; }
+    } else if (kind === 6) { // céu estrelado com horizonte
+      const y = r1(205, 235);
+      art += `<circle cx="${r1(40, 160)}" cy="${r1(50, 90)}" r="${r1(10, 16)}" fill="${pale}" opacity=".9"/>`;
+      art += `<path d="M0 ${y} C 50 ${y - r1(10, 30)}, 110 ${y + r1(5, 20)}, 200 ${y - r1(5, 25)} L200 300 L0 300Z" fill="${hsl(h1, 35, Math.max(6, L0 - 8))}"/>`;
+      art += `<path d="M0 ${y + 25} C 60 ${y + 10}, 130 ${y + 35}, 200 ${y + 18} L200 300 L0 300Z" fill="${hsl(h2, 30, Math.max(4, L0 - 12))}"/>`;
+    } else { // eclipse
+      const cx = r1(70, 130), cy = r1(80, 130), r = r1(28, 38);
+      defs += `<radialGradient id="c"><stop offset=".55" stop-color="${pale}" stop-opacity="0"/><stop offset=".62" stop-color="${pale}" stop-opacity=".95"/><stop offset=".75" stop-color="${glow}" stop-opacity=".45"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></radialGradient>`;
+      art += `<circle cx="${cx}" cy="${cy}" r="${r * 1.75}" fill="url(#c)"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="${hsl(h1, 40, 6)}"/>`;
     }
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${bg1}"/><stop offset="1" stop-color="${bg2}"/></linearGradient>`
-      + `<linearGradient id="v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".12"/><stop offset=".5" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs>`
-      + `<rect width="200" height="300" fill="url(#g)"/>${art}<rect width="200" height="300" fill="url(#v)"/><rect x="0" y="0" width="7" height="300" fill="#000" opacity=".18"/></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="${sky1}"/><stop offset="1" stop-color="${sky2}"/></linearGradient>`
+      + `<linearGradient id="v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".55" stop-color="#000" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient>${defs}</defs>`
+      + `<rect width="200" height="300" fill="url(#g)"/>${stars}${art}<rect width="200" height="300" fill="url(#v)"/><rect x="0" y="0" width="6" height="300" fill="#000" opacity=".2"/></svg>`;
     const url = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
     if (cache.size > 600) cache.clear(); cache.set(key, url); return url;
   }
