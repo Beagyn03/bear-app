@@ -9965,6 +9965,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
@@ -25251,15 +25252,52 @@ function ppTip(k) { const p = ppS(); if (!p || !p.on || (typeof ppG !== 'undefin
     const eco = ppFind('[data-a=ecoed]'); if (eco && (typeof ppG === 'undefined' || !ppG) && !ppQuiet()) ppTip('sessao');
   }, 1500); }
 // ---------- Completar seu perfil: convite no Você ----------
-function ppPerfilOk() { const q = (db.prefs || {}).perfil || {}; return !!q.ok; }
+function ppGenLab(L) { const M = {}; try { (typeof TASTE_G !== 'undefined' ? TASTE_G : []).forEach((g) => { M[g[0]] = g[1]; }); } catch {} return L.map((k) => M[k] || (String(k).charAt(0).toUpperCase() + String(k).slice(1))).join(', '); }
+function ppPerfilFalta() { const q = (db.prefs || {}).perfil || {}, tg = ((db.prefs || {}).taste || {}).genres || [];
+  return [!(typeof myPhoto === 'function' && myPhoto()), !String((typeof T === 'function' && T().bio) || (typeof socialProfile !== 'undefined' && socialProfile && socialProfile.bio) || '').trim(), !tg.length, !(q.idiomas || []).length, !(q.formatos || []).length, !String(q.cidade || '').trim(), !String(q.desejos || '').trim()].filter(Boolean).length; }
+function ppPerfilOk() { const q = (db.prefs || {}).perfil || {}; return !!q.ok || ppPerfilFalta() === 0; }
 function ppInv() { const p = ppS(); if (!p || !p.on || p.perfOff || ppPerfilOk()) return;
   const pb = TR.querySelector('.v3pb'); if (!pb || !pb.offsetParent || pb.parentElement.querySelector('.ppinv')) return;
   const b = document.createElement('button'); b.type = 'button'; b.className = 'ppinv';
-  b.innerHTML = `${v4ic('pen', 18)}<span style="flex:1"><b>Complete seu perfil</b><small>foto, frase, gêneros, idiomas… tudo opcional</small></span>${v4ic('chev', 16)}`;
+  b.innerHTML = `${v4ic('pen', 18)}<span style="flex:1"><b>Complete seu perfil</b><small>${(() => { const n = ppPerfilFalta(); return n === 1 ? 'falta 1 item · opcional' : 'faltam ' + n + ' itens · tudo opcional'; })()}</small></span>${v4ic('chev', 16)}`;
   b.addEventListener('click', () => ppPerfil()); pb.after(b); }
 { let tm = 0; new MutationObserver(() => { if (!tm) tm = setTimeout(() => { tm = 0; ppInv(); }, 200); }).observe(TR, { childList: true, subtree: true }); setInterval(ppInv, 1500); }
+
+// Cidade e estado (Bia, 21/11): UF primeiro (27 UFs), depois a cidade escolhida da lista oficial do IBGE daquela UF
+// (data/municipios.json, carregado só quando o campo abre). Aceita sem acento/maiúscula e grava o nome oficial; texto fora da lista não é salvo.
+const PP_UFS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+const ppNorm = (x) => String(x || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
+let ppMunP = null;
+const ppMun = () => (ppMunP = ppMunP || fetch('data/municipios.json').then((r) => r.json()).catch(() => { ppMunP = null; return null; }));
+function ppCidadeSplit(v) { const m = String(v || '').match(/^(.*?)[\s,\-\/·]+([A-Za-z]{2})\s*$/); return m ? { city: m[1].trim(), uf: m[2].toUpperCase() } : { city: String(v || '').trim(), uf: '' }; }
+function ppCidadeHTML(v) { const { city, uf } = ppCidadeSplit(v), ok = PP_UFS.includes(uf);
+  const fs = 'min-height:44px;border-radius:12px;border:1.5px solid var(--ppline);background:transparent;color:inherit;font:inherit';
+  return `<div data-cid style="display:grid;grid-template-columns:92px 1fr;gap:8px;margin-top:8px;align-items:start">
+    <select data-uf aria-label="Estado (UF)" style="${fs};padding:0 .5rem"><option value="">UF</option>${PP_UFS.map((u) => `<option value="${u}"${u === uf ? ' selected' : ''}>${u}</option>`).join('')}</select>
+    <div style="position:relative"><input data-city autocomplete="off" aria-label="Cidade" aria-autocomplete="list" placeholder="${ok ? 'Cidade' : 'Escolha a UF primeiro'}" value="${esc(ok ? city : '')}"${ok ? '' : ' disabled'} style="${fs};width:100%;padding:0 .8rem">
+    <div data-sug role="listbox" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;max-height:240px;overflow:auto;border:1px solid var(--ppline);border-radius:12px;background:var(--pppan);box-shadow:0 10px 24px rgba(0,0,0,.35)"></div></div></div>
+    <small data-cerr role="status" style="display:block;margin-top:6px;color:#e0806a;font-weight:700">${v && !ok ? 'Confira: escolha a UF e a cidade da lista' : ''}</small>`; }
+function ppCidadeBind(ov, q, onSet) { const box = ov.querySelector('[data-cid]'); if (!box) return;
+  const sel = box.querySelector('[data-uf]'), inp = box.querySelector('[data-city]'), sug = box.querySelector('[data-sug]'), err = ov.querySelector('[data-cerr]');
+  const set = (v) => { q.cidade = v; onSet(); };
+  const list = async () => { const M = await ppMun(); return (M && M[sel.value]) || []; };
+  const show = async () => { const L = await list(), t = ppNorm(inp.value); if (!t) { sug.style.display = 'none'; return; }
+    const a = L.filter((n) => ppNorm(n).startsWith(t)), b = L.filter((n) => !ppNorm(n).startsWith(t) && ppNorm(n).includes(t)), R = [...a, ...b].slice(0, 8);
+    sug.innerHTML = R.length ? R.map((n) => `<button type="button" role="option" data-pick="${esc(n)}" style="display:block;width:100%;text-align:left;min-height:44px;padding:0 .8rem;border:0;background:none;color:inherit;font:inherit;cursor:pointer">${esc(n)}</button>`).join('') : '<div style="padding:.7rem .8rem;opacity:.75">Nenhuma cidade com esse nome nessa UF</div>';
+    sug.style.display = 'block'; };
+  const check = async () => { const L = await list(), t = ppNorm(inp.value); if (!t) { set(''); err.textContent = ''; return; }
+    const hit = L.find((n) => ppNorm(n) === t); if (hit) { inp.value = hit; set(hit + ', ' + sel.value); err.textContent = ''; } else { set(''); err.textContent = 'Escolha uma cidade da lista'; } };
+  sel.addEventListener('change', () => { inp.value = ''; set(''); sug.style.display = 'none'; inp.disabled = !sel.value; inp.placeholder = sel.value ? 'Cidade' : 'Escolha a UF primeiro'; err.textContent = ''; if (sel.value) { ppMun(); inp.focus(); } });
+  inp.addEventListener('focus', () => { ppMun(); });
+  inp.addEventListener('input', show);
+  inp.addEventListener('blur', () => setTimeout(() => { sug.style.display = 'none'; check(); }, 150));
+  sug.addEventListener('mousedown', (ev) => ev.preventDefault());
+  sug.addEventListener('click', (ev) => { const b = ev.target.closest('[data-pick]'); if (!b) return; inp.value = b.dataset.pick; sug.style.display = 'none'; set(b.dataset.pick + ', ' + sel.value); err.textContent = ''; });
+  // o que já estava salvo e não bate com a lista: pedir para corrigir
+  if (inp.value && sel.value) list().then((L) => { if (L.length && !L.some((n) => ppNorm(n) === ppNorm(inp.value))) err.textContent = 'Confira: "' + inp.value + '" não está na lista de cidades de ' + sel.value; }); }
 const PP_PERF = [
-  ['foto', 'Foto e frase', 'aparecem no seu perfil · quem vê: quem pode ver seu perfil'],
+  ['foto', 'Foto do perfil', 'aparece no seu perfil · quem vê: quem pode ver seu perfil'],
+  ['frase', 'Frase do perfil', 'uma linha sobre você como leitor ou leitora · quem vê: quem pode ver seu perfil'],
   ['generos', 'Gêneros favoritos', 'vieram do primeiro acesso; deixam o Para você mais certeiro'],
   ['idiomas', 'Idiomas em que você lê', 'o Para você mostra edições nesses idiomas · só você vê'],
   ['formatos', 'Formatos', 'livro físico, e-book, audiolivro · só você vê'],
@@ -25267,34 +25305,49 @@ const PP_PERF = [
   ['desejos', 'Link da sua lista de desejos', 'ex.: Amazon: quem comprar por ali envia direto para você, sem a loja mostrar seu endereço (pode aparecer no rastreio) · por enquanto só você vê'],
 ];
 function ppPerfil() {
-  const q = { ...((db.prefs || {}).perfil || {}) }, tg = ((db.prefs || {}).taste || {}).genres || [];
+  const q = { ...((db.prefs || {}).perfil || {}) }, tg = [...(((db.prefs || {}).taste || {}).genres || [])], sc0 = ppPerfil._sc || 0; ppPerfil._sc = 0;
+  q.frase = String((typeof T === 'function' && T().bio) || '').trim();
   const ov = document.createElement('div'); ov.className = 'ppab ppperf'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Complete seu perfil'); ppVars(ov);
   ov.style.cssText += ';place-items:start center;overflow:auto';
   const chips = (k, L) => `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${L.map((x) => { const on = (q[k] || []).includes(x); return `<button type="button" data-ch="${k}" data-v="${esc(x)}" aria-pressed="${on}" style="min-height:40px;padding:0 .9rem;border-radius:99px;border:1.5px solid ${on ? 'var(--ppacc)' : 'var(--ppline)'};background:${on ? 'color-mix(in srgb,var(--ppacc) 20%,transparent)' : 'none'};color:inherit;font:inherit;font-weight:800;font-size:.85rem;cursor:pointer">${esc(x)}</button>`; }).join('')}</div>`;
   const inp = (k, ph, lab, type) => `<input data-f="${k}" type="${type || 'text'}" aria-label="${esc(lab)}" placeholder="${esc(ph)}" value="${esc(q[k] || '')}" style="margin-top:8px;width:100%;min-height:44px;padding:0 .8rem;border-radius:12px;border:1.5px solid var(--ppline);background:transparent;color:inherit;font:inherit">`;
-  const ctl = { foto: `<button type="button" data-go="perfil" style="margin-top:8px;min-height:44px;padding:0 1rem;border-radius:99px;border:1.5px solid var(--ppline);background:none;color:inherit;font:inherit;font-weight:800;cursor:pointer">Editar foto e frase</button>`,
-    generos: `<div style="margin-top:6px;font-size:.9rem">${tg.length ? esc(tg.join(', ')) : 'nenhum ainda'}</div><button type="button" data-go="gostos" style="margin-top:8px;min-height:44px;padding:0 1rem;border-radius:99px;border:1.5px solid var(--ppline);background:none;color:inherit;font:inherit;font-weight:800;cursor:pointer">Escolher gêneros</button>`,
+  const ctl = { foto: `<button type="button" data-go="perfil" style="margin-top:8px;min-height:44px;padding:0 1rem;border-radius:99px;border:1.5px solid var(--ppline);background:none;color:inherit;font:inherit;font-weight:800;cursor:pointer">Escolher foto</button>`, frase: inp('frase', 'Ex.: leio de tudo, mas fantasia é casa', 'Frase do perfil'),
+    generos: `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${(typeof TASTE_G !== 'undefined' ? TASTE_G : []).map((g) => { const on = tg.includes(g[0]); return `<button type="button" data-gen="${esc(g[0])}" aria-pressed="${on}" style="min-height:40px;padding:0 .9rem;border-radius:99px;border:1.5px solid ${on ? 'var(--ppacc)' : 'var(--ppline)'};background:${on ? 'color-mix(in srgb,var(--ppacc) 20%,transparent)' : 'none'};color:inherit;font:inherit;font-weight:800;font-size:.85rem;cursor:pointer">${esc(g[1])}</button>`; }).join('')}</div>`,
     idiomas: chips('idiomas', ['Português', 'Inglês', 'Espanhol', 'Francês']), formatos: chips('formatos', ['Livro físico', 'E-book', 'Audiolivro']),
-    cidade: inp('cidade', 'Ex.: Goiânia, GO', 'Cidade e estado'), desejos: inp('desejos', 'https://…', 'Link da lista de desejos', 'url') };
-  const cnt = () => [((socialProfile || {}).avatarUrl || (socialProfile || {}).bio) ? 1 : 0, tg.length ? 1 : 0, (q.idiomas || []).length ? 1 : 0, (q.formatos || []).length ? 1 : 0, q.cidade ? 1 : 0, q.desejos ? 1 : 0].reduce((a, b) => a + b, 0);
+    cidade: ppCidadeHTML(q.cidade), desejos: inp('desejos', 'https://…', 'Link da lista de desejos', 'url') };
+  const filled = (k) => k === 'foto' ? !!(typeof myPhoto === 'function' && myPhoto()) : k === 'frase' ? !!String(q.frase || '').trim() : k === 'generos' ? tg.length > 0 : (k === 'idiomas' || k === 'formatos') ? (q[k] || []).length > 0 : !!String(q[k] || '').trim();
+  const cnt = () => PP_PERF.filter(([k]) => filled(k)).length;
+  const miss0 = PP_PERF.filter(([k]) => !filled(k)), done0 = PP_PERF.filter(([k]) => filled(k));
+  const card = ([k, t, sub]) => `<div data-it="${k}" style="padding:12px;border:1px solid var(--ppline);border-radius:14px;background:var(--pppan)"><b style="display:block">${esc(t)}</b><small style="display:block;opacity:.75;margin-top:2px">${esc(sub)}</small>${ctl[k]}</div>`;
   ov.innerHTML = `<div class="in" style="text-align:left;justify-items:stretch;gap:10px;padding:calc(18px + env(safe-area-inset-top)) 0 24px">
     <div style="display:flex;align-items:center;gap:8px"><h2 style="flex:1;font-size:1.3rem">Complete seu perfil</h2><button type="button" data-x aria-label="Fechar" style="width:44px;height:44px;border:0;background:none;color:inherit;cursor:pointer">${v4ic('x', 20)}</button></div>
-    <p style="font-size:.9rem">Tudo aqui é opcional. Nunca pedimos seu endereço.</p><small id="ppcnt" style="font-weight:800;opacity:.8">${cnt()} de ${PP_PERF.length} preenchidos</small>
-    ${PP_PERF.map(([k, t, s]) => `<div style="padding:12px;border:1px solid var(--ppline);border-radius:14px;background:var(--pppan)"><b style="display:block">${esc(t)}</b><small style="display:block;opacity:.75;margin-top:2px">${esc(s)}</small>${ctl[k]}</div>`).join('')}
+    <p style="font-size:.9rem">Tudo aqui é opcional. Nunca pedimos seu endereço.</p><small id="ppcnt" style="font-weight:800;opacity:.8">${cnt()} de ${PP_PERF.length} preenchidos${miss0.length ? ' · falta' + (miss0.length > 1 ? 'm ' : ' ') + miss0.length : ''}</small>
+    ${miss0.length ? miss0.map(card).join('') : '<div style="padding:14px;border:1px solid var(--ppline);border-radius:14px;background:var(--pppan)"><b>Seu perfil está completo</b><small style="display:block;opacity:.75;margin-top:2px">Tudo preenchido. Dá para editar abaixo.</small></div>'}
+    ${done0.length ? `<button type="button" data-done aria-expanded="${miss0.length ? 'false' : 'true'}" style="justify-self:start;min-height:44px;border:0;background:none;color:inherit;font:inherit;font-weight:800;opacity:.75;cursor:pointer">Já preenchido (${done0.length}) ›</button><div data-donel style="display:${miss0.length ? 'none' : 'grid'};gap:10px">${done0.map(card).join('')}</div>` : ''}
     <div style="display:flex;gap:8px;margin-top:6px"><button type="button" data-sk style="flex:1;min-height:48px;border-radius:99px;border:1.5px solid var(--ppline);background:none;color:inherit;font:inherit;font-weight:800;cursor:pointer">Pular por agora</button><button type="button" class="ok" data-ok style="flex:1">Salvar</button></div></div>`;
   ov.querySelectorAll('svg').forEach((s) => { s.style.cssText += ';fill:none;stroke:currentColor;stroke-width:1.9'; });
-  const close = () => { document.removeEventListener('keydown', key, true); ov.remove(); };
+  const close = (fromPop) => { document.removeEventListener('keydown', key, true); ov.remove(); if (ov._pop) { window.removeEventListener('popstate', ov._pop); ov._pop = null; if (!fromPop) try { history.back(); } catch {} } };
   const key = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); close(); } };
-  const keep = (ok) => { ov.querySelectorAll('[data-f]').forEach((i) => { q[i.dataset.f] = i.value.trim(); }); db.prefs = { ...(db.prefs || {}), perfil: { ...q, ...(ok ? { ok: 1 } : {}) } }; try { save(); } catch {} };
+  const keep = (ok) => { ov.querySelectorAll('[data-f]').forEach((i) => { q[i.dataset.f] = i.value.trim(); });
+    const { frase, ...rest } = q; const bio = String(frase || '').slice(0, 160);
+    if (typeof T === 'function' && (T().bio || '') !== bio) { T().bio = bio; if (connected() && socialProfile) sapi('PUT', '/v1/me/bio', { bio }).catch(() => {}); }
+    db.prefs = { ...(db.prefs || {}), perfil: { ...rest, ...(ok ? { ok: 1 } : {}) }, taste: { ...(((db.prefs || {}).taste) || {}), genres: [...tg] } }; try { save(); } catch {} };
+  // refaz a folha no mesmo ponto (o item recém-preenchido sai de "falta" e o contador atualiza)
+  const redo = () => { keep(); ppPerfil._sc = ov.scrollTop; if (ov._pop) { window.removeEventListener('popstate', ov._pop); ov._pop = null; ppPerfil._noPush = 1; } close(true); ppPerfil(); };
   ov.addEventListener('click', (ev) => { const t = ev.target.closest('button'); if (!t) return;
     if (t.dataset.ch) { const k = t.dataset.ch, v = t.dataset.v, L = new Set(q[k] || []); L.has(v) ? L.delete(v) : L.add(v); q[k] = [...L]; const on = L.has(v); t.setAttribute('aria-pressed', on); t.style.borderColor = on ? 'var(--ppacc)' : 'var(--ppline)'; t.style.background = on ? 'color-mix(in srgb,var(--ppacc) 20%,transparent)' : 'none'; ov.querySelector('#ppcnt').textContent = cnt() + ' de ' + PP_PERF.length + ' preenchidos'; return; }
-    if (t.dataset.go === 'perfil') { keep(); close(); S.ajMode = 'perfil'; goTab('perfil'); return; }
+    if (t.dataset.gen) { const v = t.dataset.gen, i = tg.indexOf(v); i >= 0 ? tg.splice(i, 1) : tg.push(v); const on = tg.includes(v); t.setAttribute('aria-pressed', on); t.style.borderColor = on ? 'var(--ppacc)' : 'var(--ppline)'; t.style.background = on ? 'color-mix(in srgb,var(--ppacc) 20%,transparent)' : 'none'; ov.querySelector('#ppcnt').textContent = cnt() + ' de ' + PP_PERF.length + ' preenchidos'; return; }
+    if (t.dataset.go === 'perfil') { keep(); const p0 = typeof myPhoto === 'function' ? myPhoto() : ''; try { pickPhoto(); } catch {} let n = 0; const iv = setInterval(() => { n++; const p1 = typeof myPhoto === 'function' ? myPhoto() : ''; if (p1 && p1 !== p0) { clearInterval(iv); if (ov.isConnected) redo(); } else if (n > 240 || !ov.isConnected) clearInterval(iv); }, 500); return; }
     if (t.dataset.go === 'gostos') { keep(); close(); openTaste(); return; }
+    if (t.dataset.go === 'frase') { keep(); close(); Promise.resolve().then(() => editBio()).then(() => { if (ppPerfilFalta()) ppPerfil(); }).catch(() => {}); return; }
+    if ('done' in t.dataset) { const l = ov.querySelector('[data-donel]'), open = l.style.display === 'none'; l.style.display = open ? 'grid' : 'none'; t.setAttribute('aria-expanded', open); return; }
     if ('x' in t.dataset) return close();
     if ('sk' in t.dataset) { keep(); close(); ppPut({ perfOff: 1 }); return; }
     if ('ok' in t.dataset) { keep(true); close(); toast('Perfil salvo'); TR.querySelectorAll('.ppinv').forEach((x) => x.remove()); } });
   ov.addEventListener('input', (ev) => { if (ev.target.dataset.f) { q[ev.target.dataset.f] = ev.target.value.trim(); ov.querySelector('#ppcnt').textContent = cnt() + ' de ' + PP_PERF.length + ' preenchidos'; } });
-  document.addEventListener('keydown', key, true); document.body.append(ov); ov.querySelector('[data-x]').focus({ preventScroll: true });
+  document.addEventListener('keydown', key, true); document.body.append(ov); ppCidadeBind(ov, q, () => { const c = ov.querySelector('#ppcnt'); if (c) c.textContent = cnt() + ' de ' + PP_PERF.length + ' preenchidos'; }); if (sc0) ov.scrollTop = sc0; ov.querySelector('[data-x]').focus({ preventScroll: true });
+  // voltar do celular fecha só esta folha (fica no Você)
+  try { if (!ppPerfil._noPush) history.pushState({ ppperf: 1 }, ''); ppPerfil._noPush = 0; const pop = () => { if (ov.isConnected) { keep(); ov._pop = null; window.removeEventListener('popstate', pop); close(true); } }; window.addEventListener('popstate', pop); ov._pop = pop; } catch {}
 }
 // --- y2_v2_tour_guiado.js ---
 // Tour guiado (Bia, 21/11; protótipo v170): cada etapa dos Primeiros passos abre um caminho nas telas REAIS do app, com um
