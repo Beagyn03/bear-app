@@ -9,6 +9,24 @@
 // Desempenho: tudo em shadow root próprio, anima só transform/opacity, SVG inline, telas montadas uma de cada vez,
 // nada em laço; prefers-reduced-motion vira só fade. O aviso para a outra pessoa ficou de fora (não aprovado).
 const V9CSS = `
+.cv .cvt{font-style:normal;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.cv.img .cvt{visibility:hidden}
+.bpw{display:flex;align-items:center;gap:6px}
+.podr > span{max-width:clamp(82px,26vw,110px)}
+.podr .pt{font-size:11.5px;font-weight:800;line-height:1.2;opacity:.9;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;text-align:center}
+.podr .vz .cvz{display:grid;place-items:center;width:clamp(66px,21vw,88px);height:clamp(60px,18vw,80px);border-radius:8px;border:1.5px dashed rgba(255,255,255,.22);opacity:.6;font-size:18px}
+.ntr{position:relative}
+.ntr.mx{border-color:rgba(255,171,159,.55);box-shadow:0 0 0 1px rgba(255,171,159,.25),0 10px 30px rgba(255,122,104,.15)}
+.ntselo{position:absolute;top:-10px;right:12px;font-style:normal;font-size:10.5px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;background:#ff7a68;color:#1a0f12;border-radius:99px;padding:2px 9px;animation:blPop .5s .8s both}
+.ntbar{grid-column:1/-1;display:grid;gap:5px;margin-top:4px}
+.ntbar i{display:block;height:7px;border-radius:99px;width:var(--w);transform-origin:left;animation:ntGrow .9s .6s both}
+.ntbar i.m{background:#e7a96b}.ntbar i.e{background:#a993ff}
+.ntbar b{font-size:12.5px;font-weight:900;color:#ffab9f}
+.ntdisc{grid-column:1/-1;justify-self:start;margin-top:2px}
+@keyframes ntGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes blPop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){.ntbar i,.ntselo,.blq{animation:none!important}}
+
 :host{all:initial;display:block;font:400 16px/1.35 'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;color:#fff;--f-disp:var(--v2-disp,'Fraunces',Georgia,serif);-webkit-text-size-adjust:100%}
 *{box-sizing:border-box}button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
@@ -40,9 +58,9 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .bls{position:absolute;inset:calc(48px + env(safe-area-inset-top,0px)) 20px calc(26px + env(safe-area-inset-bottom,0px));z-index:3;pointer-events:none;display:grid;grid-template-rows:auto minmax(0,1fr) auto;justify-items:center;align-items:stretch;text-align:center;gap:14px;animation:blUp .45s both}.bls button{pointer-events:auto}
 .bz-h{display:grid;gap:6px;justify-items:center;width:100%}.bz-h .blh:empty{display:none}
 .bz-c{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;width:100%;min-height:0}
-.bz-f{display:grid;gap:10px;justify-items:center;width:100%;min-height:44px;align-content:end}
+.bz-f{display:grid;gap:12px;justify-items:center;width:100%;margin-top:6px}
 .blk{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:900;opacity:.75}
-.blh{font-family:var(--f-disp);font-size:28px;line-height:1.1;margin:0;letter-spacing:-.01em}.blh.xl{font-size:34px}.blq{margin:0;font-size:15px;font-weight:700;opacity:.9;line-height:1.4;max-width:30ch}
+.blh{font-family:var(--f-disp);font-size:28px;line-height:1.1;margin:0;letter-spacing:-.01em}.blh.xl{font-size:34px}.blq{margin:0;font-size:16.5px;font-weight:800;line-height:1.4;max-width:32ch;padding:10px 16px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);animation:blUp .45s .5s both}
 .blbt{background:rgba(255,255,255,.12)!important;border:1.5px solid rgba(255,255,255,.25)!important;color:#fff!important;padding:8px 14px;font-size:13.5px}
 .blhint{opacity:.55;font-size:12.5px;margin:0}
 .bl.calc{display:grid;place-items:center}.blcalc{position:relative;z-index:3;display:grid;justify-items:center;text-align:center;gap:6px;padding:0 24px}.blcalc b{font-family:var(--f-disp);font-size:22px;animation:blFade .6s .3s both}.blcalc small{font-size:13px;opacity:.75;font-weight:700}
@@ -58,9 +76,9 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .vn{width:100%;max-width:330px;height:auto;overflow:visible}.vn circle{mix-blend-mode:screen}.vl circle{fill:rgba(224,144,74,.62)}.vr circle{fill:rgba(165,140,240,.62)}
 .vl{animation:blVl .9s cubic-bezier(.2,.8,.2,1) both}.vr{animation:blVr .9s cubic-bezier(.2,.8,.2,1) both}.vt{animation:blFade .5s .7s both}
 .vn text{fill:#fff;text-anchor:middle;font-weight:900}.vn .n{font-size:26px}.vn .n.big{font-size:40px}.vn .l{font-size:12.5px;font-weight:800;opacity:.9}
-.vcov{display:flex;gap:12px;justify-content:center;align-items:flex-start}.vcov > span{display:grid;justify-items:center;gap:5px;width:64px;animation:blUp .45s .9s both}
-.vcov .cv{width:52px;height:78px;font-size:7.5px}.vcov small{font-size:11px;font-weight:800;line-height:1.2;opacity:.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.vcov .mais b{display:grid;place-items:center;width:52px;height:78px;border-radius:4px 8px 8px 4px;border:1.5px dashed rgba(255,255,255,.4);font-size:18px}
+.vcov{display:flex;gap:12px;justify-content:center;align-items:flex-start}.vcov > span{display:grid;justify-items:center;gap:5px;width:68px;animation:blUp .45s .9s both}
+.vcov .cv{width:60px;height:90px;font-size:8.5px}.vcov small{font-size:11px;font-weight:800;line-height:1.2;opacity:.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.vcov .mais b{display:grid;place-items:center;width:60px;height:90px;border-radius:4px 8px 8px 4px;border:1.5px dashed rgba(255,255,255,.4);font-size:18px}
 .radar{width:100%;max-width:300px;align-self:center;overflow:visible}.radar .rg{fill:none;stroke:rgba(255,255,255,.18);stroke-width:1}.radar text{fill:rgba(255,255,255,.75);font-size:10px;font-weight:800;text-anchor:middle;dominant-baseline:middle}.radar text.cm{fill:#ffd6a3;font-size:11.5px}
 .radar .rme,.radar .rel{transform-box:view-box;transform-origin:100px 100px;animation:blPop .8s cubic-bezier(.2,.8,.2,1) both}.radar .rme{fill:rgba(240,176,112,.38);stroke:#f0b070;stroke-width:1.6}.radar .rel{fill:rgba(195,176,255,.38);stroke:#c3b0ff;stroke-width:1.6;animation-delay:.25s}
 .rlg{display:flex;gap:16px;font-size:12.5px;font-weight:800;justify-content:center}.rlg span{display:flex;align-items:center;gap:6px}.rlg .blav{width:20px;height:20px;font-size:9px;border-width:1.5px}
@@ -82,8 +100,8 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .ntr .cv{width:48px;height:72px;font-size:7px}.ntt{display:grid;gap:5px;min-width:0}.ntt b{font-size:15px;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.ntt i{justify-self:start;font-style:normal;font-size:11px;font-weight:900;border-radius:99px;padding:2px 9px;background:rgba(92,197,138,.22);color:#8ff0b5}.ntr.tr .ntt i{background:rgba(255,122,104,.22);color:#ffab9f}
 .ntv{display:flex;gap:12px}.ntv > span{display:grid;justify-items:center;gap:1px}.ntv small{font-size:11px;font-weight:800;opacity:.75}.ntv b{font-size:22px;font-weight:900}.ntv b.m{color:#f0b070}.ntv b.e{color:#c3b0ff}
 .bpod{display:grid;justify-items:center;gap:4px;width:100%}.bpod > small{font-size:12.5px;font-weight:800;opacity:.85}.bpod .blav{width:28px;height:28px;font-size:12px;border-width:2px}
-.podr{display:flex;align-items:flex-end;justify-content:center;gap:10px}.podr > span{position:relative;display:grid;justify-items:center;gap:3px;animation:blUp .45s both}.podr em{font-style:normal;font-size:11px;font-weight:900;opacity:.75}
-.podr .cv{width:50px;height:75px;font-size:7px}.podr .p0 .cv{width:64px;height:96px;font-size:9px}.podr .p0{animation-delay:.2s}.podr .p2{animation-delay:.35s}
+.podr{display:flex;align-items:flex-end;justify-content:center;gap:12px}.podr > span{position:relative;display:grid;justify-items:center;gap:3px;animation:blUp .45s both}.podr em{font-style:normal;font-size:11px;font-weight:900;opacity:.75}
+.podr .cv{width:clamp(66px,21vw,88px);height:clamp(99px,31.5vw,132px);font-size:10px}.podr .p0 .cv{width:clamp(82px,26vw,110px);height:clamp(123px,39vw,165px);font-size:12px}.podr .p0{animation-delay:.2s}.podr .p2{animation-delay:.35s}
 .podr .both .cv{box-shadow:0 0 0 2.5px #ffd6a3,0 8px 20px rgba(255,214,163,.25)}.podr .both em{color:#ffd6a3;opacity:1}
 .eco2{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}.eco2 span{display:grid;justify-items:center;background:rgba(255,255,255,.07);border-radius:14px;padding:10px 6px}.eco2 b{font-size:32px;font-weight:900}.eco2 span:first-child b{color:#f0b070}.eco2 span:last-child b{color:#c3b0ff}.eco2 small{font-size:12px;font-weight:800;opacity:.8}
 .ecq{display:grid;gap:10px;width:100%}.ecq .eqw{border-radius:14px;padding:12px 14px;animation:blUp .45s var(--d) both}.ecq .eqw.qme{background:rgba(240,176,112,.16)}.ecq .eqw.qel{background:rgba(195,176,255,.16)}.ecq .eqw q{display:block;font-family:var(--f-disp);font-size:17px;line-height:1.3}.ecq .eqw small{display:block;margin-top:4px;font-size:11.5px;font-weight:800;opacity:.75}
@@ -112,7 +130,27 @@ const v9ic = (k, w) => '<svg class="i" viewBox="0 0 24 24"' + (w ? ' style="widt
 const V9SKY = Array.from({ length: 28 }, (_, i) => '<i style="left:' + ((i * 37 + 11) % 100) + '%;top:' + ((i * 53 + 7) % 100) + '%;opacity:' + (0.25 + ((i * 7) % 6) / 10).toFixed(2) + '"></i>');
 const V9MIN = 5;
 const v9cssUrl = (u) => 'url("' + String(u).replace(/["\\\n]/g, '') + '")';
-const v9cv = (b) => { const c = b && b.cover && !/^data:/.test(b.cover) || (b && b.cover && b.cover.length < 300000) ? b.cover : ''; return '<span class="cv' + (c ? ' img' : '') + '"' + (c ? ' style="background-image:' + v9cssUrl(c) + '"' : '') + '>' + esc((b && b.title) || '') + '</span>'; };
+// capas (Bia, 21/11: retângulos escuros vazios): a url só vira fundo depois de carregar; sem capa, a capa genérica mostra o título.
+// Fonte: a capa que veio, a da sua Biblioteca, o cache do aparelho ou a busca do catálogo (título + autor).
+const V9CVK = 'lv.v9cv';
+const v9cvCache = (() => { let m = {}; try { m = JSON.parse(localStorage.getItem(V9CVK) || '{}') || {}; } catch {} return m; })();
+const v9cvPut = (k, u) => { v9cvCache[k] = u || ''; try { const ks = Object.keys(v9cvCache); if (ks.length > 300) ks.slice(0, ks.length - 300).forEach((x) => delete v9cvCache[x]); localStorage.setItem(V9CVK, JSON.stringify(v9cvCache)); } catch {} };
+const v9cvOf = (b) => { if (!b) return ''; const ok = (u) => u && typeof u === 'string' && (!/^data:/.test(u) || u.length < 300000) ? String(u).replace(/^http:/, 'https:') : '';
+  if (ok(b.cover)) return ok(b.cover); const k = normT(b.title || ''); try { const e = lib().find((x) => normT(x.title) === k && x.cover); if (e && ok(e.cover)) return ok(e.cover); } catch {} return ok(v9cvCache[k]); };
+const v9cv = (b) => { const c = v9cvOf(b), t = (b && b.title) || ''; return '<span class="cv" data-v9k="' + esc(normT(t)) + '" data-v9t="' + esc(t) + '" data-v9a="' + esc((b && (b.author || b.a)) || '') + '"' + (c ? ' data-src="' + esc(c) + '"' : '') + '><i class="cvt">' + esc(t) + '</i></span>'; };
+const v9cvBusca = new Map();
+const v9cvBuscar = (t, a) => { const k = normT(t); if (!k) return Promise.resolve(''); if (k in v9cvCache) return Promise.resolve(v9cvCache[k]); if (v9cvBusca.has(k)) return v9cvBusca.get(k);
+  const p = (async () => { try { const r = await sapi('GET', '/v1/books/search?q=' + encodeURIComponent((t + ' ' + (a || '')).trim()));
+    const L = (r && r.status === 200 && r.data && r.data.items) || [], an = normT(a || '');
+    const it = L.find((x) => normT(x.title) === k && (!an || (x.authors || []).some((y) => normT(y).includes(an.slice(0, 6))))) || L.find((x) => normT(x.title) === k) || null;
+    const u = it ? (it.cover_url || (it.isbn ? 'https://covers.openlibrary.org/b/isbn/' + it.isbn + '-M.jpg?default=false' : '')) : ''; v9cvPut(k, u); return u; } catch { return ''; } })();
+  v9cvBusca.set(k, p); return p; };
+const v9cvTesta = (u) => new Promise((ok) => { const im = new Image(); im.onload = () => ok(im.naturalWidth > 2); im.onerror = () => ok(false); im.src = u; });
+const v9Pinta = (sr) => { if (!sr) return; sr.querySelectorAll('.cv[data-v9k]:not([data-pt])').forEach((el) => { el.dataset.pt = '1';
+  const pinta = (o, u) => { o.style.backgroundImage = v9cssUrl(u); o.classList.add('img'); };
+  (async () => { let u = el.dataset.src || ''; if (u && await v9cvTesta(u)) return pinta(el, u);
+    if (u) { const k = el.dataset.v9k; if (v9cvCache[k] === u) delete v9cvCache[k]; }
+    u = await v9cvBuscar(el.dataset.v9t, el.dataset.v9a); if (u && await v9cvTesta(u)) sr.querySelectorAll('.cv[data-v9k="' + el.dataset.v9k + '"]:not(.img)').forEach((o) => pinta(o, u)); })(); }); };
 const v9nt = (x) => '★' + String(x).replace('.', ',');
 // ---------- dados do par ----------
 function v9Data(d, M) {
@@ -124,9 +162,9 @@ function v9Data(d, M) {
   const both = [...theirK.keys()].filter((k) => mineK.has(k));
   const a = Math.max(0, mine.length - both.length), b = both.length, c = Math.max(0, theirTotal - both.length);
   const D = { n: first, h: d.handle, am: !!d.isFriend, priv: !d.shelf, lidos: [mine.length, theirK.size], venn: [a, b, c] };
-  D.vc = both.slice(0, 3).map((k) => { const e = mineK.get(k), t = theirK.get(k); return { title: e.title, cover: (t && t.cover) || e.cover || null }; });
+  D.vc = both.slice(0, both.length <= 4 ? 4 : 3).map((k) => { const e = mineK.get(k), t = theirK.get(k); return { title: e.title, author: e.author || (t && (t.author || t.a)) || '', cover: (t && t.cover) || e.cover || null }; });
   // notas: livros que as duas leram e avaliaram
-  D.rg = both.map((k) => { const e = mineK.get(k), m = e && e.status === 'LIDO' ? Number((reviewOfLib(e) || {}).paws) || 0 : 0, t = Number(theirK.get(k).p) || 0; return m && t ? { title: e.title, cover: theirK.get(k).cover || e.cover, m, e: t } : null; }).filter(Boolean);
+  D.rg = both.map((k) => { const e = mineK.get(k), m = e && e.status === 'LIDO' ? Number((reviewOfLib(e) || {}).paws) || 0 : 0, t = Number(theirK.get(k).p) || 0; return m && t ? { title: e.title, author: e.author || '', cover: theirK.get(k).cover || e.cover, m, e: t } : null; }).filter(Boolean);
   D.agree = D.rg.filter((x) => Math.abs(x.m - x.e) <= 0.5).length;
   // gêneros (radar com os 5 eixos mais fortes das duas)
   let myD = null; try { myD = v2DnaOf(mine); } catch {}
@@ -137,7 +175,7 @@ function v9Data(d, M) {
     const topA = [...A.entries()].sort((x, y) => y[1] - x[1])[0][0], topB = [...B.entries()].sort((x, y) => y[1] - x[1])[0][0];
     D.gc = topA === topB ? topA : AX.filter((g) => A.get(g) && B.get(g)).sort((x, y) => Math.min(A.get(y), B.get(y)) - Math.min(A.get(x), B.get(x)))[0] || topA; D.gSame = topA === topB; D.gA = topA; D.gB = topB; }
   // Top 3 das duas
-  let myTop = []; try { myTop = top5Books().slice(0, 3).map((x) => ({ title: x.title, cover: x.cover })); } catch {}
+  let myTop = []; try { myTop = top5Books().slice(0, 3).map((x) => ({ title: x.title, author: x.author || '', cover: x.cover })); } catch {}
   const thTop = sh.top5 ? (sh.potinho || []).slice(0, 3) : [];
   D.top = myTop.length >= 1 && thTop.length >= 1 ? [myTop, thTop] : null;
   // emoções: as que mais marcam cada uma (Top e trechos)
@@ -214,7 +252,8 @@ function v9Venn(D) {
         + '<text x="' + pr[0].toFixed(1) + '" y="' + pr[1].toFixed(1) + '" class="n">' + c + '</text><text x="' + pr[0].toFixed(1) + '" y="' + (pr[1] + 20).toFixed(1) + '" class="l">só ' + esc(D.n) + '</text>'; })()
     + '<text x="' + lx.toFixed(1) + '" y="' + (cy + 4) + '" class="n big">' + b + '</text><text x="' + lx.toFixed(1) + '" y="' + (cy + 24) + '" class="l">as duas</text></g></svg>';
 }
-const v9Z = (k, h, chart, q, act) => '<div class="bls"><header class="bz-h"><span class="blk">' + k + '</span><h2 class="blh">' + h + '</h2></header><div class="bz-c">' + chart + '</div><footer class="bz-f">' + (q ? '<p class="blq">' + q + '</p>' : '') + (act || '') + '</footer></div>';
+// o comentário vem logo depois do visual, em destaque, e os botões abaixo dele (Bia, 21/11: estava colado na borda de baixo)
+const v9Z = (k, h, chart, q, act) => '<div class="bls"><header class="bz-h"><span class="blk">' + k + '</span><h2 class="blh">' + h + '</h2></header><div class="bz-c">' + chart + ((q || act) ? '<div class="bz-f">' + (q ? '<p class="blq">' + q + '</p>' : '') + (act || '') + '</div>' : '') + '</div></div>';
 function v9Act(D, k) {
   const disc = '<button class="btn s blbt" data-v9="disc">' + v9ic('reply', 16) + 'Discutir</button>';
   if (!D.am) return k === 'rg' || k === 'em' ? '<button class="btn s blbt" data-v9="add">' + v9ic('plus', 16) + 'Adicionar amizade para conversar</button>' : '';
@@ -230,14 +269,22 @@ function v9Screen(D, k, prev) {
     return v9Z('As estantes', b + ' ' + (b === 1 ? 'livro que as duas leram' : 'livros que as duas leram'), v9Venn(D) + (D.vc.length ? '<div class="vcov">' + D.vc.map((x) => '<span>' + v9cv(x) + '<small>' + esc(x.title) + '</small></span>').join('') + (mais > 0 ? '<span class="mais"><b>+' + mais + '</b><small>outros</small></span>' : '') + '</div>' : ''),
       D.lo ? a + ' só seus e ' + c + ' só de ' + n + ': muita coisa para trocar.' : b ? 'Uma boa parte do que você leu, ' + n + ' também leu.' : 'Nenhum livro em comum ainda. Começo perfeito para indicar.', v9Act(D, 'venn')); }
   if (k === 'top') { const [A, B] = D.top, kk = (x) => normT(x.title), both = A.filter((x) => B.some((y) => kk(y) === kk(x))).map((x) => x.title);
-    const pod = (L, who) => '<div class="bpod">' + (who === 'me' ? D.avMe : D.avEl) + '<small>' + (who === 'me' ? 'Você' : n) + '</small><div class="podr">' + [1, 0, 2].filter((p) => L[p]).map((p) => '<span class="p' + p + (both.some((t) => normT(t) === kk(L[p])) ? ' both' : '') + '"><em>' + (p + 1) + 'º</em>' + v9cv(L[p]) + '</span>').join('') + '</div></div>';
+    const pod = (L, who) => '<div class="bpod"><span class="bpw">' + (who === 'me' ? D.avMe : D.avEl) + '<small>' + (who === 'me' ? 'Você' : n) + '</small></span><div class="podr">' + [1, 0, 2].map((p) => L[p]
+      ? '<span class="p' + p + (both.some((t) => normT(t) === kk(L[p])) ? ' both' : '') + '"><em>' + (p + 1) + 'º</em>' + v9cv(L[p]) + '<small class="pt">' + esc(L[p].title) + '</small></span>'
+      : '<span class="p' + p + ' vz"><em>' + (p + 1) + 'º</em><span class="cvz">—</span></span>').join('') + '</div></div>';
+    const b1 = B[0] && !lib().some((e) => normT(e.title) === kk(B[0])) ? B[0] : null;
     return v9Z('Top 3', both.length ? esc(both[0]) + ' está no top das duas' : 'Nenhum livro nos dois tops', pod(A, 'me') + pod(B, 'el'),
-      both.length > 1 ? 'E ' + esc(both[1]) + ' também. Gosto parecido no que importa.' : both.length ? 'Um favorito em comum já diz muito.' : 'Bom momento para pedir o 1º lugar de ' + n + ' emprestado.'); }
+      both.length > 1 ? 'E ' + esc(both[1]) + ' também. Gosto parecido no que importa.' : both.length ? 'Um favorito em comum já diz muito.' : b1 ? 'Bom momento para pedir ' + esc(b1.title) + ', o 1º lugar de ' + n + ', emprestado.' : 'Cada uma com seus favoritos: troquem indicações.'); }
   if (k === 'gen') return v9Z('Gêneros', esc(D.gc), v9Radar(D) + lg, D.gSame ? esc(D.gc) + ' é o idioma das duas.' : 'Você em ' + esc(String(D.gA).toLowerCase()) + ', ' + n + ' em ' + esc(String(D.gB).toLowerCase()) + '. ' + esc(D.gc) + ' é a ponte.');
-  if (k === 'rg') { const R = [...D.rg].sort((x, y) => Math.abs(x.m - x.e) - Math.abs(y.m - y.e)), L = R.length > 3 ? [R[0], R[1], R[R.length - 1]] : R, tr = L.find((x) => Math.abs(x.m - x.e) >= 2);
-    return v9Z('Notas', 'Acordo e treta', '<div class="nts">' + L.map((x, r) => { const df = Math.abs(x.m - x.e), t = df >= 2;
-      return '<div class="ntr' + (t ? ' tr' : '') + '" style="--d:' + (0.15 + r * 0.18).toFixed(2) + 's">' + v9cv(x) + '<span class="ntt"><b>' + esc(x.title) + '</b><i>' + (t ? 'Treta de ' + String(df).replace('.', ',') + '★' : df ? 'Quase acordo' : 'Acordo') + '</i></span><span class="ntv"><span><small>Você</small><b class="m">' + v9nt(x.m) + '</b></span><span><small>' + n + '</small><b class="e">' + v9nt(x.e) + '</b></span></span></div>'; }).join('') + '</div>',
-      tr ? esc(tr.title) + ': ' + v9nt(tr.m) + ' contra ' + v9nt(tr.e) + '. Alguém aqui precisa se explicar.' : 'Concordam em quase tudo.', v9Act(D, 'rg')); }
+  if (k === 'rg') { const R = [...D.rg].sort((x, y) => Math.abs(x.m - x.e) - Math.abs(y.m - y.e)), L = R.length > 3 ? [R[0], R[1], R[R.length - 1]] : R;
+    // maior treta: selo no card, placar animado e o Discutir dentro dele (Bia, 21/11: o comentário passava batido no rodapé)
+    const top = L.reduce((a, x) => (Math.abs(x.m - x.e) > Math.abs(a.m - a.e) ? x : a), L[0]), dTop = Math.abs(top.m - top.e), treta = dTop >= 1.5;
+    const piada = (df) => df >= 3 ? 'Isso não é diferença, é abismo.' : df >= 2 ? 'Alguém aqui precisa se explicar.' : 'Dá um bom debate.';
+    const fr = treta ? esc(top.title) + ': ' + v9nt(top.m) + ' contra ' + v9nt(top.e) + '. ' + piada(dTop) : D.agree === D.rg.length ? 'Concordam em tudo. Suspeito.' : 'Concordam em quase tudo.';
+    return v9Z('Notas', treta ? 'Acordo e treta' : 'Quase o mesmo gosto', '<div class="nts">' + L.map((x, r) => { const df = Math.abs(x.m - x.e), t = df >= 2, mx = treta && x === top;
+      return '<div class="ntr' + (t ? ' tr' : '') + (mx ? ' mx' : '') + '" style="--d:' + (0.15 + r * 0.18).toFixed(2) + 's">' + (mx ? '<em class="ntselo">maior treta</em>' : '') + v9cv(x) + '<span class="ntt"><b>' + esc(x.title) + '</b><i>' + (t ? 'Treta de ' + String(df).replace('.', ',') + '★' : df ? 'Quase acordo' : 'Acordo') + '</i></span><span class="ntv"><span><small>Você</small><b class="m">' + v9nt(x.m) + '</b></span><span><small>' + n + '</small><b class="e">' + v9nt(x.e) + '</b></span></span>'
+        + (mx ? '<span class="ntbar" aria-hidden="true"><i class="m" style="--w:' + (x.m / 5 * 100).toFixed(0) + '%"></i><i class="e" style="--w:' + (x.e / 5 * 100).toFixed(0) + '%"></i><b>' + String(dTop).replace('.', ',') + '★ de diferença</b></span>' + (D.am ? '<button class="btn s blbt ntdisc" data-v9="disc">' + v9ic('reply', 16) + 'Discutir</button>' : '') : '') + '</div>'; }).join('') + '</div>',
+      fr, D.am && treta ? '' : v9Act(D, 'rg')); }
   if (k === 'em') { const ec = (L) => L.map((e) => '<span class="' + (D.ec.includes(e) ? 'cm' : '') + '">' + esc(e) + '</span>').join('');
     return v9Z('O que sentem', D.ec.length ? esc(D.ec.join(' e ')) : 'Cada uma sente diferente', (D.ec.length ? '<div class="emc">' + D.ec.map((e, j) => '<b style="--d:' + (0.2 + j * 0.2).toFixed(2) + 's">' + esc(e) + '</b>').join('') + '</div>' : '') + '<div class="emo2"><div>' + D.avMe + '<small>Você</small>' + ec(D.em[0]) + '</div><div>' + D.avEl + '<small>' + n + '</small>' + ec(D.em[1]) + '</div></div>',
       D.ec.length ? 'As duas vivem pelo mesmo tipo de cena.' : 'Troquem de lugar por um livro.', v9Act(D, 'em')); }
@@ -288,7 +335,7 @@ function v9Screen(D, k, prev) {
     const html = cur.calc ? '<div class="bl calc" role="dialog" aria-label="Calculando a combinação">' + sky + '<div class="blcalc">' + v9Const(cur.D.venn[1]) + '<b>Juntando as estantes…</b><small>' + (cur.D.venn[0] + cur.D.venn[1]) + ' livros seus, ' + (cur.D.venn[1] + cur.D.venn[2]) + ' de ' + esc(cur.D.n) + '</small></div></div>'
       : '<div class="bl" role="dialog" aria-label="Sua combinação com ' + esc(cur.D.n) + '">' + sky + '<i class="comet" aria-hidden="true"></i><div class="blbars">' + T.map((_, j) => '<i class="' + (j < i ? 'f' : j === i ? 'c' : '') + '"></i>').join('') + '</div><button class="ib blx" data-v9="x" aria-label="Fechar">' + v9ic('x', 20) + '</button>'
         + '<button class="blnav l" data-v9="prev" aria-label="Anterior"></button><button class="blnav r" data-v9="next" aria-label="Próximo"></button>' + v9Screen(cur.D, T[i], cur.prev) + '</div>';
-    sr.innerHTML = ''; sr.append(st()); const w = document.createElement('div'); w.innerHTML = html; sr.append(w);
+    sr.innerHTML = ''; sr.append(st()); const w = document.createElement('div'); w.innerHTML = html; sr.append(w); try { v9Pinta(sr); } catch {}
     if (!cur.calc && i < T.length - 1) tmr = setTimeout(() => { if (cur && cur.i === i) { cur.i++; draw(); } }, 8000);
   };
   const open = async (d, mode) => {
