@@ -223,6 +223,7 @@ function lvEyes(root) {
       const H = rows[0].map((h) => normT(h)), col = (...n) => H.findIndex((h) => n.includes(h));
       const cT = col('title', 'titulo', 'livro', 'nome do livro'), cS = col('exclusive shelf', 'read status', 'status', 'estante'), cV = col('my review', 'review', 'resenha', 'comentario'), cX = col('bookshelves', 'estantes', 'tags'), cSp = col('spoiler');
       if (cT < 0) return toast('Não encontrei a coluna de título');
+      S.lvSrc = H.includes('read status') ? 'StoryGraph' : H.includes('exclusive shelf') || H.includes('my review') ? 'Goodreads' : 'outro app'; // de onde veio, para o Completar histórico (Bia, 21/11)
       const C = { livros: 0, lidos: 0, lendo: 0, quero: 0, aband: 0, paus: 0, resenhas: 0, spoiler: 0 }, shelves = new Set(), ABD = /abandon|did not finish|\bdnf\b|desist|nao termin|nao conclu/;
       for (const r of rows.slice(1, 3001)) { if (!String(r[cT] || '').trim()) continue; C.livros++;
         const sh = cS >= 0 ? normT(r[cS]) : '', tg = cX >= 0 ? normT(r[cX]) : '', st = ABD.test(sh) || ABD.test(tg) ? 'aband' : /currently|lendo|reading/.test(sh) ? 'lendo' : /to read|quero|wish/.test(sh) ? 'quero' : /paus|hiberna/.test(sh) ? 'paus' : 'lidos'; C[st]++;
@@ -248,7 +249,8 @@ function lvEyes(root) {
   window.lvAfterImport = (n) => {
     const I = S.lvImp; S.lvImp = null;
     const touched = [];
-    if (I) { for (const e of (db.library || [])) { const t = (e.review && e.review.texto) || ''; if (t && t !== I.before.get(e.id)) { touched.push(e); if (!I.pub) e.review.share = false; else delete e.review.share; } } try { save(); } catch {} if (I.pub) touched.forEach((e) => { try { publishReview(e); } catch {} }); }
+    if (I) { for (const e of (db.library || [])) if (!I.before.has(e.id) && !e.impSrc) e.impSrc = S.lvSrc || 'outro app';
+      for (const e of (db.library || [])) { const t = (e.review && e.review.texto) || ''; if (t && t !== I.before.get(e.id)) { touched.push(e); if (!I.pub) e.review.share = false; else delete e.review.share; } } try { save(); } catch {} if (I.pub) touched.forEach((e) => { try { publishReview(e); } catch {} }); }
     try { if (_ai) _ai(n); } catch (err) { console.warn(err); }
     if (!I) return;
     const novos = Math.max(0, (db.library || []).length - I.n0), atual = Math.max(0, n - novos);

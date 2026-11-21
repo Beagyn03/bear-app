@@ -73,41 +73,74 @@ function openLoans() {
 }
 
 // ---------- Completar histórico ----------
+// (Bia, 21/11: "falta dados") cada livro mostra o que já se sabe (status, nota, páginas, datas, de onde veio) e pede só o que
+// falta, com rótulo ("Quando terminou?"), "Só o ano", "Não lembro" (tira da lista sem apagar nada) e "salvo" por campo.
+// No topo, "N de M completos"; abas sem livro somem; no fim, Concluir ou Fazer depois.
+{ const st = document.createElement('style'); st.textContent = `
+.v4fx .hk{display:flex;flex-wrap:wrap;gap:.15rem .6rem;font-size:.72rem;font-weight:700;color:var(--ink-2);margin-top:.15rem}.v4fx .hk .s5{color:var(--gold,#c9a227)}
+.v4fx .hl{display:flex;align-items:center;gap:.45rem;margin-top:.55rem;font-size:.8rem;font-weight:900;color:var(--ink)}.v4fx .hl .ok{font-size:.72rem;font-weight:800;color:var(--ok,#2f8a52)}
+.v4fx .fld input{flex:1;min-width:0;min-height:44px;box-sizing:border-box}.v4fx .acts{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem}.v4fx .acts .chip{min-height:40px}
+.v4fx .v4st button{min-width:40px;min-height:40px}
+.v4fxtop{display:grid;gap:.35rem;margin:.2rem 0 .7rem}.v4fxtop b{font-size:.82rem}.v4fxtop .bar{height:6px;border-radius:99px;background:color-mix(in srgb,var(--ink) 10%,transparent);overflow:hidden}.v4fxtop .bar i{display:block;height:100%;background:var(--acc)}
+.v4fxend{display:grid;margin-top:.9rem}`; TR.append(st); }
+const fxNo = (e) => (e.fxNo = e.fxNo || {});
+const fxOpen = (e, k) => fxMiss(e)[k] && !(e.fxNo && e.fxNo[k]);
 openFixReads = function (filter) {
-  const PER = 12; let f = filter && ['fim', 'ini', 'pag', 'nota'].includes(filter) ? filter : (S.v4fxF || null), page = 0;
-  const counts = () => { const L = lib().filter((e) => e.status === 'LIDO'); const c = { fim: 0, ini: 0, pag: 0, nota: 0 }; L.forEach((e) => { const m = fxMiss(e); ['fim', 'ini', 'pag', 'nota'].forEach((k) => { if (m[k]) c[k]++; }); }); return c; };
-  if (!f) { const c = counts(); f = ['fim', 'ini', 'pag', 'nota'].find((k) => c[k]) || 'fim'; }
+  const PER = 12, KS = ['fim', 'ini', 'pag', 'nota'], NM = { fim: 'Sem fim', ini: 'Sem início', pag: 'Sem pág.', nota: 'Sem nota' };
+  const LAB = { fim: 'Quando terminou?', ini: 'Quando começou?', pag: 'Quantas páginas?', nota: 'Sua nota' };
+  const ST = { LIDO: 'Lido', LENDO: 'Lendo', QUERO: 'Quero ler', HIBERNANDO: 'Pausado', ABANDONEI: 'Abandonado' };
+  const lidos = () => lib().filter((e) => e.status === 'LIDO');
+  // quem entra na conta "completos": os lidos que tinham algo faltando quando a página abriu
+  const pend0 = new Set(lidos().filter((e) => KS.some((k) => fxOpen(e, k))).map((e) => String(e.id)));
+  let f = filter && KS.includes(filter) ? filter : (S.v4fxF || null), page = 0;
+  const counts = () => { const c = { fim: 0, ini: 0, pag: 0, nota: 0 }; lidos().forEach((e) => KS.forEach((k) => { if (fxOpen(e, k)) c[k]++; })); return c; };
+  const dt = (d) => { if (!d) return ''; const m = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][+String(d).slice(5, 7) - 1]; return m ? m + '/' + String(d).slice(0, 4) : String(d).slice(0, 4); };
   const draw = () => {
-    const c = counts(), NM = { fim: 'Sem fim', ini: 'Sem início', pag: 'Sem pág.', nota: 'Sem nota' };
-    const all = lib().filter((e) => e.status === 'LIDO' && fxMiss(e)[f]).sort((a, z) => String(z.finishedAt || z.addedAt || '').localeCompare(String(a.finishedAt || a.addedAt || '')));
+    const c = counts(); if (!f || !c[f]) f = KS.find((k) => c[k]) || f || 'fim';
+    const tot = pend0.size, feitos = [...pend0].filter((id) => { const e = lib().find((y) => String(y.id) === id); return !e || !KS.some((k) => fxOpen(e, k)); }).length;
+    const all = lidos().filter((e) => fxOpen(e, f)).sort((a, z) => String(z.finishedAt || z.addedAt || '').localeCompare(String(a.finishedAt || a.addedAt || '')));
     const pages = Math.max(1, Math.ceil(all.length / PER)); if (page >= pages) page = pages - 1; const list = all.slice(page * PER, page * PER + PER);
-    const fld = (e) => { if (f === 'nota') return '<div class="v4st">' + [1, 2, 3, 4, 5].map((i) => '<button type="button" data-n="' + i + '" aria-label="' + i + ' estrelas">★</button>').join('') + '</div>';
-      if (f === 'pag') return '<div class="fld"><input inputmode="numeric" data-k="pag" placeholder="nº de páginas" aria-label="Páginas"><span class="ok" hidden>Salvo</span></div>';
-      return '<div class="fld"><input type="date" data-k="' + f + '" max="' + todayISO() + '" aria-label="Data"><button type="button" class="chip" data-a="ano">Só o ano</button><span class="ok" hidden>Salvo</span></div>'; };
-    const sub = (e) => esc(String(e.author || '').split(',')[0]) + (f === 'fim' && e.startedAt ? ' · começou em ' + exD(e.startedAt) + '/' + String(e.startedAt).slice(2, 4) : '') + (f === 'ini' && e.finishedAt ? ' · terminou em ' + exD(e.finishedAt) + '/' + String(e.finishedAt).slice(2, 4) : '');
+    const known = (e) => { const rv = reviewOfLib(e) || {}, out = [ST[e.status] || 'Lido'];
+      if (rv.paws && f !== 'nota') out.push('<span class="s5" aria-label="nota ' + String(rv.paws).replace('.', ',') + '">' + '★'.repeat(Math.round(rv.paws)) + ' ' + String(rv.paws).replace('.', ',') + '</span>');
+      if (Number(e.totalPages) > 0 && f !== 'pag') out.push(e.totalPages + ' pág.');
+      if (e.startedAt && f !== 'ini') out.push('começou ' + dt(e.startedAt)); if (e.finishedAt && f !== 'fim' && !e.noDate) out.push('terminou ' + dt(e.finishedAt));
+      if (e.impSrc) out.push('veio ' + (e.impSrc === 'outro app' ? 'de outro app' : 'do ' + esc(e.impSrc)));
+      return '<span class="hk">' + out.map((x) => '<span>' + x + '</span>').join('') + '</span>'; };
+    const fid = (e) => 'fx-' + String(e.id).replace(/[^\w-]/g, '') + '-' + f;
+    const fld = (e) => { const ok = '<span class="ok" hidden aria-live="polite">' + '<i class=v3e data-i=ok></i>salvo</span>';
+      if (f === 'nota') return '<span class="hl" id="' + fid(e) + '">' + LAB.nota + ok + '</span><div class="v4st" role="group" aria-labelledby="' + fid(e) + '">' + [1, 2, 3, 4, 5].map((i) => '<button type="button" data-n="' + i + '" aria-label="' + i + (i > 1 ? ' estrelas' : ' estrela') + '">★</button>').join('') + '</div>';
+      if (f === 'pag') return '<label class="hl" for="' + fid(e) + '">' + LAB.pag + ok + '</label><div class="fld"><input id="' + fid(e) + '" inputmode="numeric" data-k="pag" placeholder="ex.: 320"></div>';
+      return '<label class="hl" for="' + fid(e) + '">' + LAB[f] + ok + '</label><div class="fld"><input id="' + fid(e) + '" type="date" data-k="' + f + '" max="' + todayISO() + '"></div>'; };
+    const acts = '<div class="acts">' + (f === 'fim' || f === 'ini' ? '<button type="button" class="chip" data-a="ano">Só o ano</button>' : '') + '<button type="button" class="chip" data-a="nao">Não lembro</button></div>';
     const nav = all.length > PER ? '<div class="fx-pg"><button type="button" data-pg="-1"' + (page ? '' : ' disabled') + '>‹ Anterior</button><span>' + (page * PER + 1) + '–' + Math.min(all.length, page * PER + PER) + ' de ' + all.length + '</span><button type="button" data-pg="1"' + (page < pages - 1 ? '' : ' disabled') + '>Próxima ›</button></div>' : '';
-    const v = v4Page('Completar histórico', '<p class="v4pg-intro">Livros que vieram do Goodreads ou do StoryGraph sem alguns dados. Complete quando quiser: eles entram nas estatísticas e na meta do ano certo.</p>'
+    const tabs = KS.filter((k) => c[k]);
+    const v = v4Page('Completar histórico', '<p class="v4pg-intro">Livros que vieram de outro app sem alguns dados. Completar deixa certas as estatísticas e a meta do ano.</p>'
       + '<button type="button" class="v4btn-w" data-a="addold"><i class=v3e data-i=plus></i>Adicionar livros que já li</button>'
-      + '<div class="v4seg" role="tablist">' + ['fim', 'ini', 'pag', 'nota'].map((k) => '<button type="button" role="tab" class="' + (f === k ? 'on' : '') + '" data-f="' + k + '">' + NM[k] + ' <small>' + c[k] + '</small></button>').join('') + '</div>'
-      + (list.length ? '<div class="v4card">' + list.map((e) => '<div class="v4fx" data-id="' + esc(String(e.id)) + '">' + cvh(e.title, e.cover, '') + '<div><b>' + esc(e.title) + '</b><small>' + sub(e) + '</small>' + fld(e) + '</div></div>').join('') + '</div>' + nav
-        : '<p class="v2wempty">Nada faltando aqui.</p>')
-      + '<p class="v4pg-foot">Salva sozinho a cada campo. O que você não preencher continua aqui.</p>', () => openFixReads(f));
+      + (tot ? '<div class="v4fxtop"><b aria-live="polite">' + feitos + ' de ' + tot + ' completos</b><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="' + tot + '" aria-valuenow="' + feitos + '" aria-label="' + feitos + ' de ' + tot + ' completos"><i style="width:' + Math.round(feitos / tot * 100) + '%"></i></div></div>' : '')
+      + (tabs.length ? '<div class="v4seg" role="tablist">' + tabs.map((k) => '<button type="button" role="tab" aria-selected="' + (f === k) + '" class="' + (f === k ? 'on' : '') + '" data-f="' + k + '">' + NM[k] + ' <small>' + c[k] + '</small></button>').join('') + '</div>' : '')
+      + (list.length ? '<div class="v4card">' + list.map((e) => '<div class="v4fx" data-id="' + esc(String(e.id)) + '">' + cvh(e.title, e.cover, '') + '<div><b>' + esc(e.title) + '</b><small>' + esc(String(e.author || '').split(',')[0]) + '</small>' + known(e) + fld(e) + acts + '</div></div>').join('') + '</div>' + nav
+        : '<p class="v2wempty">Tudo completo. Suas estatísticas e a meta do ano já contam certo.</p>')
+      + '<p class="v4pg-foot">Salva sozinho a cada campo. "Não lembro" tira o livro desta lista sem apagar nada.</p>'
+      + '<div class="v4fxend"><button type="button" class="' + (tot && feitos >= tot ? 'v4btn-w pri' : 'v4btn-w') + '" data-a="fim">' + (tot && feitos < tot ? 'Fazer depois' : 'Concluir') + '</button></div>', () => openFixReads(f));
     v.querySelector('[data-a=addold]').addEventListener('click', () => { try { openHistory(); } catch { try { openHistLeituras(); } catch {} } });
+    v.querySelector('.v4fxend [data-a=fim]').addEventListener('click', () => { const b = v.querySelector('.v4back, .v4back2, .sl-back, [data-a=back]'); if (b) b.click(); else { v.hidden = true; try { refresh(); } catch {} } });
     v.querySelectorAll('.v4seg [data-f]').forEach((b) => b.addEventListener('click', () => { f = S.v4fxF = b.dataset.f; page = 0; draw(); }));
     v.querySelectorAll('.fx-pg button').forEach((b) => b.addEventListener('click', () => { page += Number(b.dataset.pg); draw(); }));
     v.querySelectorAll('.v4fx').forEach((row) => {
       const e = lib().find((y) => String(y.id) === row.dataset.id); if (!e) return; const ok = row.querySelector('.ok');
-      const done = () => { save(); try { publishSnapshotSoon(); } catch {} if (ok) { ok.hidden = false; } setTimeout(() => { if (!fxMiss(e)[f]) { row.style.transition = 'opacity .25s'; row.style.opacity = '.35'; } }, 300); };
+      const done = () => { save(); try { publishSnapshotSoon(); } catch {} if (ok) ok.hidden = false; setTimeout(() => { try { draw(); } catch {} }, 900); };
       row.querySelectorAll('.v4st button').forEach((b) => b.addEventListener('click', () => { const n = +b.dataset.n; let rv = reviewOfLib(e); if (!rv) { e.review = { paws: n, mel: [], frase: '' }; rv = e.review; } else rv.paws = n;
         row.querySelectorAll('.v4st button').forEach((x) => x.classList.toggle('on', +x.dataset.n <= n)); try { publishReview(e); } catch {} done(); }));
+      row.querySelector('[data-a=nao]')?.addEventListener('click', () => { fxNo(e)[f] = 1; save(); toast('Tirado desta lista. Nada foi apagado'); draw(); });
       const inp = row.querySelector('input'); if (!inp) return;
       const setDate = (k, val, approx) => { if (k === 'ini') { e.startedAt = val; if (approx) e.startApprox = true; else delete e.startApprox; } else { e.finishedAt = val; delete e.noDate; if (approx) e.dateApprox = true; else delete e.dateApprox; } };
       inp.addEventListener('change', () => { const k = inp.dataset.k, val = inp.value.trim(); if (!val) return;
-        if (k === 'pag') { const n = Math.round(Number(val)); if (!(n > 0 && n < 100000)) { inp.value = ''; return toast('Número de páginas inválido'); } e.totalPages = n; return done(); }
+        if (k === 'pag') { const n = Math.round(Number(val)); if (!(n > 0 && n < 100000)) { inp.value = ''; inp.setAttribute('aria-invalid', 'true'); return toast('Use só números, ex.: 320'); } e.totalPages = n; return done(); }
+        if (inp.type === 'text' && !/^\d{4}$/.test(val)) { inp.setAttribute('aria-invalid', 'true'); return toast('Digite o ano com 4 números'); }
         let d = val; if (/^\d{4}$/.test(val)) d = k === 'ini' ? val + '-01-01' : val + '-06-30';
         if (d > todayISO()) { inp.value = ''; return toast('A data não pode ser no futuro'); }
         const ini = k === 'ini' ? d : e.startedAt, fim = k === 'fim' ? d : e.finishedAt; if (ini && fim && ini > fim) { inp.value = ''; return toast('O início precisa ser antes do fim'); }
-        setDate(k, d, /^\d{4}$/.test(val)); done(); });
+        inp.removeAttribute('aria-invalid'); setDate(k, d, /^\d{4}$/.test(val)); done(); });
       row.querySelector('[data-a=ano]')?.addEventListener('click', (ev) => { inp.type = 'text'; inp.inputMode = 'numeric'; inp.maxLength = 4; inp.value = ''; inp.placeholder = 'ano, ex.: 2023'; inp.focus(); ev.currentTarget.remove(); });
     });
   };
@@ -150,7 +183,7 @@ v2FuncoesSheet = function () {
       return b; })();
     const tq = get('aj-tq'); if (tq) { const nb = tq.cloneNode(true); nb.addEventListener('click', () => { const v = $('#shelflist'); if (v) v.hidden = true; try { v5S().tab = 'trechos'; } catch {} goTab('estante'); }); tq.replaceWith(nb); }
     const hl = get('aj-hl'); if (hl) { const b = hl.querySelector('b'), s = hl.querySelector('small'); if (b) b.textContent = 'Importar histórico'; if (s) s.textContent = 'Goodreads e StoryGraph'; }
-    const fix = mk('aj-v4fix', 'Completar histórico', (() => { try { const L = lib().filter((e) => e.status === 'LIDO' && Object.values(fxMiss(e)).some(Boolean)).length; return L ? L + ' livros com dados faltando' : 'datas, páginas e notas dos lidos'; } catch { return ''; } })(), () => openFixReads());
+    const fix = mk('aj-v4fix', 'Completar histórico', (() => { try { const L = lib().filter((e) => e.status === 'LIDO' && ['fim', 'ini', 'pag', 'nota'].some((k) => fxOpen(e, k))).length; return L ? L + ' livros com dados faltando' : 'datas, páginas e notas dos lidos'; } catch { return ''; } })(), () => openFixReads());
     const del = connected() ? mk('aj-v4del', 'Excluir conta', 'apaga tudo, não tem volta', () => { try { deleteAccountSheet(); } catch {} }) : null; if (del) del.classList.add('danger');
     const tema = rowByText(/^Tema/), sons = get('aj-sound') ? get('aj-sound').closest('.aj-row, label, div') : rowByText(/^Sons/);
     const thn = () => { const n = tema && tema.querySelector('#aj-thn'); return n ? n.textContent : ''; };

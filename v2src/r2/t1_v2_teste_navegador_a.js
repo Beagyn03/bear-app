@@ -2,7 +2,7 @@
 // 19) Busca: tocar num resultado abre a página do livro (antes abria o menu rápido). O código antigo intercepta o toque
 //     no próprio shadow root; aqui o toque é tratado antes, na janela, e só para resultados de busca (.ct-it).
 addEventListener('click', (ev) => {
-  const p = ev.composedPath ? ev.composedPath() : []; const it = p.find((n) => n.classList && n.classList.contains('ct-it')); if (!it) return;
+  const p = ev.composedPath ? ev.composedPath() : []; const it = p.find((n) => n.classList && n.classList.contains('ct-it')); if (!it) return; if (Date.now() - (window.lvLongAt || 0) < 700) return; // soltou o "segurar": o menu já abriu (u3)
   if (p.some((n) => n.tagName === 'BUTTON' && it.contains(n))) return; // botões do cartão (edições etc.) seguem com a ação deles
   const t = it.querySelector('.ct-tx b'), a = it.querySelector('.ct-tx small'); if (!t) return;
   ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
