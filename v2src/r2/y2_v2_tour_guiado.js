@@ -18,6 +18,10 @@
 .ppbal .bt button:not(.p):not(.sk){border-color:color-mix(in srgb,var(--ppbal-ink,#fff) 35%,transparent)}
 .ppbal .ar{position:absolute;width:14px;height:14px;background:inherit;border-left:2px solid var(--ppacc,#e0a060);border-top:2px solid var(--ppacc,#e0a060);transform:rotate(45deg)}
 .ppbal.dn .ar{top:-8px}.ppbal.up .ar{bottom:-8px;transform:rotate(225deg)}
+.ppbal.cmp{padding:10px 12px 8px}.ppbal.cmp .pb{display:none}.ppbal.cmp b{font-size:.98rem}.ppbal.cmp p{font-size:.85rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.ppbal.cmp .bt{margin-top:6px}
+.pppause{position:fixed;z-index:2147482996;right:max(12px,env(safe-area-inset-right));bottom:calc(84px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:2px;padding:4px 4px 4px 14px;border-radius:99px;border:2px solid var(--ppacc,#e0a060);background:var(--ppsurf,#2b2540);color:var(--ppbal-ink,#fff);font:800 .88rem system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.pppause .go{border:0;background:none;color:inherit;font:inherit;min-height:40px;padding:0 6px;cursor:pointer}.pppause .x{width:40px;height:40px;border:0;background:none;color:var(--ppsub,#d8cfe8);display:grid;place-items:center;cursor:pointer}
+.pppause svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}
 @media (prefers-reduced-motion: no-preference){.ppbal{animation:ppbIn .22s ease both}@keyframes ppbIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
 `; document.head.append(st); }
 var ppG = null; // caminho guiado em andamento
@@ -29,7 +33,15 @@ function ppFindAny(sel) { for (const r of ppRoots()) { let L; try { L = r.queryS
 function ppFind(sel, txt) { for (const r of ppRoots()) { let L; try { L = r.querySelectorAll(sel); } catch { continue; }
     for (const x of L) { if (x.closest && x.closest('.ppbal')) continue; if (txt && !(txt instanceof RegExp ? txt.test(x.textContent) : x.textContent.includes(txt))) continue; if (ppVis(x)) return x; } } return null; }
 function ppClose() { document.querySelectorAll('.ppbal,.ppring,.ppscrim').forEach((x) => x.remove()); if (ppClose.raf) cancelAnimationFrame(ppClose.raf); ppClose.raf = 0; }
-// um balão: { t, x, el?, n?, N?, btns:[[label, fn, pri?]], skip?, onX?, solo? }
+// quantas coisas à vista (capas, anel, botões, campos) um balão na faixa [y, y+h] cobriria (fora o alvo e o "also")
+function ppCovers(y, h, el, al) { let n = 0; const seen = new Set();
+  for (const R of ppRoots()) { let L; try { L = R.querySelectorAll('button, input, textarea, img, .cv, .v3ring, .orb, [data-a], [role=button]'); } catch { continue; }
+    for (const x of L) { if (seen.has(x) || n > 60) continue; seen.add(x); if (x.closest && x.closest('.ppbal, .pppause')) continue;
+      if (x === el || (el && (el.contains(x) || x.contains(el))) || (al && (x === al || al.contains(x)))) continue;
+      const q = x.getBoundingClientRect(); if (q.width < 8 || q.height < 8 || q.bottom < 0 || q.top > innerHeight) continue;
+      if (q.bottom > y && q.top < y + h) { const f = (Math.min(q.bottom, y + h) - Math.max(q.top, y)) / q.height; n += (x.matches('img, .cv, .v3ring, .orb, textarea, input') ? 2 : 1) * f; } } }
+  return n; }
+// um balão: { t, x, el?, n?, N?, btns:[[label, fn, pri?]], skip?, onX?, solo?, also? }
 function ppBalloon(o) {
   ppClose(); const b = document.createElement('div'); b.className = 'ppbal'; b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', o.t); ppVars(b);
   b.innerHTML = `${o.N ? `<div class="top"><span class="pn">passo ${o.n} de ${o.N}</span><button type="button" class="x" aria-label="Sair do guia">${v4ic('x', 18)}</button></div><div class="pb"><i style="width:${Math.round((o.n / o.N) * 100)}%"></i></div>` : ''}
@@ -42,14 +54,28 @@ function ppBalloon(o) {
     if (!el || !el.isConnected) { document.querySelector('.ppring')?.remove(); if (!document.querySelector('.ppscrim')) { const sc = document.createElement('div'); sc.className = 'ppscrim'; document.body.append(sc); }
       b.style.top = Math.max(12, H - bh - 96) + 'px'; b.classList.remove('up', 'dn'); b.querySelector('.ar').hidden = true; return; }
     document.querySelector('.ppscrim')?.remove();
-    const r = el.getBoundingClientRect(); let ring = document.querySelector('.ppring');
+    // alvo + o que precisa continuar à vista no passo (ex.: "Atualizar página" logo abaixo de "Começar a ler")
+    const r0 = el.getBoundingClientRect(), al = o.also ? (typeof o.also === 'function' ? o.also() : ppFindAny(o.also)) : null, ra = al && al.isConnected ? al.getBoundingClientRect() : null;
+    const r = ra && ra.width && ra.bottom > 0 && ra.top < H ? { left: Math.min(r0.left, ra.left), right: Math.max(r0.right, ra.right), top: Math.min(r0.top, ra.top), bottom: Math.max(r0.bottom, ra.bottom) } : { left: r0.left, right: r0.right, top: r0.top, bottom: r0.bottom };
+    r.width = r.right - r.left; r.height = r.bottom - r.top;
+    let ring = document.querySelector('.ppring');
     if (o.bottom) { if (!ring) { ring = document.createElement('div'); ring.className = 'ppring'; ppVars(ring); document.body.append(ring); }
       Object.assign(ring.style, { left: Math.max(4, r.left - 4) + 'px', top: Math.max(4, r.top - 4) + 'px', width: Math.max(0, Math.min(innerWidth - 4, r.right + 4) - Math.max(4, r.left - 4)) + 'px', height: Math.max(0, r.height + 8) + 'px' });
       b.style.top = Math.max(12, H - bh - 96) + 'px'; b.classList.remove('up', 'dn'); b.querySelector('.ar').hidden = true; return; } if (!ring) { ring = document.createElement('div'); ring.className = 'ppring'; ppVars(ring); document.body.append(ring); }
     const L = Math.max(4, r.left - 4), T = Math.max(4, r.top - 4), W = Math.min(innerWidth - 4, r.right + 4) - L, Hh = Math.min(H - 4, r.bottom + 4) - T;
     Object.assign(ring.style, { left: L + 'px', top: T + 'px', width: Math.max(0, W) + 'px', height: Math.max(0, Hh) + 'px' });
-    const below = r.bottom + 14 + bh < H - 8 || r.top - 14 - bh < 8; const top = below ? Math.min(H - bh - 8, r.bottom + 14) : r.top - 14 - bh;
-    b.style.top = Math.max(8, top) + 'px'; b.classList.toggle('dn', below); b.classList.toggle('up', !below);
+    // lado do balão (Bia, 21/11): o que tem espaço; se os dois têm, o que cobre menos coisas à vista (capa, anel, botões, campos);
+    // se nenhum tem, o balão encolhe (sem barra, texto em 2 linhas) e, se ainda não couber, encosta na borda do lado maior.
+    const key = Math.round(r.top) + ':' + Math.round(r.bottom) + ':' + H;
+    if (b._key !== key) { b._key = key; b.classList.remove('cmp'); const hN = b.offsetHeight; b.classList.add('cmp'); const hC = b.offsetHeight; b.classList.remove('cmp');
+      const sb = H - r.bottom - 22, sa = r.top - 22, C = [];
+      // candidatos: abaixo/acima, normal/compacto; vale o que cabe e cobre menos coisas à vista (compacto pesa um pouco)
+      for (const [sd, sp] of [['b', sb], ['a', sa]]) for (const [cmp, hh] of [[0, hN], [1, hC]]) if (hh <= sp) C.push({ sd, cmp, hh, sc: ppCovers(sd === 'b' ? r.bottom + 14 : r.top - 14 - hh, hh, el, al) + (cmp ? 0.5 : 0) + (sd === 'a' ? 0.1 : 0) });
+      C.sort((x, y) => x.sc - y.sc); const c = C[0] || { sd: sb >= sa ? 'B' : 'A', cmp: 1, hh: hC };
+      b.classList.toggle('cmp', !!c.cmp); b._side = c.sd; b._h = c.hh; }
+    const h = b._h || bh, sd = b._side || 'b', below = sd === 'b' || sd === 'B';
+    const top = sd === 'b' ? r.bottom + 14 : sd === 'a' ? r.top - 14 - h : sd === 'B' ? H - h - 8 : 8;
+    b.style.top = Math.max(8, Math.min(top, H - h - 8)) + 'px'; b.classList.toggle('dn', below); b.classList.toggle('up', !below);
     const br = b.getBoundingClientRect(), ar = b.querySelector('.ar'); ar.hidden = false; ar.style.left = Math.min(Math.max(r.left + r.width / 2 - br.left - 7, 16), br.width - 30) + 'px'; };
   if (el) { try { const r = el.getBoundingClientRect(); if (r.top < 60 || r.bottom > innerHeight - 120) el.scrollIntoView({ block: 'center' }); } catch {} }
   const loop = () => { place(); ppClose.raf = requestAnimationFrame(loop); }; loop();
@@ -72,34 +98,54 @@ function ppOnTop(el) { try { const r = el.getBoundingClientRect(), x = r.left + 
     if (!t) return false; if (t === el || el.contains(t) || t.contains(el) || (t.closest && t.closest('.ppbal'))) return true; const host = el.getRootNode && el.getRootNode().host; return !!(host && (t === host || (t.getRootNode && t.getRootNode() === el.getRootNode() && el.contains(t)))); } catch { return true; } }
 // dicas antigas da tela somem enquanto o tour mostra a dele (item E)
 function ppHideTips(on) { for (const r of ppRoots()) { try { r.querySelectorAll(on ? '.tip, .v3tip' : '[data-pphid]').forEach((x) => { if (on) { if (!x.hidden && !x.closest('.ppbal')) { x.hidden = true; x.dataset.pphid = '1'; } } else { x.hidden = false; delete x.dataset.pphid; } }); } catch {} } }
-function ppStop() { if (ppG && ppG.tm) clearInterval(ppG.tm); ppG = null; ppClose(); ppHideTips(false); }
+function ppStop() { if (ppG && ppG.tm) clearInterval(ppG.tm); ppG = null; ppClose(); ppHideTips(false); document.querySelector('.pppause')?.remove(); try { if (v4State().fimDemo) v4State().fimDemo = 0; } catch {} }
+// a pessoa fez outra coisa (Bia, 21/11): o tour nunca mostra balão sem alvo; pausa e oferece "Continuar o tour", que retoma o mesmo passo
+function ppPause() { const g = ppG; if (!g) return; if (g.tm) { clearInterval(g.tm); g.tm = 0; } ppClose(); ppHideTips(false); g.paused = 1;
+  document.querySelector('.pppause')?.remove(); const p = document.createElement('div'); p.className = 'pppause'; p.setAttribute('role', 'group'); p.setAttribute('aria-label', 'Tour pausado'); ppVars(p);
+  p.innerHTML = '<button type="button" class="go">Continuar o tour</button><button type="button" class="x" aria-label="Encerrar o tour">' + v4ic('x', 16) + '</button>';
+  // retoma do passo que monta a tela (o mais próximo para trás que tem "go"), para a pessoa voltar ao lugar certo
+  p.querySelector('.go').addEventListener('click', (ev) => { ev.stopPropagation(); p.remove(); if (ppG === g) { g.paused = 0; let k = g.i; while (k > 0 && (!g.steps[k].go || g.steps[k].hidden)) k--; g.i = k; ppStep(); } });
+  p.querySelector('.x').addEventListener('click', (ev) => { ev.stopPropagation(); p.remove(); if (ppG === g) ppStop(); });
+  document.body.append(p); }
 function ppFinish(how) { const g = ppG; ppStop(); if (!g) return; if (g.stage) ppDone(g.stage, how === 'skip' ? 'skip' : undefined);
   if (how !== 'skip' && g.then) { setTimeout(() => ppGuide(g.then, g.thenStage || g.stage), 500); return; }
   try { goTab('inicio'); } catch {} if (how !== 'skip') toast('Etapa concluída'); }
 function ppNext() { if (!ppG) return; ppG.i++; ppStep(); }
 function ppStep() {
-  const g = ppG; if (!g) return; if (g.tm) { clearInterval(g.tm); g.tm = 0; } ppClose();
+  const g = ppG; if (!g) return; if (g.tm) { clearInterval(g.tm); g.tm = 0; } ppClose(); g.tapEl = null; // o toque-alvo do passo anterior não vale para este (o clique do próprio tour no Ler pulava o passo)
   const s = g.steps[g.i]; if (!s) return ppFinish();
   if (!s.keep) ppCloseLayers();
   try { s.go && s.go(); } catch (e) { console.warn('guia', e); }
   // contagem fixa (teste real 21/11, item 9): N vem do plano do caminho; cada passo não oculto conta, mesmo se pulado
-  let n, N; if (s.sub) { g.sn = (g.sn || 0) + 1; n = g.sn; N = PP_SESSAO.length; } else { if (!s.hidden) g.n = (g.n || 0) + 1; n = Math.min(g.n || 1, g.N); N = g.N; }
+  g.cnt = g.cnt || {}; let n, N; const c0 = g.cnt[g.i];
+  if (s.br) { N = g.brN; n = c0 || (g.bn = (g.bn || 0) + 1); }
+  else if (s.sub) { N = PP_SESSAO.length; n = c0 || (g.sn = (g.sn || 0) + 1); }
+  else { N = g.N; if (c0) n = c0; else { if (!s.hidden) g.n = (g.n || 0) + 1; n = Math.min(g.n || 1, g.N); } }
+  g.cnt[g.i] = n; g.seen = 0; g.lost = 0;
   let waited = 0, shown = null;
   const show = (el) => { const btns = (s.btns || (s.adv === 'btn' ? [[s.btn || 'Continuar', () => ppNext()]] : [])).map(([l, f]) => [l, f === 'next' ? () => ppNext() : f]);
     if (!el && !btns.length) btns.push(['Continuar', () => ppNext()]);
-    shown = ppBalloon({ t: s.sub ? 'Sessão · ' + s.t : s.t, x: s.x, el, n, N, btns, bottom: !!s.bottom, skip: () => ppFinish('skip'), onX: () => ppStop() });
+    shown = ppBalloon({ t: s.sub ? 'Sessão · ' + s.t : s.t, x: s.x, el, n, N, btns, bottom: !!s.bottom, also: s.also, skip: () => ppFinish('skip'), onX: () => ppStop() });
     g.tapEl = el && (!s.adv || s.tapGo) ? el : null; g.hold = !!s.hold; };
   const tick = () => { if (ppG !== g) return clearInterval(g.tm);
     if (s.until && (() => { try { return s.until(); } catch { return false; } })()) { clearInterval(g.tm); g.tm = 0; return ppNext(); }
+    // alternativa conhecida: a pessoa escolheu outro caminho -> segue o ramo dela, com contagem própria
+    if (s.alt) for (const A of s.alt) { let ok = false; try { ok = A.when(); } catch {} if (ok) { clearInterval(g.tm); g.tm = 0; const B = A.steps.map((x) => ({ ...x, br: 1 })); g.steps.splice(g.i + 1, g.steps.length, ...B); g.brN = B.length; g.bn = 0; return ppNext(); } }
     ppHideTips(true);
     let el = s.sel ? (typeof s.sel === 'function' ? s.sel() : ppFind(s.sel, s.txt)) : null;
     // alvo coberto por outra camada: tenta rolar até ele; se continuar coberto, segue para o próximo passo (item D)
-    if (el && !ppOnTop(el)) { g.cov = (g.cov || 0) + 300; if (g.cov === 300) { try { el.scrollIntoView({ block: 'center' }); } catch {} } if (g.cov < 2400) { if (shown) { ppClose(); shown = null; g.cur = null; } return; } g.cov = 0; clearInterval(g.tm); g.tm = 0; return ppNext(); }
+    if (el && !ppOnTop(el)) { if (TR.querySelector('.lista-snap')) return; g.cov = (g.cov || 0) + 300; if (g.cov === 300) { try { el.scrollIntoView({ block: 'center' }); } catch {} } if (g.cov < 2400) { if (shown) { ppClose(); shown = null; g.cur = null; } return; } g.cov = 0; clearInterval(g.tm); g.tm = 0; return (s.opt && !g.seen) ? ppNext() : ppPause(); }
     g.cov = 0;
-    if (el) { if (!shown || g.cur !== el) { g.cur = el; show(el); } return; }
+    if (el) { g.seen = 1; g.lost = 0; if (!shown || g.cur !== el) { g.cur = el; show(el); } return; }
     waited += 300;
-    if (shown && g.cur && !g.cur.isConnected) { g.cur = null; shown = null; }
-    if (!shown && (!s.sel || waited >= (s.opt ? 1200 : (s.wait || 3500)))) { if (!s.sel && s.hidden) return; if (s.opt && s.sel && waited < 2500) return; if (s.opt && s.sel) { clearInterval(g.tm); g.tm = 0; return ppNext(); } g.cur = null; show(null); } };
+    // o alvo sumiu depois de aparecer (a pessoa foi para outro lugar): espera ~1,5 s e pausa
+    // o Hoje redesenhando (cópia congelada por cima por até ~1,6 s) não conta como "sumiu"
+    const busy = (() => { try { return !!TR.querySelector('#lista.v3-wait, #lista.v3-back, .lista-snap'); } catch { return false; } })();
+    if (g.seen && s.sel) { if (shown) { ppClose(); shown = null; g.cur = null; } if (!busy) g.lost += 300; if (g.lost >= 1500) return ppPause(); return; }
+    if (busy) waited -= 300;
+    if (!shown && (!s.sel || waited >= (s.opt ? 1200 : (s.wait || 3500)))) { if (!s.sel && s.hidden) return; if (s.opt && s.sel && waited < 2500) return; if (s.opt && s.sel) { clearInterval(g.tm); g.tm = 0; return ppNext(); }
+      if (s.sel) return ppPause(); // nunca balão sem alvo (só os soltos por design, sem seletor)
+      g.cur = null; show(null); } };
   g.cur = null; g.tm = setInterval(tick, 300); tick();
 }
 // ---------- caminhos ----------
@@ -139,13 +185,20 @@ const PP_HOJE = [
     tapGo: () => { ppG.sn = 0; ppG.steps.push(...PP_SESSAO); ppNext(); },
     btns: [['Depois', () => ppFinish()], ['Experimentar agora', () => { ppG.sn = 0; ppG.steps.push(...PP_SESSAO); ppNext(); }]] },
 ];
+// ramo "Atualizar página" (Bia, 21/11): no lugar de entrar no silêncio, a pessoa escolheu só marcar a página
+const PP_UPD = [
+  { keep: 1, sel: () => ppFindAny('[aria-label="Deslizar até a página"]') || ppFindAny('[data-a=ust]'), also: '#v4upc', t: 'Diga a página', x: 'Ajuste em que página você está. O comentário é opcional.', adv: 'btn', until: () => !ppFindAny('[data-a=savepg]') },
+  { keep: 1, sel: () => ppFindAny('[data-a=savepg]'), t: 'Salve', x: 'Toque em Salvar. Descartar não guarda nada.', until: () => !ppFindAny('[data-a=savepg]') },
+  { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, wait: 6000, sel: '#tabbar [data-tab=ler]', t: 'Pronto', x: 'A sessão de leitura fica para quando quiser: toque em Ler.', adv: 'btn', btn: 'Concluir' },
+];
+const PP_ALT_UPD = [{ when: () => !!ppFindAny('[data-a=savepg]') && !ppFindAny('[data-a=start]') && !(typeof v4Ses === 'function' && v4Ses()), steps: PP_UPD }];
 const PP_SESSAO0 = [
-  { go: () => { if (!ppFind('[data-a=lerfoco]') && !ppFind('[data-a=start]')) { const t = ppFind('#tabbar [data-tab=ler]'); if (t) t.click(); } }, sel: '[data-a=lerfoco]', opt: 1, t: 'Entrar no silêncio', x: 'Abre a sessão de leitura.' },
-  { sel: '[data-a=start]', t: 'Começar a ler', x: 'Conta o tempo e silencia o resto. No fim, você diz a página.' },
+  { go: () => { if (!ppFind('[data-a=lerfoco]') && !ppFind('[data-a=start]')) { const t = ppFind('#tabbar [data-tab=ler]'); if (t) t.click(); } }, sel: '[data-a=lerfoco]', opt: 1, alt: PP_ALT_UPD, t: 'Entrar no silêncio', x: 'Abre a sessão de leitura.' },
+  { sel: '[data-a=start]', also: '[data-a=sheet][data-s=upd].just', alt: PP_ALT_UPD, t: 'Começar a ler', x: 'Conta o tempo e silencia o resto. No fim, você diz a página.' },
   { sel: '[data-a=ecoed]', t: 'Ecos', x: 'Frases de quem já passou por esta página aparecem aqui. Em Deixar um eco, você deixa o seu.', adv: 'btn' },
   { sel: '.v6luzb', opt: 1, t: 'Luz', x: 'Esmaece a tela para ler no escuro.', adv: 'btn' },
   { sel: '[data-a=sheet]', txt: 'Encerrar', t: 'Encerrar', x: 'No fim, diga a página em que parou.' },
-  { keep: 1, sel: () => ppFind('[aria-label="Deslizar até a página"]') || ppFind('[data-a=ust]'), t: 'Diga a página e salve', x: 'Ajuste a página em que parou e salve. Descartar não guarda nada.', adv: 'none',
+  { keep: 1, sel: () => ppFind('[aria-label="Deslizar até a página"]') || ppFind('[data-a=ust]'), also: '#v4upc', t: 'Diga a página e salve', x: 'Ajuste a página e salve. O comentário é opcional; Descartar não guarda nada.', adv: 'none',
     until: () => !ppFind('[data-a=ust]') && !ppFind('[data-a=ecoed]') },
   // fecha a tela Ler e aponta o Atualizar do cartão no Hoje (teste real 21/11, item 3)
   { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, wait: 9000, sel: () => (S.v4 ? null : ppFindAny('#lista:not(.lista-snap) .v3qa.p')), t: 'Leu fora da sessão?', x: 'Toque em Atualizar e diga onde parou.', adv: 'btn', btn: 'Concluir' },
@@ -169,14 +222,36 @@ function ppPaths(id) {
       btns: [['Abrir as opções', () => { const el = ppG && ppG.cur; if (el) el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, composed: true, cancelable: true })); }]] },
     ...PP_MENU_LER];
   if (id === 'hoje2') return [...PP_HOJE];
-  if (id === 'fim') return [
-    { go: () => ppTab('inicio'), sel: () => ppFindAny('#lista:not(.lista-snap) [data-h3=fim]'), t: 'Toque em Terminei', x: 'Abre a nota, as datas e o que sentiu.', until: () => !!ppFind('[data-a=fimn]') },
-    { keep: 1, go: () => { ppG.f0 = lib().filter((e) => e.status === 'LIDO').length; }, sel: () => ppStars(), t: 'Dê a nota e salve', x: 'Toque nas estrelas (meia vale) e salve.', adv: 'none',
-      until: () => lib().filter((e) => e.status === 'LIDO').length > (ppG.f0 || 0) && !ppFind('[data-a=fimn]') },
-    { go: () => { try { ppDone('fim'); } catch {} const L = lib().filter((e) => e.status === 'LIDO').sort((a, b) => String(b.finishedAt || '').localeCompare(String(a.finishedAt || '')));
-        const e = L[0]; if (e) { try { openBookPage(e); } catch {} } }, sel: '#shelflist .bp-tabs button', txt: 'Minha leitura', opt: 1, t: 'Minha leitura', x: 'Seu progresso e sua avaliação ficam aqui.', adv: 'none', until: () => !!ppAval() },
-    { sel: () => ppAval(), t: 'Sua avaliação', x: 'Fica aqui. Toque para editar ou apagar.', adv: 'btn', btn: 'Concluir' },
-  ];
+  if (id === 'fim') { // (Bia, 21/11) o tour nunca faz a pessoa marcar como lido um livro que não terminou
+    const R = (() => { try { return reading(); } catch { return null; } })(), e = (R && R.e) || lib().find((x) => x.status === 'LENDO') || lib()[0];
+    const inf = e && typeof v4Info === 'function' ? v4Info(e) : null, real = !!(e && e.status === 'LENDO' && inf && inf.total && inf.now >= inf.total);
+    const openFim = () => { if (e && !ppFindAny('.v4fim')) { try { v4FimOpen(e, real ? 0 : 1); } catch (er) { console.warn('fim', er); } } };
+    const A = (sel, t, x, o) => ({ keep: 1, go: openFim, sel: () => { const y = typeof sel === 'function' ? sel() : ppFindAny(sel); return y; }, t, x, adv: 'btn', ...(o || {}) });
+    const FOLHA = [
+      A('#v4st5', 'Sua nota', 'Meia estrela vale. Opcional.', { also: '#v4nlbl' }),
+      A('#v4fimfe', 'O que sentiu', 'Marque até 3. Opcional.'),
+      A(() => { const b = ppFindAny('[data-a=fimr]'); return b ? b.parentElement : null; }, 'Ressaca literária', 'Deu ressaca ou curou uma? Ajuda outras pessoas a escolher.'),
+      A('.v4fim details.nvd', 'Níveis do enredo', 'Opcional: ajuda quem vai escolher o próximo livro.'),
+      A('#v4fimt', 'O que você achou', 'Seu texto, se quiser.'),
+      A(() => { const b = ppFindAny('[data-a=fimsp]'); return b ? b.closest('label') : null; }, 'Tem spoiler', 'Esconde o texto de quem ainda não leu.'),
+      A(() => { const b = ppFindAny('[data-a=fimshare]'); return b ? b.closest('label') : null; }, 'Publicar na Comunidade', 'Desligado: fica só para você.', { opt: 1 }),
+    ];
+    if (!real) return [
+      { keep: 1, go: () => { if (e && !ppFindAny('.v4fim')) { try { v4FimOpen(e, 1); } catch (er) { console.warn('demo', er); } } }, sel: '.v4fim .fimdemo', t: 'Demonstração', x: 'Veja o que dá para registrar ao terminar um livro. Nada será salvo.', adv: 'btn' },
+      ...FOLHA,
+      { keep: 1, sel: () => ppFindAny('[data-a=fimok]'), t: 'Entendi', x: 'Quando terminar um livro de verdade, toque em Terminei no cartão do Hoje.', until: () => !ppFindAny('.v4fim') },
+    ];
+    return [
+      { go: () => ppTab('inicio'), sel: () => ppFindAny('#lista:not(.lista-snap) [data-h3=fim]'), t: 'Toque em Terminei', x: 'Você chegou ao fim: registre como foi.', until: () => !!ppFindAny('.v4fim') },
+      ...FOLHA,
+      { keep: 1, go: () => { ppG.f0 = lib().filter((x) => x.status === 'LIDO').length; }, sel: () => ppFindAny('[data-a=fimok]'), t: 'Salve', x: 'Tudo acima é opcional. Salve quando quiser.', adv: 'none',
+        until: () => lib().filter((x) => x.status === 'LIDO').length > (ppG.f0 || 0) && !ppFindAny('.v4fim') },
+      // sem nota nem texto: não mostra "Sua avaliação"; aponta Minha leitura (avaliar depois)
+      { hidden: 1, sel: null, t: '', x: '', until: () => true, go: () => { const L = lib().filter((x) => x.status === 'LIDO').sort((a, b) => String(b.finishedAt || '').localeCompare(String(a.finishedAt || ''))); const rv = (L[0] && L[0].review) || {};
+          ppG.steps.splice(ppG.i + 1, ppG.steps.length, { go: () => { try { ppDone('fim'); } catch {} if (L[0]) { try { openBookPage(L[0]); } catch {} } }, sel: '#shelflist .bp-tabs button', txt: 'Minha leitura', opt: 1, t: 'Minha leitura', x: rv.paws || rv.texto ? 'Seu progresso e sua avaliação ficam aqui.' : 'Você pode avaliar depois em Minha leitura.', adv: rv.paws || rv.texto ? 'none' : 'btn', btn: 'Concluir', until: () => (rv.paws || rv.texto) && !!ppAval() },
+            ...(rv.paws || rv.texto ? [{ sel: () => ppAval(), t: 'Sua avaliação', x: 'Fica aqui. Toque para editar ou apagar.', adv: 'btn', btn: 'Concluir' }] : [])); } },
+    ];
+  }
   if (id === 'gente') return [
     { go: () => ppTab('comunidade'), sel: '[data-a=v6new]', t: 'Comente sem spoiler', x: 'Se contar do enredo, marque até que página vai o spoiler.', adv: 'btn' },
     { sel: '#g-find', t: 'Encontre leitores', x: 'Na lupa, procure pessoas que leem o que você lê.', until: () => !!ppFind('#ct-q') },
@@ -198,7 +273,7 @@ const PP_MENU_LER = [
 ];
 function ppGuide(id, stage) {
   ppStop(); const steps = ppPaths(id); if (!steps.length) return;
-  const PLAN = { imp: 6, busca1: 7, busca2: 8, bib2: 5, hoje2: 3, fim: 4, gente: 5 };
+  const PLAN = { imp: 6, busca1: 7, busca2: 8, bib2: 5, hoje2: 3, fim: steps.filter((x) => !x.hidden).length + (steps.some((x) => x.hidden) ? 1 : 0), gente: 5 };
   ppG = { id, stage, steps: steps.slice(), i: 0, n: 0, N: PLAN[id] || steps.filter((x) => !x.hidden).length };
   // o caminho da busca na etapa 1 encadeia a etapa 2 quando o livro entra como Lendo
   if (id === 'busca1') ppG.steps.push({ hidden: 1, sel: null, t: '', x: '', until: () => true, go: () => { if (ppHas('LENDO') && !ppArr('done').includes('ler')) { ppG.then = 'hoje2'; ppG.thenStage = 'ler'; } } });

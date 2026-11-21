@@ -26,7 +26,7 @@
 const PP_ST = [
   ['biblio', 'Monte sua Biblioteca', 'traga de outro app ou busque o primeiro'],
   ['ler', 'Comece a ler', 'o livro vai para o Hoje; Ler abre a sessão'],
-  ['fim', 'Termine e avalie', 'em Terminei você dá a nota e escreve, se quiser'],
+  ['fim', 'Termine um livro', 'e avalie, se quiser: a nota é opcional'],
   ['gente', 'Encontre sua gente', 'comente sem spoiler, peça amizade, leia junto'],
 ];
 const ppArr = (k) => { const p = ppS() || {}; return Array.isArray(p[k]) ? p[k] : []; };
@@ -35,7 +35,7 @@ function ppActs(k) {
   const L = lib(), quero = L.some((e) => e.status === 'QUERO' || e.status === 'HIBERNANDO'), lendo = L.some((e) => e.status === 'LENDO');
   if (k === 'biblio') return [['imp', 'Trazer de outro app', 1], ['busca1', 'Buscar um livro']];
   if (k === 'ler') return lendo ? [['hoje2', 'Ver meu livro no Hoje', 1], ['busca2', 'Buscar uma nova leitura']] : quero ? [['bib2', 'Começar um livro da Biblioteca', 1], ['busca2', 'Buscar uma nova leitura']] : [['busca2', 'Buscar uma nova leitura', 1]];
-  if (k === 'fim') return lendo ? [['fim', 'Terminar e avaliar o livro', 1]] : [['busca2', 'Buscar uma nova leitura', 1]];
+  if (k === 'fim') return (lendo || lib().length) ? [['fim', 'Ver como terminar um livro', 1]] : [['busca2', 'Buscar uma nova leitura', 1]];
   if (k === 'gente') return [['gente', 'Encontrar minha gente', 1]];
   return [];
 }
@@ -78,7 +78,7 @@ TR.addEventListener('click', (ev) => {
 setInterval(() => { const p = ppS(); if (!p || !p.on || p.off || (typeof ppG !== 'undefined' && ppG)) return; let L; try { L = lib(); } catch { return; } const d = ppArr('done');
   // o Top 3 do primeiro acesso não conclui a etapa 1 (ela é trazer ou buscar livros)
   if (!d.includes('biblio') && L.some((e) => !e.fromTop3)) ppDone('biblio');
-  if (!d.includes('fim') && L.some((e) => e.status === 'LIDO' && e.finishedAt && p.at && e.finishedAt >= p.at && e.review)) ppDone('fim');
+  if (!d.includes('fim') && L.some((e) => e.status === 'LIDO' && e.finishedAt && p.at && e.finishedAt >= p.at)) ppDone('fim');
 }, 2500);
 // ---------- dicas por evento: uma vez cada, mesmo fora da ordem ----------
 const PP_TIPS = {
