@@ -5,7 +5,7 @@
 //  - "Pergunta do dia": uma pergunta por dia (fixa pela data), sem spoiler. As respostas são livros da pessoa;
 //    tocar abre o post novo da Rede já com o livro e a pergunta, para a pessoa escrever e publicar (nunca publica
 //    sozinho). Depois de responder, o cartão mostra "Você respondeu: …" naquele dia (db.prefs.qday).
-//    Entra em Personalizar Início ("Pergunta do dia"): dá para desligar e mudar de lugar.
+//    Entra em Personalizar Hoje ("Pergunta do dia"): dá para desligar e mudar de lugar.
 { const st = document.createElement('style'); st.textContent = `
 .v2-qn,.v2-qd{grid-column:1/-1}
 .v2-qn{display:flex;align-items:center;justify-content:space-between;gap:.6rem;width:100%;margin:0 0 .9rem;padding:.65rem .85rem;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
@@ -97,7 +97,7 @@ function v2QAnswer(id) {
   db.prefs = { ...(db.prefs || {}), qday: { date: v2Today(), answer: e ? e.title : 'Outro livro' } }; save();
   try { openRdComposer({ kind: 'comment', book, text: `Pergunta do dia: ${q}\n` }); } catch (err) { console.warn('pergunta do dia', err); }
 }
-// Personalizar Início: a Pergunta do dia vira uma seção que liga/desliga e muda de lugar
+// Personalizar Hoje: a Pergunta do dia vira uma seção que liga/desliga e muda de lugar
 if (!HOME_SECS.some((x) => x[0] === 'qday')) HOME_SECS.splice(0, 0, ['qday', 'Pergunta do dia']);
 const V2_SEC_EL = {
   recs: (box) => [box.querySelector('#rc-host')],
@@ -118,7 +118,7 @@ function v2HojeEnsure() {
     if (unit && unit.previousElementSibling === now) at = unit;
     if (at.nextElementSibling !== qn) at.after(qn);
   }
-  // Pergunta do dia: no lugar escolhido em Personalizar Início
+  // Pergunta do dia: no lugar escolhido em Personalizar Hoje
   const { order, off } = homePrefs(); let qd = box.querySelector('[data-v2qd]');
   if (off.includes('qday')) { qd && qd.remove(); return; }
   // a chave ignora o id da capa (data-cvk muda a cada desenho): antes o cartão era trocado sem parar e piscava com o "A seguir"

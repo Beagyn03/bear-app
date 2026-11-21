@@ -9942,10 +9942,12 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
-// Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
-// Só sai do app quando já está no Início sem nada aberto. Cada camada aberta ganha uma entrada no histórico do navegador.
+// Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
+// Só sai do app quando já está no Hoje sem nada aberto. Cada camada aberta ganha uma entrada no histórico do navegador.
 (() => {
   const vis = (n) => n && !n.hidden && n.offsetParent !== null;
   const layers = () => {
@@ -10149,7 +10151,7 @@ const paws5 = (n) => { n = Number(n) || 0; if (!n) return 'lido'; const t = n >=
 .es4-r [data-lot]{display:none!important}
 `; TR.append(st); }
 // --- 07_pessoa.js ---
-// Toque numa pessoa da leitura conjunta (linha no card do Início ou bolinha na página Lendo junto): Ver perfil / Mandar mensagem.
+// Toque numa pessoa da leitura conjunta (linha no card do Hoje ou bolinha na página Lendo junto): Ver perfil / Mandar mensagem.
 { const st = document.createElement('style'); st.textContent = `.v3-bud-r{cursor:pointer;border-radius:10px}.v3-bud-r:active{background:color-mix(in srgb,var(--acc) 10%,transparent)}.bj-dot[data-avh],.fd-post .av[data-avh],.pt-com .av[data-avh]{cursor:pointer}`; TR.append(st); }
 const personMenu = (anchor, handle, name) => {
   const me = (typeof socialProfile !== 'undefined' && socialProfile && socialProfile.handle) || ''; if (!handle || handle === me) return;
@@ -10865,7 +10867,7 @@ if (!ES_SORTS.some((x) => x[0] === 'prioridade')) ES_SORTS.splice(1, 0, ['priori
 @media (prefers-reduced-motion:reduce){.ys-bk:is(.ys-ouro,.ys-prata)::before,.ys-bk:is(.ys-ouro,.ys-prata)::after{animation:none}}
 `; TR.append(st); }
 // --- 24_estante_lift.js ---
-// Prateleiras da Estante: barra de progresso (lendo) e barra de lido no topo da capa, e o livro sai para a frente ao passar o dedo/mouse,
+// Prateleiras da Biblioteca: barra de progresso (lendo) e barra de lido no topo da capa, e o livro sai para a frente ao passar o dedo/mouse,
 // igual às Leituras por mês.
 { const st = document.createElement('style'); st.textContent = `
 .es4 .es-row{padding-top:14px!important;margin-top:-8px}
@@ -11311,7 +11313,7 @@ function navBack() { // volta uma página; false se não havia para onde
 function navToProfileEntry() { return { fn: () => goTab('eu'), tab: 'eu' }; }
 { // envolve quem abre página no #shelflist
   const navKey = (name, a) => { try { return name + '|' + JSON.stringify(a.map((x) => (x && typeof x === 'object' ? x.id || x.handle || x.title || '' : x))); } catch { return null; } };
-  // skip: chamadas que só desenham dentro de outra tela (ex.: o feed embutido no Início) não contam como navegação (19/11)
+  // skip: chamadas que só desenham dentro de outra tela (ex.: o feed embutido no Hoje) não contam como navegação (19/11)
   const wrap = (get, set, mk, skip) => { const o = get(); if (typeof o !== 'function') return; const name = o.name || String(Math.random()); set(function (...a) {
     if (skip && skip(a)) return o.apply(this, a);
     const fn = mk(a); fn.key = navKey(name, a); navEnter(fn); const N = S.nav; N.depth++;
@@ -11447,7 +11449,7 @@ function openGoalNew() {
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('#shelflist #gl-new'); if (!b) return; ev.stopImmediatePropagation(); ev.preventDefault(); openGoalNew(); }, true);
 // --- 34_cadastro_gostos.js ---
 // Cadastro (15/11): conta nova já sai com @usuário (sem cair em Editar perfil) e o Bear pergunta gêneros e livros
-// favoritos. Os gostos ficam em db.prefs.taste e alimentam "Para você" no Início (Google Livros, sem mudar a API).
+// favoritos. Os gostos ficam em db.prefs.taste e alimentam "Para você" no Hoje (Google Livros, sem mudar a API).
 const TASTE_G = [['romance', 'Romance', 'subject:romance'], ['contemporaneo', 'Romance contemporâneo', '"romance contemporâneo" OR subject:"contemporary romance"'], ['dark', 'Dark romance', '"dark romance"'], ['fantasia', 'Fantasia', 'subject:fantasy'], ['romantasia', 'Romantasia', 'romantasia OR "fantasy romance"'], ['darkfantasy', 'Dark fantasy', '"dark fantasy" OR "fantasia sombria"'], ['ficcao', 'Ficção científica', 'subject:"science fiction"'],
   ['suspense', 'Suspense', 'subject:thriller'], ['policial', 'Policial e mistério', 'subject:mystery'], ['terror', 'Terror', 'subject:horror'],
   ['historico', 'Romance histórico', 'subject:"historical fiction"'], ['classicos', 'Clássicos', 'subject:classics'], ['ya', 'Jovem adulto', 'subject:"young adult"'], ['distopia', 'Distopia', 'distopia OR subject:dystopian'],
@@ -11574,7 +11576,7 @@ function openTaste(first, prof) {
   S.listRedraw = draw; S.navView = { t: 'taste', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle();
 }
 { const _o = openTaste; openTaste = function (first) { if (first) { S.nav.st = []; S.nav.cur = null; return _o.apply(this, arguments); } navEnter(() => openTaste()); S.nav.depth++; try { return _o.apply(this, arguments); } finally { S.nav.depth--; } }; }
-// ---------- "Para você" no Início ----------
+// ---------- "Para você" no Hoje ----------
 async function tasteRecs() {
   const t = tasteOf(); if (!t) return [];
   const key = JSON.stringify(['pt2', t.genres, (t.books || []).map((b) => b.title)]), day = todayISO();
@@ -11940,7 +11942,7 @@ function rdPostToken(it) {
 }
 function rdSendToFriend(it) {
   const fr = (SOC.fr && SOC.fr.friends) || [];
-  if (!fr.length) return toast('Adicione amizades para enviar posts');
+  if (!fr.length) return toast('Adicione amigos para enviar posts');
   sheet('Enviar para', fr.slice(0, 40).map((f) => [f.displayName || '@' + f.handle, async () => {
     const body = rdShareText(it) + '\n' + rdPostToken(it);
     if (body.length > 1000) return toast('Post grande demais para enviar');
@@ -12176,7 +12178,7 @@ function openRdComposer(pre = {}) {
             <label><input type="radio" name="spk" value="end"${R.spk === 'end' ? ' checked' : ''}> Conta o final</label>
             <label><input type="radio" name="spk" value="yes"${R.spk === 'yes' ? ' checked' : ''}> Tem spoiler, não sei dizer até onde</label>
             <small>Quem ainda não chegou nesse ponto vê o post embaçado. Quem já leu vê normal.</small></div>` : '<input type="checkbox" id="rdc-sp" hidden>'}
-        <div class="rdc2-foot"><button type="button" class="rdc2-vis" id="rdc-vis">${R.vis === 'friends' ? '<i class=v3e data-i=friends></i>Amizades' : '<i class=v3e data-i=globe></i>Todos'} <i>▾</i></button><button type="button" class="rdc-go" id="rdc-go">Publicar</button></div>
+        <div class="rdc2-foot"><button type="button" class="rdc2-vis" id="rdc-vis" aria-label="Quem vê: ${R.vis === 'friends' ? 'Só amizades' : 'Toda a comunidade'}">${R.vis === 'friends' ? '<i class=v3e data-i=friends></i>Amizades' : '<i class=v3e data-i=globe></i>Comunidade'} <i>▾</i></button><button type="button" class="rdc-go" id="rdc-go">Publicar</button></div>
         ${me ? `<p class="rdc2-me">Publicando como ${esc(me)}</p>` : ''}
       </div>`;
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
@@ -12479,7 +12481,7 @@ fillMissingCovers = async function (manual) {
 };
 // --- 39_inicio_tour.js ---
 // Início mais completo (15/11): "Comece por aqui" para quem ainda não tem livros, Sua semana, meta do ano (com convite
-// quando não tem), Na Rede (3 posts) e Em alta. Tudo entra em Ajustes › Personalizar Início. Seções desligadas por padrão
+// quando não tem), Na Rede (3 posts) e Em alta. Tudo entra em Ajustes › Personalizar Hoje. Seções desligadas por padrão
 // antes (Leituras do ano e Próxima conquista) passam a aparecer para quem nunca personalizou.
 // Tour de boas-vindas para conta nova (db.prefs.tourDone); "Ver o tour de novo" em Ajustes.
 { const st = document.createElement('style'); st.textContent = `
@@ -12600,7 +12602,7 @@ function inLoad() {
 const TOUR = [
   [null, 'Boas-vindas ao Livroverso', 'Um tour rápido pelo app. Leva menos de um minuto.'],
   ['#tabbar [data-tab=inicio]', 'Início', 'O livro que você está lendo, sua semana, a meta do ano e o que a comunidade está comentando. Toque no livro para atualizar a página em que parou.'],
-  ['#tabbar [data-tab=estante]', 'Estante', 'Minha biblioteca tem todos os seus livros: lendo, lidos e na fila. Crie estantes suas, como "Clube do livro" ou "Para reler".'],
+  ['#tabbar [data-tab=estante]', 'Estante', 'A Biblioteca tem todos os seus livros: lendo, lidos e na fila. Crie estantes suas, como "Clube do livro" ou "Para reler".'],
   ['#tabbar [data-tab=buscar]', 'Buscar', 'Ache um livro e coloque na estante. Começou a ler? Escolha "Estou lendo".'],
   ['#tabbar [data-tab=comunidade]', 'Comunidade', 'Na Comunidade, comentários, trechos e indicações sobre livros, com controle de spoiler. Em Amigos, quem você segue e as leituras conjuntas.'],
   ['#tabbar [data-tab=eu]', 'Perfil', 'Seu @usuário, conquistas e o que você já leu.'],
@@ -13371,7 +13373,7 @@ function myProfileNums() {
       + cell(maior ? k(maior.totalPages) + ' pág.' : '–', maior ? 'mais longo' : 'mais longo', maior ? 'maior' : '', maior ? '<span class="tt">' + esc(maior.title) + '</span>' : '')
       + cell(alvo ? `${lidosAno.length} de ${alvo}` : '–', alvo ? `meta de ${y} · ${pct}%` : `sem meta de ${y}`, 'meta', alvo ? `<span class="mt"><i style="width:${pct}%"></i></span>` : '');
     const mark = () => { const N = S.nav; if (N && !N.st.length) N.st.push({ fn: () => goTab('eu'), tab: 'eu' }); };
-    const shelf = (s) => { try { Object.assign(ESN(), { tab: 'bib', st: s, nota: '', fmt: '', gen: '', own: '' }); S.esnQ = ''; save(); } catch {} v.hidden = true; goTab('estante'); mark(); }; // Minha biblioteca já filtrada (Bia, 19/11)
+    const shelf = (s) => { try { Object.assign(ESN(), { tab: 'bib', st: s, nota: '', fmt: '', gen: '', own: '' }); S.esnQ = ''; save(); } catch {} v.hidden = true; goTab('estante'); mark(); }; // Biblioteca já filtrada (Bia, 19/11)
     const go = { lidos: () => shelf('LIDO'), fila: () => shelf('QUERO'), aband: () => shelf('ABANDONEI'), resenhas: () => { mark(); openMyReviews(); }, maior: () => { if (maior) { mark(); openBookPage(maior); } }, stats: () => { v.hidden = true; goTab('progresso'); }, meta: () => { const before = JSON.stringify(db.yearGoals || {}); setYearGoal(y); let n = 0; const t = setInterval(() => { if (++n > 120 || JSON.stringify(db.yearGoals || {}) !== before) { clearInterval(t); myProfileNums(); } }, 500); } }; // meta abre o ajuste da meta do ano
     nums.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); (go[b.dataset.go] || (() => {}))(); }, true));
   } catch (err) { console.warn('números do perfil', err); }
@@ -13436,7 +13438,7 @@ function myStatsSnap() {
 }; }
 // --- 54_prazo_leitura.js ---
 // Prazo para terminar a leitura atual (Bia, 16/11): "quero terminar até sábado" → o app calcula quantas páginas por dia faltam,
-// mostra no cartão "Lendo agora" do Início e lista o plano dia a dia. Guardado no livro (e.dueAt = AAAA-MM-DD).
+// mostra no cartão "Lendo agora" do Hoje e lista o plano dia a dia. Guardado no livro (e.dueAt = AAAA-MM-DD).
 { const st = document.createElement('style'); st.textContent = `
 .due-ln{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.45rem;font-size:.8rem;font-weight:800;color:var(--ink-2);width:100%}
 .due-ln b{color:var(--acc)}.due-ln button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.78rem;padding:0;flex:none}
@@ -13558,7 +13560,7 @@ function dueSheet(e) {
   f.addEventListener('submit', (ev) => { ev.preventDefault(); if (!inp.value || inp.value < t) return toast('Escolha hoje ou um dia depois'); if (e.dueAt !== inp.value || !e.dueSince) { e.dueSince = todayISO(); e.dueSetAt = new Date().toISOString(); e.dueStartPage = readingInfo(e).now || 0; } e.dueAt = inp.value; if (off.length) e.dueOff = off; else delete e.dueOff; save(); close(); try { renderHome(todayISO()); } catch {} toast(`Prazo: ${dueLabel(e.dueAt)}`); });
   document.body.append(wrap);
 }
-// cartão "Lendo agora" do Início: linha do prazo (ou convite para definir)
+// cartão "Lendo agora" do Hoje: linha do prazo (ou convite para definir)
 { let tm = 0; const paint = () => {
     const R = (() => { try { return reading(); } catch { return null; } })(); if (!R || !R.e || R.e.status !== 'LENDO') return;
     TR.querySelectorAll('.lx-now .lx-nt, .v3-now:not(.empty)').forEach((card) => {
@@ -13658,7 +13660,7 @@ S.upNote = { text: '', fe: [], vis: (() => { try { const v = localStorage.getIte
     const N = S.upNote, wrap = document.createElement('div'); wrap.className = 'up-note';
     wrap.innerHTML = `<textarea maxlength="280" placeholder="O que está achando desta parte? (opcional)"></textarea>
       <div class="up-fe">${QT_PICK.map(([k, n]) => `<button type="button" data-f="${k}" class="${N.fe.includes(k) ? 'on' : ''}">${esc(n)}</button>`).join('')}</div>
-      <div class="up-vis"><span>Quem vê</span><div class="up-vs">${[['friends', 'Amigos'], ['public', 'Todos']].map(([k, n]) => `<button type="button" data-v="${k}" class="${N.vis === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+      <div class="up-vis"><span>Quem vê</span><div class="up-vs">${[['friends', 'Só amizades'], ['public', 'Toda a comunidade']].map(([k, n]) => `<button type="button" data-v="${k}" class="${N.vis === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
       <label class="up-pub"><input type="checkbox" ${N.sp ? 'checked' : ''}> Contém spoiler <small>(quem não chegou nesta página vê embaçado)</small></label>`;
     const ta = wrap.querySelector('textarea'); ta.value = N.text; ta.addEventListener('input', () => { N.text = ta.value; });
     wrap.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.f; if (N.fe.includes(k)) N.fe = N.fe.filter((x) => x !== k); else if (N.fe.length < 3) N.fe.push(k); else return toast('Até 3 emoções'); b.classList.toggle('on', N.fe.includes(k)); }));
@@ -13751,7 +13753,7 @@ const openFoco = () => { try { const R = reading(); if (R) startFocus(); } catch
 if (/[?&]upd=1/.test(location.search)) { setTimeout(openUpd, 2200); try { history.replaceState(null, '', location.pathname); } catch {} }
 if (/[?&]foco=1/.test(location.search)) { setTimeout(openFoco, 2200); try { history.replaceState(null, '', location.pathname); } catch {} }
 if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (ev) => { if (ev.data && ev.data.type === 'bear-upd') openUpd(); if (ev.data && ev.data.type === 'bear-foco') openFoco(); });
-// cartão do Início: mostra que o lembrete está ligado
+// cartão do Hoje: mostra que o lembrete está ligado
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { TR.querySelectorAll('.due-ln span:first-child').forEach((s) => { const R = reading(); if (R && R.e.remind && !s.dataset.bell) { s.dataset.bell = 1; s.insertAdjacentHTML('beforeend', ' <small style="font-weight:700;opacity:.75">· lembrete às ' + String(R.e.remind.hour).padStart(2, '0') + ':' + String(R.e.remind.minute || 0).padStart(2, '0') + '</small>'); } }); }, 120); }).observe(TR, { childList: true, subtree: true }); }
 // --- 58_amigos_atualiza.js ---
 // Lista de amigos sempre atual (Bia, 16/11): ao abrir a tela de Amigos, busca a lista na hora e redesenha
@@ -13766,7 +13768,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
   return r;
 }; }
 // --- 59_semana_prazo.js ---
-// "Sua semana" do Início vira o placar do prazo (Bia, 16/11): com a leitura atual com prazo, cada dia mostra a meta do dia
+// "Sua semana" do Hoje vira o placar do prazo (Bia, 16/11): com a leitura atual com prazo, cada dia mostra a meta do dia
 // (contorno) e o que foi lido nele (preenchido), do dia em que o prazo foi marcado até o prazo. Sem prazo, continua o gráfico da semana.
 { const st = document.createElement('style'); st.textContent = `
 .pz-wk{display:flex;gap:.25rem;overflow-x:auto;scrollbar-width:none;padding:.2rem 0 .1rem}.pz-wk::-webkit-scrollbar{display:none}
@@ -13809,7 +13811,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => { TR.querySelectorAll('.pz-plan:not([data-b])').forEach((b) => { b.dataset.b = 1; b.addEventListener('click', () => { const R = reading(); if (R) dueSheet(R.e); }); }); }, 100); }).observe(TR, { childList: true, subtree: true }); }
 // --- 59b_calendario_inicio.js ---
 { const st = document.createElement('style'); st.textContent = ".dk-row{display:flex;gap:.35rem;overflow-x:auto;padding:.1rem 0 .35rem;scrollbar-width:none;max-width:100%}.dk-row::-webkit-scrollbar{display:none}\n.dk{flex:0 0 62px;display:grid;justify-items:center;gap:.12rem;border:1px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;border-radius:12px!important;padding:.35rem .2rem!important;font:inherit;height:auto!important;min-height:0!important;box-shadow:none!important;cursor:pointer}\n.dk small{font-size:.62rem;font-weight:900;text-transform:uppercase;color:var(--ink-2)}.dk em{font-style:normal;font-size:.62rem;font-weight:700;color:var(--ink-2)}\n.dk-c{position:relative;width:38px;height:56px;border-radius:5px;overflow:hidden;display:block}.dk-c > .dk-cv{position:absolute;inset:0}\n.dk-c .dk-cv{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;width:100%!important;height:100%!important;margin:0!important;border-radius:0!important;box-shadow:none!important;font-size:.36rem!important}.dk-c .dk-cv img{width:100%;height:100%;object-fit:cover}\n.dk-c > .dk-gray{position:absolute;left:0;right:0;top:0;bottom:auto;z-index:1;-webkit-backdrop-filter:grayscale(1) brightness(.95);backdrop-filter:grayscale(1) brightness(.95);background:rgba(128,128,128,.18);transition:height .4s ease}\n.dk-c u{position:absolute;top:1px;right:2px;z-index:2;text-decoration:none;font-size:.7rem;color:#f5b84a;text-shadow:0 1px 2px rgba(0,0,0,.6)}\n.dk b{font-size:.68rem;font-weight:900;white-space:nowrap}.dk i{font-style:normal;font-size:.6rem;font-weight:800;color:var(--acc);white-space:nowrap}\n.dk.hoje{border:2px solid var(--acc)!important}.dk.off{border-style:dashed!important;background:none!important;opacity:.6}.dk.ok{border-color:#2f8a52!important}.dk.ok b{color:#2f8a52}\n.dk-c .dk-cv{display:grid!important;place-items:center;background:#8a6a4a;color:#fff;text-align:center;line-height:1.1;padding:2px;box-sizing:border-box;overflow:hidden}\n.dk-rib{position:relative;display:block;width:22px;height:46px;background:color-mix(in srgb,var(--ink) 12%,transparent);clip-path:polygon(0 0,100% 0,100% 100%,50% 80%,0 100%);overflow:hidden}\n.dk-rib i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(var(--acc),color-mix(in srgb,var(--acc) 70%,#000));transition:height .4s ease}\n.dk-rib.ok i{background:linear-gradient(#ffe08a,#e2a92c)}.dk-rib.off{background:none;outline:1.5px dashed var(--line);outline-offset:-2px;clip-path:none;border-radius:3px}\n.dk-rib u{position:absolute;left:0;right:0;top:4px;text-align:center;text-decoration:none;font-size:.7rem;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}.dk-rib u.fim{color:var(--acc);text-shadow:none}"; TR.append(st); const st3 = document.createElement('style'); st3.textContent = ".dk-c .dk-cv{display:grid!important;place-items:center;background:#8a6a4a;color:#fff;text-align:center;line-height:1.1;padding:2px;box-sizing:border-box;overflow:hidden}"; document.head.append(st3); }
-// Placar do prazo no Início vira calendário do mês (Bia, 17/11): cada dia mostra quantas páginas foram lidas
+// Placar do prazo no Hoje vira calendário do mês (Bia, 17/11): cada dia mostra quantas páginas foram lidas
 // (todos os livros); nos dias do prazo, fica verde quando bateu a meta do livro do prazo; dias que vêm mostram
 // até qual página ler; folga tracejada; hoje com contorno; prazo com estrela.
 { const st = document.createElement('style'); st.textContent = `
@@ -13846,7 +13848,7 @@ function prazoRowHTML(e, R) {
     const info = [due ? 'Meta batida em ' + hit + ' de ' + due + ' dias' : '', ''].filter(Boolean).join(' · ');
     return (info ? '<div class="pz-mn" style="font-size:.7rem;font-weight:700;color:var(--ink-2);margin:.4rem 0 .25rem">' + info + '</div>' : '<div style="height:.4rem"></div>') + '<div class="dk-row">' + cardsH + '</div>';
 }
-// com prazo, o bloco separado some do Início (os dias ficam dentro do cartão da leitura)
+// com prazo, o bloco separado some do Hoje (os dias ficam dentro do cartão da leitura)
 { const _isw2 = inSemana; inSemana = function () { try { const R = reading(), e = R && R.e; if (e && e.status === 'LENDO' && e.dueAt && e.dueAt >= todayISO()) return ''; } catch {} return _isw2.apply(this, arguments); }; }
 { const st3 = document.createElement('style'); st3.textContent = '.due-hd{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin:.1rem 0 .4rem}.due-hd button{margin-left:auto}.due-hd button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.76rem;padding:0;cursor:pointer}.due-cards + .due-ln > button{display:none}.due-cards + .due-ln{justify-content:flex-start}'; TR.append(st3); }
 { let tm = 0; const paint = () => {
@@ -13924,7 +13926,7 @@ img[src^="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP"]{display:none!important}
 }
 // --- 63_nota_estrela_img.js ---
 // Marca-página da nota com as estrelas desenhadas (Bia, 17/11): fita + estrela por nível (5 arco-íris, 4–4,5 ouro, 3–3,5 prata,
-// abaixo bronze); a nota continua escrita pelo app no miolo da estrela. Vale na Estante (.mk-bear) e em Leituras por mês (.ys-mk).
+// abaixo bronze); a nota continua escrita pelo app no miolo da estrela. Vale na Biblioteca (.mk-bear) e em Leituras por mês (.ys-mk).
 { const st = document.createElement('style'); st.textContent = `
 .mk-bear,.ys-mk{width:34px!important;height:56px!important;top:-12px!important;left:4px!important;background:var(--nimg) center bottom/contain no-repeat!important;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.35))!important}
 #shelflist .esv-grid > .es-bk > .mk-bear{top:-26px!important}
@@ -14366,7 +14368,7 @@ async function openNivelList(k, title) {
 .ss-link{border:0!important;background:none!important;color:var(--acc)!important;font:inherit!important;font-weight:800!important;font-size:.82rem!important;padding:.2rem 0!important;height:auto!important;min-height:0!important;justify-self:center;cursor:pointer;box-shadow:none!important}`; TR.append(st); }
 const SS_LIST = [['LENDO', 'Lendo'], ['LIDO', 'Lido'], ['HIBERNANDO', 'Pausado'], ['QUERO', 'Quero ler'], ['ABANDONEI', 'Abandonei']];
 const ssChips = (cur) => '<div class="ss-chips" role="tablist" aria-label="Status do livro">' + SS_LIST.map(([k, n]) => '<button type="button" role="tab" data-s="' + k + '"' + (k === cur ? ' class="on" aria-selected="true"' : '') + '>' + n + '</button>').join('') + '</div>';
-// abre a atualização de leitura de um livro (o do Início ou outro em andamento)
+// abre a atualização de leitura de um livro (o do Hoje ou outro em andamento)
 function ssOpenUpdate(e) {
   const R = (() => { try { return reading(); } catch { return null; } })();
   if (R && R.e.id === e.id) return S.madrugada ? wakeBear('upd') : editLeitura();
@@ -15051,7 +15053,7 @@ function tlEvents(e) {
   // página em que cada dia terminou: volta da página atual descontando o que foi lido nos dias seguintes
   let after = 0; list.forEach((x) => { x.end = Math.max(0, now - after); x.start = Math.max(0, x.end - x.pages); after += x.pages; });
   const maxP = Math.max(1, ...list.map((x) => x.pages)), off = e.dueOff || [];
-  // meta dos dias passados: a mesma conta dos marca-páginas do Início (feita no dia em que o prazo foi marcado)
+  // meta dos dias passados: a mesma conta dos marca-páginas do Hoje (feita no dia em que o prazo foi marcado)
   let workAll = 0; if (e.dueAt && e.dueSince) for (let d = String(e.dueSince).slice(0, 10); d <= e.dueAt; d = new Date(Date.parse(d) + 864e5).toISOString().slice(0, 10)) if (!off.includes(new Date(d + 'T12:00:00Z').getUTCDay())) workAll++;
   const base = total && workAll ? Math.ceil(Math.max(0, total - (e.dueStartPage || 0)) / workAll) : 0;
   list.forEach((x) => {
@@ -15140,7 +15142,7 @@ let TL_PAINT = () => {};
     const body = ed.querySelector('.ed-body'); if (ed.hidden || !body || !(body.querySelector('#up-save') || body.querySelector('.ss-chips')) || body.querySelector('.tl')) return;
     const e = S.tlE; if (!e) return;
     body.querySelectorAll('.tl-tabs').forEach((x) => x.remove());
-    const tabs = document.createElement('div'); tabs.className = 'tl-tabs'; tabs.innerHTML = '<button type="button" data-t="up">Atualizar</button><button type="button" data-t="hist">Histórico</button>';
+    const tabs = document.createElement('div'); tabs.className = 'tl-tabs'; tabs.innerHTML = '<button type="button" data-t="up">Atualizar página</button><button type="button" data-t="hist">Histórico</button>';
     const set = (k) => { S.tlTab = k; tlRemember(e, k); body.classList.toggle('tl-on', k === 'hist'); tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.t === k)); };
     tabs.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => set(b.dataset.t)));
     const hd = body.querySelector('.ss-hd'); if (hd) hd.after(tabs); else body.prepend(tabs); set(S.tlTab || 'up');
@@ -15183,7 +15185,7 @@ function tlEditClick(ev, e, redraw) {
 { const _al = addToLibrary; addToLibrary = function () { const before = new Set(lib().map((x) => x.id)); const r = _al.apply(this, arguments);
     setTimeout(() => { try { let ch = false; lib().forEach((x) => { if (!before.has(x.id) && x.status === 'LENDO' && !x.startedTs) { x.startedTs = new Date().toISOString(); ch = true; } }); if (ch) save(); } catch {} }, 400); return r; }; }
 // --- 87_meta_inicio_livros.js ---
-// Meta do ano no Início (Bia, 17/11; Editar meta no ••• do cartão): embaixo da barra de progresso, as capas dos livros lidos no ano que contam para a meta,
+// Meta do ano no Hoje (Bia, 17/11; Editar meta no ••• do cartão): embaixo da barra de progresso, as capas dos livros lidos no ano que contam para a meta,
 // do mais recente para o mais antigo, e depois as vagas tracejadas que faltam.
 { const st = document.createElement('style'); st.textContent = `
 .ini-meta.im2{padding:.7rem .85rem .75rem}
@@ -15216,17 +15218,17 @@ function tlEditClick(ev, e, redraw) {
     TR.querySelectorAll('#lista .yo-fsh').forEach((sh) => { [sh, sh.nextElementSibling].forEach((n) => { if (n) n.style.display = lendo ? 'none' : ''; }); });
   };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 60); }).observe(TR, { childList: true, subtree: true }); }
-// Leituras por mês sai do Início (Bia, 17/11): já aparece no perfil.
+// Leituras por mês sai do Hoje (Bia, 17/11): já aparece no perfil.
 { const st = document.createElement('style'); st.textContent = '#lista .ini-ano{display:none!important}'; TR.append(st); }
 { const i = HOME_SECS.findIndex((x) => x[0] === 'ano'); if (i >= 0) HOME_SECS.splice(i, 1); }
-// "Sua semana" sai do Início (Bia, 17/11): com prazo, os dias já aparecem no cartão da leitura; sem prazo, está em Estatísticas.
+// "Sua semana" sai do Hoje (Bia, 17/11): com prazo, os dias já aparecem no cartão da leitura; sem prazo, está em Estatísticas.
 inSemana = function () { return ''; };
-// "Na Rede" sai do Início (Bia, 17/11): já está em Comunidade. Some também da lista de personalizar o Início, junto com "Sua semana".
+// "Na Rede" sai do Hoje (Bia, 17/11): já está em Comunidade. Some também da lista de personalizar o Início, junto com "Sua semana".
 ['rede', 'semana'].forEach((k) => { const i = HOME_SECS.findIndex((x) => x[0] === k); if (i >= 0) HOME_SECS.splice(i, 1); });
 { const st = document.createElement('style'); st.textContent = '#lista [data-in=rede],#lista [data-in=semana]{display:none!important}'; TR.append(st); }
-// A anotação do livro (só você vê) fica no Diário de leitura e não aparece mais no cartão do Início (Bia, 17/11).
+// A anotação do livro (só você vê) fica no Diário de leitura e não aparece mais no cartão do Hoje (Bia, 17/11).
 { const st = document.createElement('style'); st.textContent = '#lista .v3-now .v3-note{display:none!important}'; TR.append(st); }
-// "Em alta" sai do Início (Bia, 17/11): volta quando houver um cálculo melhor, com mais leitores no app.
+// "Em alta" sai do Hoje (Bia, 17/11): volta quando houver um cálculo melhor, com mais leitores no app.
 { const i = HOME_SECS.findIndex((x) => x[0] === 'alta'); if (i >= 0) HOME_SECS.splice(i, 1); }
 { const st = document.createElement('style'); st.textContent = '#lista [data-in=alta]{display:none!important}'; TR.append(st); }
 // --- 89_perfil_espera.js ---
@@ -15466,8 +15468,8 @@ function paintAmigos() {
 .g-orb img{width:26px;height:26px}.g-orb.off img{filter:grayscale(1);opacity:.55}.g-orb.off{border-color:var(--line);color:var(--ink-2)}
 .orb-card{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:.8rem .9rem;margin:.2rem 0 1rem;cursor:pointer}
 .orb-hd{display:grid;grid-template-columns:50px minmax(0,1fr) auto;gap:.7rem;align-items:center}
-.orb-ic{width:50px;height:50px;border-radius:15px;background:color-mix(in srgb,#f0b84a 14%,transparent);padding:6px;box-sizing:border-box}.orb-ic img{width:100%;height:100%;display:block}
-.orb-ic.off img{filter:grayscale(1);opacity:.55}
+.orb-ic{width:50px;height:50px;border-radius:15px;background:color-mix(in srgb,#f0b84a 14%,transparent);padding:6px;box-sizing:border-box}.orb-ic img,.orb-ic .orb-svg{width:100%;height:100%;display:block}.orb-ic{color:#c98a1c}.g-orb .orb-svg{width:20px;height:20px;flex:none}
+.orb-ic.off img,.orb-ic.off .orb-svg{filter:grayscale(1);opacity:.55}
 .orb-hd b{display:block;font-size:1rem}.orb-hd small{display:block;font-size:.76rem;color:var(--ink-2);font-weight:700;margin-top:.1rem}
 .orb-rec{text-align:right}.orb-rec small{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em}.orb-rec b{font-size:1rem}
 .orb-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:.75rem}
@@ -15498,6 +15500,8 @@ function paintAmigos() {
 .orb-leg{display:flex;gap:.8rem;margin-top:.6rem;font-size:.7rem;color:var(--ink-2);font-weight:700}
 `; TR.append(st); }
 const ORB_IMG = 'img/orbita.webp';
+// ícone de traço no lugar do planeta colorido (Bia, 20/11: acabamento); mesmo desenho do cartão do topo do Hoje
+const ORB_SVG = '<svg class="orb-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10.5" ry="3.6" transform="rotate(-18 12 12)"/></svg>';
 const orbAddDays = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 // dias com leitura: { 'AAAA-MM-DD': { pages, books: Map(libId -> pages) } }
 function orbDays() {
@@ -15522,16 +15526,16 @@ const orbSub = (s) => s.today ? (s.cur > 1 ? 'Leitura de hoje registrada' : 'Pri
 { let tm = 0; const paint = () => {
     const bell = TR.querySelector('#g-msg'); if (!bell) return;
     let b = TR.querySelector('#g-orb'); if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'g-orb'; b.className = 'g-orb'; bell.before(b); b.addEventListener('click', () => openOrbita()); }
-    const s = orbStats(), html = '<img src="' + ORB_IMG + '" alt="">' + s.cur; if (b.innerHTML !== html) b.innerHTML = html;
+    const s = orbStats(), html = ORB_SVG + s.cur; if (b.innerHTML !== html) b.innerHTML = html;
     b.classList.toggle('off', !s.today); b.setAttribute('aria-label', orbTxt(s) + '. Abrir sua órbita de leitura'); };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 120); }).observe(TR, { childList: true, subtree: true }); setTimeout(paint, 800); }
-// cartão do Início (logo depois do Lendo agora)
+// cartão do Hoje (logo depois do Lendo agora)
 function orbCardHTML(compact) {
   const s = orbStats(), t = todayISO(), DW = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
   const wk = Array.from({ length: 7 }, (_, i) => orbAddDays(t, i - 6)).map((d) => { const on = s.days.has(d), off = !on && orbIsOff(d), hj = d === t;
     return '<span><i class="' + (on ? 'on' : '') + (off ? ' off' : '') + (hj ? ' hj' : '') + '"></i>' + (compact ? (hj ? 'hoje' : DW[new Date(d + 'T12:00:00').getDay()].slice(0, 1)) : hj ? 'hoje' : DW[new Date(d + 'T12:00:00').getDay()]) + '</span>'; }).join('');
-  if (compact) return '<button type="button" class="orb-card orb-sm" id="orb-card"><div class="orb-sh"><span class="orb-ic' + (s.today ? '' : ' off') + '"><img src="' + ORB_IMG + '" alt=""></span><span>Órbita</span></div><b class="orb-n">' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small class="orb-r">' + (s.today || !s.cur ? 'recorde ' + s.best : 'leia hoje para seguir') + '</small><div class="orb-wk">' + wk + '</div></button>';
-  return '<button type="button" class="orb-card" id="orb-card"><div class="orb-hd"><span class="orb-ic' + (s.today ? '' : ' off') + '"><img src="' + ORB_IMG + '" alt=""></span><div><b>' + orbTxt(s) + '</b><small>' + orbSub(s) + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div><div class="orb-wk">' + wk + '</div></button>';
+  if (compact) return '<button type="button" class="orb-card orb-sm" id="orb-card"><div class="orb-sh"><span class="orb-ic' + (s.today ? '' : ' off') + '">' + ORB_SVG + '</span><span>Órbita</span></div><b class="orb-n">' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small class="orb-r">' + (s.today || !s.cur ? 'recorde ' + s.best : 'leia hoje para seguir') + '</small><div class="orb-wk">' + wk + '</div></button>';
+  return '<button type="button" class="orb-card" id="orb-card"><div class="orb-hd"><span class="orb-ic' + (s.today ? '' : ' off') + '">' + ORB_SVG + '</span><div><b>' + orbTxt(s) + '</b><small>' + orbSub(s) + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div><div class="orb-wk">' + wk + '</div></button>';
 }
 { let tm = 0; const paint = () => {
     const box = TR.querySelector('#lista'); if (!box || S.tab !== 'inicio' || box.classList.contains('lista-snap')) return;
@@ -15561,7 +15565,7 @@ function openOrbita(ym) {
     }
     const minYM = ([...s.days.keys()].sort()[0] || t).slice(0, 7);
     v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Sua órbita de leitura</b><span></span></div>'
-      + '<div class="orb-pg"><div class="orb-big"><span class="orb-ic' + (s.today ? '' : ' off') + '"><img src="' + ORB_IMG + '" alt=""></span><div><b>' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small>' + (s.cur ? 'em órbita' + (s.since ? ' · sem parar desde ' + s.since.slice(8, 10) + '/' + s.since.slice(5, 7) : '') : 'fora de órbita') + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div>'
+      + '<div class="orb-pg"><div class="orb-big"><span class="orb-ic' + (s.today ? '' : ' off') + '">' + ORB_SVG + '</span><div><b>' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small>' + (s.cur ? 'em órbita' + (s.since ? ' · sem parar desde ' + s.since.slice(8, 10) + '/' + s.since.slice(5, 7) : '') : 'fora de órbita') + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div>'
       + '<p class="orb-tx">Cada dia em que você atualiza a página de um livro conta. Um dia sem leitura e a órbita recomeça. Dias de folga de um prazo não quebram a órbita.</p>'
       + '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (S.orbYM <= minYM ? ' disabled' : '') + '>‹</button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (S.orbYM >= t.slice(0, 7) ? ' disabled' : '') + '>›</button></div>'
       + '<p class="orb-sum">' + (nRead ? nRead + (nRead === 1 ? ' dia lido' : ' dias lidos') + ' · ' + pages.toLocaleString('pt-BR') + ' páginas' : 'Nenhuma leitura registrada neste mês') + '</p><div class="orb-g">' + cells + '</div>'
@@ -15660,7 +15664,7 @@ html .due-sh .dx{margin-top:.8rem!important;justify-self:center}
   }; }
 // --- a0_menu_lateral.js ---
 // Menu lateral reorganizado (Bia, 18/11): Minha leitura (Estatísticas, Órbita, Metas, Conquistas) · Meu acervo (Meus trechos,
-// Histórico de leituras, Posts salvos) · Pessoas (Amigos, com pedidos pendentes) · App (Personalizar Início, Instalar o app,
+// Histórico de leituras, Posts salvos) · Pessoas (Amigos, com pedidos pendentes) · App (Personalizar Hoje, Instalar o app,
 // Ajustes, Sair) · Moderação (Denúncias, só moderação). "Montar histórico" e "Ajustar leituras" viram "Histórico de leituras".
 // Estante ganha atalhos para Meus trechos e Histórico de leituras; os números do seu perfil abrem as Estatísticas.
 { const st = document.createElement('style'); st.textContent = `
@@ -15688,7 +15692,7 @@ function openSavedPosts() { S.comSeg = 'rede'; S.rdF = 'salvos'; goTab('comunida
       G('Minha leitura'), old('stats'), btn('orbita', 'orbita', 'Órbita de leitura', orb), old('goals'), old('ach'),
       G('Meu acervo'), old('quotes') || btn('quotes', 'mn_trechos', 'Meus trechos', nQ || ''), btn('hl', 'mn_historico', 'Histórico de leituras'), btn('salvos', 'mn_lista', 'Posts salvos', nS || ''),
       G('Pessoas'), old('friends'), btn('gifts', 'mn_lista', 'Presentes', (db.gifts || []).length ? String((db.gifts || []).length) : ''),
-      G('App'), btn('home', 'mn_ajustar', 'Personalizar Início'), (() => { try { return appInstalled() ? null : btn('inst', 'ic_instalar', 'Instalar o app'); } catch { return null; } })(), old('cfg'), out,
+      G('App'), btn('home', 'mn_ajustar', 'Personalizar Hoje'), (() => { try { return appInstalled() ? null : btn('inst', 'ic_instalar', 'Instalar o app'); } catch { return null; } })(), old('cfg'), out,
       ...((S.rd && S.rd.admin) || (typeof COVM !== 'undefined' && COVM.admin) ? [G('Moderação'), btn('mod', 'ic_privacidade', 'Denúncias')] : []),
     ].filter(Boolean);
     // pedidos de amizade pendentes em destaque
@@ -15774,7 +15778,7 @@ function qnPaint() {
   seg.after(box); try { paintCv(box); } catch {}
   box.querySelectorAll('.qn-gh').forEach((b) => b.addEventListener('click', () => { const e = byId(b.dataset.book); if (e) openBookPage(e); }));
 }
-// menu lateral e atalho da Estante com o nome novo
+// menu lateral e atalho da Biblioteca com o nome novo
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => {
     TR.querySelectorAll('.drw [data-go="quotes"], .drw [data-go2="quotes"]').forEach((b) => { if (b.dataset.qn) return; b.dataset.qn = '1'; [...b.childNodes].forEach((c) => { if (c.nodeType === 3 && /trechos/i.test(c.textContent)) c.textContent = 'Trechos e anotações'; }); });
     TR.querySelectorAll('.es-sc [data-a=q] b').forEach((b) => { if (b.textContent !== 'Trechos e anotações') { b.textContent = 'Trechos e anotações'; const n = lib().reduce((a, e) => a + (e.quotes || []).length + notesOf(e).length, 0), s = b.nextElementSibling; if (s) s.textContent = n ? n + ' guardados' : 'frases e notas dos livros'; } });
@@ -16436,7 +16440,7 @@ function rtCalSVG(D, w, anim) {
 // Ajustes de navegação (Bia, 18/11):
 // - o menu de baixo volta sempre que a conversa não está mais na tela (algumas saídas da conversa não o devolviam);
 // - Estatísticas e Leituras por mês: Voltar na mesma linha do ano; Amigos: "Encontrar leitores" vira uma lupa ao lado do Voltar;
-// - Ajustes sem "Sair da conta" (fica no menu lateral), sem "Personalizar Início" (vai para o ••• do Início) e sem
+// - Ajustes sem "Sair da conta" (fica no menu lateral), sem "Personalizar Hoje" (vai para o ••• do Hoje) e sem
 //   "Novidades no feed" (vai para o ••• da Comunidade); "Excluir conta" passa para Editar perfil;
 // - "Para você": tocar no livro sempre abre algo (menu do livro; se não abrir, a página do livro).
 { const st = document.createElement('style'); st.textContent = `
@@ -16464,7 +16468,7 @@ function rtCalSVG(D, w, anim) {
 // 3) Ajustes mais enxuto; Excluir conta em Editar perfil
 { const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
   try {
-    ['#aj-feed'].forEach((s) => box.querySelector(s)?.remove()); // Personalizar Início e Sair voltam para Ajustes: o topo não tem mais menu lateral nem ••• (Bia, 20/11)
+    ['#aj-feed'].forEach((s) => box.querySelector(s)?.remove()); // Personalizar Hoje e Sair voltam para Ajustes: o topo não tem mais menu lateral nem ••• (Bia, 20/11)
     const del = box.querySelector('#aj-del'); const delCard = del && del.closest('.aj-card');
     if (S.ajMode === 'perfil') { if (!del && connected()) { box.insertAdjacentHTML('beforeend', '<div class="aj-g">Conta</div><div class="aj-card"><button type="button" class="aj-row danger" id="aj-del"><span><b>Excluir conta</b><small>Apaga a conta e todos os dados dela, para sempre</small></span>›</button></div>'); box.querySelector('#aj-del').addEventListener('click', deleteAccountSheet); } }
     else if (delCard) delCard.remove();
@@ -16473,11 +16477,11 @@ function rtCalSVG(D, w, anim) {
     if (S.ajMode !== 'perfil') box.querySelectorAll('.aj-g').forEach((g) => { const n = g.nextElementSibling; if (!n || !n.classList.contains('aj-card')) g.remove(); });
   } catch (err) { console.warn('ajustes', err); }
   return r; }; }
-// 4) ••• do Início (na barra do topo, só no Início): Personalizar Início
+// 4) ••• do Hoje (na barra do topo, só no Hoje): Personalizar Hoje
 { let tm = 0; const sync = () => { const orb = TR.querySelector('#g-orb'); if (!orb) return; let b = TR.querySelector('#g-imore');
-    if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'g-imore'; b.className = 'g-imore'; b.textContent = '•••'; b.setAttribute('aria-label', 'Opções do Início'); orb.before(b);
-      b.addEventListener('click', () => popMenu(b, S.tab === 'estante' ? [{ label: 'Trechos e anotações', fn: () => openAllQuotes() }, { label: 'Histórico de leituras', fn: () => openHistLeituras() }, ...(lib().some((e) => !e.cover) ? [{ label: 'Buscar capas que faltam', fn: () => fillMissingCovers(true) }] : [])] : [{ label: 'Personalizar Início', fn: () => homePrefsSheet() }])); }
-    const v = $('#shelflist'); b.hidden = !((S.tab === 'inicio' || S.tab === 'estante') && (!v || v.hidden)); b.setAttribute('aria-label', S.tab === 'estante' ? 'Opções da Estante' : 'Opções do Início'); };
+    if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'g-imore'; b.className = 'g-imore'; b.textContent = '•••'; b.setAttribute('aria-label', 'Opções do Hoje'); orb.before(b);
+      b.addEventListener('click', () => popMenu(b, S.tab === 'estante' ? [{ label: 'Trechos e anotações', fn: () => openAllQuotes() }, { label: 'Histórico de leituras', fn: () => openHistLeituras() }, ...(lib().some((e) => !e.cover) ? [{ label: 'Buscar capas que faltam', fn: () => fillMissingCovers(true) }] : [])] : [{ label: 'Personalizar Hoje', fn: () => homePrefsSheet() }])); }
+    const v = $('#shelflist'); b.hidden = !((S.tab === 'inicio' || S.tab === 'estante') && (!v || v.hidden)); b.setAttribute('aria-label', S.tab === 'estante' ? 'Opções da Biblioteca' : 'Opções do Hoje'); };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; sync(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 // 5) ••• da Comunidade: Novidades no feed
 { const _rf = rdFiltersSheet; rdFiltersSheet = function () { const r = _rf.apply(this, arguments);
@@ -16493,7 +16497,7 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
   try { bookMenuOpen(cvEl || b, { title, author: author || null, cover }); } catch (err) { console.warn('para você', err); }
   setTimeout(() => { if (!TR.querySelector('.bkm')) { try { openAnyBook(title, author || null, cover); } catch {} } }, 150); }, true);
 // --- b0_estante_nova.js ---
-// Estante nova (Bia, 18/11): duas abas, "Minha biblioteca" (todos os livros, filtrados pela situação) e "Estantes" (as que a
+// Estante nova (Bia, 18/11): duas abas, "Biblioteca" (todos os livros, filtrados pela situação) e "Estantes" (as que a
 // pessoa cria). No topo, busca na hora, ⚙ (filtrar e organizar) e ＋ (adicionar livro ou nova estante). Na biblioteca, grade ou
 // lista. As estantes ficam compactas: nome, contagem, ＋ e •••, barra de quanto já foi lido e as capas.
 // Atalhos (Trechos e anotações, Histórico de leituras) vão para o ••• da barra do topo.
@@ -16564,7 +16568,7 @@ function esnSort(list, k) {
   if (k === 'nota') return L.sort((a, b) => (Number((reviewOfLib(b) || {}).paws) || 0) - (Number((reviewOfLib(a) || {}).paws) || 0));
   if (k === 'paginas') return L.sort((a, b) => (Number(b.totalPages) || 0) - (Number(a.totalPages) || 0));
   if (k === 'recentes') return L.sort((a, b) => String(b.addedAt || '').localeCompare(String(a.addedAt || '')));
-  return L; // conclusão: a ordem padrão da Minha biblioteca
+  return L; // conclusão: a ordem padrão da Biblioteca
 }
 function esnBook(e, mode) { const m = { ...es4Mark(e) }; const x = e.ex || {};
   if (x.loan) m.over += '<span class="ex-bdg" title="Emprestado"><i class=v3e data-i=swap></i></span>'; else if (x.own === 'pegou') m.over += '<span class="ex-bdg" title="Peguei emprestado"><i class=v3e data-i=friends></i></span>';
@@ -16582,7 +16586,7 @@ drawEstante = function (box) {
     if (P.own === 'quero') P.own = '';
     const chips = [P.own && ['own', { tenho: 'Tenho', emp: 'Emprestados', peg: 'Peguei emprestado' }[P.own]], P.nota && ['nota', { 5: '★ 5', 4: '★ 4 ou mais', 3: '★ 3 ou mais', none: 'Sem nota' }[P.nota]], P.fmt && ['fmt', { PAPER: 'Físico', EBOOK: 'E-book', AUDIO: 'Audiolivro' }[P.fmt]], P.gen && ['gen', P.gen]].filter(Boolean);
     body = `<div class="esn-seg">${ESN_ST.filter(([k]) => k === 'ALL' || cnt(k)).map(([k, n]) => `<button type="button" data-st="${k}" class="${P.st === k ? 'on' : ''}">${n}<small>${cnt(k)}</small></button>`).join('')}</div>`
-      /* linha de exemplar saiu da Estante (Bia, 20/11): Tenho/Emprestados/Peguei ficam no filtro; Quero ter mora em Você > Desejos */
+      /* linha de exemplar saiu da Biblioteca (Bia, 20/11): Tenho/Emprestados/Peguei ficam no filtro; Quero ter mora em Você > Desejos */
       + (chips.length ? `<div class="esn-chips">${chips.map(([k, n]) => `<button type="button" data-clr="${k}">${esc(n)} ×</button>`).join('')}</div>` : '')
       + `<div class="esn-bar"><b>${plural(list.length, 'livro', 'livros')}${q ? ` com “${esc(q)}”` : ''}</b><button type="button" data-a="sort">${esc((ESN_SORT.find((x) => x[0] === (P.sort || 'conclusao')) || ESN_SORT[0])[1])} ▾</button><button type="button" data-a="view" aria-label="${P.view === 'lista' ? 'Ver em grade' : 'Ver em lista'}">${P.view === 'lista' ? ESN_ICO.grid : ESN_ICO.list}</button></div>`
       + (list.length ? (P.view === 'lista' ? `<div class="esn-list">${list.map((e) => esnBook(e, 'lista')).join('')}</div>` : `<div class="esn-grid">${list.map((e) => esnBook(e, 'grade')).join('')}</div>`)
@@ -16599,7 +16603,7 @@ drawEstante = function (box) {
   }
   box.innerHTML = `<div class="esn-top"><label class="esn-q">${ESN_ICO.q}<input type="search" id="esn-q" placeholder="${P.tab === 'bib' ? 'Buscar título, autor ou gênero' : 'Buscar estante ou livro'}" value="${esc(q)}" autocomplete="off">${q ? '<button type="button" data-a="clrq" aria-label="Limpar busca">×</button>' : ''}</label>`
     + `<button type="button" class="esn-ib" data-a="filt" aria-label="Filtrar e organizar">${ESN_ICO.f}${nAdv ? `<u>${nAdv}</u>` : ''}</button><button type="button" class="esn-ib acc" data-a="add" aria-label="Adicionar">＋</button></div>`
-    + `<div class="esn-tabs"><button type="button" data-tab="bib" class="${P.tab === 'bib' ? 'on' : ''}">Minha biblioteca</button><button type="button" data-tab="est" class="${P.tab === 'est' ? 'on' : ''}">Estantes${mine.length ? ' · ' + mine.length : ''}</button></div>` + body;
+    + `<div class="esn-tabs"><button type="button" data-tab="bib" class="${P.tab === 'bib' ? 'on' : ''}">Biblioteca</button><button type="button" data-tab="est" class="${P.tab === 'est' ? 'on' : ''}">Estantes${mine.length ? ' · ' + mine.length : ''}</button></div>` + body;
   paintCv(box);
   const redraw = (keepFocus) => { const pos = box.scrollTop; drawEstante(box); box.scrollTop = pos; if (keepFocus) { const i = box.querySelector('#esn-q'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } } };
   { let tm = 0; box.querySelector('#esn-q').addEventListener('input', (ev) => { S.esnQ = ev.target.value; clearTimeout(tm); tm = setTimeout(() => redraw(true), 200); }); }
@@ -16642,7 +16646,7 @@ function esnFilterSheet(redraw) {
 // Emprestar não muda o exemplar (teste 26, 20/11): o formato vem do livro; "Voltou" devolve o exemplar como estava.
 // Meu exemplar (Bia, 19/11): separado da situação de leitura. e.ex = { own: 'tenho'|'quero'|'pegou', fmt, tags, loan, borrow, log }.
 // Tenho (com formato e detalhes) e emprestar (para quem, quando, até quando); Quero ter (aparece no perfil para presentes);
-// Peguei emprestado (de quem, quando, até quando). Lembrete de devolução no Início. A amiga ainda não vê o empréstimo do lado
+// Peguei emprestado (de quem, quando, até quando). Lembrete de devolução no Hoje. A amiga ainda não vê o empréstimo do lado
 // dela (fase 2, precisa da API).
 { const st = document.createElement('style'); st.textContent = `
 .ex-2col{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;align-items:end}.ex-2col .ex-f{margin:0;min-width:0}.ex-2col .ex-f label small{font-weight:600;color:var(--ink-2);font-size:.72rem}.ex-2col input{width:100%;box-sizing:border-box;min-height:44px}
@@ -16968,7 +16972,7 @@ drawTabbar = function () {
   const bar = $('#tabbar'); if (!bar) return; const h = drawHud(), cur = v2OnTab();
   bar.classList.add('v2bar');
   const av = `<span class="tb-av" style="${h.ph ? `background-image:${cssUrl(h.ph)}` : ''}">${h.ph ? '' : esc(initial((typeof socialProfile !== 'undefined' && socialProfile && socialProfile.displayName) || h.name))}</span>`;
-  const html = [['inicio', 'Hoje'], ['estante', 'Estante'], ['ler', 'Ler'], ['comunidade', 'Comunidade'], ['eu', 'Você']].map(([k, n]) => k === 'ler'
+  const html = [['inicio', 'Hoje'], ['estante', 'Biblioteca'], ['ler', 'Ler'], ['comunidade', 'Comunidade'], ['eu', 'Você']].map(([k, n]) => k === 'ler'
     ? `<button type="button" class="v2ler" data-tab="ler" aria-label="Ler agora: começar uma sessão de leitura"><span class="pl">${V2SVG('ler')}</span><small>Ler</small></button>`
     : `<button type="button" data-tab="${k}" class="${cur === k ? 'on' : ''}" aria-current="${cur === k}">${k === 'eu' ? av : V2SVG(k)}<small>${n}</small></button>`).join('');
   // só remonta a barra quando algo mudou (antes era remontada a cada tique, mesmo igual)
@@ -16994,7 +16998,7 @@ drawTabbar();
 { const _dh = drawHud; drawHud = function () { const r = _dh.apply(this, arguments); const a = document.querySelector('#tabbar .tb-av'); if (a) { a.textContent = r.ph ? '' : initial((typeof socialProfile !== 'undefined' && socialProfile && socialProfile.displayName) || r.name); a.style.backgroundImage = r.ph ? cssUrl(r.ph) : ''; } return r; }; }
 // --- b5_v2_sessao.js ---
 // v2 fase 1 (Bia, 18/11): Ler = sessão de leitura. Céu escuro com o livro, anel de progresso e cronômetro; "Virei a página",
-// −/+10; Trecho e Anotação abrem o diário do próprio livro; "Só marcar a página" abre o Atualizar de sempre.
+// −/+10; Trecho e Anotação abrem o diário do próprio livro; "Atualizar página" abre o Atualizar de sempre.
 // Encerrar mostra o resumo (minutos, páginas, ritmo, como foi) e Salvar registra pelo mesmo caminho do foco/Atualizar
 // (quickLog para livro de meta, libLog para os demais), então histórico, prazo, metas e sincronização seguem iguais.
 // A sessão fica guardada no aparelho (bear.ses) e continua se o app fechar. Ecos ficam para quando houver servidor.
@@ -17049,7 +17053,7 @@ function v2Ler() {
   if (lendo.length === 1) return v2SesStart(lendo[0]);
   if (lendo.length > 1) return sheetList('Ler qual livro agora?', lendo.map((e) => { const i = readingInfo(e); return { label: esc(e.title), sub: i.total ? `pág. ${i.now} de ${i.total}` : '', fn: () => v2SesStart(e) }; }));
   const fila = lib().filter((e) => e.status === 'QUERO').slice(0, 8);
-  if (!fila.length) return toast('Adicione um livro na Estante para começar a ler');
+  if (!fila.length) return toast('Adicione um livro na Biblioteca para começar a ler');
   sheetList('Você não está lendo nenhum livro. Qual começa agora?', fila.map((e) => ({ label: esc(e.title), sub: e.author ? esc(e.author) : '', fn: () => { setLibStatus(e, 'LENDO'); if (e.status === 'LENDO') v2SesStart(e); } })));
 }
 function v2SesStart(e) {
@@ -17065,13 +17069,13 @@ function v2SesOpen(e, s) {
   const draw = () => {
     const { total } = readingInfo(e), p = total ? Math.min(1, s.pg / total) : 0, a = p * 2 * Math.PI - Math.PI / 2, mx = 95 + 84 * Math.cos(a), my = 95 + 84 * Math.sin(a);
     w.innerHTML = `<div class="sky">${stars}</div>
-      <div class="top"><button type="button" data-a="end">✕ Encerrar</button><button type="button" data-a="min">Minimizar</button></div>
+      <div class="top"><button type="button" data-a="end">Encerrar</button><button type="button" data-a="min">Minimizar</button></div>
       <div class="mid"><div class="orb"><svg viewBox="0 0 190 190"><circle cx="95" cy="95" r="84" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="5"/><circle cx="95" cy="95" r="84" fill="none" stroke="#e0ad3a" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(p * 527.8).toFixed(1)} 528" transform="rotate(-90 95 95)"/></svg>
         ${e.cover ? `<img class="cv" src="${esc(e.cover)}" alt="">` : `<span class="cv">${esc(String(e.title || '?').charAt(0))}</span>`}<span class="moon" style="left:${mx.toFixed(1)}px;top:${my.toFixed(1)}px"></span></div>
         <div class="bt">${esc(e.title)}</div><div class="tm" id="v2tm">${v2Clock(s)}</div>
         <div class="pgl"><span>começou na pág. <b>${s.pg0}</b> de ${total}</span></div>
         <p class="calm">Leia em paz. Quando parar, toque em <b>Encerrar</b> e diga em que página ficou.</p>
-        <button type="button" class="just" data-a="just">Só marcar a página, sem cronômetro</button></div>
+        <button type="button" class="just" data-a="just">Atualizar página, sem cronômetro</button></div>
       <div class="tools"><button type="button" data-a="qt">${v2Svg('qt')}Trecho</button><button type="button" data-a="nt">${v2Svg('nt')}Anotação</button></div>`;
   };
   const diary = (pane) => { w.hidden = true; ssOpenUpdate(e); const ed = $('#editor');
@@ -17140,7 +17144,7 @@ function v2SesEnd(e, s, w) {
 // v2 (Bia, 18/11): um caminho só para cada coisa.
 //  - Foco virou a sessão Ler: o botão Foco sai do card do Hoje e todo "Foco" que sobrou (menu do livro, atalhos) abre a sessão
 //    do livro. Um foco antigo ainda em andamento continua abrindo o foco, para não perder o tempo contado.
-//  - Menu lateral sem o que já tem lugar fixo: Ajustes (aba Você) e Personalizar Início (••• do Hoje).
+//  - Menu lateral sem o que já tem lugar fixo: Ajustes (aba Você) e Personalizar Hoje (••• do Hoje).
 { const _sf = startFocus;
   startFocus = function () {
     try { if (focusRunning()) return _sf.apply(this, arguments); } catch {}
@@ -17341,7 +17345,7 @@ document.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape') return;
 //  - "Pergunta do dia": uma pergunta por dia (fixa pela data), sem spoiler. As respostas são livros da pessoa;
 //    tocar abre o post novo da Rede já com o livro e a pergunta, para a pessoa escrever e publicar (nunca publica
 //    sozinho). Depois de responder, o cartão mostra "Você respondeu: …" naquele dia (db.prefs.qday).
-//    Entra em Personalizar Início ("Pergunta do dia"): dá para desligar e mudar de lugar.
+//    Entra em Personalizar Hoje ("Pergunta do dia"): dá para desligar e mudar de lugar.
 { const st = document.createElement('style'); st.textContent = `
 .v2-qn,.v2-qd{grid-column:1/-1}
 .v2-qn{display:flex;align-items:center;justify-content:space-between;gap:.6rem;width:100%;margin:0 0 .9rem;padding:.65rem .85rem;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
@@ -17433,7 +17437,7 @@ function v2QAnswer(id) {
   db.prefs = { ...(db.prefs || {}), qday: { date: v2Today(), answer: e ? e.title : 'Outro livro' } }; save();
   try { openRdComposer({ kind: 'comment', book, text: `Pergunta do dia: ${q}\n` }); } catch (err) { console.warn('pergunta do dia', err); }
 }
-// Personalizar Início: a Pergunta do dia vira uma seção que liga/desliga e muda de lugar
+// Personalizar Hoje: a Pergunta do dia vira uma seção que liga/desliga e muda de lugar
 if (!HOME_SECS.some((x) => x[0] === 'qday')) HOME_SECS.splice(0, 0, ['qday', 'Pergunta do dia']);
 const V2_SEC_EL = {
   recs: (box) => [box.querySelector('#rc-host')],
@@ -17454,7 +17458,7 @@ function v2HojeEnsure() {
     if (unit && unit.previousElementSibling === now) at = unit;
     if (at.nextElementSibling !== qn) at.after(qn);
   }
-  // Pergunta do dia: no lugar escolhido em Personalizar Início
+  // Pergunta do dia: no lugar escolhido em Personalizar Hoje
   const { order, off } = homePrefs(); let qd = box.querySelector('[data-v2qd]');
   if (off.includes('qday')) { qd && qd.remove(); return; }
   // a chave ignora o id da capa (data-cvk muda a cada desenho): antes o cartão era trocado sem parar e piscava com o "A seguir"
@@ -17514,7 +17518,7 @@ Object.assign(V2I, {
 //  - "Atualizar página" como botão principal (a sessão de leitura fica só no Ler do menu de baixo, 19/11), "•••" (o menu do livro de sempre). Vários livros em leitura: troca rápida.
 //  - Embaixo, nesta ordem: prazo da semana (o cartão antigo enxuto), Pergunta do dia, Órbita + Meta lado a lado,
 //    Qual leio agora + Na fila, e o resto (indicações, Comunidade…). O cartão grande "Lendo agora" e a "Próxima conquista" saem.
-//  - A ordem vem do CSS (grid + order); Personalizar Início continua ligando e desligando as seções.
+//  - A ordem vem do CSS (grid + order); Personalizar Hoje continua ligando e desligando as seções.
 { const st = document.createElement('style'); st.textContent = `
 .v3-colA.v2h{display:grid!important;grid-template-columns:1fr 1fr;column-gap:.75rem;align-items:start}
 .v3-colA.v2h > *{grid-column:1/-1;order:20;min-width:0}
@@ -18016,7 +18020,7 @@ async function v2RsShare(M, d) {
 // v2 etapa 2 (19/11, branch livroverso-2): folhas, menus flutuantes, botões e campos no padrão novo, no app inteiro.
 //  - Folhas (#editor compacto, .sheet antiga, painel de filtro): cantos 26px em cima, puxador, título em serifa,
 //    linhas de opção com raio 14px e toque suave.
-//  - Menus flutuantes (.pop, .bkm do livro, painel da Estante): cartão de 18px, sombra macia, itens com raio 12px.
+//  - Menus flutuantes (.pop, .bkm do livro, painel da Biblioteca): cartão de 18px, sombra macia, itens com raio 12px.
 //  - Botões: principal em degradê do acento (o mesmo do "Ler agora"); secundário claro com borda.
 //  - Campos: raio 14px, fundo do tema, foco com anel do acento.
 //  - Abas em pílula (segmentado), iguais às de Avisos, para todas as telas que usam .v3-seg.
@@ -18066,7 +18070,7 @@ async function v2RsShare(M, d) {
   // a folha antiga (sheet) e a avaliação em página inteira ficam no document.body, fora do shadow root: mesmo estilo lá
   const hd = document.createElement('style'); hd.textContent = ":root{--v2-r:20px;--v2-sh:0 1px 2px rgba(60,35,10,.05),0 8px 22px rgba(60,35,10,.06);--v2-disp:Georgia,'Times New Roman',serif}" + st.textContent.replace(/:host{/g, ':root{'); document.head.append(hd); }
 // --- c7_v2_estante.js ---
-// v2 etapa 2 (19/11): Estante no padrão novo (Minha biblioteca e Estantes).
+// v2 etapa 2 (19/11): Estante no padrão novo (Biblioteca e Estantes).
 //  - Cabeçalho como o do Hoje: rótulo pequeno + título em serifa + resumo ("13 livros · 7 lidos").
 //  - Busca em pílula, filtro redondo, "+" no degradê do acento; abas em pílula (c6); filtros de status mais leves.
 //  - Capas com cantos e sombra de livro; nota vira selo redondo no canto de baixo (mesmas cores: 5 furta-cor, ouro,
@@ -18151,7 +18155,7 @@ async function v2RsShare(M, d) {
     if (top) {
       const tabOn = (L.querySelector('.esn-tabs .on') || {}).textContent || '';
       const lib0 = lib(), lidos = lib0.filter((e) => e.status === 'LIDO').length, nSh = (db.shelves || []).length;
-      const est = /Estantes/.test(tabOn), title = est ? 'Suas estantes' : 'Minha biblioteca';
+      const est = /Estantes/.test(tabOn), title = est ? 'Suas estantes' : 'Biblioteca';
       const sub = est ? (nSh ? `${nSh} ${nSh === 1 ? 'estante' : 'estantes'}` : 'Monte listas do seu jeito') : `${lib0.length} ${lib0.length === 1 ? 'livro' : 'livros'} · ${lidos} ${lidos === 1 ? 'lido' : 'lidos'}`;
       let h = L.querySelector('.v2-eh');
       const html = `<div class="eb">Sua estante</div><h1>${esc(title)}</h1><small>${esc(sub)}</small>`;
@@ -18535,7 +18539,7 @@ body > * input[type=checkbox]:not(.v2-raw):checked{background:#c46f2e ${CHK} cen
 //     com 2+ pessoas, duas iniciais e "+N"); toque na capa abre a página do livro, segurar abre o menu do livro;
 //  3. "Também lendo" (troca o livro do Hoje); 4. linha Prazo · Órbita · Meta; 5. destaque do dia: UM cartão só
 //     (lembrete de empréstimo/presente > Resumo do mês nos dias 1–7 > Pergunta do dia); 6. A seguir (próxima da fila,
-//     "Qual leio agora?"); 7. indicações recebidas; 8. Para você. Personalizar Início e Funções do app continuam valendo.
+//     "Qual leio agora?"); 7. indicações recebidas; 8. Para você. Personalizar Hoje e Funções do app continuam valendo.
 Object.assign(V2I, { qt: '<path class="d" d="M5 17c-1.5-1-2-2.5-2-4.5C3 9 5 7 8 6.5v3c-1.3.5-2 1.4-2 2.6h2V17zM14 17c-1.5-1-2-2.5-2-4.5 0-3.5 2-5.5 5-6v3c-1.3.5-2 1.4-2 2.6h2V17z"/><path d="M5 17c-1.5-1-2-2.5-2-4.5C3 9 5 7 8 6.5v3c-1.3.5-2 1.4-2 2.6h2V17zM14 17c-1.5-1-2-2.5-2-4.5 0-3.5 2-5.5 5-6v3c-1.3.5-2 1.4-2 2.6h2V17z"/>' });
 { const st = document.createElement('style'); st.textContent = `
 .v3-colA.v3h{display:flex!important;flex-direction:column}
@@ -18621,7 +18625,7 @@ function v3HeroHTML(col) {
   const dueBox = due ? `<button type="button" class="eta due${due.ok ? ' ok' : ''}" data-h3="prazo"><span class="dt">${due.late ? 'O prazo passou' : due.ok ? 'Leitura de hoje feita' : due.off ? 'Hoje é folga' : `Hoje, leia até a <b>pág. ${due.target}</b>`}</span><small>${CAL}${due.late ? 'escolha uma data nova' : due.ok || due.off ? 'prazo ' + due.dow : 'faltam ' + due.falta + ' pág. · prazo ' + due.dow}</small></button>` : '';
   // arco pontilhado: da página atual até a meta de hoje
   let goalArc = ''; if (due && !due.ok && !due.off && !due.late && total && due.target > now) { const q1 = now / total, q2 = Math.min(1, due.target / total); goalArc = `<circle cx="88" cy="88" r="72" fill="none" stroke="#c46f2e" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="0.1 7" stroke-dashoffset="${(-q1 * 452.4).toFixed(1)}" pathLength="452.4" transform="rotate(-90 88 88)" opacity=".9" style="stroke-dasharray:0.1 7;clip-path:none" data-q2="${q2}"/>`; goalArc = `<path d="${(() => { const P = (q) => { const a = q * 2 * Math.PI - Math.PI / 2; return [(88 + 72 * Math.cos(a)).toFixed(2), (88 + 72 * Math.sin(a)).toFixed(2)]; }; const [x1, y1] = P(q1), [x2, y2] = P(q2); return 'M' + x1 + ' ' + y1 + ' A72 72 0 ' + (q2 - q1 > 0.5 ? 1 : 0) + ' 1 ' + x2 + ' ' + y2; })()}" fill="none" stroke="#c46f2e" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="0.1 7" opacity=".9"/>`; }
-  // linha do dia: Prazo · Órbita · Meta (some o que estiver desligado em Funções do app / Personalizar Início)
+  // linha do dia: Prazo · Órbita · Meta (some o que estiver desligado em Funções do app / Personalizar Hoje)
   const tiles = [];
   if (false) {
     let pz = { b: '+ Prazo', s: 'quando terminar', off: false };
@@ -18697,7 +18701,7 @@ function v3Bind(n) {
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true }); setTimeout(put, 900); }
 // --- e1_v2_ler3.js ---
 // v3 Ler (Bia, 19/11): o botão do meio abre direto o livro do Hoje (antes perguntava "Ler qual livro agora?" a quem lia
-// mais de um). A tela de antes da sessão tem Começar a ler, Trocar livro (lendo + fila) e Só marcar a página.
+// mais de um). A tela de antes da sessão tem Começar a ler, Trocar livro (lendo + fila) e Atualizar página.
 // Sessão em andamento continua abrindo direto, e sem nenhum livro em leitura segue oferecendo a fila.
 { const st = document.createElement('style'); st.textContent = `
 .v3pre .mid{gap:.35rem}
@@ -18714,12 +18718,12 @@ function v3LerPre(e) {
     const { now, total } = readingInfo(e), p = total ? Math.min(1, now / total) : 0, a = p * 2 * Math.PI - Math.PI / 2, mx = 95 + 84 * Math.cos(a), my = 95 + 84 * Math.sin(a);
     const can = lib().filter((x) => (x.status === 'LENDO' || x.status === 'QUERO') && x.id !== e.id).length;
     w.innerHTML = `<div class="sky">${stars}</div>
-      <div class="top"><button type="button" data-a="x" aria-label="Fechar">✕</button>${can ? '<button type="button" data-a="sw">Trocar livro</button>' : '<span></span>'}</div>
+      <div class="top"><button type="button" data-a="x" aria-label="Fechar">${(() => { try { return v4ic('x', 18); } catch { return '✕'; } })()}</button>${can ? '<button type="button" data-a="sw">Trocar livro</button>' : '<span></span>'}</div>
       <div class="mid"><div class="orb"><svg viewBox="0 0 190 190"><circle cx="95" cy="95" r="84" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="5"/><circle cx="95" cy="95" r="84" fill="none" stroke="#e0ad3a" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(p * 527.8).toFixed(1)} 528" transform="rotate(-90 95 95)"/></svg>
         ${e.cover ? `<img class="cv" src="${esc(e.cover)}" alt="">` : `<span class="cv">${esc(String(e.title || '?').charAt(0))}</span>`}<span class="moon" style="left:${mx.toFixed(1)}px;top:${my.toFixed(1)}px"></span></div>
         <div class="bt">${esc(e.title)}</div><div class="sub">${total ? `você está na pág. ${now} de ${total}` : `você está na pág. ${now}`}</div>
         <p class="calm">Um toque e o tempo começa a contar. Quando parar, é só dizer em que página ficou.</p></div>
-      <div class="go"><button type="button" class="flip" data-a="go">${V2SVG('ler', 20)}Começar a ler</button><button type="button" class="two" data-a="pg">Só marcar a página</button></div>`;
+      <div class="go"><button type="button" class="flip" data-a="go">${V2SVG('ler', 20)}Começar a ler</button><button type="button" class="two" data-a="pg">Atualizar página</button></div>`;
   };
   w.addEventListener('click', (ev) => { const b = ev.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a;
     if (a === 'x') return w.remove();
@@ -18735,10 +18739,12 @@ v2Ler = function () {
   const s = v2SesGet(); if (s) { const e = lib().find((x) => x.id === s.libId); if (e) return v2SesOpen(e, s); v2SesPut(null); }
   const R = reading(); if (R && R.e) return v3LerPre(R.e);
   const fila = lib().filter((e) => e.status === 'QUERO').slice(0, 8);
-  if (!fila.length) return toast('Adicione um livro na Estante para começar a ler');
+  if (!fila.length) return toast('Adicione um livro na Biblioteca para começar a ler');
   sheetList('Você não está lendo nenhum livro. Qual começa agora?', fila.map((e) => ({ label: esc(e.title), sub: e.author ? esc(e.author) : '', fn: () => { setLibStatus(e, 'LENDO'); if (e.status === 'LENDO') v3LerPre(e); } })));
 };
 // --- f0_v2_desejos.js ---
+// ícone de traço no lugar de ✓/✕ de texto (Bia, 20/11: acabamento)
+const v10ic = (k) => { try { return v4ic(k, 18); } catch { return k === 'ok' ? '✓' : '✕'; } };
 // v2 Desejos e Presentes (Bia, 19/11/2026, branch livroverso-2; desenho aprovado no protótipo v3).
 //  Desejos mora na aba Desejos do perfil (bloco f3_v2_perfil3). Desejos = a lista "Quero ter" em grade de capas.
 //   - Seu: dica no topo, "+ Adicionar" como primeiro item (busca e marca Quero ter), esconder/mostrar para as amizades.
@@ -18861,10 +18867,10 @@ function gfManage(g, after) {
   const who = gfFirst(g.name || '@' + g.h);
   const sh = gfSheetBox('gfm-sh', '<div class="ex-hd">' + cvh(g.title, g.cover, '') + '<div><b>Presente para ' + esc(who) + '</b><small>' + esc(g.title) + (g.due ? ' · reservado até ' + exD(g.due) : '') + '</small></div></div>'
     + '<div class="gfm-l">'
-    + '<button type="button" data-a="given"><i>✓</i><span><b>Já dei</b><small>sai de Vou dar; ' + esc(who) + ' passa a ver em Ganhei</small></span></button>'
+    + '<button type="button" data-a="given"><i>' + v10ic('ok') + '</i><span><b>Já dei</b><small>sai de Vou dar; ' + esc(who) + ' passa a ver em Ganhei</small></span></button>'
     + '<button type="button" data-a="date"><i><i class=v3e data-i=cal></i></i><span><b>Mudar a data</b><small>adiar ou antecipar a reserva</small></span></button>'
     + '<button type="button" data-a="buy"><i><i class=v3e data-i=cart></i></i><span><b>Onde comprar</b><small>lojas com o livro já buscado</small></span></button>'
-    + '<button type="button" class="dng" data-a="quit"><i>✕</i><span><b>Não vou mais dar</b><small>o livro volta a ficar livre para outras pessoas</small></span></button>'
+    + '<button type="button" class="dng" data-a="quit"><i>' + v10ic('x') + '</i><span><b>Não vou mais dar</b><small>o livro volta a ficar livre para outras pessoas</small></span></button>'
     + '</div><div class="acts" style="grid-template-columns:1fr"><button type="button" data-a="x">Fechar</button></div>');
   const close = () => sh.remove();
   sh.querySelector('[data-a=x]').addEventListener('click', close); sh.addEventListener('click', (ev) => { if (ev.target === sh) close(); });
@@ -18929,7 +18935,7 @@ async function v2WishPaint(v, d, host) {
   host = host || v.querySelector('.v3pane[data-k=des]') || v.querySelector('.sl-body');
   let p = host.querySelector('.v2wish'); if (!p) { p = document.createElement('section'); p.className = 'v2wish'; host.append(p); }
   const P = db.prefs || {}, mine = !!d.self, who = gfFirst(d.displayName || '@' + d.handle);
-  const tip = (k, txt) => (P[k] ? '' : '<div class="v2tip"><span><b>Dica:</b> ' + txt + '</span><button type="button" data-tip="' + k + '" aria-label="Entendi">✕</button></div>');
+  const tip = (k, txt) => (P[k] ? '' : '<div class="v2tip"><span><b>Dica:</b> ' + txt + '</span><button type="button" data-tip="' + k + '" aria-label="Entendi">' + v10ic('x') + '</button></div>');
   if (mine) {
     const L = v2WishMine(), hide = !!P.wishHide;
     p.innerHTML = tip('tipWm', 'suas amizades podem marcar “Vou dar” nesta lista. Você não fica sabendo quem, para não estragar a surpresa.')
@@ -19522,10 +19528,10 @@ Object.assign(V3EMO, { quote: '<path d="M10 7H6a2 2 0 0 0-2 2v3h5v5H4M20 7h-4a2 
 // o seletor agrupado (anotação/trecho no Lendo) mostra os dois grupos; o título do grupo "Mais" some junto com as escondidas
 { const st = document.createElement('style'); st.textContent = '.fe-gt:nth-of-type(n+2){display:none}'; TR.append(st); }
 // --- f7_v2_topo_sem_menu.js ---
-// Topo como no protótipo (Bia, 20/11): só a marca, a lupa e o sino. Saem o menu lateral (☰) e o "•••" do Início/Estante.
+// Topo como no protótipo (Bia, 20/11): só a marca, a lupa e o sino. Saem o menu lateral (☰) e o "•••" do Hoje/Estante.
 // O que só existia neles mudou de lugar:
-//  - Personalizar Início, Sair da conta → Ajustes (voltaram; ver a9);
-//  - Trechos e anotações → aba "Trechos" na Estante (como no protótipo);
+//  - Personalizar Hoje, Sair da conta → Ajustes (voltaram; ver a9);
+//  - Trechos e anotações → aba "Trechos" na Biblioteca (como no protótipo);
 //  - Histórico de leituras, Buscar capas que faltam, Denúncias (moderação) → Ajustes › "Seus livros" / "Moderação";
 //  - Estatísticas, Resumo, Órbita, Metas, Presentes → Você › Minha leitura; Amigos → "N amizades" no perfil;
 //    Posts salvos → Comunidade › Salvos; Instalar o app → Ajustes (e o aviso de instalar).
@@ -19552,7 +19558,7 @@ Object.assign(V3EMO, { quote: '<path d="M10 7H6a2 2 0 0 0-2 2v3h5v5H4M20 7h-4a2 
   return r; }; }
 // --- f8_v2_capa_tocar_segurar.js ---
 // Capa de livro como no protótipo (Bia, 20/11): TOCAR abre a página do livro; SEGURAR (~450 ms) abre o menu rápido do livro
-// (no computador, clique direito também). Vale para as capas da Estante, listas, Comunidade, perfil e "Para você".
+// (no computador, clique direito também). Vale para as capas da Biblioteca, listas, Comunidade, perfil e "Para você".
 // Antes, tocar abria o menu. Segurar não dispara o toque, não abre o menu do navegador nem seleciona texto, e rolar a tela
 // (dedo andou mais de 10 px) não abre nada. O anel do livro no Hoje já tinha esse comportamento (e0) e fica de fora daqui.
 { const SEL = '.es-bk, .v3-hb, .cs-bk, .tr-bk, .fd-post .nv-cv, .rc-it .cv, .fr-read, .fl-bk, .pv-bk';
@@ -19578,7 +19584,7 @@ Object.assign(V3EMO, { quote: '<path d="M10 7H6a2 2 0 0 0-2 2v3h5v5H4M20 7h-4a2 
   document.addEventListener('click', (ev) => { if (Date.now() - fired < 900) { fired = 0; ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); return; } // o clique que o celular solta ao levantar o dedo (cairia num item do menu que acabou de abrir)
     const n = hit(ev); if (!n) return; ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
     const b = bookOf(n); if (b) openPage(b); }, true); }
-// Dica no topo da Estante (como no protótipo), some ao tocar no X e não volta
+// Dica no topo da Biblioteca (como no protótipo), some ao tocar no X e não volta
 { const st = document.createElement('style'); st.textContent = '.v3tip{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin:0 0 12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,#7e63c9 14%,var(--panel));border:1px solid color-mix(in srgb,#7e63c9 30%,var(--line));font-size:12.5px;line-height:1.4;color:var(--ink-2)}.v3tip b{color:var(--ink)}.v3tip button{flex:none;border:0;background:none;color:var(--ink-2);font:inherit;font-size:16px;line-height:1;padding:0 2px;cursor:pointer}'; TR.append(st);
   let tm = 0; const put = () => { if (S.tab !== 'estante' || ((db.prefs || {}).tipCapa)) return; const seg = TR.querySelector('#lista .esn-seg'); if (!seg || seg.parentElement.querySelector('.v3tip')) return;
     seg.insertAdjacentHTML('afterend', '<div class="v3tip"><span><b>Dica:</b> toque na capa para abrir o livro; segure para atualizar, terminar ou mudar o status sem abrir.</span><button type="button" aria-label="Entendi">×</button></div>');
@@ -19645,7 +19651,7 @@ const v4PageTitle = () => (v4Avisos() ? 'Avisos' : v4Busca() ? 'Buscar' : '');
 // --- g0_v2_ler_v4.js ---
 // v4 Ler, Atualizar e Terminei (Bia, 20/11; etapas 2 e 3 do alinhamento com o protótipo v3 https://claude.ai/artifact/FZDpofzVvP8EJjSrugBoJc).
 // Telas numa camada própria (.v4ler, dentro de um shadow root próprio) com o CSS do protótipo isolado (tokens ligados aos do app).
-// - Ler (botão do meio): folha "Entrar no silêncio / Atualizar páginas lidas"; tela antes de começar (capa grande na órbita, outro livro ao longe,
+// - Ler (botão do meio): folha "Entrar no silêncio / Atualizar página"; tela antes de começar (capa grande na órbita, outro livro ao longe,
 //   deslizar troca, meta pontilhada, ecos à frente com (?), tempo); sessão (cronômetro que só troca o próprio texto, pausa, quadro da página com o
 //   painel página/%/tempo, ecos subindo por trás, Trecho por foto, Anotar com ditar e foto vira texto, Deixar um eco, som ambiente, resumo).
 // - Ecos de verdade pela API (GET/POST /v1/echoes): o texto só chega depois da página; antes, só a posição.
@@ -19659,7 +19665,7 @@ const V4ICON = {
   estante:'<rect class="d" x="3.5" y="5" width="4.2" height="15" rx="1.2"/><rect x="3.5" y="5" width="4.2" height="15" rx="1.2"/><rect x="9.6" y="3.5" width="4.2" height="16.5" rx="1.2"/><path d="M15.8 6.4l3.7-.9 3 13.8-3.7.8z"/>',
   ler:'<path class="d" d="M12 6.6C9.8 5 6.8 4.5 3 5v13.2c3.8-.5 6.8 0 9 1.6 2.2-1.6 5.2-2.1 9-1.6V5c-3.8-.5-6.8 0-9 1.6z"/><path d="M12 6.6C9.8 5 6.8 4.5 3 5v13.2c3.8-.5 6.8 0 9 1.6 2.2-1.6 5.2-2.1 9-1.6V5c-3.8-.5-6.8 0-9 1.6zM12 6.6v13.2"/>',
   com:'<path class="d" d="M4 6.5A3.5 3.5 0 0 1 7.5 3h7A3.5 3.5 0 0 1 18 6.5v4a3.5 3.5 0 0 1-3.5 3.5H9l-4 3v-3.4A3.5 3.5 0 0 1 4 10.5z"/><path d="M4 6.5A3.5 3.5 0 0 1 7.5 3h7A3.5 3.5 0 0 1 18 6.5v4a3.5 3.5 0 0 1-3.5 3.5H9l-4 3v-3.4A3.5 3.5 0 0 1 4 10.5zM20.5 9.5v5a3 3 0 0 1-1 2.2V20l-3-2h-4"/>',
-  busca:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/>',
+  busca:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/>', globe:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.6 3.5 5.4 3.5 8.5s-1.1 5.9-3.5 8.5c-2.4-2.6-3.5-5.4-3.5-8.5s1.1-5.9 3.5-8.5z"/>',
   sino:'<path class="d" d="M6 10a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 15 6 10z"/><path d="M6 10a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 15 6 10zM10 20a2.2 2.2 0 0 0 4 0"/>',
   dots:'<circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/>',
   back:'<path d="M15 5l-7 7 7 7"/>', x:'<path d="M6 6l12 12M18 6 6 18"/>', plus:'<path d="M12 5v14M5 12h14"/>',
@@ -19758,7 +19764,7 @@ function v4Orb(e, pg) {
 v2Ler = function () {
   const s = v4Ses(); if (s) { const e = lib().find((x) => x.id === s.libId); if (e) return v4Open(e); v2SesPut(null); }
   const L = v4Books();
-  if (!L.length) { const fila = lib().filter((e) => e.status === 'QUERO').slice(0, 8); if (!fila.length) return toast('Adicione um livro na Estante para começar a ler');
+  if (!L.length) { const fila = lib().filter((e) => e.status === 'QUERO').slice(0, 8); if (!fila.length) return toast('Adicione um livro na Biblioteca para começar a ler');
     return sheetList('Você não está lendo nenhum livro. Qual começa agora?', fila.map((e) => ({ label: esc(e.title), sub: e.author ? esc(e.author) : '', fn: () => { setLibStatus(e, 'LENDO'); if (e.status === 'LENDO') v4Sheet('lerq', e); } }))); }
   v4Sheet('lerq', L[0]);
 };
@@ -19777,7 +19783,7 @@ function v4PreHTML(e) {
       ${v4EcotHTML(e)}</div>
       <div class="dur">${[[0, 'Livre'], [15, '15 min'], [25, '25 min'], [45, '45 min'], [60, '1 h']].map(([m, n]) => `<button class="${dur === m ? 'on' : ''}" data-a="dur" data-m="${m}">${n}</button>`).join('')}</div>
       <button class="flip" data-a="start">${v4ic('ler', 18)}Começar a ler</button>
-      <button class="just" data-a="sheet" data-s="upd">Só marcar a página</button></div></div>`;
+      <button class="just" data-a="sheet" data-s="upd">Atualizar página</button></div></div>`;
 }
 const v4Clock = (s) => { const now = s.pz || Date.now(), el = Math.max(0, Math.floor((now - s.start - (s.off || 0)) / 1000)), v = s.dur ? Math.max(0, s.dur * 60 - el) : el, h = Math.floor(v / 3600), m = Math.floor((v % 3600) / 60), x = v % 60, p = (n) => String(n).padStart(2, '0');
   return { t: (h ? h + ':' + p(m) : p(m)) + ':' + p(x), done: !!(s.dur && v === 0), secs: el }; };
@@ -19850,12 +19856,12 @@ function v4SheetHTML(k) {
   if (k === 'lerq') { const { now, total } = v4Info(e), due = v4Due(e);
     return `<div class="sh-bk">${v4cv(e)}<div><h3>${esc(e.title)}</h3><span class="mut">pág. ${now}${total ? ` de ${total}` : ''}${due && !due.done ? ` · hoje, até a ${due.target}` : ''}</span></div></div>
     <div class="lerq"><button class="go1" data-a="lerfoco"><span class="ic1">${v4ic('orb', 26)}</span><span class="t"><b>Entrar no silêncio</b><small>tempo, som ambiente e ecos; só o livro e você</small></span>${v4ic('chev', 18)}</button>
-    <button class="go2" data-a="sheet" data-s="upd"><span class="ic1">${v4ic('pag', 24)}</span><span class="t"><b>Atualizar páginas lidas</b><small>já li, só quero marcar onde parei</small></span>${v4ic('chev', 18)}</button></div>`; }
+    <button class="go2" data-a="sheet" data-s="upd"><span class="ic1">${v4ic('pag', 24)}</span><span class="t"><b>Atualizar página</b><small>já li, só quero marcar onde parei</small></span>${v4ic('chev', 18)}</button></div>`; }
   if (k === 'pick') { const L = lib().filter((x) => x.status === 'LENDO' || x.status === 'QUERO').sort((a, b) => (a.status === 'LENDO' ? 0 : 1) - (b.status === 'LENDO' ? 0 : 1)).slice(0, 14);
     return `<h3>Ler qual livro?</h3><div class="list">${L.map((x) => { const i = v4Info(x); return `<button class="li" data-a="setcur" data-id="${esc(x.id)}">${v4cv(x, '', 'width:34px;height:51px;font-size:7px;')}<span class="t">${esc(x.title)}<small>${x.status === 'LENDO' ? (i.total ? `pág. ${i.now} de ${i.total}` : 'lendo') : 'da fila: começa agora'}</small></span></button>`; }).join('')}</div>`; }
   if (k === 'ecohelp') { const de = (db.prefs || {}).ecoDe === 'amigos' ? 'amigos' : 'rede';
     return `<h3>Ecos</h3><div class="list">${[['orb', 'O que é', 'Uma frase curta que alguém deixou numa página deste livro.'], ['ler', 'Quando aparece', 'Quando você marca uma página igual ou depois da do eco: no meio da leitura ou ao encerrar. Antes disso, é uma luz piscando no céu, sem spoiler.'], ['pen', 'Deixe o seu', 'Na leitura, toque em Deixar um eco. Quem chegar àquela página depois vai ver.'], ['friends', 'De quem', 'Das suas amizades, sempre primeiro e em cores. Da rede, em luz branca.']].map(([i, t, sm]) => `<div class="li">${v4ic(i, 20)}<span class="t">${t}<small>${sm}</small></span></div>`).join('')}</div>
-    <div class="lbl">Ver ecos de</div><div class="seg"><button class="${de === 'amigos' ? 'on' : ''}" data-a="ecode" data-k="amigos">Só amizades</button><button class="${de === 'rede' ? 'on' : ''}" data-a="ecode" data-k="rede">Toda a rede</button></div>
+    <div class="lbl">Ver ecos de</div><div class="seg"><button class="${de === 'amigos' ? 'on' : ''}" data-a="ecode" data-k="amigos">Só amizades</button><button class="${de === 'rede' ? 'on' : ''}" data-a="ecode" data-k="rede">Toda a comunidade</button></div>
     <button class="btn p w" data-a="close" style="margin-top:12px">Entendi</button>`; }
   if (k === 'amb') { return `<h3>Som ambiente</h3>${V4AMB_G.map(([g, L]) => `<div class="lbl">${g}</div><div class="chips" style="flex-wrap:wrap;margin:0;padding:2px 0">${L.map((n) => `<button class="chip ${s && s.amb === n ? 'on' : ''}" data-a="amb" data-k="${n}">${n}</button>`).join('')}</div>`).join('')}
     <div class="lbl">Volume</div><input type="range" id="v4vol" min="0" max="100" value="${Math.round((st.vol ?? 0.6) * 100)}" style="width:100%;accent-color:var(--acc)" aria-label="Volume">
@@ -20305,15 +20311,15 @@ function v5EstantesHTML() {
   });
   const ord = (V5ORD.find((x) => x[0] === (v5P().shOrd || 'mine')) || V5ORD[0])[1];
   return `<div class="shh"><button class="so" data-a="sheet" data-s="v5shsort">${v4ic('sort', 16)}${ord}</button><button class="lot" data-a="sheet" data-s="v5sorteio">${v4ic('orb', 16)}Sortear</button><button data-a="v5newsh">${v4ic('plus', 16)}Nova estante</button></div>
-  ${v5P().tipSh5 || ed ? '' : `<div class="tip"><span><b>Dica:</b> segure uma estante para pôr livros, editar, juntar numa biblioteca ou arquivar.</span><button data-a="v5tip" data-k="tipSh5" aria-label="Entendi">${v4ic('x', 16)}</button></div>`}
+  ${v5P().tipSh5 || ed ? '' : `<div class="tip"><span><b>Dica:</b> segure uma estante para pôr livros, editar, juntar num grupo ou arquivar.</span><button data-a="v5tip" data-k="tipSh5" aria-label="Entendi">${v4ic('x', 16)}</button></div>`}
   ${ed ? `<div class="tip"><span>Use ↑ e ↓ para mudar a ordem.</span><button class="lnk" style="text-decoration:none" data-a="v5shed">Pronto</button></div>` : ''}
   ${cards || `<div class="empty">Estantes são listas suas: "Clássicos", "Para dar de presente", "Clube do livro". Um livro pode estar em várias.<br><button class="act0" data-a="v5newsh">${v4ic('plus', 16)}Nova estante</button></div>`}
   ${arq.length && !ed ? `<button class="arq" data-a="v5arq">${v4ic('save', 18)}<span>Arquivadas<small>${plural(arq.length, 'estante', 'estantes')} · os livros e os números continuam</small></span>${v4ic('chev', 16)}</button>` : ''}`;
 }
 function v5GrpHTML(g) {
   const L = v5Shelves().filter((s) => s.grp === g && !s.arch);
-  return `<div class="sub"><button class="tool" data-a="v5back" aria-label="Voltar">${v4ic('back', 20)}</button><h2>${esc(g)}</h2><button class="tool" data-a="sheet" data-s="v5grpm" data-g="${esc(g)}" aria-label="Opções da biblioteca">${v4ic('dots', 20)}</button></div>
-  <div class="shh"><span class="mut" style="font-size:12.5px">${plural(L.length, 'estante', 'estantes')}</span><button data-a="v5newsh" data-g="${esc(g)}">${v4ic('plus', 16)}Nova estante nesta biblioteca</button></div>
+  return `<div class="sub"><button class="tool" data-a="v5back" aria-label="Voltar">${v4ic('back', 20)}</button><h2>${esc(g)}</h2><button class="tool" data-a="sheet" data-s="v5grpm" data-g="${esc(g)}" aria-label="Opções do grupo">${v4ic('dots', 20)}</button></div>
+  <div class="shh"><span class="mut" style="font-size:12.5px">${plural(L.length, 'estante', 'estantes')}</span><button data-a="v5newsh" data-g="${esc(g)}">${v4ic('plus', 16)}Nova estante neste grupo</button></div>
   ${L.map((s) => v5ShCard(s, false)).join('') || '<div class="empty">Nenhuma estante aqui.</div>'}`;
 }
 function v5ArqHTML() {
@@ -20361,10 +20367,10 @@ function v5BmHTML(e) {
   const st = e.status, pg = libProgress(e), tot = Number(e.totalPages) || 0, due = (() => { try { return v4Due(e); } catch { return null; } })(), soc = v4On('comunidade');
   const shN = v5Shelves().filter((s) => (s.bookIds || []).includes(e.id)).map((s) => s.name);
   const top = st === 'LENDO' ? [v5li('v5upd', 'pag', 'Atualizar página'), v5li('v5fim', 'ok', 'Terminei', 'nota, datas e o que sentiu'), vFn('junto') ? v5li('v5junto', 'friends', 'Ler junto') : '', vFn('prazos') && v5li('v5prazo', 'cal', e.dueAt ? 'Prazo' : 'Definir prazo', e.dueAt ? (due && !due.done ? `hoje, até a pág. ${due.target}` : 'mudar a data ou tirar') : 'quando quer terminar?'), v5li('sheet', 'stop', 'Parar de ler', 'pausar, desistir ou marquei por engano', ' data-s="v5stop"')]
-    : st === 'QUERO' ? [v5li('v5start', 'ler', 'Começar a ler'), v5li('v5prio', 'sort', 'Prioridade', { 1: 'alta', 2: 'normal', 3: 'baixa' }[e.prio || 2]), v5li('v5fim', 'ok', 'Já li', 'nota e quando leu')]
+    : st === 'QUERO' ? [v5li('v5start', 'ler', 'Começar a ler'), v5li('v5prio', 'sort', 'Prioridade', { 1: 'alta', 2: 'normal', 3: 'baixa' }[e.prio || 2]), v5li('v5fim', 'ok', 'Já li', 'nota e quando leu'), v5FilaLivre(e) ? v5li('v5tirafila', 'x', 'Tirar da fila', 'sai na hora; dá para desfazer') : '']
     : st === 'LIDO' ? [v5li('v5fim', 'quote', 'Minha avaliação', 'nota, emoções e níveis do enredo'), v5li('v5retro', 'cal', 'Retrospectiva'), v5li('sheet', 'swap', 'Ler de novo', 'a leitura anterior fica no histórico', ' data-s="v5reler"'), v5li('sheet', 'undo', 'Não terminei', 'marquei como lido por engano', ' data-s="v5unlido"')]
-    : st === 'HIBERNANDO' ? [v5li('v5start', 'ler', 'Retomar', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5aband', 'stop', 'Desistir de vez', 'vai para Abandonados'), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')]
-    : [v5li('v5start', 'ler', 'Tentar de novo', pg ? 'volta para o Hoje na pág. ' + pg : ''), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')];
+    : st === 'HIBERNANDO' ? [v5li('v5start', 'ler', 'Voltar a ler', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5aband', 'stop', 'Desistir', 'vai para Abandonados'), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')]
+    : [v5li('v5start', 'ler', 'Voltar a ler', pg ? 'volta para o Hoje na pág. ' + pg : ''), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')];
   return `<button class="sh-bk sh-go" data-a="v5open" aria-label="Abrir página do livro">${v4cv(e)}<div style="flex:1;min-width:0;text-align:left"><h3>${esc(e.title)}</h3><span class="mut">${esc(e.author || '')}${e.author ? ' · ' : ''}${V5ST[st] || ''}${st === 'LENDO' && pg ? ' · pág. ' + pg + (tot ? ' de ' + tot : '') : ''}</span><small class="sh-lk">Ver página do livro</small></div><span class="r">${v4ic('chev', 18)}</span></button>
   <div class="list">${top.filter(Boolean).join('')}
   ${v4On('emprest') ? v5li('v5lend', 'swap', 'Emprestar', 'para uma amizade ou alguém de fora') : ''}
@@ -20385,7 +20391,7 @@ v4SheetHTML = function (k) {
     if (k === 'v5stop') { const pg = libProgress(e), dueAt = e.dueAt;
       return `${v5hd(e, 'Parar de ler', `${esc(e.title)} · pág. ${pg}${e.totalPages ? ' de ' + e.totalPages : ''}`)}
       ${dueAt ? `<div class="sh-due">${v4ic('cal', 18)}<span>Este livro tem prazo. Se for só um atraso, dá para <button data-a="v5prazo">mudar a data</button> em vez de parar.</span></div>` : ''}
-      <div class="list">${v5li('v5pause', 'pause', 'Pausar', `sai do Hoje e guarda a pág. ${pg}. Fica em Estante › Pausados até você retomar.${dueAt ? ' O prazo fica suspenso.' : ''}`)}
+      <div class="list">${v5li('v5pause', 'pause', 'Pausar', `sai do Hoje e guarda a pág. ${pg}. Fica em Biblioteca › Pausados até você retomar.${dueAt ? ' O prazo fica suspenso.' : ''}`)}
       ${v5li('v5aband', 'stop', 'Desistir', `vai para Abandonados com a página onde parou. Não conta na meta.${dueAt ? ' O prazo é cancelado.' : ''}`)}
       ${v5li('v5engano', 'undo', 'Marquei por engano', `volta para Quero ler e apaga o progresso, como se nunca tivesse começado.${dueAt ? ' O prazo é cancelado.' : ''}`)}</div>
       <button class="btn s w" data-a="sheet" data-s="v5bm" style="margin-top:10px">Voltar</button>`; }
@@ -20395,7 +20401,7 @@ v4SheetHTML = function (k) {
       ${v5li('v5ul_meio', 'pause', 'Parei no meio', 'vai para Pausados, com a página onde parou.')}
       ${v5li('v5ul_nada', 'undo', 'Nem comecei', 'volta para Quero ler, sem página.')}</div>
       <button class="btn s w" data-a="sheet" data-s="v5bm" style="margin-top:10px">Voltar</button>`;
-    if (k === 'v5rm') { const msg = { QUERO: 'O livro sai do Quero ler, da Estante e das suas estantes.', LENDO: 'O livro sai do Hoje e da Estante, junto com páginas, trechos e anotações. Se só quer parar, use Parar de ler: pausar ou desistir guarda o histórico.', LIDO: 'O livro sai da Estante, da meta do ano e das estatísticas, junto com nota, avaliação e trechos. Se marcou como lido por engano, use Não terminei.', HIBERNANDO: 'O livro sai da Estante e das estatísticas, junto com páginas e trechos. Se só quer parar de ver em Pausados, use Desistir de vez: o histórico fica.' }[e.status] || 'O livro sai da Estante e das suas estantes.';
+    if (k === 'v5rm') { const msg = { QUERO: 'O livro sai do Quero ler, da Biblioteca e das suas estantes.', LENDO: 'O livro sai do Hoje e da Biblioteca, junto com páginas, trechos e anotações. Se só quer parar, use Parar de ler: pausar ou desistir guarda o histórico.', LIDO: 'O livro sai da Biblioteca, da meta do ano e das estatísticas, junto com nota, avaliação e trechos. Se marcou como lido por engano, use Não terminei.', HIBERNANDO: 'O livro sai da Biblioteca e das estatísticas, junto com páginas e trechos. Se só quer parar de ver em Pausados, use Desistir: o histórico fica.' }[e.status] || 'O livro sai da Biblioteca e das suas estantes.';
       return `${v5hd(e, 'Remover este livro?', esc(e.title))}<p class="mut" style="margin:0 0 12px">${msg}</p>
       <div class="sh-due">${v4ic('undo', 18)}<span>Nada se perde na hora: o livro fica <b>30 dias</b> em Você › Ajustes › Removidos recentemente, com tudo o que tinha, e volta com um toque.</span></div>
       <div class="row" style="gap:8px"><button class="btn s" style="flex:1" data-a="sheet" data-s="v5bm">Voltar</button><button class="btn p" style="flex:1" data-a="v5rmok">Remover</button></div>`; }
@@ -20421,12 +20427,12 @@ v4SheetHTML = function (k) {
       if (s.arch) return `<h3>${esc(s.name)}</h3><div class="list">${v5li('v5unarch', 'save', 'Desarquivar', 'volta para a lista')}${v5li('v5shdel', 'trash', 'Excluir estante', 'os livros continuam em Livros', '', 'dng')}</div>`;
       return `<h3>${esc(s.name)}</h3><div class="list">${v5li('v5shlot', 'orb', 'Sortear desta estante', 'um cometa escolhe o próximo')}${v5li('v5shadd', 'plus', 'Adicionar livros', 'escolha vários dos seus livros de uma vez')}${v5li('v5shedit', 'pen', 'Editar estante', 'nome, cor, descrição e meta')}
       <div class="lbl" style="margin:10px 4px 4px">Quem vê</div><div class="seg" style="margin:0 0 6px"><button class="${s.priv ? '' : 'on'}" data-a="v5priv" data-k="0">Pública no perfil</button><button class="${s.priv ? 'on' : ''}" data-a="v5priv" data-k="1">Só você</button></div>
-      ${v5li('sheet', 'estante', s.grp ? 'Trocar de biblioteca' : 'Colocar numa biblioteca', s.grp ? 'agora em ' + esc(s.grp) : 'ex.: 2026 mês a mês, Clube do livro', ' data-s="v5shgrp"')}${s.grp ? v5li('v5ungrp', 'x', 'Tirar da biblioteca', 'volta solta para a lista') : ''}
+      ${v5li('sheet', 'estante', s.grp ? 'Trocar de grupo' : 'Colocar num grupo', s.grp ? 'agora em ' + esc(s.grp) : 'ex.: 2026 mês a mês, Clube do livro', ' data-s="v5shgrp"')}${s.grp ? v5li('v5ungrp', 'x', 'Tirar do grupo', 'volta solta para a lista') : ''}
       ${v5li('v5arch', 'save', 'Arquivar', 'some da lista e de "adicionar à estante"; livros e números ficam')}${v5li('v5shdel', 'trash', 'Excluir estante', 'os livros continuam em Livros', '', 'dng')}</div>`; }
     if (k === 'v5shgrp') { const s = v5Shelves().find((x) => x.id === c.sh); const G = [...new Set(v5Shelves().map((x) => x.grp).filter(Boolean))];
-      return `<h3>Colocar numa biblioteca</h3><p class="mut" style="margin:0 0 8px">Biblioteca junta várias estantes, como "2026 mês a mês".</p><div class="list">${G.map((g) => `<button class="li rp${s && s.grp === g ? ' on' : ''}" data-a="v5setgrp" data-g="${esc(g)}"><span class="rd2"></span><span class="t">${esc(g)}</span></button>`).join('')}</div>
-      <div class="v5f"><label>Nova biblioteca<input class="fld" id="v5grpnm" maxlength="40" placeholder="Ex.: Clube do livro"></label></div><button class="btn p w" data-a="v5setgrp" data-g="" style="margin-top:10px">Criar e colocar</button>`; }
-    if (k === 'v5grpm') { const g = c.grp; return `<h3>${esc(g)}</h3><div class="list">${v5li('v5grpren', 'pen', 'Renomear biblioteca', '')}${v5li('v5newsh', 'plus', 'Nova estante nesta biblioteca', 'ex.: Dezembro', ` data-g="${esc(g)}"`)}${v5li('v5grparch', 'save', 'Arquivar a biblioteca inteira', 'some da lista; livros e números ficam')}${v5li('v5grpundo', 'x', 'Desfazer biblioteca', 'as estantes voltam soltas para a lista')}</div>
+      return `<h3>Colocar num grupo</h3><p class="mut" style="margin:0 0 8px">Biblioteca junta várias estantes, como "2026 mês a mês".</p><div class="list">${G.map((g) => `<button class="li rp${s && s.grp === g ? ' on' : ''}" data-a="v5setgrp" data-g="${esc(g)}"><span class="rd2"></span><span class="t">${esc(g)}</span></button>`).join('')}</div>
+      <div class="v5f"><label>Novo grupo<input class="fld" id="v5grpnm" maxlength="40" placeholder="Ex.: Clube do livro"></label></div><button class="btn p w" data-a="v5setgrp" data-g="" style="margin-top:10px">Criar e colocar</button>`; }
+    if (k === 'v5grpm') { const g = c.grp; return `<h3>${esc(g)}</h3><div class="list">${v5li('v5grpren', 'pen', 'Renomear grupo', '')}${v5li('v5newsh', 'plus', 'Nova estante neste grupo', 'ex.: Dezembro', ` data-g="${esc(g)}"`)}${v5li('v5grparch', 'save', 'Arquivar o grupo inteiro', 'some da lista; livros e números ficam')}${v5li('v5grpundo', 'x', 'Desfazer grupo', 'as estantes voltam soltas para a lista')}</div>
       <div class="v5f" id="v5grprenw" hidden><label>Novo nome<input class="fld" id="v5grpren" maxlength="40" value="${esc(g)}"></label><button class="btn p w" data-a="v5grprenok">Salvar nome</button></div>`; }
     if (k === 'v5sorteio') { const src = c.src || 'QUERO', O = [['QUERO', 'Quero ler', plural(lib().filter((x) => x.status === 'QUERO').length, 'livro', 'livros')], ...v5Shelves().filter((s) => !s.arch && (s.bookIds || []).length).map((s) => [s.id, s.name, plural((s.bookIds || []).length, 'livro', 'livros')])];
       return `<h3>Sortear o próximo</h3><p class="mut" style="margin:0 0 6px">Um cometa cai e mostra o livro. Se não gostar, sorteia de novo.</p>
@@ -20468,6 +20474,11 @@ function v5TqInit(x) {
 }
 // ---------- removidos recentemente (30 dias) ----------
 function v5Purge() { const lim = Date.now() - 30 * 864e5; const L = (db.removed || []).filter((r) => new Date(r.at).getTime() > lim); if (L.length !== (db.removed || []).length) { db.removed = L; v5Save(); } }
+// "Tirar da fila" (Bia, 20/11): livro só na fila, sem trechos, anotações, diário nem exemplar, sai na hora, sem a folha do Remover.
+// Usa o mesmo caminho do Remover (fica em Removidos recentemente); o toast "Desfazer" devolve o livro com a mesma prioridade e as mesmas estantes.
+function v5FilaLivre(e) { const ex = e.ex || {}; return e.status === 'QUERO' && !(e.quotes || []).length && !(e.diary || []).length && !String(e.note || '').trim() && !(e.notes || []).length && (!ex.own || ex.own === 'quero') && !e.link; } // "Quero ter" (desejos) não conta como dado: volta junto no Desfazer
+function v5TirarFila(e) { const t = e.title, id = e.id, i = db.library.indexOf(e); v5Remove(e);
+  toast(`“${t}” saiu da fila`, { label: 'Desfazer', fn: () => { v5Restore(id); const k = db.library.findIndex((x) => x.id === id); if (k >= 0 && i >= 0 && k !== i) { const [x] = db.library.splice(k, 1); db.library.splice(Math.min(i, db.library.length), 0, x); v5Save(); try { refresh(); } catch {} v5Redraw(); } } }); }
 function v5Remove(e) {
   if (e.link) return toast(`“${e.title}” faz parte de uma meta com prazo. Tire o livro da meta para remover.`);
   const sh = v5Shelves().filter((s) => (s.bookIds || []).includes(e.id)).map((s) => s.id);
@@ -20475,13 +20486,13 @@ function v5Remove(e) {
   db.library = db.library.filter((x) => x !== e); v5Shelves().forEach((s) => { s.bookIds = (s.bookIds || []).filter((i) => i !== e.id); });
   if (T().nextId === e.id) T().nextId = null; if (T().currentId === e.id) T().currentId = null;
   v5Save(); try { refresh(); } catch {} v5Redraw();
-  toast(`“${e.title}” saiu da Estante`, { label: 'Desfazer', fn: () => v5Restore(e.id) });
+  toast(`“${e.title}” saiu da Biblioteca`, { label: 'Desfazer', fn: () => v5Restore(e.id) });
 }
 function v5Restore(id) {
   const r = (db.removed || []).find((x) => String(x.e.id) === String(id)); if (!r) return;
   if (!lib().some((x) => x.id === r.e.id)) db.library.push(r.e);
   (r.sh || []).forEach((sid) => { const s = v5Shelves().find((x) => x.id === sid); if (s && !(s.bookIds || []).includes(r.e.id)) s.bookIds = [...(s.bookIds || []), r.e.id]; });
-  db.removed = (db.removed || []).filter((x) => x !== r); v5Save(); try { refresh(); } catch {} v5Redraw(); toast(`“${r.e.title}” voltou para a Estante`);
+  db.removed = (db.removed || []).filter((x) => x !== r); v5Save(); try { refresh(); } catch {} v5Redraw(); toast(`“${r.e.title}” voltou para a Biblioteca`);
 }
 // ---------- sorteio com cometa ----------
 function v5Comet(src) {
@@ -20560,6 +20571,7 @@ function v5V4Click(ev) {
   if (a === 'v5ul_meio') { withUndo(`“${e.title}” foi para Pausados`, () => { setLibStatus(e, 'HIBERNANDO'); v5Save(); }); return done(); }
   if (a === 'v5ul_nada') { withUndo(`“${e.title}” voltou para Quero ler`, () => { setLibStatus(e, 'QUERO'); if (e.status === 'QUERO') { e.currentPage = 0; delete e.startedAt; } v5Save(); }); return done(); }
   if (a === 'v5rmok') { v5SheetClose(); return v5Remove(e); }
+  if (a === 'v5tirafila') { v5SheetClose(); return v5TirarFila(e); }
   if (a === 'v5restore') { v5Restore(d.id); return v4Draw(); }
   if (a === 'v5relerok') { const meta = !!(V4 && V4.querySelector('#v5rlmeta') && V4.querySelector('#v5rlmeta').checked);
     e.reads = [...(e.reads || []), { startedAt: e.startedAt || null, finishedAt: e.finishedAt || null, pages: e.totalPages || null }];
@@ -20591,7 +20603,7 @@ function v5V4Click(ev) {
   if (a === 'v5unarch') { delete sh.arch; v5Save(); return done(`“${sh.name}” voltou para a lista`); }
   if (a === 'v5shdel') { const nm = sh.name; withUndo(`Estante “${nm}” excluída`, () => { db.shelves = v5Shelves().filter((x) => x !== sh); v5Save(); }); return done(); }
   if (a === 'v5ungrp') { delete sh.grp; v5Save(); return done(); }
-  if (a === 'v5setgrp') { const g = d.g || String((V4.querySelector('#v5grpnm') || {}).value || '').trim().slice(0, 40); if (!g) return toast('Dê um nome à biblioteca'); sh.grp = g; v5Save(); return done(`“${sh.name}” está em ${g}`); }
+  if (a === 'v5setgrp') { const g = d.g || String((V4.querySelector('#v5grpnm') || {}).value || '').trim().slice(0, 40); if (!g) return toast('Dê um nome ao grupo'); sh.grp = g; v5Save(); return done(`“${sh.name}” está em ${g}`); }
   if (a === 'v5grpren') { const w = V4.querySelector('#v5grprenw'); if (w) w.hidden = false; return; }
   if (a === 'v5grprenok') { const g = c.grp, n = String((V4.querySelector('#v5grpren') || {}).value || '').trim().slice(0, 40); if (!n) return; v5Shelves().forEach((s) => { if (s.grp === g) s.grp = n; }); if (S5.sub && S5.sub.g === g) S5.sub.g = n; v5Save(); return done(); }
   if (a === 'v5grparch') { v5Shelves().forEach((s) => { if (s.grp === c.grp) s.arch = 1; }); S5.sub = null; v5Save(); return done(`Biblioteca ${c.grp} arquivada`); }
@@ -20647,7 +20659,8 @@ bookMenu = function (e) { if (e && lib().includes(e)) return v5Menu(e); };
 
 // ---------- Ajustes › Removidos recentemente ----------
 { const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
-  try { v5Purge(); const n = (db.removed || []).length, host = box || $('#lista'); if (host && !host.querySelector('#aj-v5rm')) { const ref = host.querySelector('#aj-hl, #aj-tq, #aj-cv'); const card = ref ? ref.closest('.aj-card') : host.querySelector('.aj-card');
+  try { v5Purge(); const n = (db.removed || []).length, host = box || $('#lista'); if (S.ajMode === 'perfil') return r; // Editar perfil não mostra Removidos recentemente (fica só em Ajustes; Bia, 20/11)
+    if (host && !host.querySelector('#aj-v5rm')) { const ref = host.querySelector('#aj-hl, #aj-tq, #aj-cv'); const card = ref ? ref.closest('.aj-card') : host.querySelector('.aj-card');
       if (card) { card.insertAdjacentHTML('beforeend', `<button type="button" class="aj-row" id="aj-v5rm"><span><b>Removidos recentemente</b><small>${n ? plural(n, 'livro', 'livros') + ' · voltam com tudo por 30 dias' : 'livros removidos voltam com tudo por 30 dias'}</small></span>›</button>`); host.querySelector('#aj-v5rm').addEventListener('click', () => v5Sheet('v5removed', {})); } } } catch (err) { console.warn('removidos', err); }
   return r; }; }
 
@@ -20667,7 +20680,7 @@ bookMenu = function (e) { if (e && lib().includes(e)) return v5Menu(e); };
 #shelflist.v5bp .bp-tabs [data-t=enredo],#shelflist.v5bp .sl-top .es-dots[data-a=menu]{display:none!important}
 #shelflist.v5bp:not(.v5bp-minha) .bp-ex,#shelflist.v5bp:not(.v5bp-minha) .bp-buy{display:none!important}`; TR.append(st); }
 { let cur = null, tm = 0;
-  const prim = (e) => e.status === 'LENDO' ? ['pag', 'Atualizar página'] : e.status === 'QUERO' ? ['ler', 'Começar a ler'] : e.status === 'LIDO' ? ['quote', 'Minha avaliação'] : e.status === 'HIBERNANDO' ? ['ler', 'Retomar'] : ['ler', 'Tentar de novo'];
+  const prim = (e) => e.status === 'LENDO' ? ['pag', 'Atualizar página'] : e.status === 'QUERO' ? ['ler', 'Começar a ler'] : e.status === 'LIDO' ? ['quote', 'Minha avaliação'] : e.status === 'HIBERNANDO' ? ['ler', 'Voltar a ler'] : ['ler', 'Voltar a ler']; // vocabulário (Bia, 20/11): um nome só
   const fix = () => { const v = $('#shelflist'); if (!v) return; const hero = v.querySelector('.bp-hero'), e = !cur ? null : lib().includes(cur) ? cur : (lib().find((x) => x.id === cur.id) || null); // a estante pode ser recarregada (sincronização, capa achada): acha o mesmo livro pelo id
     if (v.hidden || !hero || !e) { v.classList.remove('v5bp', 'v5bp-minha'); return; }
     v.classList.add('v5bp'); const on = v.querySelector('.bp-tabs [data-t].on, .bp-tabs [data-t][aria-selected="true"]'); const t = on ? on.dataset.t : 'sobre';
@@ -20709,6 +20722,7 @@ const V6CSS = `.v6spt{display:inline-flex;align-items:center;gap:3px;margin-left
 .v6com .acts .liked{color:var(--acc)}.v6com .acts .liked svg{fill:currentColor}
 .v6com .acts .saved svg{fill:currentColor;color:var(--acc)}
 .v6com .who .av{background-size:cover;background-position:center}
+.v6com .macts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}.v6com .macts .btn{min-height:42px;padding:0 16px;border-radius:999px;font-weight:800;border:1px solid var(--line);background:var(--panel);color:var(--ink)}.v6com .macts .btn.p{background:var(--acc);border-color:transparent;color:var(--on-acc,#fff)}
 .v6com .msg{padding:22px 16px;border:1.5px dashed var(--line);border-radius:16px;text-align:center;color:var(--ink2);margin-top:12px;line-height:1.45}
 .v6com .more2{display:block;width:100%;margin:12px 0 0;padding:11px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:900;cursor:pointer}
 .v6com .day{font-family:var(--f-disp);font-size:15px;color:var(--ink2);margin:14px 2px 6px}
@@ -20787,7 +20801,7 @@ const v6Body = (t) => String(t || '').replace(/^(Desafio da semana|Pergunta do d
 function v6PostHTML(it, i) {
   const u = it.user || {}, mine = it.mine || (u.handle && u.handle === v6Me()), S6 = v6S(), key = it.type + it.id;
   const sp = (() => { try { return rdSpoil(it); } catch { return it.spoiler ? 'spoiler' : null; } })(), open = !!S6.open[key] || mine;
-  const vis = mine && it.type === 'post' ? ` · <span class="vis">${it.visibility === 'friends' ? v4ic('friends', 12) + 'amizades' : v4ic('busca', 12) + 'todos'}</span>` : '';
+  const vis = mine && it.type === 'post' ? ` · <span class="vis">${it.visibility === 'friends' ? v4ic('friends', 12) + 'amizades' : v4ic('globe', 12) + 'comunidade'}</span>` : '';
   const body = `${it.text ? `<p>${esc(v6Body(it.text))}</p>` : ''}${it.quote ? `<div class="pq">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}${it.book2 ? `<div class="prec">${cvh(it.book2.title, it.book2.cover)}<span>indicou <b>${esc(it.book2.title)}</b></span></div>` : ''}${it.hasImage ? `<div class="pimg rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
   const fe = (it.feelings || []).map(v6Lbl).filter(Boolean);
   let saved = false; try { saved = rdIsSaved(it); } catch {}
@@ -20796,7 +20810,7 @@ function v6PostHTML(it, i) {
     ${sp && !open ? `<span class="spz" data-a="v6sp" data-i="${i}" role="button"><span class="spzt">${body || '<p>…</p>'}</span><span class="spveil on"><em>${v4ic('eye', 15)}Cuidado, spoiler</em><small>Eu quero ver mesmo assim</small></span></span>`
       : `${body}${sp && S6.open[key] && !mine ? `<button class="sphide" data-a="v6sph" data-i="${i}">${v4ic('eye', 13)}Spoiler aberto · esconder de novo</button>` : ''}`}
     ${fe.length ? `<div class="pfe">${fe.map((n) => `<span>${esc(n)}</span>`).join('')}</div>` : ''}</div></div>
-    <div class="acts"><button data-a="v6like" data-i="${i}" class="${it.liked ? 'liked' : ''}" aria-pressed="${!!it.liked}">${v4ic('heart', 18)}${it.likes || ''}</button><button data-a="v6rp" data-i="${i}">${v4ic('reply', 18)}Responder${it.replies ? ` · ${it.replies}` : ''}</button><span class="sp"></span><button data-a="v6save" data-i="${i}" class="${saved ? 'saved' : ''}" aria-label="${saved ? 'Tirar dos salvos' : 'Salvar'}">${v4ic('save', 18)}</button><button data-a="v6send" data-i="${i}" aria-label="Enviar">${v4ic('send', 18)}</button></div></article>`;
+    <div class="acts"><button data-a="v6like" data-i="${i}" class="${it.liked ? 'liked' : ''}" aria-pressed="${!!it.liked}" aria-label="Curtir">${v4ic('heart', 18)}${it.likes || ''}</button><button data-a="v6rp" data-i="${i}">${v4ic('reply', 18)}Responder${it.replies ? ` · ${it.replies}` : ''}</button><span class="sp"></span><button data-a="v6save" data-i="${i}" class="${saved ? 'saved' : ''}" aria-label="${saved ? 'Tirar dos salvos' : 'Salvar'}">${v4ic('save', 18)}</button><button data-a="v6send" data-i="${i}" aria-label="Enviar">${v4ic('send', 18)}</button></div></article>`;
 }
 function v6Paint() {
   const host = $('#lista > .v6host'); if (!host || S.tab !== 'comunidade') return; const R = host.shadowRoot.querySelector('.v6com'), S6 = v6S();
@@ -20808,11 +20822,14 @@ function v6Paint() {
   list.forEach((it, i) => { let d = ''; try { d = rdDayLbl(it.createdAt); } catch {} if (d && d !== last && S6.f !== 'salvos') { posts += `<div class="day">${esc(d)}</div>`; last = d; } posts += v6PostHTML(it, i); });
   const empty = S6.f === 'salvos' ? '<b>Nada salvo ainda</b><br>Toque no marcador de um post para guardar aqui.'
     : Fd.busy || !Fd.at ? 'Carregando a Comunidade…' : Fd.err ? 'Não consegui carregar agora. Puxe para atualizar ou tente de novo daqui a pouco.'
-    : S6.f === 'amigos' ? 'Suas amizades ainda não postaram. Veja <b>Todos</b> ou escreva o primeiro post.' : 'Nada por aqui ainda.';
+    : S6.f === 'amigos' ? (((SOC.fr && SOC.fr.friends) || []).length ? 'Suas amizades ainda não postaram. Veja <b>Todos</b> ou escreva o primeiro post.' : '<b>Aqui aparece o que suas amizades estão lendo</b><br>Encontre leitores para acompanhar, ou escreva o primeiro post sobre a sua leitura.')
+    : 'Nada por aqui ainda. Que tal começar a conversa?';
+  // estado vazio com o que fazer ali (Bia, 20/11: acabamento)
+  const emptyActs = S6.f !== 'salvos' && !(Fd.busy || !Fd.at) && !Fd.err ? `<div class="macts"><button class="btn p" data-a="v6new">Escrever um post</button><button class="btn s" data-a="v6find">Encontrar leitores</button></div>` : '';
   R.innerHTML = `<div class="cbar"><span class="av" data-avh="${esc(me.handle)}" style="background-color:${friendColor(me.handle)}">${esc(initial(me.displayName || me.handle))}</span><button class="cin" data-a="v6new">Escreva sobre sua leitura…</button></div>
   ${q ? `<button class="cdes" data-a="v6des"><span class="eb acc">Desafio da semana</span><span>${esc(q)}</span>${v4ic('chev', 14)}</button>` : ''}
   <div class="ctabs" role="tablist">${F.map(([k, l]) => `<button role="tab" aria-selected="${S6.f === k}" class="${S6.f === k ? 'on' : ''}" data-a="v6tab" data-k="${k}">${l}</button>`).join('')}<button class="cg" data-a="v6cfg" aria-label="Preferências da Comunidade">${v4ic('gear', 17)}</button></div>
-  ${list.length ? posts : `<div class="msg">${empty}</div>`}
+  ${list.length ? posts : `<div class="msg">${empty}${emptyActs}</div>`}
   ${Fd.more && S6.f !== 'salvos' && list.length ? `<button class="more2" data-a="v6moreload">${Fd.busy ? 'Carregando…' : 'Ver mais'}</button>` : ''}`;
   try { paintCv(R); } catch {} try { rdLoadImages(R); } catch {}
   R.querySelectorAll('[data-avh]').forEach((n) => { try { const d = avatarOf(n.dataset.avh); if (d) { n.style.backgroundImage = `url("${d}")`; n.textContent = ''; } } catch {} });
@@ -20823,6 +20840,7 @@ function v6Click(ev) {
   const S6 = v6S(), it = b.dataset.i != null ? S6.list[+b.dataset.i] : null;
   if (a === 'v6tab') { S6.f = b.dataset.k; const F = v6Feed(v6Sc(S6.f)); v6Paint(); if (S6.f !== 'salvos' && !F.busy && Date.now() - F.at > 20000) v6Load(v6Sc(S6.f)); return; }
   if (a === 'v6new') return openRdComposer();
+  if (a === 'v6find') { try { return addFriendSheet(); } catch { return; } }
   if (a === 'v6des') { let q = ''; try { q = v2WkQ(); } catch {} return openRdComposer({ kind: 'comment', text: `Desafio da semana: ${q}\n` }); }
   if (a === 'v6cfg') return rdFiltersSheet();
   if (a === 'v6moreload') return v6Load(v6Sc(S6.f), true);
@@ -21076,7 +21094,7 @@ pickBooksFor = function (s, after) { if (!s) return; v7Sheet('v7add', { sid: s.i
 //  - Completar histórico no desenho do protótipo (abas Sem fim · Sem início · Sem pág. · Sem nota, um campo por livro);
 //  - Funções do app como página, com a lista do protótipo (Empréstimos e Presentes separados, sem Conquistas);
 //  - Ajustes nos grupos do protótipo (Seu perfil · Seu app · Conta e dados · Ajuda), Moderação para quem modera,
-//    Sair e Excluir conta no fim; "Trechos e anotações" abre a aba Trechos da Estante;
+//    Sair e Excluir conta no fim; "Trechos e anotações" abre a aba Trechos da Biblioteca;
 //  - páginas internas com o Voltar no topo, ao lado do título (como no protótipo), sem a linha de voltar repetida.
 Object.assign(V3EMO, { x: '<path d="M6 6l12 12M18 6 6 18"/>', sino: '<path d="M6 10a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 15 6 10zM10 20a2.2 2.2 0 0 0 4 0"/>', plus: '<path d="M12 5v14M5 12h14"/>' });
 { const st = document.createElement('style'); st.textContent = `
@@ -21231,7 +21249,7 @@ v2FuncoesSheet = function () {
     if (tema) { tema.hidden = true; tema.classList.add('v4throw'); const b0 = tema.querySelector('b'); if (b0) b0.textContent = 'Escolha o tema'; tema.addEventListener('click', () => setTimeout(() => { const sm = apar && apar.querySelector('small'); if (sm) sm.textContent = 'tema' + (thn() ? ' · ' + thn() : ''); }, 50)); }
     const G = [
       ['Seu perfil', [get('aj-priv'), get('aj-mu')]],
-      ['Seu app', [get('aj-home'), get('aj-fn'), apar, tema, spoiler, get('aj-v5rm')]], // Sons saiu dos Ajustes; Tema virou "Aparência", que abre a escolha (Bia, 20/11, item 41) // Trechos e anotações saiu (Bia, 20/11): é conteúdo, mora na Estante › Trechos
+      ['Seu app', [get('aj-home'), get('aj-fn'), apar, tema, spoiler, get('aj-v5rm')]], // Sons saiu dos Ajustes; Tema virou "Aparência", que abre a escolha (Bia, 20/11, item 41) // Trechos e anotações saiu (Bia, 20/11): é conteúdo, mora na Biblioteca › Trechos
       ['Conta e dados', [get('aj-sync'), get('aj-install'), hl, fix, get('aj-cv'), get('aj-exp'), get('aj-imp')]],
       ['Moderação', [get('aj-mod')]],
       ['Ajuda', [get('aj-tour')]],
@@ -21540,7 +21558,7 @@ function openLembretes() {
   const _vs = v5Sheet; v5Sheet = function () { const r = _vs.apply(this, arguments); try { arm(); } catch {} return r; };
 }
 // --- l3_v2_filtrar.js ---
-// Estante › Filtrar (Bia, 20/11; protótipo v132, folha 'sort'): a folha é SÓ de filtro. Sai a Situação (já está nos chips de
+// Biblioteca › Filtrar (Bia, 20/11; protótipo v132, folha 'sort'): a folha é SÓ de filtro. Sai a Situação (já está nos chips de
 // fora), saem Ordenar (fica no "Data de conclusão ▾") e Ver como (fica no ícone grade/lista) e sai o chip "Qualquer" de cada
 // grupo: nada marcado = mostra tudo; tocar de novo desmarca. Rodapé "Limpar" + "Ver N livros" com N ao vivo.
 // O botão de filtro ganha um ponto quando há filtro ativo.
@@ -21933,7 +21951,7 @@ function vFn(k) { try { const m = v2Mods(); if (V6SUB[k] && m[V6SUB[k]] === fals
   [0, 600, 1800].forEach((ms) => setTimeout(() => { try { v2ModsApply(); } catch {} }, ms));
 }
 // --- n1_v2_personalizar_inicio.js ---
-// Personalizar Início alinhado ao Hoje novo (Bia, 20/11). O cartão do livro atual fica sempre primeiro. Itens:
+// Personalizar Hoje alinhado ao Hoje novo (Bia, 20/11). O cartão do livro atual fica sempre primeiro. Itens:
 // Linha do dia (Órbita e Meta; fica logo abaixo do livro), Destaque do dia (Pergunta do dia, lembretes, Resumo do mês),
 // A seguir, Para você. Saem Comece por aqui (aparece sozinho em conta sem livros), Também lendo (virou deslizar no cartão),
 // Próxima conquista, Meta do ano e Na fila (estão na Linha do dia e em A seguir). Sem duplicar Funções do app: item de função
@@ -21958,7 +21976,7 @@ var V6H = [['dia', 'Linha do dia', 'Órbita e Meta, logo abaixo do livro'], ['de
     const draw = () => { const p = P(), O = p.order.filter((k) => V6H.some((x) => x[0] === k));
       const row = (k, i) => { const it = V6H.find((x) => x[0] === k), dis = fnOff(k), on = !p.off.includes(k) && !dis;
         return '<div class="v4fn' + (dis ? ' dis' : '') + '" data-k="' + k + '"><span><b>' + esc(it[1]) + '</b><small>' + esc(it[2]) + '</small></span><span class="ud"><button type="button" data-mv="-1" data-k="' + k + '" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>↑</button><button type="button" data-mv="1" data-k="' + k + '" aria-label="Descer"' + (i === O.length - 1 ? ' disabled' : '') + '>↓</button></span><button type="button" class="v2fn-tg' + (on ? ' on' : '') + '" data-tg="' + k + '" role="switch" aria-checked="' + on + '" aria-label="' + esc(it[1]) + '"></button></div>'; };
-      const v = v4Page('Personalizar Início', '<p class="v4pg-top">O livro que você está lendo fica sempre em primeiro. Escolha o que aparece embaixo dele e em que ordem.</p><div class="v4card v6hp">' + O.map(row).join('') + '</div>', () => homePrefsSheet());
+      const v = v4Page('Personalizar Hoje', '<p class="v4pg-top">O livro que você está lendo fica sempre em primeiro. Escolha o que aparece embaixo dele e em que ordem.</p><div class="v4card v6hp">' + O.map(row).join('') + '</div>', () => homePrefsSheet());
       v.querySelectorAll('[data-tg]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.tg; if (fnOff(k)) { try { v2FuncoesSheet(); } catch {} return; } p.off = p.off.includes(k) ? p.off.filter((x) => x !== k) : [...p.off, k]; save(); apply(); draw(); }));
       v.querySelectorAll('.v4fn.dis span:first-child').forEach((s) => s.addEventListener('click', () => { try { v2FuncoesSheet(); } catch {} }));
       v.querySelectorAll('[data-mv]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k, i = p.order.indexOf(k), j = i + +b.dataset.mv; if (i < 0 || j < 0 || j >= p.order.length) return; [p.order[i], p.order[j]] = [p.order[j], p.order[i]]; save(); apply(); draw(); }));
@@ -22998,7 +23016,7 @@ saveQuote = function (e) {
   const F = () => [['tudo', 'Tudo'], ['coment', 'Comentários'], ['aval', 'Avaliações'], ['ecos', 'Ecos'], ['prog', 'Progresso']].filter(([k]) => (k !== 'coment' || vFn('comunidade')) && (k !== 'ecos' || vFn('ecos')));
   const stars = (p) => { const n = Math.round(Number(p) || 0); return '<span class="st">' + '★'.repeat(n) + '<u>' + '★'.repeat(5 - n) + '</u></span>'; };
   const byTitle = (t) => { try { return lib().find((e) => normT(e.title) === normT(t || '')); } catch { return null; } };
-  const quem = (v) => v === 'friends' ? 'só amizades' : v === 'rede' ? 'toda a rede' : v === 'local' ? '' : 'todos';
+  const quem = (v) => v === 'friends' ? 'só amizades' : v === 'rede' ? 'toda a comunidade' : v === 'local' ? '' : 'todos';
   const fromApi = (it) => {
     const b = it.book || {}, pg = it.page || null, pct = it.readerPct;
     if (it.type === 'review') {
@@ -23192,11 +23210,11 @@ addEventListener('click', (ev) => {
   const clean = () => { TR.querySelectorAll('label.ck-row, .dd label, .dd .ck-row').forEach((l) => { if ((l.textContent || '').trim() === 'Conquistas') l.remove(); }); };
   new MutationObserver(clean).observe(TR, { childList: true, subtree: true }); }
 // Tour com os rótulos da v2 (teste 20/11 item 45): Hoje, Estante (Livros/Estantes/Trechos), Ler, Comunidade, Você; sem conquistas,
-// sem "Minha biblioteca", "Amigos" ou o menu antigo. A busca é a lupa do topo.
+// sem "Biblioteca", "Amigos" ou o menu antigo. A busca é a lupa do topo.
 TOUR.splice(0, TOUR.length,
   [null, 'Boas-vindas ao Livroverso', 'Um passeio rápido pelo app. Leva menos de um minuto.'],
   ['#tabbar [data-tab=inicio]', 'Hoje', 'O livro que você está lendo, seu prazo, a órbita, a meta e a Pergunta do dia. Use Atualizar no cartão do livro para marcar a página.'],
-  ['#tabbar [data-tab=estante]', 'Estante', 'Todos os seus livros em Livros, suas estantes em Estantes e o que você guardou em Trechos. Toque na capa para abrir; segure para o menu.'],
+  ['#tabbar [data-tab=estante]', 'Biblioteca', 'Todos os seus livros em Livros, suas estantes em Estantes e o que você guardou em Trechos. Toque na capa para abrir; segure para o menu.'],
   ['#tabbar [data-tab=ler]', 'Ler', 'Comece uma sessão de leitura com cronômetro, luz e ecos de quem leu a mesma página.'],
   ['#tabbar [data-tab=comunidade]', 'Comunidade', 'Comentários, trechos e avaliações de quem lê, com controle de spoiler, e as leituras conjuntas.'],
   ['#tabbar [data-tab=eu]', 'Você', 'Seu perfil, metas, estatísticas, resumo do mês e ajustes.'],
@@ -23241,7 +23259,7 @@ Object.assign(V3EMO, {
 // Teste das ações sociais (Bia, 20/11), parte A: posts, curtidas, salvos, trechos, ecos e mensagens.
 // - Confirmação do app (folha/menu) no lugar da janela do navegador para apagar resposta, eco e mensagem.
 // - Post publicado aparece no feed na hora (o feed é recarregado logo depois de publicar).
-// - Trecho publicado pelo Novo post também vai para Estante › Trechos e "Meus trechos" do livro.
+// - Trecho publicado pelo Novo post também vai para Biblioteca › Trechos e "Meus trechos" do livro.
 // - Post ou avaliação excluídos saem dos Salvos; a Conversa aberta do post excluído fecha.
 // - Eco: aviso ao salvar.
 // - Conversa: o "•••" do seu post abre o mesmo menu do feed (Editar, Quem vê, Spoiler, Excluir).
@@ -23385,7 +23403,7 @@ function v9DelReview(e) {
     return _rm.apply(this, arguments); }; }
 // --- u3_v2_capa_segurar.js ---
 // Segurar qualquer capa abre opções (Bia, 20/11; regra do protótipo: tocar abre a página, segurar abre o menu).
-// Antes só valia na Estante. Agora vale em toda capa do app (Hoje, perfis, Top 3, Comunidade, Busca, Metas, páginas):
+// Antes só valia na Biblioteca. Agora vale em toda capa do app (Hoje, perfis, Top 3, Comunidade, Busca, Metas, páginas):
 // livro seu → o menu do livro; livro que não está com você → Ver o livro / Adicionar à estante.
 // A Estante continua com o gesto dela ([data-long]); aqui só entram as capas sem esse gesto.
 { let t = 0, x0 = 0, y0 = 0, cv = null, longAt = 0;
@@ -23580,6 +23598,171 @@ TR.addEventListener('click', (ev) => {
   ev.stopPropagation(); ev.preventDefault();
   v9Ask(b, 'Sair da conta (seus dados continuam guardados)', () => { const c = window.confirm; window.confirm = () => true; try { logout(); } catch (e) { console.warn('sair', e); } finally { window.confirm = c; } });
 }, true);
+// --- x0_v2_vocabulario.js ---
+// Vocabulário único (Bia, 20/11; glossário aprovado): os textos dos blocos v2 já foram trocados na fonte.
+// Aqui ficam só as frases que ainda moram no código antigo (fora de v2src/r2) e aparecem em telas que a v2 abre.
+// Troca só texto de interface (curto, fora de posts, trechos, mensagens e campos), e para sozinha se algo redesenhar em laço.
+{ const RX = [[/\b(à|na|da|À|Na|Da) minha biblioteca\b/g, '$1 Biblioteca'], [/\bMinha biblioteca\b/g, 'Biblioteca'], [/Personalizar Início/g, 'Personalizar Hoje'],
+    [/Só amigos\b/g, 'Só amizades'], [/Retomar leitura/g, 'Voltar a ler'], [/Desistir de vez/g, 'Desistir'], [/\b(na|da|à) Estante\b(?!s)/g, '$1 Biblioteca']];
+  const QUICK = /minha biblioteca|Personalizar Início|Só amigos|Retomar leitura|Desistir de vez| Estante\b/i;
+  const SKIP = 'textarea,input,[contenteditable],.rd-tx,.rd-body,.rd-text,.v2rv-tx,blockquote,.q-tx,.bq-t,.msg,.bub,.ms-b,.bd-msg,script,style';
+  let n = 0, t0 = Date.now(), off = 0;
+  const fix = (node) => { const s = node.nodeValue; if (!s || s.length > 240 || !QUICK.test(s)) return; const p = node.parentElement; if (!p || p.closest(SKIP)) return;
+    let v = s; RX.forEach(([a, b]) => { v = v.replace(a, b); }); if (v !== s) { node.nodeValue = v; n++; } };
+  const attr = (el) => ['aria-label', 'title', 'placeholder'].forEach((k) => { const s = el.getAttribute && el.getAttribute(k); if (s && QUICK.test(s)) { let v = s; RX.forEach(([a, b]) => { v = v.replace(a, b); }); if (v !== s) el.setAttribute(k, v); } });
+  const walk = (root) => { if (root.nodeType === 3) return fix(root); if (root.nodeType !== 1 && root.nodeType !== 11) return; if (root.nodeType === 1) attr(root);
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT); let x; while ((x = w.nextNode())) { if (x.nodeType === 3) fix(x); else attr(x); } };
+  const mo = new MutationObserver((ms) => { if (off > Date.now()) return; if (Date.now() - t0 > 1000) { t0 = Date.now(); n = 0; }
+    ms.forEach((m) => { if (m.type === 'characterData') fix(m.target); else m.addedNodes.forEach(walk); });
+    if (n > 300) { off = Date.now() + 3000; console.warn('vocabulário: muitas trocas seguidas, pausa de 3 s'); } });
+  [TR, document.body].forEach((r) => { try { walk(r); mo.observe(r, { childList: true, subtree: true, characterData: true }); } catch {} }); }
+// --- x1_v2_dialogo_app.js ---
+// Nenhuma janela do navegador na v2 (Bia, 20/11: regra única de confirmar e desfazer).
+// O app ainda tem ~38 confirm()/prompt()/alert() antigos. Em vez de reescrever cada um, a confirmação vira uma folha do app:
+// a 1ª chamada mostra a folha e devolve "não"; se a pessoa confirma, a mesma ação é refeita (o mesmo botão ou o mesmo item de menu)
+// e desta vez o confirm() devolve "sim". prompt() faz o mesmo com um campo de texto. alert() vira aviso (toast).
+// Chamada que não veio de um toque, as escolhas de sincronização (OK/Cancelar com dois resultados) e a importação de arquivo continuam com a janela antiga.
+{ const st = document.createElement('style'); st.textContent = `
+.v10dlg{position:fixed;inset:0;z-index:2147483000;display:grid;align-items:end;justify-items:center;background:rgba(10,8,20,.45);padding:0 0 env(safe-area-inset-bottom,0)}
+.v10dlg .bx{width:min(100%,460px);background:var(--panel,#fff);color:var(--ink,#222);border-radius:22px 22px 0 0;padding:20px 18px 18px;box-shadow:0 -8px 30px rgba(0,0,0,.25);display:grid;gap:12px}
+.v10dlg h3{margin:0;font-size:18px;line-height:1.25}.v10dlg p{margin:0;font-size:14px;line-height:1.45;color:var(--ink-2,#555);white-space:pre-line}
+.v10dlg input{width:100%;box-sizing:border-box;min-height:44px;padding:10px 12px;border-radius:12px;border:1px solid var(--line,#ccc);background:var(--bg,#fff);color:inherit;font:inherit}
+.v10dlg .bt{display:flex;gap:10px;justify-content:flex-end;margin-top:4px}
+.v10dlg .bt button{min-height:44px;min-width:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line,#ccc);background:none;color:inherit;font:inherit;font-weight:800;cursor:pointer}
+.v10dlg .bt .ok{background:var(--acc,#c76b2a);border-color:transparent;color:#fff}.v10dlg .bt .ok.dng{background:#b3261e}
+@media (prefers-reduced-motion: no-preference){.v10dlg .bx{animation:v10up .18s ease-out}@keyframes v10up{from{transform:translateY(24px);opacity:.6}}}
+`; TR.append(st); }
+{ const NC = window.confirm.bind(window), NP = window.prompt.bind(window), NA = window.alert.bind(window);
+  let act = null, passC = 0, passP = null;
+  // de onde veio a ação: o último toque (botão) ou o item de menu/folha que está rodando
+  window.addEventListener('click', (ev) => { const t = ev.composedPath ? ev.composedPath()[0] : ev.target; const b = t && t.closest ? t.closest('button,a,[role=button],[data-a],label,input') || t : t; act = { el: b, t: Date.now() }; }, true);
+  const wrapItems = (items, key) => (items || []).map((x) => { if (!x || typeof x !== 'object') return x;
+    if (Array.isArray(x)) { const f = x[1]; return typeof f === 'function' ? [x[0], function () { act = { fn: f, t: Date.now() }; return f.apply(this, arguments); }, ...x.slice(2)] : x; }
+    if (typeof x[key] !== 'function') return x; const f = x[key]; return Object.assign({}, x, { [key]: function () { act = { fn: f, t: Date.now() }; return f.apply(this, arguments); } }); });
+  try { const _pm = popMenu; popMenu = function (anchor, items) { return _pm.call(this, anchor, wrapItems(items, 'fn')); }; } catch {}
+  try { const _sl = sheetList; sheetList = function (title, items, c) { return _sl.call(this, title, wrapItems(items, 'fn'), c); }; } catch {}
+  try { const _sh = sheet; sheet = function (title, items) { return _sh.call(this, title, wrapItems(items)); }; } catch {}
+  const replayable = () => act && Date.now() - act.t < 2500 && (act.fn || (act.el && act.el.isConnected));
+  const replay = (a) => { try { if (a.fn) a.fn(); else if (a.el && a.el.isConnected) a.el.click(); } catch (e) { console.warn('refazer ação', e); } };
+  const VERB = /^(Apagar|Excluir|Remover|Tirar|Desfazer|Bloquear|Descartar|Desconectar|Sair|Recriar|Corrigir|Começar|Salvar|Cancelar|Levar|Usar)\b/i, DNG = /^(Apagar|Excluir|Remover|Tirar|Desfazer|Bloquear|Descartar)/i;
+  const split = (m) => { const s = String(m || '').trim(), i = s.search(/\?(\s|$)/); if (i > 0 && i < 160) return [s.slice(0, i + 1).trim(), s.slice(i + 1).trim()]; return [s, '']; };
+  const okLabel = (title) => { const q = title.split(/[.!]\s+/).pop(), w = (q.match(VERB) || [])[1]; if (!w) return 'Confirmar'; return /^cancelar$/i.test(w) ? 'Sim, cancelar' : w[0].toUpperCase() + w.slice(1).toLowerCase(); };
+  const open = (title, body, ok, dng, input, done) => {
+    const prev = TR.activeElement || document.activeElement, d = document.createElement('div'); d.className = 'v10dlg';
+    d.innerHTML = `<div class="bx" role="alertdialog" aria-modal="true" aria-labelledby="v10t" ${body ? 'aria-describedby="v10b"' : ''}><h3 id="v10t"></h3>${body ? '<p id="v10b"></p>' : ''}${input != null ? '<input type="text" aria-labelledby="v10t">' : ''}<div class="bt"><button type="button" class="no">Cancelar</button><button type="button" class="ok${dng ? ' dng' : ''}"></button></div></div>`;
+    d.querySelector('h3').textContent = title; if (body) d.querySelector('p').textContent = body; d.querySelector('.ok').textContent = ok;
+    const inp = d.querySelector('input'); if (inp) inp.value = input || '';
+    const close = (v) => { d.remove(); try { prev && prev.focus && prev.focus(); } catch {} done(v); };
+    d.addEventListener('click', (ev) => { if (ev.target === d) close(null); });
+    d.querySelector('.no').addEventListener('click', (ev) => { ev.stopPropagation(); close(null); });
+    d.querySelector('.ok').addEventListener('click', (ev) => { ev.stopPropagation(); close(inp ? inp.value : true); });
+    d.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); close(null); } if (ev.key === 'Enter' && inp) { ev.preventDefault(); close(inp.value); }
+      if (ev.key === 'Tab') { const f = [...d.querySelectorAll('input,button')]; const i = f.indexOf(TR.activeElement || document.activeElement); if (ev.shiftKey && i <= 0) { ev.preventDefault(); f[f.length - 1].focus(); } else if (!ev.shiftKey && i === f.length - 1) { ev.preventDefault(); f[0].focus(); } } });
+    TR.append(d); setTimeout(() => (inp || d.querySelector('.ok')).focus(), 30); };
+  window.confirm = function (msg) {
+    if (passC > 0) { passC--; return true; }
+    // escolhas com dois resultados ("OK: usar os da nuvem / Cancelar: substituir") e confirmações no meio da importação de arquivo
+    // não podem virar "não" + refazer: ficam com a janela antiga
+    if (!replayable() || /OK:|arquivo/.test(String(msg))) return NC(msg);
+    const a = act; act = null; const [t, b] = split(msg), ok = okLabel(t);
+    open(t, b, ok, DNG.test(ok), null, (v) => { if (v) { passC = 1; replay(a); setTimeout(() => { passC = 0; }, 1500); } });
+    return false; };
+  window.prompt = function (msg, def) {
+    if (passP != null) { const v = passP; passP = null; return v; }
+    if (!replayable()) return NP(msg, def);
+    const a = act; act = null; const [t, b] = split(msg);
+    open(t, b, 'Salvar', false, def == null ? '' : String(def), (v) => { if (v != null && v !== true) { passP = String(v); replay(a); setTimeout(() => { passP = null; }, 1500); } });
+    return null; };
+  window.alert = function (msg) { try { sessionStorage.setItem('lv.alert', String(msg)); setTimeout(() => { try { sessionStorage.removeItem('lv.alert'); } catch {} }, 5000); } catch {} try { toast(String(msg)); } catch { NA(msg); } };
+  // aviso que veio logo antes de um recarregamento (ex.: conta excluída)
+  try { const m = sessionStorage.getItem('lv.alert'); if (m) { sessionStorage.removeItem('lv.alert'); setTimeout(() => { try { toast(m); } catch {} }, 1200); } } catch {}
+  // o Sair (w2) chama logout() com confirm liberado: continua funcionando, porque ele troca window.confirm só durante a chamada
+}
+// --- x2_v2_confirmar_excluir.js ---
+// Excluir estante pede confirmação na folha do app antes (Bia, 20/11: "excluir estante não confirma nada").
+// Continua com "Desfazer" depois; a confirmação vem pelo confirm() do x1, que vira folha do app.
+window.addEventListener('click', (ev) => {
+  const p = ev.composedPath ? ev.composedPath() : [], b = p.find((n) => n && n.dataset && n.dataset.a === 'v5shdel'); if (!b) return;
+  const box = b.closest('.sheet, .v4sheet, [role=dialog], .sh') || b.parentElement, h = box && box.querySelector('h3'), nm = h ? h.textContent.trim() : '';
+  if (!confirm(`Excluir a estante${nm ? ' “' + nm + '”' : ''}? Os livros continuam em Livros, com status, notas e progresso.`)) { ev.stopPropagation(); ev.preventDefault(); }
+}, true);
+// --- x3_v2_acessibilidade.js ---
+// Acessibilidade e acabamento (Bia, 20/11: rodada de confiabilidade).
+// 1) Contraste AA no tema Papel: o laranja e o cinza de texto ficavam abaixo de 4,5:1 sobre o fundo creme (3,2 a 4,3).
+//    O laranja escurece um pouco (#9c5216: 5,0 sobre o fundo, 5,8 com texto branco) e o cinza também (#6e5a47: 5,7).
+// 2) Botão com fundo laranja nos temas escuros usava texto branco (1,8:1); passa a usar a cor de texto sobre o laranja do tema.
+// 3) Alvos de toque de pelo menos 40 px: fechar do cartão do topo, curtir/salvar/••• dos posts, ícones do topo, voltar, fechar dica.
+// 4) Folhas e menus: Esc fecha; ao abrir, o foco vai para dentro; ao fechar, volta para onde estava. Foco visível no teclado.
+// 5) Quem pede menos movimento no celular: sem cometa, estrelas piscando, deslizes e transições animadas.
+{ const hs = document.createElement('style'); hs.textContent = `html[data-pal="papel"]{--acc:#9c5216;--caramel-deep:#9c5216;--ink-2:#6e5a47}`; document.head.append(hs);
+  const st = document.createElement('style'); st.id = 'v10a11y'; st.textContent = `
+:host(.light) .v8dia,:host(.light) .v4ler{--vio:#6a4fb8}
+.in-meta-cta button{color:var(--on-acc,#fff)!important}
+.v4ler,.v6com{--ink3:var(--ink-2)!important}
+:host(.light) .pact.le,:host-context(.light) .pact.le,:host(.light) .le,:host-context(.light) .le{color:#5a40a8!important}
+.v8diaw .v8x{width:40px!important;height:40px!important;top:4px!important;right:4px!important}
+.rd-like,.rd-save,.rd-more,.rd-rep,.rd-reply{min-width:40px;min-height:40px}
+.g-b,.g-orb{min-width:40px;min-height:40px}
+.v4back,.v4back2{min-width:40px!important;min-height:40px!important}
+.v2tip button{min-width:40px;min-height:40px;display:inline-grid;place-items:center}
+[role=tab]{min-height:40px}.v6com .acts button,.v6com .cg{min-height:40px;min-width:40px;justify-content:center}button.ic{min-width:40px;min-height:40px}
+.v3dots button{position:relative}.v3dots button::after{content:"";position:absolute;inset:-16px -6px}
+button:focus-visible,a:focus-visible,[role=button]:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--acc)!important;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .v8dia .comet,.dcomet,.v7load i,.sky i{animation:none!important}.v8dia .comet{display:none!important}
+}`; TR.append(st);
+  const ds = document.createElement('style'); ds.textContent = `@media (prefers-reduced-motion: reduce){body .sheet *,body .sheet{animation:none!important;transition:none!important}}`; document.head.append(ds); }
+// telas novas (Ler, Comunidade, Biblioteca) vivem em shadow roots dentro do app: o mesmo CSS e as mesmas regras valem lá dentro
+const v10Roots = () => { const out = [TR]; const walk = (r) => r.querySelectorAll('*').forEach((x) => { if (x.shadowRoot) { out.push(x.shadowRoot); walk(x.shadowRoot); } }); walk(TR); return out; };
+const v10All = (sel) => v10Roots().flatMap((r) => [...r.querySelectorAll(sel)]);
+{ // Esc fecha a camada de cima
+  const deep = () => { let a = document.activeElement; while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement; return a; };
+  window.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape' || ev.defaultPrevented) return;
+    if (v10All('.v10dlg').length) return; // a folha de confirmação cuida do próprio Esc
+    try {
+      if (v10All('.pop').length) { closePop(); ev.preventDefault(); return; }
+      const veil = v10All('.veil[data-a=close]').pop(); if (veil) { veil.click(); ev.preventDefault(); return; }
+      const bs = [...document.body.querySelectorAll(':scope > .sheet')].pop(); if (bs) { bs.remove(); ev.preventDefault(); return; }
+      const es = v10All('.esn-sheet').pop(); if (es) { const c = es.querySelector('[data-a=close],.cancel,.x,[aria-label=Fechar]'); if (c) c.click(); else es.remove(); ev.preventDefault(); return; }
+      const ed = TR.querySelector('#editor'); if (ed && !ed.hidden) { closeEd(); ev.preventDefault(); }
+    } catch (e) { console.warn('Esc', e); } }, true);
+  // foco: entra na camada que abriu e volta para onde estava quando ela fecha
+  const OVL = '.v4ler .sheet, .pop, .esn-sheet, #editor:not([hidden]) .ed-body';
+  let stack = [];
+  const first = (el) => el.querySelector('button:not([disabled]),[href],input:not([type=hidden]),select,textarea,[tabindex]:not([tabindex="-1"])');
+  const scan = () => {
+    const open = [...v10All(OVL), ...document.body.querySelectorAll(':scope > .sheet .box')];
+    open.forEach((el) => { if (stack.some((s) => s.el === el)) return; const prev = deep(); stack.push({ el, prev });
+      if (!el.getAttribute('role')) el.setAttribute('role', 'dialog');
+      if (el.getAttribute('role') === 'dialog') el.setAttribute('aria-modal', 'true');
+      // só puxa o foco quando a pessoa está usando teclado (no toque, não abre o teclado do celular nem pinta o contorno)
+      if (kb) setTimeout(() => { const f = first(el); if (f && el.isConnected) f.focus(); }, 40); });
+    stack = stack.filter((s) => { if (s.el.isConnected && !(s.el.closest('#editor') && s.el.closest('#editor').hidden)) return true; if (kb && s.prev && s.prev.isConnected) { try { s.prev.focus(); } catch {} } return false; }); };
+  let kb = false; window.addEventListener('keydown', (ev) => { if (ev.key === 'Tab' || ev.key === 'Escape' || ev.key === 'Enter') kb = true; }, true); window.addEventListener('pointerdown', () => { kb = false; }, true);
+  let tm = 0; const mo = new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(scan, 30); });
+  const opt = { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] };
+  const css = () => TR.querySelector('#v10a11y');
+  // cada shadow root novo ganha o CSS de acessibilidade e passa a ser observado
+  const spread = () => v10Roots().forEach((r) => { if (r === TR || r.v10a) return; r.v10a = 1; const c = css(); if (c) r.append(c.cloneNode(true)); mo.observe(r, opt); });
+  const mo2 = new MutationObserver(() => { clearTimeout(tm2); tm2 = setTimeout(spread, 60); }); let tm2 = 0;
+  mo.observe(TR, opt); mo.observe(document.body, { childList: true }); mo2.observe(TR, { childList: true, subtree: true }); spread(); }
+// Esqueleto do Hoje (Bia, 20/11: acabamento). Na abertura o Hoje fica invisível até o layout final estar pronto (reteste M8);
+// em vez de tela vazia, mostra blocos cinza no formato do Hoje (cartão do topo, cartão do livro, dois cartões pequenos),
+// por cima do lugar da lista e sem ocupar espaço próprio (não empurra nada: o deslocamento continua zero).
+{ const st = document.createElement('style'); st.textContent = `
+.v10sk{position:absolute;z-index:1;pointer-events:none;display:grid;gap:12px;align-content:start}
+.v10sk i{display:block;border-radius:18px;background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.v10sk .r{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (prefers-reduced-motion: no-preference){.v10sk i{animation:v10pulse 1.2s ease-in-out infinite alternate}@keyframes v10pulse{to{opacity:.55}}}`; TR.append(st);
+  let sk = null;
+  const sync = () => { const l = TR.querySelector('#lista:not(.lista-snap)'), on = !!(l && l.classList.contains('v3-wait') && S.tab === 'inicio');
+    if (!on) { if (sk) { sk.remove(); sk = null; } return; }
+    if (!sk) { sk = document.createElement('div'); sk.className = 'v10sk'; sk.setAttribute('aria-hidden', 'true'); sk.innerHTML = '<i style="height:96px"></i><i style="height:300px"></i><div class="r"><i style="height:86px"></i><i style="height:86px"></i></div><i style="height:140px"></i>'; }
+    if (sk.parentElement !== l.parentElement) l.before(sk);
+    sk.style.top = l.offsetTop + 'px'; sk.style.left = l.offsetLeft + 'px'; sk.style.width = l.offsetWidth + 'px';
+    const pe = l.parentElement; if (pe && getComputedStyle(pe).position === 'static') pe.style.position = 'relative'; };
+  new MutationObserver(sync).observe(TR, { subtree: true, attributes: true, attributeFilter: ['class'], childList: true }); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 

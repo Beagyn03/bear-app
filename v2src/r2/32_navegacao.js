@@ -27,7 +27,7 @@ function navBack() { // volta uma página; false se não havia para onde
 function navToProfileEntry() { return { fn: () => goTab('eu'), tab: 'eu' }; }
 { // envolve quem abre página no #shelflist
   const navKey = (name, a) => { try { return name + '|' + JSON.stringify(a.map((x) => (x && typeof x === 'object' ? x.id || x.handle || x.title || '' : x))); } catch { return null; } };
-  // skip: chamadas que só desenham dentro de outra tela (ex.: o feed embutido no Início) não contam como navegação (19/11)
+  // skip: chamadas que só desenham dentro de outra tela (ex.: o feed embutido no Hoje) não contam como navegação (19/11)
   const wrap = (get, set, mk, skip) => { const o = get(); if (typeof o !== 'function') return; const name = o.name || String(Math.random()); set(function (...a) {
     if (skip && skip(a)) return o.apply(this, a);
     const fn = mk(a); fn.key = navKey(name, a); navEnter(fn); const N = S.nav; N.depth++;

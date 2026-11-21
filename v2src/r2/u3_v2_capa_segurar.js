@@ -1,5 +1,5 @@
 // Segurar qualquer capa abre opções (Bia, 20/11; regra do protótipo: tocar abre a página, segurar abre o menu).
-// Antes só valia na Estante. Agora vale em toda capa do app (Hoje, perfis, Top 3, Comunidade, Busca, Metas, páginas):
+// Antes só valia na Biblioteca. Agora vale em toda capa do app (Hoje, perfis, Top 3, Comunidade, Busca, Metas, páginas):
 // livro seu → o menu do livro; livro que não está com você → Ver o livro / Adicionar à estante.
 // A Estante continua com o gesto dela ([data-long]); aqui só entram as capas sem esse gesto.
 { let t = 0, x0 = 0, y0 = 0, cv = null, longAt = 0;

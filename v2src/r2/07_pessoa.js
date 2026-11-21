@@ -1,4 +1,4 @@
-// Toque numa pessoa da leitura conjunta (linha no card do Início ou bolinha na página Lendo junto): Ver perfil / Mandar mensagem.
+// Toque numa pessoa da leitura conjunta (linha no card do Hoje ou bolinha na página Lendo junto): Ver perfil / Mandar mensagem.
 { const st = document.createElement('style'); st.textContent = `.v3-bud-r{cursor:pointer;border-radius:10px}.v3-bud-r:active{background:color-mix(in srgb,var(--acc) 10%,transparent)}.bj-dot[data-avh],.fd-post .av[data-avh],.pt-com .av[data-avh]{cursor:pointer}`; TR.append(st); }
 const personMenu = (anchor, handle, name) => {
   const me = (typeof socialProfile !== 'undefined' && socialProfile && socialProfile.handle) || ''; if (!handle || handle === me) return;

@@ -1,5 +1,5 @@
 // Prazo para terminar a leitura atual (Bia, 16/11): "quero terminar até sábado" → o app calcula quantas páginas por dia faltam,
-// mostra no cartão "Lendo agora" do Início e lista o plano dia a dia. Guardado no livro (e.dueAt = AAAA-MM-DD).
+// mostra no cartão "Lendo agora" do Hoje e lista o plano dia a dia. Guardado no livro (e.dueAt = AAAA-MM-DD).
 { const st = document.createElement('style'); st.textContent = `
 .due-ln{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.45rem;font-size:.8rem;font-weight:800;color:var(--ink-2);width:100%}
 .due-ln b{color:var(--acc)}.due-ln button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.78rem;padding:0;flex:none}
@@ -121,7 +121,7 @@ function dueSheet(e) {
   f.addEventListener('submit', (ev) => { ev.preventDefault(); if (!inp.value || inp.value < t) return toast('Escolha hoje ou um dia depois'); if (e.dueAt !== inp.value || !e.dueSince) { e.dueSince = todayISO(); e.dueSetAt = new Date().toISOString(); e.dueStartPage = readingInfo(e).now || 0; } e.dueAt = inp.value; if (off.length) e.dueOff = off; else delete e.dueOff; save(); close(); try { renderHome(todayISO()); } catch {} toast(`Prazo: ${dueLabel(e.dueAt)}`); });
   document.body.append(wrap);
 }
-// cartão "Lendo agora" do Início: linha do prazo (ou convite para definir)
+// cartão "Lendo agora" do Hoje: linha do prazo (ou convite para definir)
 { let tm = 0; const paint = () => {
     const R = (() => { try { return reading(); } catch { return null; } })(); if (!R || !R.e || R.e.status !== 'LENDO') return;
     TR.querySelectorAll('.lx-now .lx-nt, .v3-now:not(.empty)').forEach((card) => {

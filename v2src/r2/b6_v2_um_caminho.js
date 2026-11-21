@@ -1,7 +1,7 @@
 // v2 (Bia, 18/11): um caminho só para cada coisa.
 //  - Foco virou a sessão Ler: o botão Foco sai do card do Hoje e todo "Foco" que sobrou (menu do livro, atalhos) abre a sessão
 //    do livro. Um foco antigo ainda em andamento continua abrindo o foco, para não perder o tempo contado.
-//  - Menu lateral sem o que já tem lugar fixo: Ajustes (aba Você) e Personalizar Início (••• do Hoje).
+//  - Menu lateral sem o que já tem lugar fixo: Ajustes (aba Você) e Personalizar Hoje (••• do Hoje).
 { const _sf = startFocus;
   startFocus = function () {
     try { if (focusRunning()) return _sf.apply(this, arguments); } catch {}

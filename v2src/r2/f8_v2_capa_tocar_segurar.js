@@ -1,5 +1,5 @@
 // Capa de livro como no protótipo (Bia, 20/11): TOCAR abre a página do livro; SEGURAR (~450 ms) abre o menu rápido do livro
-// (no computador, clique direito também). Vale para as capas da Estante, listas, Comunidade, perfil e "Para você".
+// (no computador, clique direito também). Vale para as capas da Biblioteca, listas, Comunidade, perfil e "Para você".
 // Antes, tocar abria o menu. Segurar não dispara o toque, não abre o menu do navegador nem seleciona texto, e rolar a tela
 // (dedo andou mais de 10 px) não abre nada. O anel do livro no Hoje já tinha esse comportamento (e0) e fica de fora daqui.
 { const SEL = '.es-bk, .v3-hb, .cs-bk, .tr-bk, .fd-post .nv-cv, .rc-it .cv, .fr-read, .fl-bk, .pv-bk';
@@ -25,7 +25,7 @@
   document.addEventListener('click', (ev) => { if (Date.now() - fired < 900) { fired = 0; ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); return; } // o clique que o celular solta ao levantar o dedo (cairia num item do menu que acabou de abrir)
     const n = hit(ev); if (!n) return; ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
     const b = bookOf(n); if (b) openPage(b); }, true); }
-// Dica no topo da Estante (como no protótipo), some ao tocar no X e não volta
+// Dica no topo da Biblioteca (como no protótipo), some ao tocar no X e não volta
 { const st = document.createElement('style'); st.textContent = '.v3tip{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin:0 0 12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,#7e63c9 14%,var(--panel));border:1px solid color-mix(in srgb,#7e63c9 30%,var(--line));font-size:12.5px;line-height:1.4;color:var(--ink-2)}.v3tip b{color:var(--ink)}.v3tip button{flex:none;border:0;background:none;color:var(--ink-2);font:inherit;font-size:16px;line-height:1;padding:0 2px;cursor:pointer}'; TR.append(st);
   let tm = 0; const put = () => { if (S.tab !== 'estante' || ((db.prefs || {}).tipCapa)) return; const seg = TR.querySelector('#lista .esn-seg'); if (!seg || seg.parentElement.querySelector('.v3tip')) return;
     seg.insertAdjacentHTML('afterend', '<div class="v3tip"><span><b>Dica:</b> toque na capa para abrir o livro; segure para atualizar, terminar ou mudar o status sem abrir.</span><button type="button" aria-label="Entendi">×</button></div>');

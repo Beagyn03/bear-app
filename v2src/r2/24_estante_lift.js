@@ -1,4 +1,4 @@
-// Prateleiras da Estante: barra de progresso (lendo) e barra de lido no topo da capa, e o livro sai para a frente ao passar o dedo/mouse,
+// Prateleiras da Biblioteca: barra de progresso (lendo) e barra de lido no topo da capa, e o livro sai para a frente ao passar o dedo/mouse,
 // igual às Leituras por mês.
 { const st = document.createElement('style'); st.textContent = `
 .es4 .es-row{padding-top:14px!important;margin-top:-8px}

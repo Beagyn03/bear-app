@@ -72,7 +72,7 @@ function tlEvents(e) {
   // página em que cada dia terminou: volta da página atual descontando o que foi lido nos dias seguintes
   let after = 0; list.forEach((x) => { x.end = Math.max(0, now - after); x.start = Math.max(0, x.end - x.pages); after += x.pages; });
   const maxP = Math.max(1, ...list.map((x) => x.pages)), off = e.dueOff || [];
-  // meta dos dias passados: a mesma conta dos marca-páginas do Início (feita no dia em que o prazo foi marcado)
+  // meta dos dias passados: a mesma conta dos marca-páginas do Hoje (feita no dia em que o prazo foi marcado)
   let workAll = 0; if (e.dueAt && e.dueSince) for (let d = String(e.dueSince).slice(0, 10); d <= e.dueAt; d = new Date(Date.parse(d) + 864e5).toISOString().slice(0, 10)) if (!off.includes(new Date(d + 'T12:00:00Z').getUTCDay())) workAll++;
   const base = total && workAll ? Math.ceil(Math.max(0, total - (e.dueStartPage || 0)) / workAll) : 0;
   list.forEach((x) => {
@@ -161,7 +161,7 @@ let TL_PAINT = () => {};
     const body = ed.querySelector('.ed-body'); if (ed.hidden || !body || !(body.querySelector('#up-save') || body.querySelector('.ss-chips')) || body.querySelector('.tl')) return;
     const e = S.tlE; if (!e) return;
     body.querySelectorAll('.tl-tabs').forEach((x) => x.remove());
-    const tabs = document.createElement('div'); tabs.className = 'tl-tabs'; tabs.innerHTML = '<button type="button" data-t="up">Atualizar</button><button type="button" data-t="hist">Histórico</button>';
+    const tabs = document.createElement('div'); tabs.className = 'tl-tabs'; tabs.innerHTML = '<button type="button" data-t="up">Atualizar página</button><button type="button" data-t="hist">Histórico</button>';
     const set = (k) => { S.tlTab = k; tlRemember(e, k); body.classList.toggle('tl-on', k === 'hist'); tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.t === k)); };
     tabs.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => set(b.dataset.t)));
     const hd = body.querySelector('.ss-hd'); if (hd) hd.after(tabs); else body.prepend(tabs); set(S.tlTab || 'up');

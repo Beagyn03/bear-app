@@ -7,8 +7,8 @@
 .g-orb img{width:26px;height:26px}.g-orb.off img{filter:grayscale(1);opacity:.55}.g-orb.off{border-color:var(--line);color:var(--ink-2)}
 .orb-card{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:.8rem .9rem;margin:.2rem 0 1rem;cursor:pointer}
 .orb-hd{display:grid;grid-template-columns:50px minmax(0,1fr) auto;gap:.7rem;align-items:center}
-.orb-ic{width:50px;height:50px;border-radius:15px;background:color-mix(in srgb,#f0b84a 14%,transparent);padding:6px;box-sizing:border-box}.orb-ic img{width:100%;height:100%;display:block}
-.orb-ic.off img{filter:grayscale(1);opacity:.55}
+.orb-ic{width:50px;height:50px;border-radius:15px;background:color-mix(in srgb,#f0b84a 14%,transparent);padding:6px;box-sizing:border-box}.orb-ic img,.orb-ic .orb-svg{width:100%;height:100%;display:block}.orb-ic{color:#c98a1c}.g-orb .orb-svg{width:20px;height:20px;flex:none}
+.orb-ic.off img,.orb-ic.off .orb-svg{filter:grayscale(1);opacity:.55}
 .orb-hd b{display:block;font-size:1rem}.orb-hd small{display:block;font-size:.76rem;color:var(--ink-2);font-weight:700;margin-top:.1rem}
 .orb-rec{text-align:right}.orb-rec small{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em}.orb-rec b{font-size:1rem}
 .orb-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:.75rem}
@@ -39,6 +39,8 @@
 .orb-leg{display:flex;gap:.8rem;margin-top:.6rem;font-size:.7rem;color:var(--ink-2);font-weight:700}
 `; TR.append(st); }
 const ORB_IMG = 'img/orbita.webp';
+// ícone de traço no lugar do planeta colorido (Bia, 20/11: acabamento); mesmo desenho do cartão do topo do Hoje
+const ORB_SVG = '<svg class="orb-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10.5" ry="3.6" transform="rotate(-18 12 12)"/></svg>';
 const orbAddDays = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 // dias com leitura: { 'AAAA-MM-DD': { pages, books: Map(libId -> pages) } }
 function orbDays() {
@@ -63,16 +65,16 @@ const orbSub = (s) => s.today ? (s.cur > 1 ? 'Leitura de hoje registrada' : 'Pri
 { let tm = 0; const paint = () => {
     const bell = TR.querySelector('#g-msg'); if (!bell) return;
     let b = TR.querySelector('#g-orb'); if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'g-orb'; b.className = 'g-orb'; bell.before(b); b.addEventListener('click', () => openOrbita()); }
-    const s = orbStats(), html = '<img src="' + ORB_IMG + '" alt="">' + s.cur; if (b.innerHTML !== html) b.innerHTML = html;
+    const s = orbStats(), html = ORB_SVG + s.cur; if (b.innerHTML !== html) b.innerHTML = html;
     b.classList.toggle('off', !s.today); b.setAttribute('aria-label', orbTxt(s) + '. Abrir sua órbita de leitura'); };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 120); }).observe(TR, { childList: true, subtree: true }); setTimeout(paint, 800); }
-// cartão do Início (logo depois do Lendo agora)
+// cartão do Hoje (logo depois do Lendo agora)
 function orbCardHTML(compact) {
   const s = orbStats(), t = todayISO(), DW = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
   const wk = Array.from({ length: 7 }, (_, i) => orbAddDays(t, i - 6)).map((d) => { const on = s.days.has(d), off = !on && orbIsOff(d), hj = d === t;
     return '<span><i class="' + (on ? 'on' : '') + (off ? ' off' : '') + (hj ? ' hj' : '') + '"></i>' + (compact ? (hj ? 'hoje' : DW[new Date(d + 'T12:00:00').getDay()].slice(0, 1)) : hj ? 'hoje' : DW[new Date(d + 'T12:00:00').getDay()]) + '</span>'; }).join('');
-  if (compact) return '<button type="button" class="orb-card orb-sm" id="orb-card"><div class="orb-sh"><span class="orb-ic' + (s.today ? '' : ' off') + '"><img src="' + ORB_IMG + '" alt=""></span><span>Órbita</span></div><b class="orb-n">' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small class="orb-r">' + (s.today || !s.cur ? 'recorde ' + s.best : 'leia hoje para seguir') + '</small><div class="orb-wk">' + wk + '</div></button>';
-  return '<button type="button" class="orb-card" id="orb-card"><div class="orb-hd"><span class="orb-ic' + (s.today ? '' : ' off') + '"><img src="' + ORB_IMG + '" alt=""></span><div><b>' + orbTxt(s) + '</b><small>' + orbSub(s) + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div><div class="orb-wk">' + wk + '</div></button>';
+  if (compact) return '<button type="button" class="orb-card orb-sm" id="orb-card"><div class="orb-sh"><span class="orb-ic' + (s.today ? '' : ' off') + '">' + ORB_SVG + '</span><span>Órbita</span></div><b class="orb-n">' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small class="orb-r">' + (s.today || !s.cur ? 'recorde ' + s.best : 'leia hoje para seguir') + '</small><div class="orb-wk">' + wk + '</div></button>';
+  return '<button type="button" class="orb-card" id="orb-card"><div class="orb-hd"><span class="orb-ic' + (s.today ? '' : ' off') + '">' + ORB_SVG + '</span><div><b>' + orbTxt(s) + '</b><small>' + orbSub(s) + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div><div class="orb-wk">' + wk + '</div></button>';
 }
 { let tm = 0; const paint = () => {
     const box = TR.querySelector('#lista'); if (!box || S.tab !== 'inicio' || box.classList.contains('lista-snap')) return;
@@ -102,7 +104,7 @@ function openOrbita(ym) {
     }
     const minYM = ([...s.days.keys()].sort()[0] || t).slice(0, 7);
     v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Sua órbita de leitura</b><span></span></div>'
-      + '<div class="orb-pg"><div class="orb-big"><span class="orb-ic' + (s.today ? '' : ' off') + '"><img src="' + ORB_IMG + '" alt=""></span><div><b>' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small>' + (s.cur ? 'em órbita' + (s.since ? ' · sem parar desde ' + s.since.slice(8, 10) + '/' + s.since.slice(5, 7) : '') : 'fora de órbita') + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div>'
+      + '<div class="orb-pg"><div class="orb-big"><span class="orb-ic' + (s.today ? '' : ' off') + '">' + ORB_SVG + '</span><div><b>' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small>' + (s.cur ? 'em órbita' + (s.since ? ' · sem parar desde ' + s.since.slice(8, 10) + '/' + s.since.slice(5, 7) : '') : 'fora de órbita') + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div>'
       + '<p class="orb-tx">Cada dia em que você atualiza a página de um livro conta. Um dia sem leitura e a órbita recomeça. Dias de folga de um prazo não quebram a órbita.</p>'
       + '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (S.orbYM <= minYM ? ' disabled' : '') + '>‹</button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (S.orbYM >= t.slice(0, 7) ? ' disabled' : '') + '>›</button></div>'
       + '<p class="orb-sum">' + (nRead ? nRead + (nRead === 1 ? ' dia lido' : ' dias lidos') + ' · ' + pages.toLocaleString('pt-BR') + ' páginas' : 'Nenhuma leitura registrada neste mês') + '</p><div class="orb-g">' + cells + '</div>'

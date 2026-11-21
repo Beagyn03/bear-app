@@ -3,7 +3,7 @@
 //  - Completar histórico no desenho do protótipo (abas Sem fim · Sem início · Sem pág. · Sem nota, um campo por livro);
 //  - Funções do app como página, com a lista do protótipo (Empréstimos e Presentes separados, sem Conquistas);
 //  - Ajustes nos grupos do protótipo (Seu perfil · Seu app · Conta e dados · Ajuda), Moderação para quem modera,
-//    Sair e Excluir conta no fim; "Trechos e anotações" abre a aba Trechos da Estante;
+//    Sair e Excluir conta no fim; "Trechos e anotações" abre a aba Trechos da Biblioteca;
 //  - páginas internas com o Voltar no topo, ao lado do título (como no protótipo), sem a linha de voltar repetida.
 Object.assign(V3EMO, { x: '<path d="M6 6l12 12M18 6 6 18"/>', sino: '<path d="M6 10a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 15 6 10zM10 20a2.2 2.2 0 0 0 4 0"/>', plus: '<path d="M12 5v14M5 12h14"/>' });
 { const st = document.createElement('style'); st.textContent = `
@@ -158,7 +158,7 @@ v2FuncoesSheet = function () {
     if (tema) { tema.hidden = true; tema.classList.add('v4throw'); const b0 = tema.querySelector('b'); if (b0) b0.textContent = 'Escolha o tema'; tema.addEventListener('click', () => setTimeout(() => { const sm = apar && apar.querySelector('small'); if (sm) sm.textContent = 'tema' + (thn() ? ' · ' + thn() : ''); }, 50)); }
     const G = [
       ['Seu perfil', [get('aj-priv'), get('aj-mu')]],
-      ['Seu app', [get('aj-home'), get('aj-fn'), apar, tema, spoiler, get('aj-v5rm')]], // Sons saiu dos Ajustes; Tema virou "Aparência", que abre a escolha (Bia, 20/11, item 41) // Trechos e anotações saiu (Bia, 20/11): é conteúdo, mora na Estante › Trechos
+      ['Seu app', [get('aj-home'), get('aj-fn'), apar, tema, spoiler, get('aj-v5rm')]], // Sons saiu dos Ajustes; Tema virou "Aparência", que abre a escolha (Bia, 20/11, item 41) // Trechos e anotações saiu (Bia, 20/11): é conteúdo, mora na Biblioteca › Trechos
       ['Conta e dados', [get('aj-sync'), get('aj-install'), hl, fix, get('aj-cv'), get('aj-exp'), get('aj-imp')]],
       ['Moderação', [get('aj-mod')]],
       ['Ajuda', [get('aj-tour')]],

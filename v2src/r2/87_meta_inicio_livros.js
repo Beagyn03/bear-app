@@ -1,4 +1,4 @@
-// Meta do ano no Início (Bia, 17/11; Editar meta no ••• do cartão): embaixo da barra de progresso, as capas dos livros lidos no ano que contam para a meta,
+// Meta do ano no Hoje (Bia, 17/11; Editar meta no ••• do cartão): embaixo da barra de progresso, as capas dos livros lidos no ano que contam para a meta,
 // do mais recente para o mais antigo, e depois as vagas tracejadas que faltam.
 { const st = document.createElement('style'); st.textContent = `
 .ini-meta.im2{padding:.7rem .85rem .75rem}

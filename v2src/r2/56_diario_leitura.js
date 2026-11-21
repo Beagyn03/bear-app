@@ -21,7 +21,7 @@ S.upNote = { text: '', fe: [], vis: (() => { try { const v = localStorage.getIte
     const N = S.upNote, wrap = document.createElement('div'); wrap.className = 'up-note';
     wrap.innerHTML = `<textarea maxlength="280" placeholder="O que está achando desta parte? (opcional)"></textarea>
       <div class="up-fe">${QT_PICK.map(([k, n]) => `<button type="button" data-f="${k}" class="${N.fe.includes(k) ? 'on' : ''}">${esc(n)}</button>`).join('')}</div>
-      <div class="up-vis"><span>Quem vê</span><div class="up-vs">${[['friends', 'Amigos'], ['public', 'Todos']].map(([k, n]) => `<button type="button" data-v="${k}" class="${N.vis === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+      <div class="up-vis"><span>Quem vê</span><div class="up-vs">${[['friends', 'Só amizades'], ['public', 'Toda a comunidade']].map(([k, n]) => `<button type="button" data-v="${k}" class="${N.vis === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
       <label class="up-pub"><input type="checkbox" ${N.sp ? 'checked' : ''}> Contém spoiler <small>(quem não chegou nesta página vê embaçado)</small></label>`;
     const ta = wrap.querySelector('textarea'); ta.value = N.text; ta.addEventListener('input', () => { N.text = ta.value; });
     wrap.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.f; if (N.fe.includes(k)) N.fe = N.fe.filter((x) => x !== k); else if (N.fe.length < 3) N.fe.push(k); else return toast('Até 3 emoções'); b.classList.toggle('on', N.fe.includes(k)); }));

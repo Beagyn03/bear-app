@@ -1,3 +1,5 @@
+// ícone de traço no lugar de ✓/✕ de texto (Bia, 20/11: acabamento)
+const v10ic = (k) => { try { return v4ic(k, 18); } catch { return k === 'ok' ? '✓' : '✕'; } };
 // v2 Desejos e Presentes (Bia, 19/11/2026, branch livroverso-2; desenho aprovado no protótipo v3).
 //  Desejos mora na aba Desejos do perfil (bloco f3_v2_perfil3). Desejos = a lista "Quero ter" em grade de capas.
 //   - Seu: dica no topo, "+ Adicionar" como primeiro item (busca e marca Quero ter), esconder/mostrar para as amizades.
@@ -120,10 +122,10 @@ function gfManage(g, after) {
   const who = gfFirst(g.name || '@' + g.h);
   const sh = gfSheetBox('gfm-sh', '<div class="ex-hd">' + cvh(g.title, g.cover, '') + '<div><b>Presente para ' + esc(who) + '</b><small>' + esc(g.title) + (g.due ? ' · reservado até ' + exD(g.due) : '') + '</small></div></div>'
     + '<div class="gfm-l">'
-    + '<button type="button" data-a="given"><i>✓</i><span><b>Já dei</b><small>sai de Vou dar; ' + esc(who) + ' passa a ver em Ganhei</small></span></button>'
+    + '<button type="button" data-a="given"><i>' + v10ic('ok') + '</i><span><b>Já dei</b><small>sai de Vou dar; ' + esc(who) + ' passa a ver em Ganhei</small></span></button>'
     + '<button type="button" data-a="date"><i><i class=v3e data-i=cal></i></i><span><b>Mudar a data</b><small>adiar ou antecipar a reserva</small></span></button>'
     + '<button type="button" data-a="buy"><i><i class=v3e data-i=cart></i></i><span><b>Onde comprar</b><small>lojas com o livro já buscado</small></span></button>'
-    + '<button type="button" class="dng" data-a="quit"><i>✕</i><span><b>Não vou mais dar</b><small>o livro volta a ficar livre para outras pessoas</small></span></button>'
+    + '<button type="button" class="dng" data-a="quit"><i>' + v10ic('x') + '</i><span><b>Não vou mais dar</b><small>o livro volta a ficar livre para outras pessoas</small></span></button>'
     + '</div><div class="acts" style="grid-template-columns:1fr"><button type="button" data-a="x">Fechar</button></div>');
   const close = () => sh.remove();
   sh.querySelector('[data-a=x]').addEventListener('click', close); sh.addEventListener('click', (ev) => { if (ev.target === sh) close(); });
@@ -188,7 +190,7 @@ async function v2WishPaint(v, d, host) {
   host = host || v.querySelector('.v3pane[data-k=des]') || v.querySelector('.sl-body');
   let p = host.querySelector('.v2wish'); if (!p) { p = document.createElement('section'); p.className = 'v2wish'; host.append(p); }
   const P = db.prefs || {}, mine = !!d.self, who = gfFirst(d.displayName || '@' + d.handle);
-  const tip = (k, txt) => (P[k] ? '' : '<div class="v2tip"><span><b>Dica:</b> ' + txt + '</span><button type="button" data-tip="' + k + '" aria-label="Entendi">✕</button></div>');
+  const tip = (k, txt) => (P[k] ? '' : '<div class="v2tip"><span><b>Dica:</b> ' + txt + '</span><button type="button" data-tip="' + k + '" aria-label="Entendi">' + v10ic('x') + '</button></div>');
   if (mine) {
     const L = v2WishMine(), hide = !!P.wishHide;
     p.innerHTML = tip('tipWm', 'suas amizades podem marcar “Vou dar” nesta lista. Você não fica sabendo quem, para não estragar a surpresa.')

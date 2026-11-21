@@ -1,7 +1,7 @@
 // v2 etapa 2 (19/11, branch livroverso-2): folhas, menus flutuantes, botões e campos no padrão novo, no app inteiro.
 //  - Folhas (#editor compacto, .sheet antiga, painel de filtro): cantos 26px em cima, puxador, título em serifa,
 //    linhas de opção com raio 14px e toque suave.
-//  - Menus flutuantes (.pop, .bkm do livro, painel da Estante): cartão de 18px, sombra macia, itens com raio 12px.
+//  - Menus flutuantes (.pop, .bkm do livro, painel da Biblioteca): cartão de 18px, sombra macia, itens com raio 12px.
 //  - Botões: principal em degradê do acento (o mesmo do "Ler agora"); secundário claro com borda.
 //  - Campos: raio 14px, fundo do tema, foco com anel do acento.
 //  - Abas em pílula (segmentado), iguais às de Avisos, para todas as telas que usam .v3-seg.

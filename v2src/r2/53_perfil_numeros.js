@@ -30,7 +30,7 @@ function myProfileNums() {
       + cell(maior ? k(maior.totalPages) + ' pág.' : '–', maior ? 'mais longo' : 'mais longo', maior ? 'maior' : '', maior ? '<span class="tt">' + esc(maior.title) + '</span>' : '')
       + cell(alvo ? `${lidosAno.length} de ${alvo}` : '–', alvo ? `meta de ${y} · ${pct}%` : `sem meta de ${y}`, 'meta', alvo ? `<span class="mt"><i style="width:${pct}%"></i></span>` : '');
     const mark = () => { const N = S.nav; if (N && !N.st.length) N.st.push({ fn: () => goTab('eu'), tab: 'eu' }); };
-    const shelf = (s) => { try { Object.assign(ESN(), { tab: 'bib', st: s, nota: '', fmt: '', gen: '', own: '' }); S.esnQ = ''; save(); } catch {} v.hidden = true; goTab('estante'); mark(); }; // Minha biblioteca já filtrada (Bia, 19/11)
+    const shelf = (s) => { try { Object.assign(ESN(), { tab: 'bib', st: s, nota: '', fmt: '', gen: '', own: '' }); S.esnQ = ''; save(); } catch {} v.hidden = true; goTab('estante'); mark(); }; // Biblioteca já filtrada (Bia, 19/11)
     const go = { lidos: () => shelf('LIDO'), fila: () => shelf('QUERO'), aband: () => shelf('ABANDONEI'), resenhas: () => { mark(); openMyReviews(); }, maior: () => { if (maior) { mark(); openBookPage(maior); } }, stats: () => { v.hidden = true; goTab('progresso'); }, meta: () => { const before = JSON.stringify(db.yearGoals || {}); setYearGoal(y); let n = 0; const t = setInterval(() => { if (++n > 120 || JSON.stringify(db.yearGoals || {}) !== before) { clearInterval(t); myProfileNums(); } }, 500); } }; // meta abre o ajuste da meta do ano
     nums.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); (go[b.dataset.go] || (() => {}))(); }, true));
   } catch (err) { console.warn('números do perfil', err); }

@@ -1,4 +1,4 @@
-// v2 etapa 2 (19/11): Estante no padrão novo (Minha biblioteca e Estantes).
+// v2 etapa 2 (19/11): Estante no padrão novo (Biblioteca e Estantes).
 //  - Cabeçalho como o do Hoje: rótulo pequeno + título em serifa + resumo ("13 livros · 7 lidos").
 //  - Busca em pílula, filtro redondo, "+" no degradê do acento; abas em pílula (c6); filtros de status mais leves.
 //  - Capas com cantos e sombra de livro; nota vira selo redondo no canto de baixo (mesmas cores: 5 furta-cor, ouro,
@@ -83,7 +83,7 @@
     if (top) {
       const tabOn = (L.querySelector('.esn-tabs .on') || {}).textContent || '';
       const lib0 = lib(), lidos = lib0.filter((e) => e.status === 'LIDO').length, nSh = (db.shelves || []).length;
-      const est = /Estantes/.test(tabOn), title = est ? 'Suas estantes' : 'Minha biblioteca';
+      const est = /Estantes/.test(tabOn), title = est ? 'Suas estantes' : 'Biblioteca';
       const sub = est ? (nSh ? `${nSh} ${nSh === 1 ? 'estante' : 'estantes'}` : 'Monte listas do seu jeito') : `${lib0.length} ${lib0.length === 1 ? 'livro' : 'livros'} · ${lidos} ${lidos === 1 ? 'lido' : 'lidos'}`;
       let h = L.querySelector('.v2-eh');
       const html = `<div class="eb">Sua estante</div><h1>${esc(title)}</h1><small>${esc(sub)}</small>`;

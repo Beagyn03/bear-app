@@ -121,15 +121,15 @@ function v5EstantesHTML() {
   });
   const ord = (V5ORD.find((x) => x[0] === (v5P().shOrd || 'mine')) || V5ORD[0])[1];
   return `<div class="shh"><button class="so" data-a="sheet" data-s="v5shsort">${v4ic('sort', 16)}${ord}</button><button class="lot" data-a="sheet" data-s="v5sorteio">${v4ic('orb', 16)}Sortear</button><button data-a="v5newsh">${v4ic('plus', 16)}Nova estante</button></div>
-  ${v5P().tipSh5 || ed ? '' : `<div class="tip"><span><b>Dica:</b> segure uma estante para pôr livros, editar, juntar numa biblioteca ou arquivar.</span><button data-a="v5tip" data-k="tipSh5" aria-label="Entendi">${v4ic('x', 16)}</button></div>`}
+  ${v5P().tipSh5 || ed ? '' : `<div class="tip"><span><b>Dica:</b> segure uma estante para pôr livros, editar, juntar num grupo ou arquivar.</span><button data-a="v5tip" data-k="tipSh5" aria-label="Entendi">${v4ic('x', 16)}</button></div>`}
   ${ed ? `<div class="tip"><span>Use ↑ e ↓ para mudar a ordem.</span><button class="lnk" style="text-decoration:none" data-a="v5shed">Pronto</button></div>` : ''}
   ${cards || `<div class="empty">Estantes são listas suas: "Clássicos", "Para dar de presente", "Clube do livro". Um livro pode estar em várias.<br><button class="act0" data-a="v5newsh">${v4ic('plus', 16)}Nova estante</button></div>`}
   ${arq.length && !ed ? `<button class="arq" data-a="v5arq">${v4ic('save', 18)}<span>Arquivadas<small>${plural(arq.length, 'estante', 'estantes')} · os livros e os números continuam</small></span>${v4ic('chev', 16)}</button>` : ''}`;
 }
 function v5GrpHTML(g) {
   const L = v5Shelves().filter((s) => s.grp === g && !s.arch);
-  return `<div class="sub"><button class="tool" data-a="v5back" aria-label="Voltar">${v4ic('back', 20)}</button><h2>${esc(g)}</h2><button class="tool" data-a="sheet" data-s="v5grpm" data-g="${esc(g)}" aria-label="Opções da biblioteca">${v4ic('dots', 20)}</button></div>
-  <div class="shh"><span class="mut" style="font-size:12.5px">${plural(L.length, 'estante', 'estantes')}</span><button data-a="v5newsh" data-g="${esc(g)}">${v4ic('plus', 16)}Nova estante nesta biblioteca</button></div>
+  return `<div class="sub"><button class="tool" data-a="v5back" aria-label="Voltar">${v4ic('back', 20)}</button><h2>${esc(g)}</h2><button class="tool" data-a="sheet" data-s="v5grpm" data-g="${esc(g)}" aria-label="Opções do grupo">${v4ic('dots', 20)}</button></div>
+  <div class="shh"><span class="mut" style="font-size:12.5px">${plural(L.length, 'estante', 'estantes')}</span><button data-a="v5newsh" data-g="${esc(g)}">${v4ic('plus', 16)}Nova estante neste grupo</button></div>
   ${L.map((s) => v5ShCard(s, false)).join('') || '<div class="empty">Nenhuma estante aqui.</div>'}`;
 }
 function v5ArqHTML() {
@@ -177,10 +177,10 @@ function v5BmHTML(e) {
   const st = e.status, pg = libProgress(e), tot = Number(e.totalPages) || 0, due = (() => { try { return v4Due(e); } catch { return null; } })(), soc = v4On('comunidade');
   const shN = v5Shelves().filter((s) => (s.bookIds || []).includes(e.id)).map((s) => s.name);
   const top = st === 'LENDO' ? [v5li('v5upd', 'pag', 'Atualizar página'), v5li('v5fim', 'ok', 'Terminei', 'nota, datas e o que sentiu'), vFn('junto') ? v5li('v5junto', 'friends', 'Ler junto') : '', vFn('prazos') && v5li('v5prazo', 'cal', e.dueAt ? 'Prazo' : 'Definir prazo', e.dueAt ? (due && !due.done ? `hoje, até a pág. ${due.target}` : 'mudar a data ou tirar') : 'quando quer terminar?'), v5li('sheet', 'stop', 'Parar de ler', 'pausar, desistir ou marquei por engano', ' data-s="v5stop"')]
-    : st === 'QUERO' ? [v5li('v5start', 'ler', 'Começar a ler'), v5li('v5prio', 'sort', 'Prioridade', { 1: 'alta', 2: 'normal', 3: 'baixa' }[e.prio || 2]), v5li('v5fim', 'ok', 'Já li', 'nota e quando leu')]
+    : st === 'QUERO' ? [v5li('v5start', 'ler', 'Começar a ler'), v5li('v5prio', 'sort', 'Prioridade', { 1: 'alta', 2: 'normal', 3: 'baixa' }[e.prio || 2]), v5li('v5fim', 'ok', 'Já li', 'nota e quando leu'), v5FilaLivre(e) ? v5li('v5tirafila', 'x', 'Tirar da fila', 'sai na hora; dá para desfazer') : '']
     : st === 'LIDO' ? [v5li('v5fim', 'quote', 'Minha avaliação', 'nota, emoções e níveis do enredo'), v5li('v5retro', 'cal', 'Retrospectiva'), v5li('sheet', 'swap', 'Ler de novo', 'a leitura anterior fica no histórico', ' data-s="v5reler"'), v5li('sheet', 'undo', 'Não terminei', 'marquei como lido por engano', ' data-s="v5unlido"')]
-    : st === 'HIBERNANDO' ? [v5li('v5start', 'ler', 'Retomar', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5aband', 'stop', 'Desistir de vez', 'vai para Abandonados'), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')]
-    : [v5li('v5start', 'ler', 'Tentar de novo', pg ? 'volta para o Hoje na pág. ' + pg : ''), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')];
+    : st === 'HIBERNANDO' ? [v5li('v5start', 'ler', 'Voltar a ler', pg ? 'volta para o Hoje na pág. ' + pg : 'volta para o Hoje onde você parou'), v5li('v5aband', 'stop', 'Desistir', 'vai para Abandonados'), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')]
+    : [v5li('v5start', 'ler', 'Voltar a ler', pg ? 'volta para o Hoje na pág. ' + pg : ''), v5li('v5fila', 'plus', 'Voltar para a fila', 'Quero ler')];
   return `<button class="sh-bk sh-go" data-a="v5open" aria-label="Abrir página do livro">${v4cv(e)}<div style="flex:1;min-width:0;text-align:left"><h3>${esc(e.title)}</h3><span class="mut">${esc(e.author || '')}${e.author ? ' · ' : ''}${V5ST[st] || ''}${st === 'LENDO' && pg ? ' · pág. ' + pg + (tot ? ' de ' + tot : '') : ''}</span><small class="sh-lk">Ver página do livro</small></div><span class="r">${v4ic('chev', 18)}</span></button>
   <div class="list">${top.filter(Boolean).join('')}
   ${v4On('emprest') ? v5li('v5lend', 'swap', 'Emprestar', 'para uma amizade ou alguém de fora') : ''}
@@ -201,7 +201,7 @@ v4SheetHTML = function (k) {
     if (k === 'v5stop') { const pg = libProgress(e), dueAt = e.dueAt;
       return `${v5hd(e, 'Parar de ler', `${esc(e.title)} · pág. ${pg}${e.totalPages ? ' de ' + e.totalPages : ''}`)}
       ${dueAt ? `<div class="sh-due">${v4ic('cal', 18)}<span>Este livro tem prazo. Se for só um atraso, dá para <button data-a="v5prazo">mudar a data</button> em vez de parar.</span></div>` : ''}
-      <div class="list">${v5li('v5pause', 'pause', 'Pausar', `sai do Hoje e guarda a pág. ${pg}. Fica em Estante › Pausados até você retomar.${dueAt ? ' O prazo fica suspenso.' : ''}`)}
+      <div class="list">${v5li('v5pause', 'pause', 'Pausar', `sai do Hoje e guarda a pág. ${pg}. Fica em Biblioteca › Pausados até você retomar.${dueAt ? ' O prazo fica suspenso.' : ''}`)}
       ${v5li('v5aband', 'stop', 'Desistir', `vai para Abandonados com a página onde parou. Não conta na meta.${dueAt ? ' O prazo é cancelado.' : ''}`)}
       ${v5li('v5engano', 'undo', 'Marquei por engano', `volta para Quero ler e apaga o progresso, como se nunca tivesse começado.${dueAt ? ' O prazo é cancelado.' : ''}`)}</div>
       <button class="btn s w" data-a="sheet" data-s="v5bm" style="margin-top:10px">Voltar</button>`; }
@@ -211,7 +211,7 @@ v4SheetHTML = function (k) {
       ${v5li('v5ul_meio', 'pause', 'Parei no meio', 'vai para Pausados, com a página onde parou.')}
       ${v5li('v5ul_nada', 'undo', 'Nem comecei', 'volta para Quero ler, sem página.')}</div>
       <button class="btn s w" data-a="sheet" data-s="v5bm" style="margin-top:10px">Voltar</button>`;
-    if (k === 'v5rm') { const msg = { QUERO: 'O livro sai do Quero ler, da Estante e das suas estantes.', LENDO: 'O livro sai do Hoje e da Estante, junto com páginas, trechos e anotações. Se só quer parar, use Parar de ler: pausar ou desistir guarda o histórico.', LIDO: 'O livro sai da Estante, da meta do ano e das estatísticas, junto com nota, avaliação e trechos. Se marcou como lido por engano, use Não terminei.', HIBERNANDO: 'O livro sai da Estante e das estatísticas, junto com páginas e trechos. Se só quer parar de ver em Pausados, use Desistir de vez: o histórico fica.' }[e.status] || 'O livro sai da Estante e das suas estantes.';
+    if (k === 'v5rm') { const msg = { QUERO: 'O livro sai do Quero ler, da Biblioteca e das suas estantes.', LENDO: 'O livro sai do Hoje e da Biblioteca, junto com páginas, trechos e anotações. Se só quer parar, use Parar de ler: pausar ou desistir guarda o histórico.', LIDO: 'O livro sai da Biblioteca, da meta do ano e das estatísticas, junto com nota, avaliação e trechos. Se marcou como lido por engano, use Não terminei.', HIBERNANDO: 'O livro sai da Biblioteca e das estatísticas, junto com páginas e trechos. Se só quer parar de ver em Pausados, use Desistir: o histórico fica.' }[e.status] || 'O livro sai da Biblioteca e das suas estantes.';
       return `${v5hd(e, 'Remover este livro?', esc(e.title))}<p class="mut" style="margin:0 0 12px">${msg}</p>
       <div class="sh-due">${v4ic('undo', 18)}<span>Nada se perde na hora: o livro fica <b>30 dias</b> em Você › Ajustes › Removidos recentemente, com tudo o que tinha, e volta com um toque.</span></div>
       <div class="row" style="gap:8px"><button class="btn s" style="flex:1" data-a="sheet" data-s="v5bm">Voltar</button><button class="btn p" style="flex:1" data-a="v5rmok">Remover</button></div>`; }
@@ -237,12 +237,12 @@ v4SheetHTML = function (k) {
       if (s.arch) return `<h3>${esc(s.name)}</h3><div class="list">${v5li('v5unarch', 'save', 'Desarquivar', 'volta para a lista')}${v5li('v5shdel', 'trash', 'Excluir estante', 'os livros continuam em Livros', '', 'dng')}</div>`;
       return `<h3>${esc(s.name)}</h3><div class="list">${v5li('v5shlot', 'orb', 'Sortear desta estante', 'um cometa escolhe o próximo')}${v5li('v5shadd', 'plus', 'Adicionar livros', 'escolha vários dos seus livros de uma vez')}${v5li('v5shedit', 'pen', 'Editar estante', 'nome, cor, descrição e meta')}
       <div class="lbl" style="margin:10px 4px 4px">Quem vê</div><div class="seg" style="margin:0 0 6px"><button class="${s.priv ? '' : 'on'}" data-a="v5priv" data-k="0">Pública no perfil</button><button class="${s.priv ? 'on' : ''}" data-a="v5priv" data-k="1">Só você</button></div>
-      ${v5li('sheet', 'estante', s.grp ? 'Trocar de biblioteca' : 'Colocar numa biblioteca', s.grp ? 'agora em ' + esc(s.grp) : 'ex.: 2026 mês a mês, Clube do livro', ' data-s="v5shgrp"')}${s.grp ? v5li('v5ungrp', 'x', 'Tirar da biblioteca', 'volta solta para a lista') : ''}
+      ${v5li('sheet', 'estante', s.grp ? 'Trocar de grupo' : 'Colocar num grupo', s.grp ? 'agora em ' + esc(s.grp) : 'ex.: 2026 mês a mês, Clube do livro', ' data-s="v5shgrp"')}${s.grp ? v5li('v5ungrp', 'x', 'Tirar do grupo', 'volta solta para a lista') : ''}
       ${v5li('v5arch', 'save', 'Arquivar', 'some da lista e de "adicionar à estante"; livros e números ficam')}${v5li('v5shdel', 'trash', 'Excluir estante', 'os livros continuam em Livros', '', 'dng')}</div>`; }
     if (k === 'v5shgrp') { const s = v5Shelves().find((x) => x.id === c.sh); const G = [...new Set(v5Shelves().map((x) => x.grp).filter(Boolean))];
-      return `<h3>Colocar numa biblioteca</h3><p class="mut" style="margin:0 0 8px">Biblioteca junta várias estantes, como "2026 mês a mês".</p><div class="list">${G.map((g) => `<button class="li rp${s && s.grp === g ? ' on' : ''}" data-a="v5setgrp" data-g="${esc(g)}"><span class="rd2"></span><span class="t">${esc(g)}</span></button>`).join('')}</div>
-      <div class="v5f"><label>Nova biblioteca<input class="fld" id="v5grpnm" maxlength="40" placeholder="Ex.: Clube do livro"></label></div><button class="btn p w" data-a="v5setgrp" data-g="" style="margin-top:10px">Criar e colocar</button>`; }
-    if (k === 'v5grpm') { const g = c.grp; return `<h3>${esc(g)}</h3><div class="list">${v5li('v5grpren', 'pen', 'Renomear biblioteca', '')}${v5li('v5newsh', 'plus', 'Nova estante nesta biblioteca', 'ex.: Dezembro', ` data-g="${esc(g)}"`)}${v5li('v5grparch', 'save', 'Arquivar a biblioteca inteira', 'some da lista; livros e números ficam')}${v5li('v5grpundo', 'x', 'Desfazer biblioteca', 'as estantes voltam soltas para a lista')}</div>
+      return `<h3>Colocar num grupo</h3><p class="mut" style="margin:0 0 8px">Biblioteca junta várias estantes, como "2026 mês a mês".</p><div class="list">${G.map((g) => `<button class="li rp${s && s.grp === g ? ' on' : ''}" data-a="v5setgrp" data-g="${esc(g)}"><span class="rd2"></span><span class="t">${esc(g)}</span></button>`).join('')}</div>
+      <div class="v5f"><label>Novo grupo<input class="fld" id="v5grpnm" maxlength="40" placeholder="Ex.: Clube do livro"></label></div><button class="btn p w" data-a="v5setgrp" data-g="" style="margin-top:10px">Criar e colocar</button>`; }
+    if (k === 'v5grpm') { const g = c.grp; return `<h3>${esc(g)}</h3><div class="list">${v5li('v5grpren', 'pen', 'Renomear grupo', '')}${v5li('v5newsh', 'plus', 'Nova estante neste grupo', 'ex.: Dezembro', ` data-g="${esc(g)}"`)}${v5li('v5grparch', 'save', 'Arquivar o grupo inteiro', 'some da lista; livros e números ficam')}${v5li('v5grpundo', 'x', 'Desfazer grupo', 'as estantes voltam soltas para a lista')}</div>
       <div class="v5f" id="v5grprenw" hidden><label>Novo nome<input class="fld" id="v5grpren" maxlength="40" value="${esc(g)}"></label><button class="btn p w" data-a="v5grprenok">Salvar nome</button></div>`; }
     if (k === 'v5sorteio') { const src = c.src || 'QUERO', O = [['QUERO', 'Quero ler', plural(lib().filter((x) => x.status === 'QUERO').length, 'livro', 'livros')], ...v5Shelves().filter((s) => !s.arch && (s.bookIds || []).length).map((s) => [s.id, s.name, plural((s.bookIds || []).length, 'livro', 'livros')])];
       return `<h3>Sortear o próximo</h3><p class="mut" style="margin:0 0 6px">Um cometa cai e mostra o livro. Se não gostar, sorteia de novo.</p>
@@ -284,6 +284,11 @@ function v5TqInit(x) {
 }
 // ---------- removidos recentemente (30 dias) ----------
 function v5Purge() { const lim = Date.now() - 30 * 864e5; const L = (db.removed || []).filter((r) => new Date(r.at).getTime() > lim); if (L.length !== (db.removed || []).length) { db.removed = L; v5Save(); } }
+// "Tirar da fila" (Bia, 20/11): livro só na fila, sem trechos, anotações, diário nem exemplar, sai na hora, sem a folha do Remover.
+// Usa o mesmo caminho do Remover (fica em Removidos recentemente); o toast "Desfazer" devolve o livro com a mesma prioridade e as mesmas estantes.
+function v5FilaLivre(e) { const ex = e.ex || {}; return e.status === 'QUERO' && !(e.quotes || []).length && !(e.diary || []).length && !String(e.note || '').trim() && !(e.notes || []).length && (!ex.own || ex.own === 'quero') && !e.link; } // "Quero ter" (desejos) não conta como dado: volta junto no Desfazer
+function v5TirarFila(e) { const t = e.title, id = e.id, i = db.library.indexOf(e); v5Remove(e);
+  toast(`“${t}” saiu da fila`, { label: 'Desfazer', fn: () => { v5Restore(id); const k = db.library.findIndex((x) => x.id === id); if (k >= 0 && i >= 0 && k !== i) { const [x] = db.library.splice(k, 1); db.library.splice(Math.min(i, db.library.length), 0, x); v5Save(); try { refresh(); } catch {} v5Redraw(); } } }); }
 function v5Remove(e) {
   if (e.link) return toast(`“${e.title}” faz parte de uma meta com prazo. Tire o livro da meta para remover.`);
   const sh = v5Shelves().filter((s) => (s.bookIds || []).includes(e.id)).map((s) => s.id);
@@ -291,13 +296,13 @@ function v5Remove(e) {
   db.library = db.library.filter((x) => x !== e); v5Shelves().forEach((s) => { s.bookIds = (s.bookIds || []).filter((i) => i !== e.id); });
   if (T().nextId === e.id) T().nextId = null; if (T().currentId === e.id) T().currentId = null;
   v5Save(); try { refresh(); } catch {} v5Redraw();
-  toast(`“${e.title}” saiu da Estante`, { label: 'Desfazer', fn: () => v5Restore(e.id) });
+  toast(`“${e.title}” saiu da Biblioteca`, { label: 'Desfazer', fn: () => v5Restore(e.id) });
 }
 function v5Restore(id) {
   const r = (db.removed || []).find((x) => String(x.e.id) === String(id)); if (!r) return;
   if (!lib().some((x) => x.id === r.e.id)) db.library.push(r.e);
   (r.sh || []).forEach((sid) => { const s = v5Shelves().find((x) => x.id === sid); if (s && !(s.bookIds || []).includes(r.e.id)) s.bookIds = [...(s.bookIds || []), r.e.id]; });
-  db.removed = (db.removed || []).filter((x) => x !== r); v5Save(); try { refresh(); } catch {} v5Redraw(); toast(`“${r.e.title}” voltou para a Estante`);
+  db.removed = (db.removed || []).filter((x) => x !== r); v5Save(); try { refresh(); } catch {} v5Redraw(); toast(`“${r.e.title}” voltou para a Biblioteca`);
 }
 // ---------- sorteio com cometa ----------
 function v5Comet(src) {
@@ -376,6 +381,7 @@ function v5V4Click(ev) {
   if (a === 'v5ul_meio') { withUndo(`“${e.title}” foi para Pausados`, () => { setLibStatus(e, 'HIBERNANDO'); v5Save(); }); return done(); }
   if (a === 'v5ul_nada') { withUndo(`“${e.title}” voltou para Quero ler`, () => { setLibStatus(e, 'QUERO'); if (e.status === 'QUERO') { e.currentPage = 0; delete e.startedAt; } v5Save(); }); return done(); }
   if (a === 'v5rmok') { v5SheetClose(); return v5Remove(e); }
+  if (a === 'v5tirafila') { v5SheetClose(); return v5TirarFila(e); }
   if (a === 'v5restore') { v5Restore(d.id); return v4Draw(); }
   if (a === 'v5relerok') { const meta = !!(V4 && V4.querySelector('#v5rlmeta') && V4.querySelector('#v5rlmeta').checked);
     e.reads = [...(e.reads || []), { startedAt: e.startedAt || null, finishedAt: e.finishedAt || null, pages: e.totalPages || null }];
@@ -407,7 +413,7 @@ function v5V4Click(ev) {
   if (a === 'v5unarch') { delete sh.arch; v5Save(); return done(`“${sh.name}” voltou para a lista`); }
   if (a === 'v5shdel') { const nm = sh.name; withUndo(`Estante “${nm}” excluída`, () => { db.shelves = v5Shelves().filter((x) => x !== sh); v5Save(); }); return done(); }
   if (a === 'v5ungrp') { delete sh.grp; v5Save(); return done(); }
-  if (a === 'v5setgrp') { const g = d.g || String((V4.querySelector('#v5grpnm') || {}).value || '').trim().slice(0, 40); if (!g) return toast('Dê um nome à biblioteca'); sh.grp = g; v5Save(); return done(`“${sh.name}” está em ${g}`); }
+  if (a === 'v5setgrp') { const g = d.g || String((V4.querySelector('#v5grpnm') || {}).value || '').trim().slice(0, 40); if (!g) return toast('Dê um nome ao grupo'); sh.grp = g; v5Save(); return done(`“${sh.name}” está em ${g}`); }
   if (a === 'v5grpren') { const w = V4.querySelector('#v5grprenw'); if (w) w.hidden = false; return; }
   if (a === 'v5grprenok') { const g = c.grp, n = String((V4.querySelector('#v5grpren') || {}).value || '').trim().slice(0, 40); if (!n) return; v5Shelves().forEach((s) => { if (s.grp === g) s.grp = n; }); if (S5.sub && S5.sub.g === g) S5.sub.g = n; v5Save(); return done(); }
   if (a === 'v5grparch') { v5Shelves().forEach((s) => { if (s.grp === c.grp) s.arch = 1; }); S5.sub = null; v5Save(); return done(`Biblioteca ${c.grp} arquivada`); }
@@ -463,7 +469,8 @@ bookMenu = function (e) { if (e && lib().includes(e)) return v5Menu(e); };
 
 // ---------- Ajustes › Removidos recentemente ----------
 { const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
-  try { v5Purge(); const n = (db.removed || []).length, host = box || $('#lista'); if (host && !host.querySelector('#aj-v5rm')) { const ref = host.querySelector('#aj-hl, #aj-tq, #aj-cv'); const card = ref ? ref.closest('.aj-card') : host.querySelector('.aj-card');
+  try { v5Purge(); const n = (db.removed || []).length, host = box || $('#lista'); if (S.ajMode === 'perfil') return r; // Editar perfil não mostra Removidos recentemente (fica só em Ajustes; Bia, 20/11)
+    if (host && !host.querySelector('#aj-v5rm')) { const ref = host.querySelector('#aj-hl, #aj-tq, #aj-cv'); const card = ref ? ref.closest('.aj-card') : host.querySelector('.aj-card');
       if (card) { card.insertAdjacentHTML('beforeend', `<button type="button" class="aj-row" id="aj-v5rm"><span><b>Removidos recentemente</b><small>${n ? plural(n, 'livro', 'livros') + ' · voltam com tudo por 30 dias' : 'livros removidos voltam com tudo por 30 dias'}</small></span>›</button>`); host.querySelector('#aj-v5rm').addEventListener('click', () => v5Sheet('v5removed', {})); } } } catch (err) { console.warn('removidos', err); }
   return r; }; }
 
@@ -483,7 +490,7 @@ bookMenu = function (e) { if (e && lib().includes(e)) return v5Menu(e); };
 #shelflist.v5bp .bp-tabs [data-t=enredo],#shelflist.v5bp .sl-top .es-dots[data-a=menu]{display:none!important}
 #shelflist.v5bp:not(.v5bp-minha) .bp-ex,#shelflist.v5bp:not(.v5bp-minha) .bp-buy{display:none!important}`; TR.append(st); }
 { let cur = null, tm = 0;
-  const prim = (e) => e.status === 'LENDO' ? ['pag', 'Atualizar página'] : e.status === 'QUERO' ? ['ler', 'Começar a ler'] : e.status === 'LIDO' ? ['quote', 'Minha avaliação'] : e.status === 'HIBERNANDO' ? ['ler', 'Retomar'] : ['ler', 'Tentar de novo'];
+  const prim = (e) => e.status === 'LENDO' ? ['pag', 'Atualizar página'] : e.status === 'QUERO' ? ['ler', 'Começar a ler'] : e.status === 'LIDO' ? ['quote', 'Minha avaliação'] : e.status === 'HIBERNANDO' ? ['ler', 'Voltar a ler'] : ['ler', 'Voltar a ler']; // vocabulário (Bia, 20/11): um nome só
   const fix = () => { const v = $('#shelflist'); if (!v) return; const hero = v.querySelector('.bp-hero'), e = !cur ? null : lib().includes(cur) ? cur : (lib().find((x) => x.id === cur.id) || null); // a estante pode ser recarregada (sincronização, capa achada): acha o mesmo livro pelo id
     if (v.hidden || !hero || !e) { v.classList.remove('v5bp', 'v5bp-minha'); return; }
     v.classList.add('v5bp'); const on = v.querySelector('.bp-tabs [data-t].on, .bp-tabs [data-t][aria-selected="true"]'); const t = on ? on.dataset.t : 'sobre';

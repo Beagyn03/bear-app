@@ -1,6 +1,6 @@
 // v4 Ler, Atualizar e Terminei (Bia, 20/11; etapas 2 e 3 do alinhamento com o protótipo v3 https://claude.ai/artifact/FZDpofzVvP8EJjSrugBoJc).
 // Telas numa camada própria (.v4ler, dentro de um shadow root próprio) com o CSS do protótipo isolado (tokens ligados aos do app).
-// - Ler (botão do meio): folha "Entrar no silêncio / Atualizar páginas lidas"; tela antes de começar (capa grande na órbita, outro livro ao longe,
+// - Ler (botão do meio): folha "Entrar no silêncio / Atualizar página"; tela antes de começar (capa grande na órbita, outro livro ao longe,
 //   deslizar troca, meta pontilhada, ecos à frente com (?), tempo); sessão (cronômetro que só troca o próprio texto, pausa, quadro da página com o
 //   painel página/%/tempo, ecos subindo por trás, Trecho por foto, Anotar com ditar e foto vira texto, Deixar um eco, som ambiente, resumo).
 // - Ecos de verdade pela API (GET/POST /v1/echoes): o texto só chega depois da página; antes, só a posição.
@@ -14,7 +14,7 @@ const V4ICON = {
   estante:'<rect class="d" x="3.5" y="5" width="4.2" height="15" rx="1.2"/><rect x="3.5" y="5" width="4.2" height="15" rx="1.2"/><rect x="9.6" y="3.5" width="4.2" height="16.5" rx="1.2"/><path d="M15.8 6.4l3.7-.9 3 13.8-3.7.8z"/>',
   ler:'<path class="d" d="M12 6.6C9.8 5 6.8 4.5 3 5v13.2c3.8-.5 6.8 0 9 1.6 2.2-1.6 5.2-2.1 9-1.6V5c-3.8-.5-6.8 0-9 1.6z"/><path d="M12 6.6C9.8 5 6.8 4.5 3 5v13.2c3.8-.5 6.8 0 9 1.6 2.2-1.6 5.2-2.1 9-1.6V5c-3.8-.5-6.8 0-9 1.6zM12 6.6v13.2"/>',
   com:'<path class="d" d="M4 6.5A3.5 3.5 0 0 1 7.5 3h7A3.5 3.5 0 0 1 18 6.5v4a3.5 3.5 0 0 1-3.5 3.5H9l-4 3v-3.4A3.5 3.5 0 0 1 4 10.5z"/><path d="M4 6.5A3.5 3.5 0 0 1 7.5 3h7A3.5 3.5 0 0 1 18 6.5v4a3.5 3.5 0 0 1-3.5 3.5H9l-4 3v-3.4A3.5 3.5 0 0 1 4 10.5zM20.5 9.5v5a3 3 0 0 1-1 2.2V20l-3-2h-4"/>',
-  busca:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/>',
+  busca:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/>', globe:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.6 3.5 5.4 3.5 8.5s-1.1 5.9-3.5 8.5c-2.4-2.6-3.5-5.4-3.5-8.5s1.1-5.9 3.5-8.5z"/>',
   sino:'<path class="d" d="M6 10a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 15 6 10z"/><path d="M6 10a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 15 6 10zM10 20a2.2 2.2 0 0 0 4 0"/>',
   dots:'<circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/>',
   back:'<path d="M15 5l-7 7 7 7"/>', x:'<path d="M6 6l12 12M18 6 6 18"/>', plus:'<path d="M12 5v14M5 12h14"/>',
@@ -113,7 +113,7 @@ function v4Orb(e, pg) {
 v2Ler = function () {
   const s = v4Ses(); if (s) { const e = lib().find((x) => x.id === s.libId); if (e) return v4Open(e); v2SesPut(null); }
   const L = v4Books();
-  if (!L.length) { const fila = lib().filter((e) => e.status === 'QUERO').slice(0, 8); if (!fila.length) return toast('Adicione um livro na Estante para começar a ler');
+  if (!L.length) { const fila = lib().filter((e) => e.status === 'QUERO').slice(0, 8); if (!fila.length) return toast('Adicione um livro na Biblioteca para começar a ler');
     return sheetList('Você não está lendo nenhum livro. Qual começa agora?', fila.map((e) => ({ label: esc(e.title), sub: e.author ? esc(e.author) : '', fn: () => { setLibStatus(e, 'LENDO'); if (e.status === 'LENDO') v4Sheet('lerq', e); } }))); }
   v4Sheet('lerq', L[0]);
 };
@@ -132,7 +132,7 @@ function v4PreHTML(e) {
       ${v4EcotHTML(e)}</div>
       <div class="dur">${[[0, 'Livre'], [15, '15 min'], [25, '25 min'], [45, '45 min'], [60, '1 h']].map(([m, n]) => `<button class="${dur === m ? 'on' : ''}" data-a="dur" data-m="${m}">${n}</button>`).join('')}</div>
       <button class="flip" data-a="start">${v4ic('ler', 18)}Começar a ler</button>
-      <button class="just" data-a="sheet" data-s="upd">Só marcar a página</button></div></div>`;
+      <button class="just" data-a="sheet" data-s="upd">Atualizar página</button></div></div>`;
 }
 const v4Clock = (s) => { const now = s.pz || Date.now(), el = Math.max(0, Math.floor((now - s.start - (s.off || 0)) / 1000)), v = s.dur ? Math.max(0, s.dur * 60 - el) : el, h = Math.floor(v / 3600), m = Math.floor((v % 3600) / 60), x = v % 60, p = (n) => String(n).padStart(2, '0');
   return { t: (h ? h + ':' + p(m) : p(m)) + ':' + p(x), done: !!(s.dur && v === 0), secs: el }; };
@@ -205,12 +205,12 @@ function v4SheetHTML(k) {
   if (k === 'lerq') { const { now, total } = v4Info(e), due = v4Due(e);
     return `<div class="sh-bk">${v4cv(e)}<div><h3>${esc(e.title)}</h3><span class="mut">pág. ${now}${total ? ` de ${total}` : ''}${due && !due.done ? ` · hoje, até a ${due.target}` : ''}</span></div></div>
     <div class="lerq"><button class="go1" data-a="lerfoco"><span class="ic1">${v4ic('orb', 26)}</span><span class="t"><b>Entrar no silêncio</b><small>tempo, som ambiente e ecos; só o livro e você</small></span>${v4ic('chev', 18)}</button>
-    <button class="go2" data-a="sheet" data-s="upd"><span class="ic1">${v4ic('pag', 24)}</span><span class="t"><b>Atualizar páginas lidas</b><small>já li, só quero marcar onde parei</small></span>${v4ic('chev', 18)}</button></div>`; }
+    <button class="go2" data-a="sheet" data-s="upd"><span class="ic1">${v4ic('pag', 24)}</span><span class="t"><b>Atualizar página</b><small>já li, só quero marcar onde parei</small></span>${v4ic('chev', 18)}</button></div>`; }
   if (k === 'pick') { const L = lib().filter((x) => x.status === 'LENDO' || x.status === 'QUERO').sort((a, b) => (a.status === 'LENDO' ? 0 : 1) - (b.status === 'LENDO' ? 0 : 1)).slice(0, 14);
     return `<h3>Ler qual livro?</h3><div class="list">${L.map((x) => { const i = v4Info(x); return `<button class="li" data-a="setcur" data-id="${esc(x.id)}">${v4cv(x, '', 'width:34px;height:51px;font-size:7px;')}<span class="t">${esc(x.title)}<small>${x.status === 'LENDO' ? (i.total ? `pág. ${i.now} de ${i.total}` : 'lendo') : 'da fila: começa agora'}</small></span></button>`; }).join('')}</div>`; }
   if (k === 'ecohelp') { const de = (db.prefs || {}).ecoDe === 'amigos' ? 'amigos' : 'rede';
     return `<h3>Ecos</h3><div class="list">${[['orb', 'O que é', 'Uma frase curta que alguém deixou numa página deste livro.'], ['ler', 'Quando aparece', 'Quando você marca uma página igual ou depois da do eco: no meio da leitura ou ao encerrar. Antes disso, é uma luz piscando no céu, sem spoiler.'], ['pen', 'Deixe o seu', 'Na leitura, toque em Deixar um eco. Quem chegar àquela página depois vai ver.'], ['friends', 'De quem', 'Das suas amizades, sempre primeiro e em cores. Da rede, em luz branca.']].map(([i, t, sm]) => `<div class="li">${v4ic(i, 20)}<span class="t">${t}<small>${sm}</small></span></div>`).join('')}</div>
-    <div class="lbl">Ver ecos de</div><div class="seg"><button class="${de === 'amigos' ? 'on' : ''}" data-a="ecode" data-k="amigos">Só amizades</button><button class="${de === 'rede' ? 'on' : ''}" data-a="ecode" data-k="rede">Toda a rede</button></div>
+    <div class="lbl">Ver ecos de</div><div class="seg"><button class="${de === 'amigos' ? 'on' : ''}" data-a="ecode" data-k="amigos">Só amizades</button><button class="${de === 'rede' ? 'on' : ''}" data-a="ecode" data-k="rede">Toda a comunidade</button></div>
     <button class="btn p w" data-a="close" style="margin-top:12px">Entendi</button>`; }
   if (k === 'amb') { return `<h3>Som ambiente</h3>${V4AMB_G.map(([g, L]) => `<div class="lbl">${g}</div><div class="chips" style="flex-wrap:wrap;margin:0;padding:2px 0">${L.map((n) => `<button class="chip ${s && s.amb === n ? 'on' : ''}" data-a="amb" data-k="${n}">${n}</button>`).join('')}</div>`).join('')}
     <div class="lbl">Volume</div><input type="range" id="v4vol" min="0" max="100" value="${Math.round((st.vol ?? 0.6) * 100)}" style="width:100%;accent-color:var(--acc)" aria-label="Volume">

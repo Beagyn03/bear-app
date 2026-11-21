@@ -1,7 +1,7 @@
 // Ajustes de navegação (Bia, 18/11):
 // - o menu de baixo volta sempre que a conversa não está mais na tela (algumas saídas da conversa não o devolviam);
 // - Estatísticas e Leituras por mês: Voltar na mesma linha do ano; Amigos: "Encontrar leitores" vira uma lupa ao lado do Voltar;
-// - Ajustes sem "Sair da conta" (fica no menu lateral), sem "Personalizar Início" (vai para o ••• do Início) e sem
+// - Ajustes sem "Sair da conta" (fica no menu lateral), sem "Personalizar Hoje" (vai para o ••• do Hoje) e sem
 //   "Novidades no feed" (vai para o ••• da Comunidade); "Excluir conta" passa para Editar perfil;
 // - "Para você": tocar no livro sempre abre algo (menu do livro; se não abrir, a página do livro).
 { const st = document.createElement('style'); st.textContent = `
@@ -29,7 +29,7 @@
 // 3) Ajustes mais enxuto; Excluir conta em Editar perfil
 { const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
   try {
-    ['#aj-feed'].forEach((s) => box.querySelector(s)?.remove()); // Personalizar Início e Sair voltam para Ajustes: o topo não tem mais menu lateral nem ••• (Bia, 20/11)
+    ['#aj-feed'].forEach((s) => box.querySelector(s)?.remove()); // Personalizar Hoje e Sair voltam para Ajustes: o topo não tem mais menu lateral nem ••• (Bia, 20/11)
     const del = box.querySelector('#aj-del'); const delCard = del && del.closest('.aj-card');
     if (S.ajMode === 'perfil') { if (!del && connected()) { box.insertAdjacentHTML('beforeend', '<div class="aj-g">Conta</div><div class="aj-card"><button type="button" class="aj-row danger" id="aj-del"><span><b>Excluir conta</b><small>Apaga a conta e todos os dados dela, para sempre</small></span>›</button></div>'); box.querySelector('#aj-del').addEventListener('click', deleteAccountSheet); } }
     else if (delCard) delCard.remove();
@@ -38,11 +38,11 @@
     if (S.ajMode !== 'perfil') box.querySelectorAll('.aj-g').forEach((g) => { const n = g.nextElementSibling; if (!n || !n.classList.contains('aj-card')) g.remove(); });
   } catch (err) { console.warn('ajustes', err); }
   return r; }; }
-// 4) ••• do Início (na barra do topo, só no Início): Personalizar Início
+// 4) ••• do Hoje (na barra do topo, só no Hoje): Personalizar Hoje
 { let tm = 0; const sync = () => { const orb = TR.querySelector('#g-orb'); if (!orb) return; let b = TR.querySelector('#g-imore');
-    if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'g-imore'; b.className = 'g-imore'; b.textContent = '•••'; b.setAttribute('aria-label', 'Opções do Início'); orb.before(b);
-      b.addEventListener('click', () => popMenu(b, S.tab === 'estante' ? [{ label: 'Trechos e anotações', fn: () => openAllQuotes() }, { label: 'Histórico de leituras', fn: () => openHistLeituras() }, ...(lib().some((e) => !e.cover) ? [{ label: 'Buscar capas que faltam', fn: () => fillMissingCovers(true) }] : [])] : [{ label: 'Personalizar Início', fn: () => homePrefsSheet() }])); }
-    const v = $('#shelflist'); b.hidden = !((S.tab === 'inicio' || S.tab === 'estante') && (!v || v.hidden)); b.setAttribute('aria-label', S.tab === 'estante' ? 'Opções da Estante' : 'Opções do Início'); };
+    if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'g-imore'; b.className = 'g-imore'; b.textContent = '•••'; b.setAttribute('aria-label', 'Opções do Hoje'); orb.before(b);
+      b.addEventListener('click', () => popMenu(b, S.tab === 'estante' ? [{ label: 'Trechos e anotações', fn: () => openAllQuotes() }, { label: 'Histórico de leituras', fn: () => openHistLeituras() }, ...(lib().some((e) => !e.cover) ? [{ label: 'Buscar capas que faltam', fn: () => fillMissingCovers(true) }] : [])] : [{ label: 'Personalizar Hoje', fn: () => homePrefsSheet() }])); }
+    const v = $('#shelflist'); b.hidden = !((S.tab === 'inicio' || S.tab === 'estante') && (!v || v.hidden)); b.setAttribute('aria-label', S.tab === 'estante' ? 'Opções da Biblioteca' : 'Opções do Hoje'); };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; sync(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 // 5) ••• da Comunidade: Novidades no feed
 { const _rf = rdFiltersSheet; rdFiltersSheet = function () { const r = _rf.apply(this, arguments);

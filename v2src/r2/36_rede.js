@@ -230,7 +230,7 @@ function rdPostToken(it) {
 }
 function rdSendToFriend(it) {
   const fr = (SOC.fr && SOC.fr.friends) || [];
-  if (!fr.length) return toast('Adicione amizades para enviar posts');
+  if (!fr.length) return toast('Adicione amigos para enviar posts');
   sheet('Enviar para', fr.slice(0, 40).map((f) => [f.displayName || '@' + f.handle, async () => {
     const body = rdShareText(it) + '\n' + rdPostToken(it);
     if (body.length > 1000) return toast('Post grande demais para enviar');
@@ -466,7 +466,7 @@ function openRdComposer(pre = {}) {
             <label><input type="radio" name="spk" value="end"${R.spk === 'end' ? ' checked' : ''}> Conta o final</label>
             <label><input type="radio" name="spk" value="yes"${R.spk === 'yes' ? ' checked' : ''}> Tem spoiler, não sei dizer até onde</label>
             <small>Quem ainda não chegou nesse ponto vê o post embaçado. Quem já leu vê normal.</small></div>` : '<input type="checkbox" id="rdc-sp" hidden>'}
-        <div class="rdc2-foot"><button type="button" class="rdc2-vis" id="rdc-vis">${R.vis === 'friends' ? '<i class=v3e data-i=friends></i>Amizades' : '<i class=v3e data-i=globe></i>Todos'} <i>▾</i></button><button type="button" class="rdc-go" id="rdc-go">Publicar</button></div>
+        <div class="rdc2-foot"><button type="button" class="rdc2-vis" id="rdc-vis" aria-label="Quem vê: ${R.vis === 'friends' ? 'Só amizades' : 'Toda a comunidade'}">${R.vis === 'friends' ? '<i class=v3e data-i=friends></i>Amizades' : '<i class=v3e data-i=globe></i>Comunidade'} <i>▾</i></button><button type="button" class="rdc-go" id="rdc-go">Publicar</button></div>
         ${me ? `<p class="rdc2-me">Publicando como ${esc(me)}</p>` : ''}
       </div>`;
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });

@@ -37,7 +37,7 @@
 .ss-link{border:0!important;background:none!important;color:var(--acc)!important;font:inherit!important;font-weight:800!important;font-size:.82rem!important;padding:.2rem 0!important;height:auto!important;min-height:0!important;justify-self:center;cursor:pointer;box-shadow:none!important}`; TR.append(st); }
 const SS_LIST = [['LENDO', 'Lendo'], ['LIDO', 'Lido'], ['HIBERNANDO', 'Pausado'], ['QUERO', 'Quero ler'], ['ABANDONEI', 'Abandonei']];
 const ssChips = (cur) => '<div class="ss-chips" role="tablist" aria-label="Status do livro">' + SS_LIST.map(([k, n]) => '<button type="button" role="tab" data-s="' + k + '"' + (k === cur ? ' class="on" aria-selected="true"' : '') + '>' + n + '</button>').join('') + '</div>';
-// abre a atualização de leitura de um livro (o do Início ou outro em andamento)
+// abre a atualização de leitura de um livro (o do Hoje ou outro em andamento)
 function ssOpenUpdate(e) {
   const R = (() => { try { return reading(); } catch { return null; } })();
   if (R && R.e.id === e.id) return S.madrugada ? wakeBear('upd') : editLeitura();

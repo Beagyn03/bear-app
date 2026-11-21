@@ -1,4 +1,4 @@
-// Estante nova (Bia, 18/11): duas abas, "Minha biblioteca" (todos os livros, filtrados pela situação) e "Estantes" (as que a
+// Estante nova (Bia, 18/11): duas abas, "Biblioteca" (todos os livros, filtrados pela situação) e "Estantes" (as que a
 // pessoa cria). No topo, busca na hora, ⚙ (filtrar e organizar) e ＋ (adicionar livro ou nova estante). Na biblioteca, grade ou
 // lista. As estantes ficam compactas: nome, contagem, ＋ e •••, barra de quanto já foi lido e as capas.
 // Atalhos (Trechos e anotações, Histórico de leituras) vão para o ••• da barra do topo.
@@ -69,7 +69,7 @@ function esnSort(list, k) {
   if (k === 'nota') return L.sort((a, b) => (Number((reviewOfLib(b) || {}).paws) || 0) - (Number((reviewOfLib(a) || {}).paws) || 0));
   if (k === 'paginas') return L.sort((a, b) => (Number(b.totalPages) || 0) - (Number(a.totalPages) || 0));
   if (k === 'recentes') return L.sort((a, b) => String(b.addedAt || '').localeCompare(String(a.addedAt || '')));
-  return L; // conclusão: a ordem padrão da Minha biblioteca
+  return L; // conclusão: a ordem padrão da Biblioteca
 }
 function esnBook(e, mode) { const m = { ...es4Mark(e) }; const x = e.ex || {};
   if (x.loan) m.over += '<span class="ex-bdg" title="Emprestado"><i class=v3e data-i=swap></i></span>'; else if (x.own === 'pegou') m.over += '<span class="ex-bdg" title="Peguei emprestado"><i class=v3e data-i=friends></i></span>';
@@ -87,7 +87,7 @@ drawEstante = function (box) {
     if (P.own === 'quero') P.own = '';
     const chips = [P.own && ['own', { tenho: 'Tenho', emp: 'Emprestados', peg: 'Peguei emprestado' }[P.own]], P.nota && ['nota', { 5: '★ 5', 4: '★ 4 ou mais', 3: '★ 3 ou mais', none: 'Sem nota' }[P.nota]], P.fmt && ['fmt', { PAPER: 'Físico', EBOOK: 'E-book', AUDIO: 'Audiolivro' }[P.fmt]], P.gen && ['gen', P.gen]].filter(Boolean);
     body = `<div class="esn-seg">${ESN_ST.filter(([k]) => k === 'ALL' || cnt(k)).map(([k, n]) => `<button type="button" data-st="${k}" class="${P.st === k ? 'on' : ''}">${n}<small>${cnt(k)}</small></button>`).join('')}</div>`
-      /* linha de exemplar saiu da Estante (Bia, 20/11): Tenho/Emprestados/Peguei ficam no filtro; Quero ter mora em Você > Desejos */
+      /* linha de exemplar saiu da Biblioteca (Bia, 20/11): Tenho/Emprestados/Peguei ficam no filtro; Quero ter mora em Você > Desejos */
       + (chips.length ? `<div class="esn-chips">${chips.map(([k, n]) => `<button type="button" data-clr="${k}">${esc(n)} ×</button>`).join('')}</div>` : '')
       + `<div class="esn-bar"><b>${plural(list.length, 'livro', 'livros')}${q ? ` com “${esc(q)}”` : ''}</b><button type="button" data-a="sort">${esc((ESN_SORT.find((x) => x[0] === (P.sort || 'conclusao')) || ESN_SORT[0])[1])} ▾</button><button type="button" data-a="view" aria-label="${P.view === 'lista' ? 'Ver em grade' : 'Ver em lista'}">${P.view === 'lista' ? ESN_ICO.grid : ESN_ICO.list}</button></div>`
       + (list.length ? (P.view === 'lista' ? `<div class="esn-list">${list.map((e) => esnBook(e, 'lista')).join('')}</div>` : `<div class="esn-grid">${list.map((e) => esnBook(e, 'grade')).join('')}</div>`)
@@ -104,7 +104,7 @@ drawEstante = function (box) {
   }
   box.innerHTML = `<div class="esn-top"><label class="esn-q">${ESN_ICO.q}<input type="search" id="esn-q" placeholder="${P.tab === 'bib' ? 'Buscar título, autor ou gênero' : 'Buscar estante ou livro'}" value="${esc(q)}" autocomplete="off">${q ? '<button type="button" data-a="clrq" aria-label="Limpar busca">×</button>' : ''}</label>`
     + `<button type="button" class="esn-ib" data-a="filt" aria-label="Filtrar e organizar">${ESN_ICO.f}${nAdv ? `<u>${nAdv}</u>` : ''}</button><button type="button" class="esn-ib acc" data-a="add" aria-label="Adicionar">＋</button></div>`
-    + `<div class="esn-tabs"><button type="button" data-tab="bib" class="${P.tab === 'bib' ? 'on' : ''}">Minha biblioteca</button><button type="button" data-tab="est" class="${P.tab === 'est' ? 'on' : ''}">Estantes${mine.length ? ' · ' + mine.length : ''}</button></div>` + body;
+    + `<div class="esn-tabs"><button type="button" data-tab="bib" class="${P.tab === 'bib' ? 'on' : ''}">Biblioteca</button><button type="button" data-tab="est" class="${P.tab === 'est' ? 'on' : ''}">Estantes${mine.length ? ' · ' + mine.length : ''}</button></div>` + body;
   paintCv(box);
   const redraw = (keepFocus) => { const pos = box.scrollTop; drawEstante(box); box.scrollTop = pos; if (keepFocus) { const i = box.querySelector('#esn-q'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } } };
   { let tm = 0; box.querySelector('#esn-q').addEventListener('input', (ev) => { S.esnQ = ev.target.value; clearTimeout(tm); tm = setTimeout(() => redraw(true), 200); }); }

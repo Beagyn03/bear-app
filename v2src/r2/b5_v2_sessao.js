@@ -1,5 +1,5 @@
 // v2 fase 1 (Bia, 18/11): Ler = sessão de leitura. Céu escuro com o livro, anel de progresso e cronômetro; "Virei a página",
-// −/+10; Trecho e Anotação abrem o diário do próprio livro; "Só marcar a página" abre o Atualizar de sempre.
+// −/+10; Trecho e Anotação abrem o diário do próprio livro; "Atualizar página" abre o Atualizar de sempre.
 // Encerrar mostra o resumo (minutos, páginas, ritmo, como foi) e Salvar registra pelo mesmo caminho do foco/Atualizar
 // (quickLog para livro de meta, libLog para os demais), então histórico, prazo, metas e sincronização seguem iguais.
 // A sessão fica guardada no aparelho (bear.ses) e continua se o app fechar. Ecos ficam para quando houver servidor.
@@ -54,7 +54,7 @@ function v2Ler() {
   if (lendo.length === 1) return v2SesStart(lendo[0]);
   if (lendo.length > 1) return sheetList('Ler qual livro agora?', lendo.map((e) => { const i = readingInfo(e); return { label: esc(e.title), sub: i.total ? `pág. ${i.now} de ${i.total}` : '', fn: () => v2SesStart(e) }; }));
   const fila = lib().filter((e) => e.status === 'QUERO').slice(0, 8);
-  if (!fila.length) return toast('Adicione um livro na Estante para começar a ler');
+  if (!fila.length) return toast('Adicione um livro na Biblioteca para começar a ler');
   sheetList('Você não está lendo nenhum livro. Qual começa agora?', fila.map((e) => ({ label: esc(e.title), sub: e.author ? esc(e.author) : '', fn: () => { setLibStatus(e, 'LENDO'); if (e.status === 'LENDO') v2SesStart(e); } })));
 }
 function v2SesStart(e) {
@@ -70,13 +70,13 @@ function v2SesOpen(e, s) {
   const draw = () => {
     const { total } = readingInfo(e), p = total ? Math.min(1, s.pg / total) : 0, a = p * 2 * Math.PI - Math.PI / 2, mx = 95 + 84 * Math.cos(a), my = 95 + 84 * Math.sin(a);
     w.innerHTML = `<div class="sky">${stars}</div>
-      <div class="top"><button type="button" data-a="end">✕ Encerrar</button><button type="button" data-a="min">Minimizar</button></div>
+      <div class="top"><button type="button" data-a="end">Encerrar</button><button type="button" data-a="min">Minimizar</button></div>
       <div class="mid"><div class="orb"><svg viewBox="0 0 190 190"><circle cx="95" cy="95" r="84" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="5"/><circle cx="95" cy="95" r="84" fill="none" stroke="#e0ad3a" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(p * 527.8).toFixed(1)} 528" transform="rotate(-90 95 95)"/></svg>
         ${e.cover ? `<img class="cv" src="${esc(e.cover)}" alt="">` : `<span class="cv">${esc(String(e.title || '?').charAt(0))}</span>`}<span class="moon" style="left:${mx.toFixed(1)}px;top:${my.toFixed(1)}px"></span></div>
         <div class="bt">${esc(e.title)}</div><div class="tm" id="v2tm">${v2Clock(s)}</div>
         <div class="pgl"><span>começou na pág. <b>${s.pg0}</b> de ${total}</span></div>
         <p class="calm">Leia em paz. Quando parar, toque em <b>Encerrar</b> e diga em que página ficou.</p>
-        <button type="button" class="just" data-a="just">Só marcar a página, sem cronômetro</button></div>
+        <button type="button" class="just" data-a="just">Atualizar página, sem cronômetro</button></div>
       <div class="tools"><button type="button" data-a="qt">${v2Svg('qt')}Trecho</button><button type="button" data-a="nt">${v2Svg('nt')}Anotação</button></div>`;
   };
   const diary = (pane) => { w.hidden = true; ssOpenUpdate(e); const ed = $('#editor');

@@ -1,5 +1,5 @@
-// Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Início.
-// Só sai do app quando já está no Início sem nada aberto. Cada camada aberta ganha uma entrada no histórico do navegador.
+// Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
+// Só sai do app quando já está no Hoje sem nada aberto. Cada camada aberta ganha uma entrada no histórico do navegador.
 (() => {
   const vis = (n) => n && !n.hidden && n.offsetParent !== null;
   const layers = () => {

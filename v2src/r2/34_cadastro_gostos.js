@@ -1,5 +1,5 @@
 // Cadastro (15/11): conta nova já sai com @usuário (sem cair em Editar perfil) e o Bear pergunta gêneros e livros
-// favoritos. Os gostos ficam em db.prefs.taste e alimentam "Para você" no Início (Google Livros, sem mudar a API).
+// favoritos. Os gostos ficam em db.prefs.taste e alimentam "Para você" no Hoje (Google Livros, sem mudar a API).
 const TASTE_G = [['romance', 'Romance', 'subject:romance'], ['contemporaneo', 'Romance contemporâneo', '"romance contemporâneo" OR subject:"contemporary romance"'], ['dark', 'Dark romance', '"dark romance"'], ['fantasia', 'Fantasia', 'subject:fantasy'], ['romantasia', 'Romantasia', 'romantasia OR "fantasy romance"'], ['darkfantasy', 'Dark fantasy', '"dark fantasy" OR "fantasia sombria"'], ['ficcao', 'Ficção científica', 'subject:"science fiction"'],
   ['suspense', 'Suspense', 'subject:thriller'], ['policial', 'Policial e mistério', 'subject:mystery'], ['terror', 'Terror', 'subject:horror'],
   ['historico', 'Romance histórico', 'subject:"historical fiction"'], ['classicos', 'Clássicos', 'subject:classics'], ['ya', 'Jovem adulto', 'subject:"young adult"'], ['distopia', 'Distopia', 'distopia OR subject:dystopian'],
@@ -126,7 +126,7 @@ function openTaste(first, prof) {
   S.listRedraw = draw; S.navView = { t: 'taste', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle();
 }
 { const _o = openTaste; openTaste = function (first) { if (first) { S.nav.st = []; S.nav.cur = null; return _o.apply(this, arguments); } navEnter(() => openTaste()); S.nav.depth++; try { return _o.apply(this, arguments); } finally { S.nav.depth--; } }; }
-// ---------- "Para você" no Início ----------
+// ---------- "Para você" no Hoje ----------
 async function tasteRecs() {
   const t = tasteOf(); if (!t) return [];
   const key = JSON.stringify(['pt2', t.genres, (t.books || []).map((b) => b.title)]), day = todayISO();

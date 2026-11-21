@@ -59,7 +59,7 @@ function qnPaint() {
   seg.after(box); try { paintCv(box); } catch {}
   box.querySelectorAll('.qn-gh').forEach((b) => b.addEventListener('click', () => { const e = byId(b.dataset.book); if (e) openBookPage(e); }));
 }
-// menu lateral e atalho da Estante com o nome novo
+// menu lateral e atalho da Biblioteca com o nome novo
 { let tm = 0; new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => {
     TR.querySelectorAll('.drw [data-go="quotes"], .drw [data-go2="quotes"]').forEach((b) => { if (b.dataset.qn) return; b.dataset.qn = '1'; [...b.childNodes].forEach((c) => { if (c.nodeType === 3 && /trechos/i.test(c.textContent)) c.textContent = 'Trechos e anotações'; }); });
     TR.querySelectorAll('.es-sc [data-a=q] b').forEach((b) => { if (b.textContent !== 'Trechos e anotações') { b.textContent = 'Trechos e anotações'; const n = lib().reduce((a, e) => a + (e.quotes || []).length + notesOf(e).length, 0), s = b.nextElementSibling; if (s) s.textContent = n ? n + ' guardados' : 'frases e notas dos livros'; } });

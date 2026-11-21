@@ -1,4 +1,4 @@
-// Estante › Filtrar (Bia, 20/11; protótipo v132, folha 'sort'): a folha é SÓ de filtro. Sai a Situação (já está nos chips de
+// Biblioteca › Filtrar (Bia, 20/11; protótipo v132, folha 'sort'): a folha é SÓ de filtro. Sai a Situação (já está nos chips de
 // fora), saem Ordenar (fica no "Data de conclusão ▾") e Ver como (fica no ícone grade/lista) e sai o chip "Qualquer" de cada
 // grupo: nada marcado = mostra tudo; tocar de novo desmarca. Rodapé "Limpar" + "Ver N livros" com N ao vivo.
 // O botão de filtro ganha um ponto quando há filtro ativo.

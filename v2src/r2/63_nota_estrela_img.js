@@ -1,5 +1,5 @@
 // Marca-página da nota com as estrelas desenhadas (Bia, 17/11): fita + estrela por nível (5 arco-íris, 4–4,5 ouro, 3–3,5 prata,
-// abaixo bronze); a nota continua escrita pelo app no miolo da estrela. Vale na Estante (.mk-bear) e em Leituras por mês (.ys-mk).
+// abaixo bronze); a nota continua escrita pelo app no miolo da estrela. Vale na Biblioteca (.mk-bear) e em Leituras por mês (.ys-mk).
 { const st = document.createElement('style'); st.textContent = `
 .mk-bear,.ys-mk{width:34px!important;height:56px!important;top:-12px!important;left:4px!important;background:var(--nimg) center bottom/contain no-repeat!important;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.35))!important}
 #shelflist .esv-grid > .es-bk > .mk-bear{top:-26px!important}

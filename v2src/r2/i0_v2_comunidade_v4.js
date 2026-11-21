@@ -19,6 +19,7 @@ const V6CSS = `.v6spt{display:inline-flex;align-items:center;gap:3px;margin-left
 .v6com .acts .liked{color:var(--acc)}.v6com .acts .liked svg{fill:currentColor}
 .v6com .acts .saved svg{fill:currentColor;color:var(--acc)}
 .v6com .who .av{background-size:cover;background-position:center}
+.v6com .macts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}.v6com .macts .btn{min-height:42px;padding:0 16px;border-radius:999px;font-weight:800;border:1px solid var(--line);background:var(--panel);color:var(--ink)}.v6com .macts .btn.p{background:var(--acc);border-color:transparent;color:var(--on-acc,#fff)}
 .v6com .msg{padding:22px 16px;border:1.5px dashed var(--line);border-radius:16px;text-align:center;color:var(--ink2);margin-top:12px;line-height:1.45}
 .v6com .more2{display:block;width:100%;margin:12px 0 0;padding:11px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:900;cursor:pointer}
 .v6com .day{font-family:var(--f-disp);font-size:15px;color:var(--ink2);margin:14px 2px 6px}
@@ -97,7 +98,7 @@ const v6Body = (t) => String(t || '').replace(/^(Desafio da semana|Pergunta do d
 function v6PostHTML(it, i) {
   const u = it.user || {}, mine = it.mine || (u.handle && u.handle === v6Me()), S6 = v6S(), key = it.type + it.id;
   const sp = (() => { try { return rdSpoil(it); } catch { return it.spoiler ? 'spoiler' : null; } })(), open = !!S6.open[key] || mine;
-  const vis = mine && it.type === 'post' ? ` · <span class="vis">${it.visibility === 'friends' ? v4ic('friends', 12) + 'amizades' : v4ic('busca', 12) + 'todos'}</span>` : '';
+  const vis = mine && it.type === 'post' ? ` · <span class="vis">${it.visibility === 'friends' ? v4ic('friends', 12) + 'amizades' : v4ic('globe', 12) + 'comunidade'}</span>` : '';
   const body = `${it.text ? `<p>${esc(v6Body(it.text))}</p>` : ''}${it.quote ? `<div class="pq">“${esc(it.quote)}”${it.page ? `<small>pág. ${it.page}</small>` : ''}</div>` : ''}${it.book2 ? `<div class="prec">${cvh(it.book2.title, it.book2.cover)}<span>indicou <b>${esc(it.book2.title)}</b></span></div>` : ''}${it.hasImage ? `<div class="pimg rd-img" data-img="${esc(it.id)}"></div>` : ''}`;
   const fe = (it.feelings || []).map(v6Lbl).filter(Boolean);
   let saved = false; try { saved = rdIsSaved(it); } catch {}
@@ -106,7 +107,7 @@ function v6PostHTML(it, i) {
     ${sp && !open ? `<span class="spz" data-a="v6sp" data-i="${i}" role="button"><span class="spzt">${body || '<p>…</p>'}</span><span class="spveil on"><em>${v4ic('eye', 15)}Cuidado, spoiler</em><small>Eu quero ver mesmo assim</small></span></span>`
       : `${body}${sp && S6.open[key] && !mine ? `<button class="sphide" data-a="v6sph" data-i="${i}">${v4ic('eye', 13)}Spoiler aberto · esconder de novo</button>` : ''}`}
     ${fe.length ? `<div class="pfe">${fe.map((n) => `<span>${esc(n)}</span>`).join('')}</div>` : ''}</div></div>
-    <div class="acts"><button data-a="v6like" data-i="${i}" class="${it.liked ? 'liked' : ''}" aria-pressed="${!!it.liked}">${v4ic('heart', 18)}${it.likes || ''}</button><button data-a="v6rp" data-i="${i}">${v4ic('reply', 18)}Responder${it.replies ? ` · ${it.replies}` : ''}</button><span class="sp"></span><button data-a="v6save" data-i="${i}" class="${saved ? 'saved' : ''}" aria-label="${saved ? 'Tirar dos salvos' : 'Salvar'}">${v4ic('save', 18)}</button><button data-a="v6send" data-i="${i}" aria-label="Enviar">${v4ic('send', 18)}</button></div></article>`;
+    <div class="acts"><button data-a="v6like" data-i="${i}" class="${it.liked ? 'liked' : ''}" aria-pressed="${!!it.liked}" aria-label="Curtir">${v4ic('heart', 18)}${it.likes || ''}</button><button data-a="v6rp" data-i="${i}">${v4ic('reply', 18)}Responder${it.replies ? ` · ${it.replies}` : ''}</button><span class="sp"></span><button data-a="v6save" data-i="${i}" class="${saved ? 'saved' : ''}" aria-label="${saved ? 'Tirar dos salvos' : 'Salvar'}">${v4ic('save', 18)}</button><button data-a="v6send" data-i="${i}" aria-label="Enviar">${v4ic('send', 18)}</button></div></article>`;
 }
 function v6Paint() {
   const host = $('#lista > .v6host'); if (!host || S.tab !== 'comunidade') return; const R = host.shadowRoot.querySelector('.v6com'), S6 = v6S();
@@ -118,11 +119,14 @@ function v6Paint() {
   list.forEach((it, i) => { let d = ''; try { d = rdDayLbl(it.createdAt); } catch {} if (d && d !== last && S6.f !== 'salvos') { posts += `<div class="day">${esc(d)}</div>`; last = d; } posts += v6PostHTML(it, i); });
   const empty = S6.f === 'salvos' ? '<b>Nada salvo ainda</b><br>Toque no marcador de um post para guardar aqui.'
     : Fd.busy || !Fd.at ? 'Carregando a Comunidade…' : Fd.err ? 'Não consegui carregar agora. Puxe para atualizar ou tente de novo daqui a pouco.'
-    : S6.f === 'amigos' ? 'Suas amizades ainda não postaram. Veja <b>Todos</b> ou escreva o primeiro post.' : 'Nada por aqui ainda.';
+    : S6.f === 'amigos' ? (((SOC.fr && SOC.fr.friends) || []).length ? 'Suas amizades ainda não postaram. Veja <b>Todos</b> ou escreva o primeiro post.' : '<b>Aqui aparece o que suas amizades estão lendo</b><br>Encontre leitores para acompanhar, ou escreva o primeiro post sobre a sua leitura.')
+    : 'Nada por aqui ainda. Que tal começar a conversa?';
+  // estado vazio com o que fazer ali (Bia, 20/11: acabamento)
+  const emptyActs = S6.f !== 'salvos' && !(Fd.busy || !Fd.at) && !Fd.err ? `<div class="macts"><button class="btn p" data-a="v6new">Escrever um post</button><button class="btn s" data-a="v6find">Encontrar leitores</button></div>` : '';
   R.innerHTML = `<div class="cbar"><span class="av" data-avh="${esc(me.handle)}" style="background-color:${friendColor(me.handle)}">${esc(initial(me.displayName || me.handle))}</span><button class="cin" data-a="v6new">Escreva sobre sua leitura…</button></div>
   ${q ? `<button class="cdes" data-a="v6des"><span class="eb acc">Desafio da semana</span><span>${esc(q)}</span>${v4ic('chev', 14)}</button>` : ''}
   <div class="ctabs" role="tablist">${F.map(([k, l]) => `<button role="tab" aria-selected="${S6.f === k}" class="${S6.f === k ? 'on' : ''}" data-a="v6tab" data-k="${k}">${l}</button>`).join('')}<button class="cg" data-a="v6cfg" aria-label="Preferências da Comunidade">${v4ic('gear', 17)}</button></div>
-  ${list.length ? posts : `<div class="msg">${empty}</div>`}
+  ${list.length ? posts : `<div class="msg">${empty}${emptyActs}</div>`}
   ${Fd.more && S6.f !== 'salvos' && list.length ? `<button class="more2" data-a="v6moreload">${Fd.busy ? 'Carregando…' : 'Ver mais'}</button>` : ''}`;
   try { paintCv(R); } catch {} try { rdLoadImages(R); } catch {}
   R.querySelectorAll('[data-avh]').forEach((n) => { try { const d = avatarOf(n.dataset.avh); if (d) { n.style.backgroundImage = `url("${d}")`; n.textContent = ''; } } catch {} });
@@ -133,6 +137,7 @@ function v6Click(ev) {
   const S6 = v6S(), it = b.dataset.i != null ? S6.list[+b.dataset.i] : null;
   if (a === 'v6tab') { S6.f = b.dataset.k; const F = v6Feed(v6Sc(S6.f)); v6Paint(); if (S6.f !== 'salvos' && !F.busy && Date.now() - F.at > 20000) v6Load(v6Sc(S6.f)); return; }
   if (a === 'v6new') return openRdComposer();
+  if (a === 'v6find') { try { return addFriendSheet(); } catch { return; } }
   if (a === 'v6des') { let q = ''; try { q = v2WkQ(); } catch {} return openRdComposer({ kind: 'comment', text: `Desafio da semana: ${q}\n` }); }
   if (a === 'v6cfg') return rdFiltersSheet();
   if (a === 'v6moreload') return v6Load(v6Sc(S6.f), true);

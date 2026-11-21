@@ -1,5 +1,5 @@
 // Início mais completo (15/11): "Comece por aqui" para quem ainda não tem livros, Sua semana, meta do ano (com convite
-// quando não tem), Na Rede (3 posts) e Em alta. Tudo entra em Ajustes › Personalizar Início. Seções desligadas por padrão
+// quando não tem), Na Rede (3 posts) e Em alta. Tudo entra em Ajustes › Personalizar Hoje. Seções desligadas por padrão
 // antes (Leituras do ano e Próxima conquista) passam a aparecer para quem nunca personalizou.
 // Tour de boas-vindas para conta nova (db.prefs.tourDone); "Ver o tour de novo" em Ajustes.
 { const st = document.createElement('style'); st.textContent = `
@@ -120,7 +120,7 @@ function inLoad() {
 const TOUR = [
   [null, 'Boas-vindas ao Livroverso', 'Um tour rápido pelo app. Leva menos de um minuto.'],
   ['#tabbar [data-tab=inicio]', 'Início', 'O livro que você está lendo, sua semana, a meta do ano e o que a comunidade está comentando. Toque no livro para atualizar a página em que parou.'],
-  ['#tabbar [data-tab=estante]', 'Estante', 'Minha biblioteca tem todos os seus livros: lendo, lidos e na fila. Crie estantes suas, como "Clube do livro" ou "Para reler".'],
+  ['#tabbar [data-tab=estante]', 'Estante', 'A Biblioteca tem todos os seus livros: lendo, lidos e na fila. Crie estantes suas, como "Clube do livro" ou "Para reler".'],
   ['#tabbar [data-tab=buscar]', 'Buscar', 'Ache um livro e coloque na estante. Começou a ler? Escolha "Estou lendo".'],
   ['#tabbar [data-tab=comunidade]', 'Comunidade', 'Na Comunidade, comentários, trechos e indicações sobre livros, com controle de spoiler. Em Amigos, quem você segue e as leituras conjuntas.'],
   ['#tabbar [data-tab=eu]', 'Perfil', 'Seu @usuário, conquistas e o que você já leu.'],

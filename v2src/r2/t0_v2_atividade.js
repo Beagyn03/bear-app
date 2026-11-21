@@ -26,7 +26,7 @@
   const F = () => [['tudo', 'Tudo'], ['coment', 'Comentários'], ['aval', 'Avaliações'], ['ecos', 'Ecos'], ['prog', 'Progresso']].filter(([k]) => (k !== 'coment' || vFn('comunidade')) && (k !== 'ecos' || vFn('ecos')));
   const stars = (p) => { const n = Math.round(Number(p) || 0); return '<span class="st">' + '★'.repeat(n) + '<u>' + '★'.repeat(5 - n) + '</u></span>'; };
   const byTitle = (t) => { try { return lib().find((e) => normT(e.title) === normT(t || '')); } catch { return null; } };
-  const quem = (v) => v === 'friends' ? 'só amizades' : v === 'rede' ? 'toda a rede' : v === 'local' ? '' : 'todos';
+  const quem = (v) => v === 'friends' ? 'só amizades' : v === 'rede' ? 'toda a comunidade' : v === 'local' ? '' : 'todos';
   const fromApi = (it) => {
     const b = it.book || {}, pg = it.page || null, pct = it.readerPct;
     if (it.type === 'review') {

@@ -1,7 +1,7 @@
 // Emprestar não muda o exemplar (teste 26, 20/11): o formato vem do livro; "Voltou" devolve o exemplar como estava.
 // Meu exemplar (Bia, 19/11): separado da situação de leitura. e.ex = { own: 'tenho'|'quero'|'pegou', fmt, tags, loan, borrow, log }.
 // Tenho (com formato e detalhes) e emprestar (para quem, quando, até quando); Quero ter (aparece no perfil para presentes);
-// Peguei emprestado (de quem, quando, até quando). Lembrete de devolução no Início. A amiga ainda não vê o empréstimo do lado
+// Peguei emprestado (de quem, quando, até quando). Lembrete de devolução no Hoje. A amiga ainda não vê o empréstimo do lado
 // dela (fase 2, precisa da API).
 { const st = document.createElement('style'); st.textContent = `
 .ex-2col{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;align-items:end}.ex-2col .ex-f{margin:0;min-width:0}.ex-2col .ex-f label small{font-weight:600;color:var(--ink-2);font-size:.72rem}.ex-2col input{width:100%;box-sizing:border-box;min-height:44px}

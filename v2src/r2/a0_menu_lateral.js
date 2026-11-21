@@ -1,5 +1,5 @@
 // Menu lateral reorganizado (Bia, 18/11): Minha leitura (Estatísticas, Órbita, Metas, Conquistas) · Meu acervo (Meus trechos,
-// Histórico de leituras, Posts salvos) · Pessoas (Amigos, com pedidos pendentes) · App (Personalizar Início, Instalar o app,
+// Histórico de leituras, Posts salvos) · Pessoas (Amigos, com pedidos pendentes) · App (Personalizar Hoje, Instalar o app,
 // Ajustes, Sair) · Moderação (Denúncias, só moderação). "Montar histórico" e "Ajustar leituras" viram "Histórico de leituras".
 // Estante ganha atalhos para Meus trechos e Histórico de leituras; os números do seu perfil abrem as Estatísticas.
 { const st = document.createElement('style'); st.textContent = `
@@ -27,7 +27,7 @@ function openSavedPosts() { S.comSeg = 'rede'; S.rdF = 'salvos'; goTab('comunida
       G('Minha leitura'), old('stats'), btn('orbita', 'orbita', 'Órbita de leitura', orb), old('goals'), old('ach'),
       G('Meu acervo'), old('quotes') || btn('quotes', 'mn_trechos', 'Meus trechos', nQ || ''), btn('hl', 'mn_historico', 'Histórico de leituras'), btn('salvos', 'mn_lista', 'Posts salvos', nS || ''),
       G('Pessoas'), old('friends'), btn('gifts', 'mn_lista', 'Presentes', (db.gifts || []).length ? String((db.gifts || []).length) : ''),
-      G('App'), btn('home', 'mn_ajustar', 'Personalizar Início'), (() => { try { return appInstalled() ? null : btn('inst', 'ic_instalar', 'Instalar o app'); } catch { return null; } })(), old('cfg'), out,
+      G('App'), btn('home', 'mn_ajustar', 'Personalizar Hoje'), (() => { try { return appInstalled() ? null : btn('inst', 'ic_instalar', 'Instalar o app'); } catch { return null; } })(), old('cfg'), out,
       ...((S.rd && S.rd.admin) || (typeof COVM !== 'undefined' && COVM.admin) ? [G('Moderação'), btn('mod', 'ic_privacidade', 'Denúncias')] : []),
     ].filter(Boolean);
     // pedidos de amizade pendentes em destaque

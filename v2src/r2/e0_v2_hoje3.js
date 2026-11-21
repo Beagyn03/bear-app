@@ -6,7 +6,7 @@
 //     com 2+ pessoas, duas iniciais e "+N"); toque na capa abre a página do livro, segurar abre o menu do livro;
 //  3. "Também lendo" (troca o livro do Hoje); 4. linha Prazo · Órbita · Meta; 5. destaque do dia: UM cartão só
 //     (lembrete de empréstimo/presente > Resumo do mês nos dias 1–7 > Pergunta do dia); 6. A seguir (próxima da fila,
-//     "Qual leio agora?"); 7. indicações recebidas; 8. Para você. Personalizar Início e Funções do app continuam valendo.
+//     "Qual leio agora?"); 7. indicações recebidas; 8. Para você. Personalizar Hoje e Funções do app continuam valendo.
 Object.assign(V2I, { qt: '<path class="d" d="M5 17c-1.5-1-2-2.5-2-4.5C3 9 5 7 8 6.5v3c-1.3.5-2 1.4-2 2.6h2V17zM14 17c-1.5-1-2-2.5-2-4.5 0-3.5 2-5.5 5-6v3c-1.3.5-2 1.4-2 2.6h2V17z"/><path d="M5 17c-1.5-1-2-2.5-2-4.5C3 9 5 7 8 6.5v3c-1.3.5-2 1.4-2 2.6h2V17zM14 17c-1.5-1-2-2.5-2-4.5 0-3.5 2-5.5 5-6v3c-1.3.5-2 1.4-2 2.6h2V17z"/>' });
 { const st = document.createElement('style'); st.textContent = `
 .v3-colA.v3h{display:flex!important;flex-direction:column}
@@ -92,7 +92,7 @@ function v3HeroHTML(col) {
   const dueBox = due ? `<button type="button" class="eta due${due.ok ? ' ok' : ''}" data-h3="prazo"><span class="dt">${due.late ? 'O prazo passou' : due.ok ? 'Leitura de hoje feita' : due.off ? 'Hoje é folga' : `Hoje, leia até a <b>pág. ${due.target}</b>`}</span><small>${CAL}${due.late ? 'escolha uma data nova' : due.ok || due.off ? 'prazo ' + due.dow : 'faltam ' + due.falta + ' pág. · prazo ' + due.dow}</small></button>` : '';
   // arco pontilhado: da página atual até a meta de hoje
   let goalArc = ''; if (due && !due.ok && !due.off && !due.late && total && due.target > now) { const q1 = now / total, q2 = Math.min(1, due.target / total); goalArc = `<circle cx="88" cy="88" r="72" fill="none" stroke="#c46f2e" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="0.1 7" stroke-dashoffset="${(-q1 * 452.4).toFixed(1)}" pathLength="452.4" transform="rotate(-90 88 88)" opacity=".9" style="stroke-dasharray:0.1 7;clip-path:none" data-q2="${q2}"/>`; goalArc = `<path d="${(() => { const P = (q) => { const a = q * 2 * Math.PI - Math.PI / 2; return [(88 + 72 * Math.cos(a)).toFixed(2), (88 + 72 * Math.sin(a)).toFixed(2)]; }; const [x1, y1] = P(q1), [x2, y2] = P(q2); return 'M' + x1 + ' ' + y1 + ' A72 72 0 ' + (q2 - q1 > 0.5 ? 1 : 0) + ' 1 ' + x2 + ' ' + y2; })()}" fill="none" stroke="#c46f2e" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="0.1 7" opacity=".9"/>`; }
-  // linha do dia: Prazo · Órbita · Meta (some o que estiver desligado em Funções do app / Personalizar Início)
+  // linha do dia: Prazo · Órbita · Meta (some o que estiver desligado em Funções do app / Personalizar Hoje)
   const tiles = [];
   if (false) {
     let pz = { b: '+ Prazo', s: 'quando terminar', off: false };

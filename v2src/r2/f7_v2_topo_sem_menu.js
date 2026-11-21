@@ -1,7 +1,7 @@
-// Topo como no protótipo (Bia, 20/11): só a marca, a lupa e o sino. Saem o menu lateral (☰) e o "•••" do Início/Estante.
+// Topo como no protótipo (Bia, 20/11): só a marca, a lupa e o sino. Saem o menu lateral (☰) e o "•••" do Hoje/Estante.
 // O que só existia neles mudou de lugar:
-//  - Personalizar Início, Sair da conta → Ajustes (voltaram; ver a9);
-//  - Trechos e anotações → aba "Trechos" na Estante (como no protótipo);
+//  - Personalizar Hoje, Sair da conta → Ajustes (voltaram; ver a9);
+//  - Trechos e anotações → aba "Trechos" na Biblioteca (como no protótipo);
 //  - Histórico de leituras, Buscar capas que faltam, Denúncias (moderação) → Ajustes › "Seus livros" / "Moderação";
 //  - Estatísticas, Resumo, Órbita, Metas, Presentes → Você › Minha leitura; Amigos → "N amizades" no perfil;
 //    Posts salvos → Comunidade › Salvos; Instalar o app → Ajustes (e o aviso de instalar).

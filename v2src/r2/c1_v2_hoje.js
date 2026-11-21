@@ -3,7 +3,7 @@
 //  - "Atualizar página" como botão principal (a sessão de leitura fica só no Ler do menu de baixo, 19/11), "•••" (o menu do livro de sempre). Vários livros em leitura: troca rápida.
 //  - Embaixo, nesta ordem: prazo da semana (o cartão antigo enxuto), Pergunta do dia, Órbita + Meta lado a lado,
 //    Qual leio agora + Na fila, e o resto (indicações, Comunidade…). O cartão grande "Lendo agora" e a "Próxima conquista" saem.
-//  - A ordem vem do CSS (grid + order); Personalizar Início continua ligando e desligando as seções.
+//  - A ordem vem do CSS (grid + order); Personalizar Hoje continua ligando e desligando as seções.
 { const st = document.createElement('style'); st.textContent = `
 .v3-colA.v2h{display:grid!important;grid-template-columns:1fr 1fr;column-gap:.75rem;align-items:start}
 .v3-colA.v2h > *{grid-column:1/-1;order:20;min-width:0}

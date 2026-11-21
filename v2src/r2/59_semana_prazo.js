@@ -1,4 +1,4 @@
-// "Sua semana" do Início vira o placar do prazo (Bia, 16/11): com a leitura atual com prazo, cada dia mostra a meta do dia
+// "Sua semana" do Hoje vira o placar do prazo (Bia, 16/11): com a leitura atual com prazo, cada dia mostra a meta do dia
 // (contorno) e o que foi lido nele (preenchido), do dia em que o prazo foi marcado até o prazo. Sem prazo, continua o gráfico da semana.
 { const st = document.createElement('style'); st.textContent = `
 .pz-wk{display:flex;gap:.25rem;overflow-x:auto;scrollbar-width:none;padding:.2rem 0 .1rem}.pz-wk::-webkit-scrollbar{display:none}

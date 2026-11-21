@@ -1,7 +1,7 @@
 // Teste das ações sociais (Bia, 20/11), parte A: posts, curtidas, salvos, trechos, ecos e mensagens.
 // - Confirmação do app (folha/menu) no lugar da janela do navegador para apagar resposta, eco e mensagem.
 // - Post publicado aparece no feed na hora (o feed é recarregado logo depois de publicar).
-// - Trecho publicado pelo Novo post também vai para Estante › Trechos e "Meus trechos" do livro.
+// - Trecho publicado pelo Novo post também vai para Biblioteca › Trechos e "Meus trechos" do livro.
 // - Post ou avaliação excluídos saem dos Salvos; a Conversa aberta do post excluído fecha.
 // - Eco: aviso ao salvar.
 // - Conversa: o "•••" do seu post abre o mesmo menu do feed (Editar, Quem vê, Spoiler, Excluir).
