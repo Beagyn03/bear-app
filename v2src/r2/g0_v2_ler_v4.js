@@ -248,11 +248,12 @@ function v4UpdHTML(k, e, s) {
     <div class="pgin"><input id="v4pgv" inputmode="${U.u === 'min' ? 'text' : 'numeric'}" value="${v4Fmt(e, U.pg, U.u)}" aria-label="Posição"><span id="v4pgvu">${v4UnitTail(e, U.u)}</span></div>
     <div class="pgsl up"><button data-a="ust" data-n="-1" aria-label="Voltar">−</button><input type="range" id="v4upr" min="0" max="${total || Math.max(500, U.pg + 100)}" value="${U.pg}" aria-label="Deslizar até a página"><button data-a="ust" data-n="1" aria-label="Avançar">+</button></div>
     <div class="row" style="justify-content:space-between;align-items:center;gap:8px;margin-top:2px"><div class="chips" style="margin:0;padding:0">${[['pg', 'página'], ['pct', '%'], ...(v4IsAudio(e) ? [['min', 'tempo']] : [])].map(([u, n]) => `<button class="chip ${U.u === u ? 'on' : ''}" data-a="updu" data-u="${u}">${n}</button>`).join('')}</div></div>
+    <div class="v4caprow"><label for="v4cap">Capítulo <small>(opcional)</small></label><input class="fld cap" id="v4cap" inputmode="numeric" placeholder="ex.: 12" value="${esc(U.cap)}"><small class="mut">aparece no seu diário e no post</small></div>
     <div class="lbl lblrow"><span>Como está sendo? <small>(até 3)</small></span><button data-a="upfmais">${U.more ? 'ver menos' : 'ver todas'}</button></div>
     <div class="chips wrap emo" id="v4fe" style="margin:0;padding:2px 0">${v4FeChips(U)}</div>
     <div class="lbl">Comentário <small>(opcional)</small></div>
     <div class="cbox${U.rec ? ' rec' : ''}"><textarea id="v4upc" rows="2" placeholder="${U.rec ? 'Ouvindo… pode falar' : 'O que achou deste trecho?'}">${esc(U.text)}</textarea><button class="mic2" data-a="upmic" aria-label="Ditar">${U.rec ? '<i></i><i></i><i></i>' : v4ic('mic', 18)}</button></div>
-    <div class="row" style="justify-content:space-between;margin-top:10px;gap:10px">${com ? `<label class="tog"><input type="checkbox" ${U.pub ? 'checked' : ''} data-a="uppub"><span></span>Publicar na Comunidade<small id="v4pubs">${U.pub ? (U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê') : 'fica só no seu diário'}</small></label>` : ''}<input class="fld cap" id="v4cap" placeholder="cap." aria-label="Capítulo (opcional)" value="${esc(U.cap)}" style="flex:0 0 74px;min-width:0;text-align:center"></div>
+    <div class="row" style="justify-content:space-between;margin-top:10px;gap:10px">${com ? `<label class="tog"><input type="checkbox" ${U.pub ? 'checked' : ''} data-a="uppub"><span></span>Publicar na Comunidade<small id="v4pubs">${U.pub ? (U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê') : 'fica só no seu diário'}</small></label>` : ''}</div>
     <div id="v4pubx"${com && U.pub ? '' : ' hidden'}><div class="seg sm" style="margin-top:10px"><button class="${U.vis !== 'friends' ? 'on' : ''}" data-a="upvis" data-k="public">Todos</button><button class="${U.vis === 'friends' ? 'on' : ''}" data-a="upvis" data-k="friends">Só amizades</button></div>
     <label class="tog" style="margin-top:10px"><input type="checkbox" ${U.sp ? 'checked' : ''} data-a="upsp"><span></span>Tem spoiler<small id="v4sps">${U.sp ? `escondido para quem ainda não chegou na pág. ${U.pg}` : 'aparece aberto para todo mundo'}</small></label></div>
     <div class="row" style="margin-top:14px;gap:8px"><button class="btn s" data-a="fim">Terminei</button><button class="btn p" style="flex:1" data-a="savepg">Salvar</button></div>`;
@@ -356,14 +357,64 @@ function v4FimSave() {
 
 // ---------- ditar (voz vira texto no aparelho; nada é gravado) ----------
 let v4Rec = null;
+// Ditado (Bia, 21/11: "deveria parar sozinho; continuou ativo até eu desligar"): para depois de ~2,5 s sem fala nova, em 60 s
+// no máximo, ao trocar de tela/fechar a folha e ao tocar de novo. Mostra o texto aparecendo ("Ouvindo…"), mas só manda para o
+// campo o texto final, uma vez, sem repetir frase (o Chrome do Android reenvia a frase acumulada a cada resultado final).
+{ const st = document.createElement('style'); st.textContent = `
+[data-a$=mic].v4dict-on{animation:v4dictP 1.1s ease-in-out infinite;box-shadow:0 0 0 0 color-mix(in srgb,var(--acc) 55%,transparent)}
+@keyframes v4dictP{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--acc) 55%,transparent)}70%{box-shadow:0 0 0 12px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.v4dict-live{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top));transform:translateX(-50%);z-index:9500;max-width:min(92vw,520px);padding:.55rem .95rem;border-radius:99px;background:var(--panel,#222);color:var(--ink,#fff);border:1px solid var(--acc);box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:.9rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.v4dict-live i{font-style:normal;font-weight:600;opacity:.8}
+.v4dict-hint{display:block;margin:.35rem .2rem 0;font-size:.78rem;font-weight:700;color:var(--ink-2)}
+@media (prefers-reduced-motion: reduce){[data-a$=mic].v4dict-on{animation:none;box-shadow:0 0 0 3px var(--acc)}}
+`; TR.append(st); }
+let v4DictBtn = null;
+TR.addEventListener('click', (ev) => { const b = (ev.composedPath ? ev.composedPath() : [ev.target]).find((n) => n && n.matches && n.matches('[data-a$=mic]')); if (b) v4DictBtn = b; }, true);
+new MutationObserver(() => { TR.querySelectorAll('[data-a$=mic]:not([aria-label])').forEach((b) => { b.setAttribute('aria-label', 'Ditar'); b.setAttribute('aria-pressed', 'false'); }); }).observe(TR, { childList: true, subtree: true });
+const v4DictNorm = (x) => String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+// trechos finais sem repetir: trecho que começa com o anterior o substitui (Android reenvia acumulado); trecho já contido é ignorado
+function v4DictSegs(segs) { const out = []; for (const seg0 of segs) { const seg = String(seg0 || '').trim(); if (!seg) continue; const last = out[out.length - 1], all = v4DictNorm(out.join(' ')), b = v4DictNorm(seg);
+  if (last && b.startsWith(v4DictNorm(last))) out[out.length - 1] = seg; else if (all && all.includes(b)) continue; else out.push(seg); } return out; }
+function v4DictJoin(segs) { return v4DictSegs(segs).join(' ').trim(); }
+// pontuação local (sem IA): comandos falados viram sinais; cada pausa (fim de trecho final) fecha a frase com ponto; maiúsculas
+const V4DICT_CMD = [[/\bponto de interroga[cç][aã]o\b/gi, ' ?'], [/\bponto de exclama[cç][aã]o\b/gi, ' !'], [/\bponto final\b/gi, ' .'], [/\bdois pontos\b/gi, ' :'], [/\bv[ií]rgula\b/gi, ' ,'],
+  [/\b(nova linha|par[aá]grafo)\b/gi, ' \n'], [/\bponto\b(?!\s+(de|do|da|dos|das|alto|baixo|fraco|forte|certo|em|no|na|cego|morto|crítico|critico)\b)/gi, ' .']];
+function v4DictPunct(segs) {
+  let out = v4DictSegs(segs).map((seg) => { let t = ' ' + seg + ' '; for (const [re, rep] of V4DICT_CMD) t = t.replace(re, rep); t = t.trim(); if (t && !/[.,?!:\n]$/.test(t)) t += '.'; return t; }).join(' ');
+  out = out.replace(/[ \t]+([.,?!:])/g, '$1').replace(/([.,?!:])(?=[^\s\n.,?!:])/g, '$1 ').replace(/[ \t]*\n[ \t]*/g, '\n').replace(/([.?!])\s*[.]+/g, '$1').replace(/,\s*\./g, '.').replace(/ {2,}/g, ' ').trim();
+  out = out.replace(/(^|[.?!]\s+|\n)([a-zà-ú])/g, (m, a, c) => a + c.toUpperCase());
+  return out; }
 function v4Dictate(onText, onState) {
-  if (v4Rec) { try { v4Rec.stop(); } catch {} v4Rec = null; onState(false); return; }
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return toast('Este navegador não ouve o microfone aqui. Digite o texto.');
-  const r = new SR(); r.lang = 'pt-BR'; r.continuous = true; r.interimResults = false;
-  r.onresult = (ev) => { let t = ''; for (let i = ev.resultIndex; i < ev.results.length; i++) if (ev.results[i].isFinal) t += ev.results[i][0].transcript; if (t) onText(t.trim()); };
-  r.onerror = (ev) => { if (ev.error === 'not-allowed') toast('Libere o microfone para ditar'); };
-  r.onend = () => { v4Rec = null; onState(false); };
-  try { r.start(); v4Rec = r; onState(true); } catch { toast('Não consegui ligar o microfone'); }
+  if (v4Rec) { v4Rec.stopNow(); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return toast('Este aparelho não dita aqui. Digite o texto.');
+  const r = new SR(); r.lang = 'pt-BR'; r.continuous = true; r.interimResults = true; try { r.maxAlternatives = 1; } catch {}
+  const btn = v4DictBtn && v4DictBtn.isConnected ? v4DictBtn : null;
+  const finals = new Map(); let ended = false, silT = 0, maxT = 0, pollT = 0, live = null, heard = false;
+  const setBtn = (on) => { const bs = btn ? [btn] : [...TR.querySelectorAll('[data-a$=mic]'), ...((V4 && V4.querySelectorAll('[data-a$=mic]')) || [])]; bs.forEach((b) => { b.classList.toggle('v4dict-on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.setAttribute('aria-label', on ? 'Parar de ditar' : 'Ditar'); }); };
+  const showLive = (txt) => { if (!live) { live = document.createElement('div'); live.className = 'v4dict-live'; live.setAttribute('role', 'status'); live.setAttribute('aria-live', 'polite'); TR.append(live); }
+    const t = String(txt || '').trim(); live.innerHTML = 'Ouvindo…' + (t ? ' <i></i>' : ''); if (t) live.querySelector('i').textContent = t.length > 60 ? '…' + t.slice(-60) : t; };
+  const finalSegs = () => [...finals.keys()].sort((a, b) => a - b).map((k) => finals.get(k));
+  const finalText = () => v4DictPunct(finalSegs());
+  const finish = () => { if (ended) return; ended = true; clearTimeout(silT); clearTimeout(maxT); clearInterval(pollT); if (v4Rec === ctl) v4Rec = null;
+    const t = finalText(); if (t) { try { onText && onText(t); } catch (e) { console.warn('ditar', e); } }
+    if (live) { live.remove(); live = null; } setBtn(false); try { onState && onState(false); } catch {}
+    window.removeEventListener('pagehide', stopNow); document.removeEventListener('visibilitychange', onVis); };
+  const stopNow = () => { if (ended) return; try { r.stop(); } catch {} setTimeout(finish, 700); /* dá tempo do último resultado final chegar */ };
+  const onVis = () => { if (document.hidden) stopNow(); };
+  const quiet = (ms) => { clearTimeout(silT); silT = setTimeout(stopNow, ms); };
+  const ctl = { stopNow };
+  r.onresult = (ev) => { heard = true; let interim = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) { const res = ev.results[i], tx = (res[0] && res[0].transcript) || ''; if (res.isFinal) finals.set(i, tx); else interim += tx; }
+    showLive(v4DictJoin([...finalSegs(), interim])); quiet(2500); };
+  r.onerror = (ev) => { const e = ev && ev.error; const msg = { 'not-allowed': 'Libere o microfone para ditar', 'service-not-allowed': 'Libere o microfone para ditar', network: 'Sem internet para ditar agora', 'audio-capture': 'Não achei o microfone', 'no-speech': 'Não ouvi nada. Toque e fale de novo.' }[e];
+    if (msg) toast(msg); if (e !== 'aborted') stopNow(); };
+  r.onend = () => finish();
+  try { r.start(); } catch { toast('Não consegui ligar o microfone'); return; }
+  v4Rec = ctl; setBtn(true); showLive(''); try { onState && onState(true); } catch {}
+  try { if (!localStorage.getItem('lv.dictHint') && btn) { localStorage.setItem('lv.dictHint', '1'); const box = btn.closest('.cbox, .ntools, label, div'); const ta = box && (box.querySelector('textarea') || (box.parentElement && box.parentElement.querySelector('textarea'))); const host = ta ? (ta.closest('.cbox') || ta) : box; if (host && !host.parentElement.querySelector('.v4dict-hint')) { const h = document.createElement('small'); h.className = 'v4dict-hint'; h.textContent = 'Diga “vírgula” ou “ponto” para pontuar.'; host.after(h); } } } catch {}
+  quiet(6000); /* para quem demora a começar a falar */ maxT = setTimeout(stopNow, 60000);
+  pollT = setInterval(() => { if (btn && !btn.isConnected) stopNow(); }, 500); // a folha/campo fechou
+  window.addEventListener('pagehide', stopNow); document.addEventListener('visibilitychange', onVis);
 }
 // ---------- foto vira texto (OCR no próprio aparelho; a imagem não é guardada) ----------
 let v4Tess = null;
