@@ -16844,6 +16844,34 @@ function openGifts() {
     b = document.createElement('button'); b.type = 'button'; b.className = 'bp-buy'; b.innerHTML = '<i style="font-style:normal">🛒</i><span><b>Onde comprar</b><small>comparar preços nas lojas</small></span><em>›</em>';
     b.addEventListener('click', () => whereToBuy(byId(S.exBookId))); ex.after(b); };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 80); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
+// ==== Apagar do feed (Bia, 21/11): no ••• dos meus cards de atividade e conquista na Comunidade ====
+// "Apagar do feed" → confirmação → o card some na hora; o DELETE só vai depois de 6 s (Desfazer cancela). O livro e o status não mudam.
+{ const st = document.createElement('style'); st.textContent = `.sheet .af-msg{margin:-.2rem 0 .6rem;color:var(--ink-2);font-size:.88rem;line-height:1.35}`; TR.append(st); }
+{ const _rm = rdMenu;
+  const route = (it) => it.type === 'activity' ? `/v1/activities/${encodeURIComponent(it.id)}` : `/v1/achievement-posts/${encodeURIComponent(it.id)}`;
+  const undoToast = (msg, onUndo) => toast(msg, { label: 'Desfazer', fn: onUndo }); // toast do app (6 s)
+  // o card pode estar em S.rd.items (Comunidade) e em SOC.feed (aba Amizades / Novidades): tira dos dois e guarda para o Desfazer
+  const tirar = (it) => { const back = [];
+    for (const arr of [S.rd && S.rd.items, typeof SOC !== 'undefined' && SOC && SOC.feed]) { if (!Array.isArray(arr)) continue;
+      const k = arr.findIndex((x) => x && x.type === it.type && x.id === it.id); if (k >= 0) back.push([arr, k, arr.splice(k, 1)[0]]); }
+    return () => back.reverse().forEach(([arr, k, x]) => { if (!arr.some((y) => y && y.type === x.type && y.id === x.id)) arr.splice(Math.min(k, arr.length), 0, x); }); };
+  const apagar = (it, after) => {
+    const volta = tirar(it); try { after(); } catch {}
+    let undone = false;
+    const tm = setTimeout(async () => { if (undone) return; let ok = false; try { const r = await sapi('DELETE', route(it)); ok = r && r.status < 300; } catch {}
+      if (!ok) { volta(); try { after(); } catch {} toast('Não consegui apagar agora'); } }, 6000);
+    undoToast('Apagado do feed', () => { undone = true; clearTimeout(tm); volta(); try { after(); } catch {} });
+  };
+  const confirmar = (it, after) => { sheet('Apagar do feed?', [['Apagar do feed', () => apagar(it, after), 'danger']]);
+    const box = [...document.querySelectorAll('.sheet .box')].pop(); if (box) { const h = box.querySelector('h3'), p = document.createElement('p'); p.className = 'af-msg'; p.textContent = 'O card sai do feed. O livro e o status não mudam.'; h && h.after(p); } };
+  rdMenu = function (it, after, anchor) {
+    if (!(it && it.mine && (it.type === 'activity' || it.type === 'achievement'))) return _rm.apply(this, arguments);
+    const items = [];
+    if (it.book && it.book.title) items.push({ label: 'Ver o livro', fn: () => openAnyBook(it.book.title, it.book.author, it.book.cover) });
+    items.push({ label: 'Apagar do feed', fn: () => confirmar(it, after), danger: true });
+    if (anchor && typeof popMenu === 'function') return popMenu(anchor, items);
+    sheet(it.type === 'achievement' ? 'Sua conquista' : 'Sua atividade', items.map((x) => [x.label, x.fn, x.danger ? 'danger' : '']));
+  }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
