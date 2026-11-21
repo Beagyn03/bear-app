@@ -11514,6 +11514,10 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .gs-slot:not(:disabled){border-color:var(--acc);background:var(--panel)}.gs-slot:disabled{opacity:.45;min-height:46px}.gs-slot:disabled em{color:var(--ink-2)}
 .gs-nav{display:flex;gap:.5rem}.gs-nav .gs-ok{flex:1}.gs-prev{flex:0 0 auto;height:46px;padding:0 1.1rem;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:800}
 .gs-steps{display:flex;align-items:center;gap:.3rem;margin:.1rem 0 .5rem}.gs-steps i{width:26px;height:5px;border-radius:99px;background:var(--line)}.gs-steps i.on{background:var(--acc)}.gs-steps small{margin-left:.4rem;font-size:.75rem;font-weight:800;color:var(--ink-2)}
+.gs-fav{display:grid;gap:.7rem;margin:.4rem 0 .8rem}.gs-fv{display:grid;grid-template-columns:48px minmax(0,1fr);gap:.7rem;align-items:start;padding:.65rem;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.gs-fv .cv{width:48px;height:70px;border-radius:5px}.gs-fvt b{display:block;font-size:.92rem;line-height:1.25;margin-bottom:.35rem}.gs-fvt small{font-size:.8rem;color:var(--ink-2)}
+.gs-fvo{display:flex;flex-wrap:wrap;gap:.35rem}.gs-fvo button{min-height:40px;padding:0 .75rem;border-radius:99px;border:1.5px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:.82rem;font-weight:800;cursor:pointer}
+.gs-fvo button.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent)}
 .gs-hok{color:var(--ok,#2e7d4f)!important;font-weight:800;font-size:.9rem!important}
 .gs-skip{height:40px;border:0;background:none;color:var(--ink);font:inherit;font-weight:700;opacity:.75}
 .pv-row{display:flex;gap:.6rem;overflow-x:auto;padding:.2rem 0 .5rem;scrollbar-width:none}.pv-row::-webkit-scrollbar{display:none}
@@ -11527,7 +11531,7 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 `; TR.append(st); }
 // Primeiro acesso em 3 passos (16/11): gêneros → top 3 → histórico de outro app (importa ali mesmo). Depois, "Seus gostos" é uma página só.
 function openTaste(first, prof) {
-  S.gsHist = ''; S.gsSeen = 0; let step = 1;
+  S.gsHist = ''; S.gsSeen = 0; let step = 1, fav = false, favKey = ''; const favCh = {};
   const v = $('#shelflist'), t0 = tasteOf() || {}, sel = new Set(t0.genres || []), books = [...(t0.books || [])];
   const keep = () => { db.prefs = { ...(db.prefs || {}), tasteAsked: 1, ...(sel.size || books.length ? { taste: { genres: [...sel], books, at: new Date().toISOString() } } : {}) }; save(); try { localStorage.removeItem('bear.pv'); } catch {} };
   const chips = () => '<div class="gs-chips">' + TASTE_G.map(([k, n]) => '<button type="button" class="gs-ch' + (sel.has(k) ? ' on' : '') + '" data-k="' + k + '" aria-pressed="' + sel.has(k) + '">' + esc(n) + '</button>').join('') + '</div>';
@@ -11547,20 +11551,32 @@ function openTaste(first, prof) {
     } else {
       top = '<span></span><b>Primeiros passos</b><span></span>';
       const dots = '<div class="gs-steps" aria-label="Passo ' + step + ' de 3">' + [1, 2, 3].map((i) => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '<small>Passo ' + step + ' de 3</small></div>';
-      if (step === 1) body = bear('bear_celebrating', 'Boas-vindas' + (prof ? ', @' + esc(prof.handle) : '') + '!', 'Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.')
+      const inLib = (b) => lib().find((x) => normT(x.title) === normT(b.title));
+      if (step === 2 && fav) { // pergunta antes de colocar o Top 3 na Biblioteca (Bia, 21/11)
+        const OPT = [['LIDO', 'Já li'], ['QUERO', 'Quero ler'], ['LENDO', 'Lendo'], ['', 'Não colocar']];
+        body = dots + '<h2 class="gs-t">Quer colocar seus favoritos na Biblioteca?</h2><p class="gs-intro">Escolha como cada um entra. Dá para mudar depois.</p><div class="gs-fav">'
+          + books.map((b, i) => { const e = inLib(b), ch = favCh[normT(b.title)] ?? 'LIDO';
+            return '<div class="gs-fv">' + cvh(b.title, b.cover) + '<div class="gs-fvt"><b>' + esc(b.title) + '</b>' + (e ? '<small>já está na sua Biblioteca · ' + esc(String(LIB_LABEL[e.status] || e.status || '').toLowerCase()) + '</small>'
+              : '<div class="gs-fvo" role="radiogroup" aria-label="Como ' + esc(b.title) + ' entra">' + OPT.map(([k, n]) => '<button type="button" role="radio" aria-checked="' + (ch === k) + '" class="' + (ch === k ? 'on' : '') + '" data-fi="' + i + '" data-fk="' + k + '">' + n + '</button>').join('') + '</div>') + '</div></div>'; }).join('') + '</div>';
+        okTxt = 'Colocar na Biblioteca'; skipTxt = 'Agora não';
+      }
+      else if (step === 1) body = bear('bear_celebrating', 'Boas-vindas' + (prof ? ', @' + esc(prof.handle) : '') + '!', 'Para você aproveitar o app ao máximo, eu queria te conhecer melhor. São só 3 perguntinhas.')
         + dots + '<h2 class="gs-t">Quais gêneros você mais gosta?</h2><p class="gs-intro">Marque quantos quiser.</p>' + chips();
       else if (step === 2) body = bear('bear_reading_chair', '', books.length ? (books.length < 3 ? 'Ótima escolha! Quer colocar mais algum?' : 'Que top 3! Já sei bem o que te indicar.') : 'Agora me conta: quais livros marcaram você? Com eles eu acho leituras parecidas.')
         + dots + '<h2 class="gs-t">Seus livros do coração</h2><p class="gs-intro">Monte seu Top 3. Pode ser só um, ou nenhum.</p>' + slots();
       else body = bear('bear_running_books', '', S.gsHist ? 'Pronto, já coloquei seus livros na estante!' : 'Última pergunta, prometo!') + dots + '<h2 class="gs-t">Já usou outro app de leitura?</h2><p class="gs-intro">Se sim, traga seus livros do Goodreads, StoryGraph ou de uma planilha (Skoob ainda não): exporte o arquivo por lá e importe aqui. Assim sua estante já começa cheia.</p>'
         + '<div class="gs-hist">' + (S.gsHist ? '<small class="gs-hok">✓ ' + esc(S.gsHist) + '</small>' : '<small>No Goodreads: My Books › Import and export › Export library. Planilha: colunas título, autor e, se quiser, ano, nota e status.</small>')
         + '<button type="button" class="gs-add" id="gs-hist">' + (S.gsHist ? 'Importar outro arquivo' : 'Importar arquivo (CSV)') + '</button></div>';
-      okTxt = step < 3 ? 'Continuar' : 'Começar a usar'; skipTxt = step < 3 ? 'Pular' : (S.gsHist ? '' : 'Agora não');
+      if (!(step === 2 && fav)) { okTxt = step < 3 ? 'Continuar' : 'Começar a usar'; skipTxt = step < 3 ? 'Pular' : (S.gsHist ? '' : 'Agora não'); }
     }
     v.querySelector('.sl-body').innerHTML = '<div class="sl-top">' + top + '</div>' + body
       + '<div class="gs-btns"><div class="gs-nav">' + (first && step > 1 ? '<button type="button" class="gs-prev" id="gs-prev">‹ Voltar</button>' : '') + '<button type="button" class="gs-ok" id="gs-ok"' + (okOn ? '' : ' disabled') + '>' + okTxt + '</button></div>' + (skipTxt ? '<button type="button" class="gs-skip" id="gs-skip">' + skipTxt + '</button>' : '') + '</div>';
     paintCv(v); v.scrollTop = 0; if (S.gsSeen === step) v.querySelectorAll('.gs-hi img,.gs-bub').forEach((x) => { x.style.animation = 'none'; }); S.gsSeen = step;
     const back = v.querySelector('.sl-back');
-    $('#gs-prev', v)?.addEventListener('click', () => { step = Math.max(1, step - 1); draw(); });
+    $('#gs-prev', v)?.addEventListener('click', () => { if (fav) { fav = false; return draw(); } step = Math.max(1, step - 1); draw(); });
+    $$('[data-fk]', v).forEach((b) => b.addEventListener('click', () => { const i = b.dataset.fi, k = b.dataset.fk; favCh[normT(books[+i].title)] = k; draw(); v.querySelector('[data-fi="' + i + '"][data-fk="' + k + '"]')?.focus(); }));
+    const needFav = () => { const k = books.map((b) => normT(b.title)).join('|'); return first && step === 2 && !fav && books.length && k !== favKey && books.some((b) => !lib().some((x) => normT(x.title) === normT(b.title))); };
+    const afterFav = (put) => { favKey = books.map((b) => normT(b.title)).join('|'); if (put) favToLib(books, favCh); fav = false; step = 3; draw(); };
     if (back) back.addEventListener('click', () => { v.hidden = true; });
     $$('.gs-ch', v).forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; sel.has(k) ? sel.delete(k) : sel.add(k); b.classList.toggle('on', sel.has(k)); b.setAttribute('aria-pressed', sel.has(k)); if (!first) $('#gs-ok', v).disabled = !(sel.size || books.length); }));
     $$('[data-rm]', v).forEach((b) => b.addEventListener('click', () => { books.splice(+b.dataset.rm, 1); draw(); }));
@@ -11570,34 +11586,38 @@ function openTaste(first, prof) {
       const before = lib().length, old = S.listRedraw;
       S.listRedraw = () => { S.listRedraw = old; if (v.hidden || !v.querySelector('#gs-hist')) return old && old(); const n = lib().length - before; S.gsHist = n > 0 ? plural(n, 'livro importado', 'livros importados') : 'Nenhum livro novo nesse arquivo'; draw(); };
       importCSV(); });
-    $('#gs-skip', v)?.addEventListener('click', () => { if (!first) return done(); keep(); if (step < 3) { step++; draw(); } else done(); });
+    $('#gs-skip', v)?.addEventListener('click', () => { if (!first) return done(); if (fav) return afterFav(false); keep(); if (step < 3) { step++; draw(); } else done(); });
     $('#gs-ok', v).addEventListener('click', () => {
+      if (fav) return afterFav(true);
+      if (needFav()) { keep(); fav = true; return draw(); }
       if (first && step < 3) { keep(); step++; return draw(); }
       keep(); if (sel.size || books.length) toast(first ? 'Tudo pronto' : 'Gostos salvos'); done();
     });
   };
-  const done = () => { if (first) top3ToLib(books); if (!first && S.nav.st.length) return navBack(); v.hidden = true; try { if (S.tab === 'inicio') drawTab(); else goTab('inicio'); } catch {} };
+  const done = () => { if (!first && S.nav.st.length) return navBack(); v.hidden = true; try { if (S.tab === 'inicio') drawTab(); else goTab('inicio'); } catch {} };
+  v.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && fav) { ev.stopPropagation(); fav = false; draw(); } }, true);
   S.listRedraw = draw; S.navView = { t: 'taste', a: [] }; closeEd(); v.classList.remove('feedview', 'tabroot', 'mine-page'); draw(); v.hidden = false; v.scrollTop = 0; syncTopTitle();
 }
 { const _o = openTaste; openTaste = function (first) { if (first) { S.nav.st = []; S.nav.cur = null; return _o.apply(this, arguments); } navEnter(() => openTaste()); S.nav.depth++; try { return _o.apply(this, arguments); } finally { S.nav.depth--; } }; }
 // ---------- "Para você" no Hoje ----------
-// Top 3 do primeiro acesso entra na Biblioteca (Bia, 20/11): sem duplicar. Livro que já está na biblioteca (ex.: veio da
-// importação) fica com o status que tem; o que não está entra como Lido, sem data. Toast com Desfazer.
-function top3ToLib(books) {
+// Top 3 do primeiro acesso: o app pergunta antes de colocar na Biblioteca (Bia, 21/11; antes entrava sozinho como Lido).
+// Cada livro: Já li (Lido sem data) · Quero ler · Lendo · Não colocar. Livro que já está na Biblioteca não duplica nem muda.
+function favToLib(books, ch) {
   try {
     if (!books || !books.length) return;
     db.library = db.library || [];
-    const have = new Set(lib().map((x) => normT(x.title)));
-    const added = [];
-    books.forEach((b) => { if (!b || !b.title || have.has(normT(b.title))) return;
-      const e = { id: uid(), title: b.title, author: b.author || null, totalPages: null, status: 'LIDO', addedAt: todayISO(), noDate: true };
+    const have = new Set(lib().map((x) => normT(x.title))), added = [];
+    books.forEach((b) => { const k = normT((b && b.title) || ''), st = ch[k] ?? 'LIDO'; if (!k || !st || have.has(k)) return;
+      const e = { id: uid(), title: b.title, author: b.author || null, totalPages: null, status: st, addedAt: todayISO() };
       if (b.cover) e.cover = b.cover;
-      db.library.push(e); have.add(normT(b.title)); added.push(e.id); });
+      if (st === 'LIDO') e.noDate = true;
+      if (st === 'LENDO') e.startedAt = todayISO();
+      db.library.push(e); have.add(k); added.push(e.id); });
     if (!added.length) return;
     save();
-    const msg = added.length === books.length ? (added.length === 1 ? 'Seu livro entrou como lido' : `Seus ${added.length} livros entraram como lidos`) : (added.length === 1 ? '1 livro do seu Top 3 entrou como lido' : `${added.length} livros do seu Top 3 entraram como lidos`);
-    setTimeout(() => toast(msg, { label: 'Desfazer', fn: () => { db.library = (db.library || []).filter((x) => !added.includes(x.id)); save(); try { drawTab(); } catch {} } }), 400);
-  } catch (err) { console.warn('top 3 na biblioteca', err); }
+    const msg = added.length === 1 ? '1 favorito entrou na Biblioteca' : `${added.length} favoritos entraram na Biblioteca`;
+    setTimeout(() => toast(msg, { label: 'Desfazer', fn: () => { db.library = (db.library || []).filter((x) => !added.includes(x.id)); save(); try { drawTab(); } catch {} } }), 300);
+  } catch (err) { console.warn('favoritos na biblioteca', err); }
 }
 async function tasteRecs() {
   const t = tasteOf(); if (!t) return [];
