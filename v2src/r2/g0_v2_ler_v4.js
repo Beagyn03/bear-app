@@ -216,7 +216,7 @@ function v4SheetHTML(k) {
     <div class="lbl">Volume</div><input type="range" id="v4vol" min="0" max="100" value="${Math.round((st.vol ?? 0.6) * 100)}" style="width:100%;accent-color:var(--acc)" aria-label="Volume">
     <button class="btn s w" data-a="amb" data-k="" style="margin-top:12px">${s && s.amb ? 'Desligar som' : 'Fechar'}</button>`; }
   if (k === 'sum') { const m = st.sum || { min: 0, pages: 0, hits: [] };
-    return `<h3>Boa sessão!</h3><div class="sumr"><div><b>${m.min}</b><small>minutos</small></div><div><b>${m.pages}</b><small>páginas</small></div><div><b>${m.pages && m.min ? Math.round(m.pages / m.min * 60) : 0}</b><small>pág. por hora</small></div></div>
+    return `<h3>Boa sessão!</h3><div class="sumr"><div><b>${m.min}</b><small>minutos</small></div><div><b>${m.pages}</b><small>páginas</small></div><div><b>${m.pages && m.min >= 5 ? Math.round(m.pages / m.min * 60) : '–'}</b><small>pág. por hora</small></div></div>
     ${m.hits.length ? `<div class="lbl">${m.hits.length} ${m.hits.length > 1 ? 'ecos revelados' : 'eco revelado'}</div><div class="list">${m.hits.map((x) => `<div class="li"><span class="avs2" style="background:${v4EcoColor(x)};color:#2a1505">${esc(String(x.displayName || x.handle || '?').charAt(0).toUpperCase())}</span><span class="t">${esc(x.friend ? x.displayName : '@' + x.handle)}, pág. ${x.page}<small>"${esc(x.text)}"</small></span></div>`).join('')}</div>` : ''}
     <button class="btn p w" data-a="sumok" style="margin-top:12px">Fechar</button>`; }
   if (k === 'upd' || k === 'end') return v4UpdHTML(k, e, s);

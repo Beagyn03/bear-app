@@ -79,7 +79,7 @@ const v3Emo = (e) => { const c = new Map(); ((e && e.quotes) || []).forEach((q) 
   try { if (snapshot.shelf && snapshot.shelf.stats) snapshot.shelf.stats.am = ((SOC.fr && SOC.fr.friends) || []).length; } catch {} }; }
 function v3Data(d) {
   if (d.self) { const s = myStatsSnap(), L = lib();
-    return { lidos: s.lidos, aband: s.aband, pags: s.paginas, maior: s.maior, am: (() => { const L = SOC.fr && SOC.fr.friends; if (Array.isArray(L) && (SOC.ok || L.length)) { try { localStorage.setItem('v3.am', String(L.length)); } catch {} return L.length; } let c = null; try { c = localStorage.getItem('v3.am'); } catch {} return c != null && c !== '' ? +c : (socialProfile && socialProfile.friendsCount != null ? socialProfile.friendsCount : null); })(), // antes de a lista chegar: o último número conhecido, nunca "0 amizades" (teste 20/11 item 36)
+    return { lidos: s.lidos, aband: s.aband, pags: s.paginas, maior: s.maior, am: (() => { const L = SOC.fr && SOC.fr.friends; if (Array.isArray(L) && (SOC.frOk || L.length)) { try { localStorage.setItem('v3.am', String(L.length)); } catch {} return L.length; } let c = null; try { c = localStorage.getItem('v3.am'); } catch {} return c != null && c !== '' ? +c : (socialProfile && socialProfile.friendsCount != null ? socialProfile.friendsCount : null); })(), // antes de a lista chegar: o último número conhecido, nunca "0 amizades" (teste 20/11 item 36)
       lendo: L.filter((e) => e.status === 'LENDO').slice(0, 3).map((e) => ({ title: e.title, pct: readingInfo(e).pct, id: e.id })),
       top: (() => { try { return top5Books().slice(0, 3).map((b) => ({ ...b, emo: v3Emo(lib().find((x) => normT(x.title) === normT(b.title))) })); } catch { return []; } })() }; }
   const sh = d.shelf || {}, s = sh.stats || {}, c = sh.counts || {};
@@ -111,7 +111,7 @@ function v3Hub() {
   const m = v2Mods(); let s = {}; try { s = myStatsSnap(); } catch {}
   const loans = (() => { try { return lib().filter((e) => e.ex && e.ex.loan).length; } catch { return 0; } })(), gifts = (() => { try { return gfList().length; } catch { return 0; } })();
   const H = [['metas', 'meta', 'Metas', s.meta ? s.meta.feitos + '/' + s.meta.alvo : 'definir', m.metas], ['stats', 'stats', 'Estatísticas', todayISO().slice(0, 4), true],
-    ['resumo', 'cal', 'Resumo', (() => { try { return v2RsMonth(1).nome; } catch { return 'do mês'; } })(), true],
+    ['resumo', 'cal', 'Resumo', (() => { try { return v2RsMonth(1).nome; } catch { return 'do mês'; } })(), (() => { try { const ym = v2RsMonth(1).ym; return lib().some((e) => String(e.finishedAt || '').startsWith(ym) || (e.readLog || []).some((x) => String(x.date || '').startsWith(ym)) || String(e.startedAt || '').startsWith(ym)); } catch { return true; } })()], // conta nova não vê "Resumo · mês passado" vazio (teste conta nova 20/11, item 33)
     ['orbita', 'orb', 'Órbita', (() => { try { const n = streakNow(); return n + (n === 1 ? ' dia' : ' dias'); } catch { return ''; } })(), m.orbita],
     ['emprest', 'swap', 'Empréstimos', loans ? loans + ' fora' : 'nenhum', v4Mod('emprest')], ['presentes', 'gift', 'Presentes', gifts ? String(gifts) : 'nenhum', v4Mod('presentes')]].filter((x) => x[4]);
   return '<div class="v3hubh"><b>Minha leitura</b><small>só você vê</small></div><div class="v3hub n' + H.length + '">' + H.map(([k, i, n, sm]) => '<button type="button" data-hub="' + k + '">' + v3pi(i, 20) + '<b>' + n + '</b><small>' + esc(sm) + '</small></button>').join('') + '</div>';
