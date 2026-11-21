@@ -7,11 +7,11 @@
   const map = (it) => { const b = it.book || {}, pg = it.page || null, pct = it.readerPct;
     if (it.type === 'review') { const s = it.bookStatus; const p = s === 'ABANDONEI' ? ['ab', 'Abandonou'] : s === 'HIBERNANDO' ? ['pa', 'Pausou'] : ['av2', 'Avaliou ' + (it.paws ? stars(it.paws) : '')];
       return { f: 'aval', c: p[0], a: p[1], t: b.title, cv: b.cover, tx: it.spoiler ? 'Tem spoiler: abra o livro para ver.' : (it.text || ''), at: it.createdAt || it.updatedAt }; }
-    if (it.type === 'activity') return { f: 'prog', c: it.act === 'FINISHED' ? 'te' : 'le', a: it.act === 'FINISHED' ? 'Terminou' : it.act === 'STARTED' ? 'Começou' : 'Lendo' + (it.pages ? ' · pág. ' + it.pages : ''), t: b.title, cv: b.cover, tx: '', at: it.createdAt };
+    if (it.type === 'activity') return { f: 'prog', c: it.act === 'FINISHED' ? 'te' : 'le', a: it.act === 'FINISHED' ? 'Terminou' : it.act === 'STARTED' ? 'Começou' : 'Lendo' + v2PctTxt(it.pct, it.pages, b.title, ' · '), t: b.title, cv: b.cover, tx: '', at: it.createdAt };
     if (it.kind === 'rec') return { f: 'coment', c: 'in', a: 'Indicou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt };
-    if (it.kind === 'quote') return { f: 'coment', c: 'le', a: 'Trecho' + (pg ? ' · pág. ' + pg : ''), t: b.title, cv: b.cover, tx: it.quote ? '“' + it.quote + '”' : (it.text || ''), at: it.createdAt };
+    if (it.kind === 'quote') return { f: 'coment', c: 'le', a: 'Trecho' + v2PctTxt(pct, pg, b.title, ' · '), t: b.title, cv: b.cover, tx: it.quote ? '“' + it.quote + '”' : (it.text || ''), at: it.createdAt };
     if (pct === 100) return { f: 'prog', c: 'te', a: 'Terminou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt };
-    if (pg || pct != null) return { f: 'prog', c: 'le', a: 'Lendo' + (pg ? ' · pág. ' + pg : ' · ' + Math.round(pct) + '%'), t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt };
+    if (pg || pct != null) return { f: 'prog', c: 'le', a: 'Lendo' + v2PctTxt(pct, pg, b.title, ' · '), t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt };
     return { f: 'coment', c: 'co', a: 'Comentou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt }; };
   const F = [['tudo', 'Tudo'], ['coment', 'Comentários'], ['aval', 'Avaliações'], ['prog', 'Progresso']];
   v3Ativ = function (d, host) {

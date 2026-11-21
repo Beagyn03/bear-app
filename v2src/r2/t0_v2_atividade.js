@@ -36,14 +36,14 @@
       return { f: 'aval', c: pill[0], a: pill[1], t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: 'public', it };
     }
     if (it.kind === 'rec') return { f: 'coment', c: 'in', a: it.book2 ? 'Indicou ' + esc(it.book2.title) : 'Indicou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: it.visibility, it };
-    if (it.kind === 'quote') return { f: 'coment', c: 'le', a: 'Trecho' + (pg ? ' · pág. ' + pg : ''), t: b.title, cv: b.cover, tx: it.quote ? '“' + it.quote + '”' : it.text || '', at: it.createdAt, v: it.visibility, it };
+    if (it.kind === 'quote') return { f: 'coment', c: 'le', a: 'Trecho' + v2PctTxt(pct, pg, b.title, ' · '), t: b.title, cv: b.cover, tx: it.quote ? '“' + it.quote + '”' : it.text || '', at: it.createdAt, v: it.visibility, it };
     if (pct === 100) return { f: 'prog', c: 'te', a: 'Terminou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: it.visibility, it };
-    if (pg || pct != null) return { f: 'prog', c: 'le', a: 'Lendo' + (pg ? ' · pág. ' + pg : ' · ' + Math.round(pct) + '%'), t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: it.visibility, it };
+    if (pg || pct != null) return { f: 'prog', c: 'le', a: 'Lendo' + v2PctTxt(pct, pg, b.title, ' · '), t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: it.visibility, it };
     return { f: 'coment', c: 'co', a: 'Comentou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: it.visibility, it };
   };
   const local = () => { const L = []; let lb = []; try { lb = lib(); } catch {}
     lb.filter((e) => e.status === 'LENDO').forEach((e) => { let p = 0, now = 0; try { const r = readingInfo(e); p = r.pct || 0; now = r.now || 0; } catch {} const last = e.readLog && e.readLog.length ? e.readLog[e.readLog.length - 1].date : e.startedAt;
-      L.push({ f: 'prog', c: 'le', a: 'Lendo' + (now ? ' · pág. ' + now : ' · ' + Math.round(p) + '%'), t: e.title, cv: e.cover, tx: '', at: last || '', v: 'local', e }); });
+      L.push({ f: 'prog', c: 'le', a: 'Lendo · ' + Math.round(p) + '%', t: e.title, cv: e.cover, tx: '', at: last || '', v: 'local', e }); });
     lb.filter((e) => e.status === 'LIDO' && e.finishedAt && e.startedAt).forEach((e) => { let n = 0; try { n = Math.max(1, between(e.startedAt, e.finishedAt) + 1); } catch {}
       L.push({ f: 'prog', c: 'te', a: 'Terminou', t: e.title, cv: e.cover, tx: n ? 'Terminei em ' + n + (n === 1 ? ' dia.' : ' dias.') : '', at: e.finishedAt, v: 'local', e }); });
     return L; };

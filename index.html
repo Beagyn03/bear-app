@@ -9966,6 +9966,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
@@ -20967,7 +20968,7 @@ function v6Act(it) {
   if (/^Pergunta do dia:/i.test(t)) return `<span class="pact de">${ic('quote')}Pergunta do dia</span>`;
   if (it.kind === 'rec') return `<span class="pact in">${ic('heart')}Indicou</span>`;
   if (it.kind === 'question') return `<span class="pact qu">${ic('reply')}Perguntou</span>`;
-  if (it.kind === 'quote') return `<span class="pact le">${ic('quote')}Trecho${it.page ? ' · pág. ' + it.page : ''}</span>`;
+  if (it.kind === 'quote') return `<span class="pact le">${ic('quote')}Trecho${v2PctTxt(it.readerPct, it.page, (it.book || {}).title, ' · ')}</span>`;
   if (it.readerPct === 100) return `<span class="pact te">${ic('ok')}Terminou</span>`;
   return `<span class="pact le">${ic('ler')}Lendo${it.readerPct != null ? ' · ' + Math.round(it.readerPct) + '%' : ''}</span>`;
 }
@@ -22269,7 +22270,7 @@ const ljMine = (t) => lib().find((x) => normT(x.title) === normT(t || ''));
     const row = (x, sm, act, a, extra) => { if (!['ljme', 'ljher', 'ljcat'].includes(a)) return row0(x, sm, act, a, extra); const st = ljSt(x.title, P.h);
       if (st === 'busy') return row0(x, sm, 'Enviando…', 'ljnop', ''); if (st === 'member') return row0(x, sm, v4ic('friends', 15) + 'Vocês já leem juntas', 'ljnop', '');
       if (st === 'invited') return row0(x, sm + ' · toque para cancelar', v4ic('ok', 15) + 'Convite enviado', 'ljuninv', `data-t="${esc(x.title || '')}"`); return row0(x, sm, act, a, extra); };
-    const pg = (x) => { try { const i = readingInfo(x); return i.total ? 'você na pág. ' + i.now : 'você em ' + Math.round(i.pct || 0) + '%'; } catch { return 'você está lendo'; } };
+    const pg = (x) => { try { const i = readingInfo(x); return 'você em ' + Math.round(i.pct || 0) + '%'; } catch { return 'você está lendo'; } };
     const q = String(c.q || '').trim(), nq = normT(q);
     const locais = nq ? lib().filter((x) => normT(x.title + ' ' + (x.author || '')).includes(nq)).slice(0, 4) : [];
     const cat = nq && Array.isArray(c.res) ? c.res.filter((it) => !ljMine(it.title)).slice(0, 5) : [];
@@ -23281,14 +23282,14 @@ saveQuote = function (e) {
       return { f: 'aval', c: pill[0], a: pill[1], t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: 'public', it };
     }
     if (it.kind === 'rec') return { f: 'coment', c: 'in', a: it.book2 ? 'Indicou ' + esc(it.book2.title) : 'Indicou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: it.visibility, it };
-    if (it.kind === 'quote') return { f: 'coment', c: 'le', a: 'Trecho' + (pg ? ' · pág. ' + pg : ''), t: b.title, cv: b.cover, tx: it.quote ? '“' + it.quote + '”' : it.text || '', at: it.createdAt, v: it.visibility, it };
+    if (it.kind === 'quote') return { f: 'coment', c: 'le', a: 'Trecho' + v2PctTxt(pct, pg, b.title, ' · '), t: b.title, cv: b.cover, tx: it.quote ? '“' + it.quote + '”' : it.text || '', at: it.createdAt, v: it.visibility, it };
     if (pct === 100) return { f: 'prog', c: 'te', a: 'Terminou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: it.visibility, it };
-    if (pg || pct != null) return { f: 'prog', c: 'le', a: 'Lendo' + (pg ? ' · pág. ' + pg : ' · ' + Math.round(pct) + '%'), t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: it.visibility, it };
+    if (pg || pct != null) return { f: 'prog', c: 'le', a: 'Lendo' + v2PctTxt(pct, pg, b.title, ' · '), t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: it.visibility, it };
     return { f: 'coment', c: 'co', a: 'Comentou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt, v: it.visibility, it };
   };
   const local = () => { const L = []; let lb = []; try { lb = lib(); } catch {}
     lb.filter((e) => e.status === 'LENDO').forEach((e) => { let p = 0, now = 0; try { const r = readingInfo(e); p = r.pct || 0; now = r.now || 0; } catch {} const last = e.readLog && e.readLog.length ? e.readLog[e.readLog.length - 1].date : e.startedAt;
-      L.push({ f: 'prog', c: 'le', a: 'Lendo' + (now ? ' · pág. ' + now : ' · ' + Math.round(p) + '%'), t: e.title, cv: e.cover, tx: '', at: last || '', v: 'local', e }); });
+      L.push({ f: 'prog', c: 'le', a: 'Lendo · ' + Math.round(p) + '%', t: e.title, cv: e.cover, tx: '', at: last || '', v: 'local', e }); });
     lb.filter((e) => e.status === 'LIDO' && e.finishedAt && e.startedAt).forEach((e) => { let n = 0; try { n = Math.max(1, between(e.startedAt, e.finishedAt) + 1); } catch {}
       L.push({ f: 'prog', c: 'te', a: 'Terminou', t: e.title, cv: e.cover, tx: n ? 'Terminei em ' + n + (n === 1 ? ' dia.' : ' dias.') : '', at: e.finishedAt, v: 'local', e }); });
     return L; };
@@ -23338,11 +23339,11 @@ saveQuote = function (e) {
   const map = (it) => { const b = it.book || {}, pg = it.page || null, pct = it.readerPct;
     if (it.type === 'review') { const s = it.bookStatus; const p = s === 'ABANDONEI' ? ['ab', 'Abandonou'] : s === 'HIBERNANDO' ? ['pa', 'Pausou'] : ['av2', 'Avaliou ' + (it.paws ? stars(it.paws) : '')];
       return { f: 'aval', c: p[0], a: p[1], t: b.title, cv: b.cover, tx: it.spoiler ? 'Tem spoiler: abra o livro para ver.' : (it.text || ''), at: it.createdAt || it.updatedAt }; }
-    if (it.type === 'activity') return { f: 'prog', c: it.act === 'FINISHED' ? 'te' : 'le', a: it.act === 'FINISHED' ? 'Terminou' : it.act === 'STARTED' ? 'Começou' : 'Lendo' + (it.pages ? ' · pág. ' + it.pages : ''), t: b.title, cv: b.cover, tx: '', at: it.createdAt };
+    if (it.type === 'activity') return { f: 'prog', c: it.act === 'FINISHED' ? 'te' : 'le', a: it.act === 'FINISHED' ? 'Terminou' : it.act === 'STARTED' ? 'Começou' : 'Lendo' + v2PctTxt(it.pct, it.pages, b.title, ' · '), t: b.title, cv: b.cover, tx: '', at: it.createdAt };
     if (it.kind === 'rec') return { f: 'coment', c: 'in', a: 'Indicou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt };
-    if (it.kind === 'quote') return { f: 'coment', c: 'le', a: 'Trecho' + (pg ? ' · pág. ' + pg : ''), t: b.title, cv: b.cover, tx: it.quote ? '“' + it.quote + '”' : (it.text || ''), at: it.createdAt };
+    if (it.kind === 'quote') return { f: 'coment', c: 'le', a: 'Trecho' + v2PctTxt(pct, pg, b.title, ' · '), t: b.title, cv: b.cover, tx: it.quote ? '“' + it.quote + '”' : (it.text || ''), at: it.createdAt };
     if (pct === 100) return { f: 'prog', c: 'te', a: 'Terminou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt };
-    if (pg || pct != null) return { f: 'prog', c: 'le', a: 'Lendo' + (pg ? ' · pág. ' + pg : ' · ' + Math.round(pct) + '%'), t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt };
+    if (pg || pct != null) return { f: 'prog', c: 'le', a: 'Lendo' + v2PctTxt(pct, pg, b.title, ' · '), t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt };
     return { f: 'coment', c: 'co', a: 'Comentou', t: b.title, cv: b.cover, tx: it.text || '', at: it.createdAt }; };
   const F = [['tudo', 'Tudo'], ['coment', 'Comentários'], ['aval', 'Avaliações'], ['prog', 'Progresso']];
   v3Ativ = function (d, host) {
@@ -24498,6 +24499,45 @@ const commMarkSeen = () => { const now = new Date().toISOString();
 { let was = S.tab; let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0;
     if (was === 'comunidade' && S.tab !== 'comunidade') commMarkSeen(); was = S.tab; try { paintCommDot(); } catch {} }, 200); })
     .observe(TR, { childList: true, subtree: true }); }
+// --- wc_v2_apagar_atualizacao.js ---
+// Progresso em telas sociais (Bia, 21/11): para outras pessoas, sempre em % ("Lendo · 26%"), nunca página/posição/capítulo.
+// pct quando vier; senão calcula pela página e o total do próprio livro; sem como saber, não mostra número.
+function v2PctTxt(pct, page, title, pre) {
+  let p = pct != null && pct !== '' ? Number(pct) : null;
+  if ((p == null || !isFinite(p)) && page) { try { const k = normT(title || ''); const e = lib().find((x) => normT(x.title) === k); const t = e && Number(e.totalPages); if (t) p = Math.min(100, page / t * 100); } catch {} }
+  return p != null && isFinite(p) ? (pre || '') + Math.max(0, Math.min(100, Math.round(p))) + '%' : '';
+}
+// Apagar uma atualização de leitura (Bia, 21/11): no Histórico, "Apagar" tira o registro e a página do livro volta
+// (o bloco do histórico já desconta as páginas). Aqui: sem o "toque de novo" — apaga na hora com "Desfazer" (regra do app);
+// a atividade daquele dia no feed/Atividade sai junto (API DELETE /v1/activities/by-day) ou é refeita com a página certa
+// se ainda houver leitura naquele dia; a chamada só vai 5 s depois, para o Desfazer não precisar falar com a API.
+{ const _te = tlEditClick; const pend = new Map();
+  tlEditClick = function (ev, e, redraw) {
+    const b = ev.target.closest && ev.target.closest('.tl-eb button'), c = b && b.closest('.tl-c');
+    if (!b || b.dataset.a !== 'rm' || !c || !String(c.dataset.ref || '').startsWith('rl:')) return _te.apply(this, arguments);
+    const ix = Number(c.dataset.ref.split(':')[1]), L = e.readLog || [], x = L[ix]; if (!x) return;
+    const before = Number(e.currentPage) || 0, day = String(x.date || '').slice(0, 10), key = e.id + '|' + day;
+    // é a mais recente? (data maior, ou mesma data e posição depois). Se não for, a página atual não muda: as páginas dela
+    // passam para o registro seguinte, para a soma continuar batendo com a página atual.
+    const dk = (y, i) => String(y.date || '').slice(0, 10) + '|' + String(i).padStart(6, '0');
+    let next = null; L.forEach((y, i) => { if (i !== ix && dk(y, i) > dk(x, ix) && (!next || dk(y, i) < dk(next.y, next.i))) next = { y, i }; });
+    const nextObj = next && next.y;
+    b.dataset.ok = '1'; _te.apply(this, arguments); // o original apaga, desconta as páginas, salva e redesenha
+    if (nextObj) { nextObj.pages = (Number(nextObj.pages) || 0) + (Number(x.pages) || 0); e.currentPage = before; save(); try { redraw(); } catch {} }
+    const sync = () => { pend.delete(key);
+      if (!connected()) return;
+      const still = (e.readLog || []).some((y) => String(y.date || '').slice(0, 10) === day && Number(y.pages));
+      if (still && day === todayISO()) { try { publishActivity(e, 'PROGRESS'); } catch {} return; }
+      if (!still) Promise.resolve(sapi('DELETE', '/v1/activities/by-day?' + new URLSearchParams({ libId: e.id, kind: 'PROGRESS', day }).toString())).catch(() => {}); };
+    clearTimeout(pend.get(key)); pend.set(key, setTimeout(sync, 5000));
+    try { refresh(); } catch {}
+    toast('Atualização apagada · pág. ' + (Number(e.currentPage) || 0), { label: 'Desfazer', fn: () => {
+      clearTimeout(pend.get(key)); pend.delete(key);
+      const L2 = e.readLog || (e.readLog = []); if (nextObj) nextObj.pages = (Number(nextObj.pages) || 0) - (Number(x.pages) || 0); L2.splice(Math.min(ix, L2.length), 0, x); e.currentPage = before; save();
+      try { refresh(); } catch {} try { redraw(); } catch {} toast('Atualização de volta');
+    } });
+  };
+}
 // --- wc_v2_enquete.js ---
 // Enquetes (Bia, 21/11; API migração 040): no Novo post, "Pergunta" vira "Enquete" (2 a 4 opções de texto ou livro, prazo
 // opcional). No feed e na conversa da leitura conjunta, as opções viram barras: tocar vota; depois do voto aparecem % e

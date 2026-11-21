@@ -90,7 +90,7 @@ function v6Act(it) {
   if (/^Pergunta do dia:/i.test(t)) return `<span class="pact de">${ic('quote')}Pergunta do dia</span>`;
   if (it.kind === 'rec') return `<span class="pact in">${ic('heart')}Indicou</span>`;
   if (it.kind === 'question') return `<span class="pact qu">${ic('reply')}Perguntou</span>`;
-  if (it.kind === 'quote') return `<span class="pact le">${ic('quote')}Trecho${it.page ? ' · pág. ' + it.page : ''}</span>`;
+  if (it.kind === 'quote') return `<span class="pact le">${ic('quote')}Trecho${v2PctTxt(it.readerPct, it.page, (it.book || {}).title, ' · ')}</span>`;
   if (it.readerPct === 100) return `<span class="pact te">${ic('ok')}Terminou</span>`;
   return `<span class="pact le">${ic('ler')}Lendo${it.readerPct != null ? ' · ' + Math.round(it.readerPct) + '%' : ''}</span>`;
 }

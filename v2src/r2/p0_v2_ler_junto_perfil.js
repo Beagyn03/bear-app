@@ -33,7 +33,7 @@ const ljMine = (t) => lib().find((x) => normT(x.title) === normT(t || ''));
     const row = (x, sm, act, a, extra) => { if (!['ljme', 'ljher', 'ljcat'].includes(a)) return row0(x, sm, act, a, extra); const st = ljSt(x.title, P.h);
       if (st === 'busy') return row0(x, sm, 'Enviando…', 'ljnop', ''); if (st === 'member') return row0(x, sm, v4ic('friends', 15) + 'Vocês já leem juntas', 'ljnop', '');
       if (st === 'invited') return row0(x, sm + ' · toque para cancelar', v4ic('ok', 15) + 'Convite enviado', 'ljuninv', `data-t="${esc(x.title || '')}"`); return row0(x, sm, act, a, extra); };
-    const pg = (x) => { try { const i = readingInfo(x); return i.total ? 'você na pág. ' + i.now : 'você em ' + Math.round(i.pct || 0) + '%'; } catch { return 'você está lendo'; } };
+    const pg = (x) => { try { const i = readingInfo(x); return 'você em ' + Math.round(i.pct || 0) + '%'; } catch { return 'você está lendo'; } };
     const q = String(c.q || '').trim(), nq = normT(q);
     const locais = nq ? lib().filter((x) => normT(x.title + ' ' + (x.author || '')).includes(nq)).slice(0, 4) : [];
     const cat = nq && Array.isArray(c.res) ? c.res.filter((it) => !ljMine(it.title)).slice(0, 5) : [];
