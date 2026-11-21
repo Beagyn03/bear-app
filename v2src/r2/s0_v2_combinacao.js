@@ -297,7 +297,7 @@ function v9Screen(D, k, prev) {
       'Minutos com cronômetro em ' + F.year + '.', v9Act(D, 'foco')); }
   if (k === 'ecos') { const E = D.ecos;
     return v9Z('Ecos', E.livro ? 'Um eco de cada em ' + esc(E.livro.title) : E.me + ' ecos seus, ' + E.el + ' de ' + n, '<div class="eco2"><span><b>' + E.me + '</b><small>ecos seus</small></span><span><b>' + E.el + '</b><small>ecos de ' + n + '</small></span></div>'
-      + (E.livro ? '<div class="ecq"><div class="eqw qme" style="--d:.4s"><q>' + esc(E.livro.me.body) + '</q><small>você · pág. ' + E.livro.me.page + '</small></div><div class="eqw qel" style="--d:.65s"><q>' + esc(E.livro.them.body) + '</q><small>' + n + ' · pág. ' + E.livro.them.page + '</small></div></div>' : ''),
+      + '', // texto dos ecos não aparece aqui: eco só se lê na sessão, na página certa (Bia, 21/11)
       E.livro ? 'As duas deixaram eco no mesmo livro.' : E.el > E.me * 2 ? n + ' deixa eco em quase todo livro.' : E.me > E.el * 2 ? 'Você deixa mais ecos pelo caminho.' : 'Ecos espalhados pelas mesmas galáxias.', v9Act(D, 'ecos')); }
   if (k === 'coinc') return v9Z('Coincidências', 'Por acaso, as duas…', '<div class="coi">' + D.coinc.map(([icn, t], j) => '<span style="--d:' + (0.15 + j * 0.18).toFixed(2) + 's">' + v9ic(icn, 18) + '<b>' + esc(t) + '</b></span>').join('') + '</div>', 'O universo tem senso de humor.');
   // fecho: o cartão 9:16 + próximo passo
