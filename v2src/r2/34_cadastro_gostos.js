@@ -80,7 +80,7 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 `; TR.append(st); }
 // ---------- Passo 4 do primeiro acesso: meta do ano com projeção (Bia, 21/11; ideia vinda do Bookly, sem copiar) ----------
 // Sugestão: livros lidos este ano (inclui os importados) + ritmo do ano; sem histórico, 12. Curva leve do que já leu até a meta.
-// "Lembrete para ler" só fica guardado em db.prefs.dailyRemind (o lembrete diário ainda não existe).
+// "Lembrete para ler" liga o lembrete diário (Ajustes › Lembretes; db.prefs.orbitRem → /v1/me/orbit-reminder, Bia 21/11).
 const GM = { n: 0, y: 0, rem: false };
 function gmStats() {
   const y = new Date().getFullYear(), ys = String(y), L = lib(), read = L.filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').startsWith(ys)).length;
@@ -90,7 +90,7 @@ function gmStats() {
   return { y, read, avg, doy, left, sug };
 }
 function gmBody(dots) {
-  const st = gmStats(); if (!GM.y || GM.y !== st.y) { GM.y = st.y; GM.n = st.sug; GM.rem = !!((db.prefs || {}).dailyRemind || {}).on; }
+  const st = gmStats(); if (!GM.y || GM.y !== st.y) { GM.y = st.y; GM.n = st.sug; GM.rem = !!(((db.prefs || {}).orbitRem || {}).on || ((db.prefs || {}).dailyRemind || {}).on); }
   const n = GM.n, rest = Math.max(0, n - st.read), ppd = rest ? Math.max(1, Math.round(rest * st.avg / st.left)) : 0;
   const W = 300, H = 120, px = (d) => 8 + (W - 16) * d / 365, py = (b) => H - 14 - (H - 30) * Math.min(1, b / Math.max(n, 1));
   const xNow = px(st.doy), yNow = py(st.read), xEnd = px(365), yEnd = py(n);
@@ -106,14 +106,15 @@ function gmBody(dots) {
     + '<div class="gm-pick" role="group" aria-label="Meta de livros em ' + st.y + '"><button type="button" class="gm-b" data-gm="-1" aria-label="Diminuir a meta">−</button><b class="gm-n" aria-live="polite">' + n + '<small>livros em ' + st.y + '</small></b><button type="button" class="gm-b" data-gm="1" aria-label="Aumentar a meta">+</button></div>'
     + '<div class="gm-q">' + [12, 24, 36].map((q) => '<button type="button" class="gs-ch' + (q === n ? ' on' : '') + '" data-gq="' + q + '" aria-pressed="' + (q === n) + '">' + q + '</button>').join('') + '</div>'
     + '<div class="gm-card">' + svg + '<p class="gm-big">Até 31/12 você pode chegar a <b>' + n + ' livros</b></p><p class="gm-sm">' + (ppd ? 'Cerca de ' + ppd + ' páginas por dia' : 'Você já bateu essa meta: que tal subir?') + '</p></div>'
-    + '<label class="gm-rem"><span><b>Lembrete para ler</b><small>todo dia às 20:00 · avisamos quando ele estiver disponível</small></span><input type="checkbox" id="gm-rem"' + (GM.rem ? ' checked' : '') + '></label>';
+    + '<label class="gm-rem"><span><b>Lembrete para ler</b><small>todo dia às 20:00, só se você ainda não leu</small></span><input type="checkbox" id="gm-rem"' + (GM.rem ? ' checked' : '') + '></label>';
 }
 function gmBind(v, draw) {
   v.querySelectorAll('[data-gm]').forEach((b) => b.addEventListener('click', () => { GM.n = Math.max(1, Math.min(300, GM.n + Number(b.dataset.gm))); draw(); v.querySelector('[data-gm="' + b.dataset.gm + '"]')?.focus(); }));
   v.querySelectorAll('[data-gq]').forEach((b) => b.addEventListener('click', () => { GM.n = Number(b.dataset.gq); draw(); v.querySelector('[data-gq="' + b.dataset.gq + '"]')?.focus(); }));
-  const r = v.querySelector('#gm-rem'); if (r) r.addEventListener('change', () => { GM.rem = r.checked; });
+  const r = v.querySelector('#gm-rem'); if (r) r.addEventListener('change', async () => { GM.rem = r.checked;
+    if (r.checked) { try { await Promise.race([pushSubscribe(), new Promise((_, no) => setTimeout(() => no(new Error('tempo')), 9000))]); } catch (err) { toast(err && err.message === 'negado' ? 'Sem permissão para notificar. Dá para ligar depois em Ajustes › Lembretes.' : 'Este aparelho não aceitou notificações'); } } });
 }
-function gmSaveRemind() { try { db.prefs = { ...(db.prefs || {}), dailyRemind: { on: GM.rem ? 1 : 0, hour: 20, minute: 0, at: todayISO() } }; save(); } catch {} }
+function gmSaveRemind() { try { const o = { ...(((db.prefs || {}).orbitRem) || { hour: 20, minute: 0, off: [] }), on: !!GM.rem }; db.prefs = { ...(db.prefs || {}), orbitRem: o, dailyRemind: { on: GM.rem ? 1 : 0, hour: o.hour, minute: o.minute || 0, at: todayISO() } }; save(); try { v4orbSync(true); } catch {} } catch {} }
 function gmSave() {
   try { const y = GM.y || new Date().getFullYear(); db.yearGoals = { ...(db.yearGoals || {}), [y]: GM.n }; db.yearGoalSet = { ...(db.yearGoalSet || {}) }; if (!db.yearGoalSet[y]) db.yearGoalSet[y] = todayISO(); save(); } catch (e) { console.warn('meta do primeiro acesso', e); }
   gmSaveRemind();

@@ -39,14 +39,14 @@ async function v4orbSync(force) {
     const r = await sapi('PUT', '/v1/me/orbit-reminder', body); if (r && r.status < 300) { o.sent = sig; save(); }
   } catch {}
 }
-setInterval(() => { try { if (v4Mod('orbita')) v4orbSync(false); } catch {} }, 30000);
+setInterval(() => { try { v4orbSync(false); } catch {} }, 30000); // lembrete para ler vale mesmo com a Órbita desligada (Bia, 21/11)
 setTimeout(() => { try { v4orbSync(false); } catch {} }, 6000);
 function openLembretes() {
   const draw = () => {
     const perm = typeof pushOk === 'function' && pushOk() ? Notification.permission : 'none';
     const tsel = (cls, cur) => '<select class="' + cls + '" aria-label="Hora">' + v4times().map((t) => '<option' + (t === cur ? ' selected' : '') + '>' + t + '</option>').join('') + '</select>';
     const days = (cls, off) => '<div class="v4dw ' + cls + '">' + V4DOW.map((d, i) => '<button type="button" data-d="' + i + '" class="' + ((off || []).includes(i) ? 'off' : '') + '" aria-pressed="' + !(off || []).includes(i) + '" aria-label="' + V4DOWN[i] + '">' + d + '</button>').join('') + '</div>';
-    let h = '<p class="v4pg-intro">Avisos no celular para não perder o prazo nem a órbita. Nada é avisado em dia de folga.</p>';
+    let h = '<p class="v4pg-intro">Avisos no celular para ler todo dia e não perder o prazo. Nada é avisado em dia de folga, e quem já leu no dia não recebe o lembrete para ler.</p>';
     if (perm === 'none') h += '<div class="v4perm"><b>Este navegador não recebe notificações</b><small>No iPhone, instale o Livroverso na tela de início para receber os avisos.</small></div>';
     else if (perm !== 'granted') h += '<div class="v4perm"><b>Ativar notificações neste aparelho</b><small>Sem isso, os lembretes ficam guardados mas não chegam neste celular.</small><button type="button" data-a="perm">Ativar</button></div>';
     // 1. prazo
@@ -69,11 +69,11 @@ function openLembretes() {
     h += '</div>';
     } // fim do prazo (some com a função Prazos desligada)
     // 2. órbita
-    if (v4Mod('orbita')) {
-      const o = v4orb() || { on: false, hour: 21, minute: 0, off: [] }; let n = 0; try { n = streakNow(); } catch {}
-      h += '<div class="v4lb">Órbita</div><div class="v4card"><div class="v4lm"><div class="hd"><span></span><span><b>Se eu ainda não li hoje</b><small>' + (n ? 'sua órbita está em ' + plural(n, 'dia', 'dias') : 'uma página por dia mantém a sequência') + '</small></span>'
-        + '<button type="button" class="v2fn-tg' + (o.on ? ' on' : '') + '" data-a="ob-on" role="switch" aria-checked="' + !!o.on + '" aria-label="Lembrete da órbita"></button></div>'
-        + (o.on ? '<div class="row">me lembre às ' + tsel('ob-h', v4hhmm(o.hour, o.minute)) + '<button type="button" class="lnk" data-a="test">Testar</button></div><div class="row">Dias</div>' + days('ob-d', o.off) : '') + '</div></div>';
+    { // Lembrete para ler (Bia, 21/11): o antigo lembrete da órbita, independente da função Órbita
+      const o = v4orb() || { on: false, hour: 20, minute: 0, off: [] }; let n = 0; try { n = streakNow(); } catch {}
+      h += '<div class="v4lb">Lembrete para ler</div><div class="v4card"><div class="v4lm"><div class="hd"><span></span><span><b>Lembrete para ler</b><small>' + 'só nos dias em que você ainda não leu' + (n && v4Mod('orbita') ? ' · órbita em ' + plural(n, 'dia', 'dias') : '') + '</small></span>'
+        + '<button type="button" class="v2fn-tg' + (o.on ? ' on' : '') + '" data-a="ob-on" role="switch" aria-checked="' + !!o.on + '" aria-label="Lembrete para ler"></button></div>'
+        + (o.on ? '<div class="row">todo dia às ' + tsel('ob-h', v4hhmm(o.hour, o.minute)) + '<button type="button" class="lnk" data-a="test">Testar</button></div><div class="row">Dias</div>' + days('ob-d', o.off) : '') + '</div></div>';
     }
     // 3. avisos que já existem
     const rows = [];
@@ -95,8 +95,8 @@ function openLembretes() {
       if (!(await ensure())) return; if (old) delete old.remind; try { setCurrent(e.id); } catch {} e.remind = hm; save(); setTimeout(() => reminderSync(e), 300); toast('Agora o lembrete é de ' + e.title); setTimeout(draw, 350); });
     L('[data-a=ob-on]', async () => { const o = v4orb() || { hour: 21, minute: 0, off: [] };
       if (o.on) { o.on = false; db.prefs = { ...(db.prefs || {}), orbitRem: o }; save(); v4orbSync(true); return draw(); }
-      if (!(await ensure())) return; o.on = true; db.prefs = { ...(db.prefs || {}), orbitRem: o }; save(); v4orbSync(true); toast('Lembrete da órbita às ' + v4hhmm(o.hour, o.minute)); draw(); });
-    L('.ob-h', (s) => { const o = v4orb(); if (!o) return; const [hh, mm] = s.value.split(':').map(Number); o.hour = hh; o.minute = mm; save(); v4orbSync(true); toast('Lembrete da órbita às ' + s.value); }, 'change');
+      if (!(await ensure())) return; o.on = true; db.prefs = { ...(db.prefs || {}), orbitRem: o }; save(); v4orbSync(true); toast('Lembrete para ler às ' + v4hhmm(o.hour, o.minute)); draw(); });
+    L('.ob-h', (s) => { const o = v4orb(); if (!o) return; const [hh, mm] = s.value.split(':').map(Number); o.hour = hh; o.minute = mm; save(); v4orbSync(true); toast('Lembrete para ler às ' + s.value); }, 'change');
     L('.ob-d button', (b) => { const o = v4orb(); if (!o) return; const i = Number(b.dataset.d), off = new Set(o.off || []); off.has(i) ? off.delete(i) : off.add(i); if (off.size >= 7) return toast('Deixe pelo menos um dia'); o.off = [...off].sort(); save(); v4orbSync(true); draw(); });
     L('[data-a=test]', async () => { try { if (!(await ensure())) return; const reg = await navigator.serviceWorker.ready; await reg.showNotification('Livroverso', { body: 'É assim que o lembrete vai aparecer.', tag: 'bear-teste', icon: 'icon-192.png', badge: 'notif-badge.png' }); toast('Notificação de teste enviada'); } catch { toast('Não deu para testar neste aparelho'); } });
     L('[data-a=go]', (b) => { if (b.dataset.k === 'gifts') { try { openGifts(); } catch {} } else { try { openLoans(); } catch {} } });
@@ -107,7 +107,7 @@ function openLembretes() {
 { const _da = drawAjustes; drawAjustes = function (box) { const r = _da.apply(this, arguments);
   try { if (S.ajMode === 'perfil' || !box || box.querySelector('#aj-v4lem')) return r;
     const fn = box.querySelector('#aj-fn'); if (!fn) return r;
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'aj-row'; b.id = 'aj-v4lem'; b.innerHTML = '<span><b>Lembretes</b><small>prazo e órbita</small></span>›';
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'aj-row'; b.id = 'aj-v4lem'; b.innerHTML = '<span><b>Lembretes</b><small>leitura diária e prazo</small></span>›';
     b.addEventListener('click', () => openLembretes()); fn.after(b);
   } catch (err) { console.warn('lembretes', err); }
   return r; }; }
