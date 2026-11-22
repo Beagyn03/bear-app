@@ -489,3 +489,35 @@ window.addEventListener('popstate', () => { try { shExitEdit(); } catch {} }, tr
 document.addEventListener('visibilitychange', () => { if (document.hidden) try { shExitEdit(); } catch {} });
 try { TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closest('#tabbar [data-tab], .gtop button, .gtop a')) shExitEdit(); }, true);
   const SL = TR.querySelector('#shelflist'); if (SL) new MutationObserver(() => { if (!SL.hidden) shExitEdit(); }).observe(SL, { attributes: true, attributeFilter: ['hidden'] }); } catch {}
+// ---------- card "Leituras por mês" na linguagem da prateleira nova (Bia, 21/11) ----------
+// mesmos tokens da estante (painel, linha, raio 18, título em display), ano com setas alinhadas, calendário com o leque
+// dentro de cada mês (capa nunca sai da célula) e legenda de nota legível.
+{ const st = document.createElement('style'); st.dataset.ysx = '1'; st.textContent = `
+.ys.v3c{border-radius:18px!important;background:var(--panel)!important;border:1px solid var(--line)!important}
+.ys .ys-h{align-items:center!important;gap:8px!important}
+.ys .ys-h>b{font-family:var(--f-disp,Georgia,serif);font-size:1.08rem!important;font-weight:700;letter-spacing:-.01em;line-height:1.15}
+.ys .ys-y{display:inline-flex!important;align-items:center!important;gap:4px!important;flex:none;height:32px}
+.ys .ys-y button{display:inline-grid!important;place-items:center;width:32px!important;height:32px!important;border-radius:99px!important;border:1px solid var(--line)!important;background:var(--card,var(--panel))!important;color:var(--ink)!important;font:800 16px/1 system-ui,sans-serif!important;padding:0 0 2px!important}
+.ys .ys-y button:disabled{opacity:.35}
+.ys .ys-y b{min-width:3.1em!important;text-align:center;font-size:1rem!important;line-height:32px!important;font-variant-numeric:tabular-nums;font-weight:800}
+.ys .ys-x{width:32px!important;height:32px!important}
+.ys .yv-seg{border-radius:13px!important;padding:4px!important;background:var(--soft,color-mix(in srgb,var(--ink) 7%,transparent))!important}
+.ys .yv-seg button{border-radius:10px!important;min-height:36px;font-size:.8rem!important}
+.ys .yv-seg button.on{background:var(--card,var(--panel))!important;color:var(--ink)!important;box-shadow:0 1px 4px rgba(0,0,0,.14)}
+.ys .yv-ln{border-radius:10px!important}
+.ys .yv-ln button.on{background:var(--card,var(--panel))!important;color:var(--ink)!important;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.ys .ys-m{border-radius:99px!important;font-weight:800!important;letter-spacing:.02em}
+.ys .yv-cal{gap:8px!important}
+.ys .yv-cm{border-radius:14px!important;overflow:hidden!important;background:var(--card,transparent)!important;padding:8px 6px 8px 9px!important;min-height:112px!important}
+.ys .yv-cm b{font-family:var(--f-disp,Georgia,serif);font-size:.86rem!important}
+.ys .yv-fan{height:74px!important;margin-top:6px!important;position:relative!important}
+.ys .yv-fan .yv-fc,.ys .yv-fan .yv-fc.es-bk{position:absolute!important;top:10px!important;width:36px!important;height:54px!important;margin:0!important}
+.ys .yv-fan .yv-fc .cv{width:36px!important;height:54px!important;border-radius:3px!important;box-shadow:0 3px 7px rgba(0,0,0,.28)!important}
+.ys .yv-fan .mk-bear,.ys .yv-fan [class*=rt-]{display:none!important}
+.ys .yv-cm > :not(b):not(small):not(.yv-fan),.ys .yv-fan > :not(.yv-fc):not(i),.ys .yv-fan .yv-fc > :not(.cv){display:none!important}
+.ys .yv-fan .cv::before,.ys .yv-fan .cv::after,.ys .yv-fan .yv-fc::after,.ys .yv-fan .yv-fc::before{display:none!important}
+.ys .yv-fan i{position:absolute;right:2px;bottom:2px;font-style:normal;font-size:.68rem;font-weight:800;color:var(--ink2,var(--ink-2))}
+.ys .ys-leg{gap:10px 14px!important;font-size:.76rem!important;font-weight:700;color:var(--ink2,var(--ink-2))!important;align-items:center;margin-top:10px!important}
+.ys .ys-leg i{width:18px!important;height:7px!important;border-radius:4px!important;margin-right:5px!important;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.2)}
+.ys .yv-est2{margin-top:4px}
+`; TR.append(st); }
