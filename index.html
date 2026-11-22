@@ -9988,6 +9988,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 00_v2_render_marca.js ---
 // Tela parada (22/11), parte 1 de 2 (a outra é zz_v2_render_estavel.js): guarda como cada tela por cima (#shelflist) ficou logo
@@ -29228,6 +29229,207 @@ function vzCovers(B, s) {
   v5EstantesHTML = pre(v5EstantesHTML);
   v5GrpHTML = pre(v5GrpHTML);
   v5ArqHTML = pre(v5ArqHTML);
+}
+// --- zd_v2_trecho_spoiler.js ---
+// Novo post com Trecho (Bia, 22/11: "Trecho é sempre spoiler não?"). A regra aprovada é que trecho é SEMPRE spoiler:
+// o cartão "Tem spoiler" vem ligado e travado mesmo antes de escolher o livro, com o texto de até onde cobre (página
+// informada, ou até terminar o livro). O campo do trecho perde a borda dupla (foco dentro do cartão com barra lateral),
+// "pág." vira campo numérico no padrão do app, os chips Sentimentos/Nota apagados dizem por que estão apagados e
+// "Publicar" sem livro leva direto à escolha do livro.
+{
+  const st = document.createElement('style');
+  st.textContent = `
+.rdc2-q{gap:.5rem;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:4px 14px 14px 4px}
+.rdc2-q:focus-within{border-color:var(--acc)}
+.rdc2-q textarea,.rdc2-q textarea:focus,.rdc2-q textarea:focus-visible{outline:none!important;box-shadow:none!important;border:0!important;padding:.2rem 2.6rem .2rem .1rem}
+.rdc2-q label{display:flex;align-items:center;gap:.5rem;font-size:.86rem;font-weight:800;color:var(--ink-2)}
+.rdc2-q input#rdc-pg{width:96px;min-height:40px;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;font-weight:700;padding:0 .6rem;text-align:center;-moz-appearance:textfield}
+.rdc2-q input#rdc-pg::-webkit-outer-spin-button,.rdc2-q input#rdc-pg::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.rdc2-q input#rdc-pg:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.rdc2-q label small{font-weight:600;font-size:.78rem;color:var(--ink-2)}
+.rdc-sp.zd-lock .rdc-spt{cursor:default}
+.rdc-sp.zd-lock input#rdc-sp{display:none}
+.rdc-spt .zd-lk,.zd-lk{flex:none;display:inline-flex!important;white-space:nowrap;align-items:center;gap:.3rem;min-height:30px;padding:0 .7rem;border-radius:99px;background:color-mix(in srgb,var(--acc) 16%,var(--panel));color:var(--tx-acc,var(--acc));font-size:.8rem;font-weight:900}
+.zd-lk svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.rdc2-t.zd-why{opacity:.45;cursor:pointer}
+`;
+  (typeof TR !== 'undefined' && TR ? TR : document.head).appendChild(st);
+
+  const pgLine = (pg) => pg > 0 ? `Trecho fica escondido para quem ainda não chegou na pág. ${pg}.` : 'Trecho fica escondido para quem ainda não terminou o livro.';
+  const _auto = rdAutoSp;
+  rdAutoSp = function (R) {
+    if (R && R.kind === 'quote') {
+      const pg = Math.round(Number(R.page)) || 0;
+      return { on: true, forced: true, spoiler: pg > 0 ? { kind: 'page', at: pg } : { kind: 'end' }, line: pgLine(pg) };
+    }
+    return _auto(R);
+  };
+
+  const LOCK = '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  const hasBook = (v) => !!v.querySelector('.rdc2 .rdc2-bk');
+  const quoteOn = (v) => !!v.querySelector('.rdc2-t[data-t=quote].on');
+  // depois de cada desenho do composer: trava visível do spoiler, rótulo do "pág." e chips apagados com motivo
+  const fix = (v) => {
+    const box = v.querySelector('.rdc2 .rdc-sp'); const cb = box && box.querySelector('#rdc-sp');
+    if (box && cb) {
+      const lock = cb.disabled && quoteOn(v);
+      box.classList.toggle('zd-lock', lock);
+      let lk = box.querySelector('.zd-lk');
+      if (lock && !lk) { lk = document.createElement('span'); lk.className = 'zd-lk'; lk.innerHTML = LOCK + 'Sempre'; cb.after(lk); }
+      if (!lock && lk) lk.remove();
+      if (lock) box.querySelector('.rdc-spt b') && (box.querySelector('.rdc-spt b').textContent = 'Trecho é sempre spoiler');
+    }
+    const pgL = v.querySelector('.rdc2-q label');
+    if (pgL && !pgL.dataset.zd) {
+      pgL.dataset.zd = '1';
+      const inp = pgL.querySelector('#rdc-pg');
+      if (inp) {
+        inp.setAttribute('inputmode', 'numeric'); inp.setAttribute('pattern', '[0-9]*'); inp.setAttribute('enterkeyhint', 'done');
+        inp.setAttribute('placeholder', '—'); inp.setAttribute('aria-label', 'Página do trecho');
+        [...pgL.childNodes].forEach((n) => { if (n.nodeType === 3) n.remove(); });
+        const t = document.createElement('span'); t.textContent = 'Página'; pgL.insertBefore(t, inp);
+        const s = document.createElement('small'); s.textContent = 'opcional'; inp.after(s);
+        inp.addEventListener('input', () => { const l = v.querySelector('#rdc-spl'); if (l && quoteOn(v)) l.textContent = pgLine(Math.round(Number(inp.value)) || 0); });
+      }
+    }
+    // chips apagados: continuam apagados, mas tocáveis para explicar
+    v.querySelectorAll('.rdc2-t[data-t=fe],.rdc2-t[data-t=pw]').forEach((b) => {
+      if (b.disabled) { b.disabled = false; b.classList.add('zd-why'); b.setAttribute('aria-disabled', 'true'); }
+    });
+  };
+  const why = (v, k) => {
+    const q = !!v.querySelector('.rdc2-t[data-t=question].on'), quote = quoteOn(v), rec = !!v.querySelector('.rdc2-t[data-t=rec].on');
+    if (k === 'pw' && (quote || q || rec)) return toast(quote ? 'Nota fica para comentário. Tire o Trecho para dar nota.' : q ? 'Nota fica para comentário. Tire a Pergunta para dar nota.' : 'Nota fica para comentário. Tire a Indicação para dar nota.');
+    if (k === 'fe' && q) return toast('Sentimentos ficam para comentário e trecho.');
+    if (!hasBook(v)) { toast(k === 'pw' ? 'Escolha o livro para dar nota' : 'Escolha o livro para marcar sentimentos'); v.querySelector('.rdc2 [data-pick="1"]')?.click(); }
+  };
+  const hook = () => {
+    const v = $('#shelflist'); if (!v || v.dataset.zdHook) return; v.dataset.zdHook = '1';
+    new MutationObserver(() => { if (v.querySelector('.rdc2')) fix(v); }).observe(v, { childList: true, subtree: true });
+    v.addEventListener('click', (e) => {
+      const b = e.target.closest && e.target.closest('.rdc2-t.zd-why'); if (b) { e.stopImmediatePropagation(); e.preventDefault(); return why(v, b.dataset.t); }
+      const go = e.target.closest && e.target.closest('#rdc-go');
+      if (go && v.querySelector('.rdc2') && !hasBook(v) && (quoteOn(v) || v.querySelector('.rdc2-t[data-t=rec].on'))) {
+        e.stopImmediatePropagation(); e.preventDefault();
+        toast(quoteOn(v) ? 'Escolha de que livro é o trecho' : 'Escolha o livro que você leu');
+        v.querySelector('.rdc2 [data-pick="1"]')?.click();
+      }
+    }, true);
+    if (v.querySelector('.rdc2')) fix(v);
+  };
+  hook(); setTimeout(hook, 600); setTimeout(hook, 2000);
+  const _open = openRdComposer;
+  openRdComposer = function (...a) { const r = _open.apply(this, a); hook(); const v = $('#shelflist'); v && v.querySelector('.rdc2') && fix(v); return r; };
+}
+// --- ze_v2_enquete_simples.js ---
+// Enquete no Novo post mais simples (Bia, 22/11: "quando é enquete acho que o formulário tá complexo"). Com Enquete
+// escolhida: cabeçalho "Enquete ×" no lugar dos chips de Acrescentar; a pergunta no topo e o livro vira o link "Sobre um
+// livro?"; cada opção é um campo só (digita texto ou escolhe livro pelas sugestões da Biblioteca e do catálogo), sem botão
+// "Livro" nem microfone; "+ Outra opção" logo abaixo (até 4, com × nas extras); prazo numa linha ("Encerra em 3 dias ▾");
+// "Tem spoiler?" recolhido num link; sem o texto explicativo. A leitura conjunta ("Votar o próximo livro") segue igual.
+{
+  const st = document.createElement('style');
+  st.textContent = `
+.rdc2.ze-poll>.rdc2-l,.rdc2.ze-poll>.rdc2-tools,.rdc2.ze-poll>.rdc2-hint{display:none!important}
+.rdc2.ze-poll>.ze-ph{order:-3}.rdc2.ze-poll>.rdc2-tx{order:-2}.rdc2.ze-poll>.rdc2-pick,.rdc2.ze-poll>.rdc2-bk{order:-1}
+.ze-ph{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.ze-ph b{display:inline-flex;align-items:center;gap:.45rem;font-size:.95rem;font-weight:900;color:var(--tx-acc,var(--acc))}
+.ze-ph button{min-width:44px;min-height:40px;border:1px solid var(--line);border-radius:99px;background:none;color:var(--ink);font:inherit;font-size:1.15rem;cursor:pointer}
+.rdc2.ze-poll>.rdc2-pick{justify-self:start;justify-content:flex-start!important;width:auto!important;min-height:40px;margin-top:-.35rem;padding:0 .2rem!important;border:0!important;background:none!important;color:var(--tx-acc,var(--acc))!important;font-size:.86rem!important;font-weight:800;box-shadow:none!important}
+.rdc2.ze-poll>.rdc2-pick>span{display:none}
+.rdc2.ze-poll .rdc2-tx textarea{min-height:0}
+.lvpl-ed.ze-ed{gap:.5rem;margin:0}
+.ze-ed .row{position:relative}
+.ze-ed input[type=text]{padding-right:.7rem}
+.ze-ed .ib.x{min-width:40px;min-height:40px;border:0;font-size:1.1rem;color:var(--ink-2)}
+.ze-ed .add{min-height:40px;padding:0 .2rem;margin-top:-.15rem}
+.ze-sg{display:grid;gap:.25rem;margin:-.15rem 0 .1rem;padding:.3rem;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.ze-sg[hidden]{display:none}
+.ze-sg button{display:flex;align-items:center;gap:.55rem;min-height:44px;padding:.25rem .45rem;border:0;border-radius:9px;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.ze-sg button:hover,.ze-sg button:focus-visible{background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.ze-sg .cv,.ze-sg img{width:24px;height:36px;flex:none;border-radius:4px;object-fit:cover}
+.ze-sg span{min-width:0;display:grid;font-size:.86rem;font-weight:800;line-height:1.2}.ze-sg small{font-weight:600;color:var(--ink-2);font-size:.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ze-sg .t{font-size:.72rem;font-weight:800;color:var(--ink-2);padding:.15rem .45rem 0;letter-spacing:.04em;text-transform:uppercase}
+.ze-dur{justify-self:start;display:inline-flex;align-items:center;gap:.35rem;min-height:40px;padding:0 .85rem;border:1px solid var(--line);border-radius:99px;background:none;color:var(--ink);font:inherit;font-size:.86rem;font-weight:800;cursor:pointer}
+.ze-dur i{font-style:normal;color:var(--ink-2)}
+.rdc2.ze-poll>.rdc-sp:not(.ze-open){display:none}
+.ze-spl{justify-self:start;min-height:40px;padding:0 .2rem;border:0;background:none;color:var(--ink-2);font:inherit;font-size:.84rem;font-weight:800;text-decoration:underline;cursor:pointer}
+.rdc2:not(.ze-poll)>.ze-spl{display:none}
+`;
+  TR.appendChild(st);
+
+  const durTxt = (k) => k === '0' ? 'Sem prazo' : 'Encerra em ' + ((plDurs.find((d) => d[0] === k) || [, '3 dias'])[1]);
+  const isComposer = (sug) => sug === undefined; // o composer chama sem sugestões; a leitura conjunta passa o Quero ler
+
+  const _html = plEditorHTML;
+  plEditorHTML = function (E, sug) {
+    if (!isComposer(sug)) return _html.apply(this, arguments);
+    const row = (o, i) => o.book
+      ? `<div class="row"><div class="bk">${cvh(o.book.title, o.book.cover)}<b>${esc(o.book.title)}</b></div><button type="button" class="ib x" data-zeclr="${i}" aria-label="Tirar o livro da opção ${i + 1}">×</button></div>`
+      : `<div class="row"><input type="text" maxlength="90" data-plopt="${i}" placeholder="Opção ${i + 1}: texto ou livro" value="${esc(o.label || '')}" aria-label="Opção ${i + 1}" autocomplete="off" enterkeyhint="next">${i >= 2 ? `<button type="button" class="ib x" data-plrm="${i}" aria-label="Tirar a opção ${i + 1}">×</button>` : ''}</div><div class="ze-sg" data-zesg="${i}" hidden></div>`;
+    return `<div class="lvpl-ed ze-ed">${E.opts.map(row).join('')}${E.opts.length < 4 ? '<button type="button" class="add" data-pladdopt>+ Outra opção</button>' : ''}
+      <button type="button" class="ze-dur" data-zedur aria-label="Prazo da enquete: ${esc(durTxt(E.dur))}">${esc(durTxt(E.dur))} <i>▾</i></button></div>`;
+  };
+
+  const _bind = plBindEditor;
+  plBindEditor = function (root, E, redraw, sug) {
+    if (!isComposer(sug)) return _bind.apply(this, arguments);
+    const pick = (i, bk) => { const o = E.opts[i]; o.book = bk; o.label = bk.title; redraw(); };
+    root.querySelectorAll('[data-plopt]').forEach((x) => {
+      const i = +x.dataset.plopt, box = root.querySelector(`[data-zesg="${i}"]`); let t1 = null, t2 = null, seq = 0;
+      const hide = () => { if (box) { box.hidden = true; box.innerHTML = ''; } };
+      x.addEventListener('input', () => {
+        E.opts[i].label = x.value; clearTimeout(t1); clearTimeout(t2); const q = x.value.trim(); const my = ++seq;
+        if (q.length < 2 || !box) return hide();
+        t1 = setTimeout(() => {
+          const n = normT(q); const seen = new Set(); const mine = lib().filter((e) => { if (!e.title) return false; const k = normT(e.title); if (!k.includes(n) || seen.has(k)) return false; seen.add(k); return true; }).slice(0, 3);
+          const asBook = (e) => ({ title: String(e.title).slice(0, 200), author: e.author ? String(e.author).slice(0, 120) : null, cover: smallCoverOk(e.cover) });
+          box.innerHTML = mine.length ? '<div class="t">Da sua Biblioteca</div>' + mine.map((e, k) => `<button type="button" data-zem="${k}">${cvh(e.title, e.cover)}<span>${esc(e.title)}${e.author ? `<small>${esc(e.author)}</small>` : ''}</span></button>`).join('') : '';
+          box.hidden = !mine.length; box.querySelectorAll('[data-zem]').forEach((b) => b.addEventListener('mousedown', (ev) => ev.preventDefault()));
+          box.querySelectorAll('[data-zem]').forEach((b) => b.addEventListener('click', () => pick(i, asBook(mine[+b.dataset.zem]))));
+          try { paintCv(box); } catch {}
+          if (q.length < 3 || typeof searchBooks !== 'function') return;
+          t2 = setTimeout(async () => {
+            let items = []; try { items = await searchBooks(q); } catch {}
+            if (my !== seq || !x.isConnected) return;
+            const have = new Set(mine.map((e) => normT(e.title)));
+            items = (items || []).filter((it) => it && it.title && !have.has(normT(it.title))).slice(0, 3); if (!items.length) return;
+            box.insertAdjacentHTML('beforeend', '<div class="t">No catálogo</div>' + items.map((it, k) => `<button type="button" data-zec="${k}">${it.coverUrl ? `<img src="${esc(it.coverUrl)}" alt="" loading="lazy">` : cvh(it.title, null)}<span>${esc(it.title)}${it.author ? `<small>${esc(it.author)}</small>` : ''}</span></button>`).join(''));
+            box.hidden = false;
+            box.querySelectorAll('[data-zec]').forEach((b) => { b.addEventListener('mousedown', (ev) => ev.preventDefault()); b.addEventListener('click', async () => {
+              const it = items[+b.dataset.zec]; let cover = null; try { cover = it.coverUrl ? await toDataCover(it.coverUrl) : null; } catch {}
+              pick(i, { title: String(it.title).slice(0, 200), author: it.author ? String(it.author).slice(0, 120) : null, cover: smallCoverOk(cover) }); }); });
+            try { paintCv(box); } catch {}
+          }, 350);
+        }, 160);
+      });
+      x.addEventListener('blur', () => setTimeout(() => { if (!box || !box.contains(root.ownerDocument.activeElement) && !(root.getRootNode().activeElement && box.contains(root.getRootNode().activeElement))) hide(); }, 220));
+      x.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && box && !box.hidden) { ev.stopPropagation(); hide(); } if (ev.key === 'Enter') { ev.preventDefault(); const nx = root.querySelector(`[data-plopt="${i + 1}"]`); if (nx) nx.focus(); else x.blur(); } });
+    });
+    root.querySelectorAll('[data-zeclr]').forEach((x) => x.addEventListener('click', () => { const o = E.opts[+x.dataset.zeclr]; o.book = null; o.label = ''; redraw(); setTimeout(() => root.querySelector(`[data-plopt="${x.dataset.zeclr}"]`)?.focus(), 30); }));
+    root.querySelectorAll('[data-plrm]').forEach((x) => x.addEventListener('click', () => { E.opts.splice(+x.dataset.plrm, 1); redraw(); }));
+    root.querySelector('[data-pladdopt]')?.addEventListener('click', () => { if (E.opts.length < 4) E.opts.push({ label: '', book: null }); redraw(); setTimeout(() => root.querySelector(`[data-plopt="${E.opts.length - 1}"]`)?.focus(), 30); });
+    root.querySelector('[data-zedur]')?.addEventListener('click', (ev) => popMenu(ev.currentTarget, plDurs.map(([k]) => ({ label: (E.dur === k ? '✓ ' : '') + durTxt(k), fn: () => { E.dur = k; redraw(); } }))));
+    try { paintCv(root); } catch {}
+  };
+
+  // a casca do composer em modo enquete (roda a cada desenho, pelo observador)
+  const shell = () => {
+    const v = TR.querySelector('#shelflist'); const box = v && v.querySelector('.rdc2'); if (!box) return;
+    const q = box.querySelector('.rdc2-t[data-t=question]'); const on = !!(q && q.classList.contains('on'));
+    box.classList.toggle('ze-poll', on);
+    let ph = box.querySelector(':scope > .ze-ph'), spl = box.querySelector(':scope > .ze-spl');
+    if (!on) { ph && ph.remove(); spl && spl.remove(); const pk = box.querySelector(':scope > .rdc2-pick'); if (pk && pk.dataset.ze) { delete pk.dataset.ze; } return; }
+    if (!ph) { ph = document.createElement('div'); ph.className = 'ze-ph'; ph.innerHTML = '<b><i class=v3e data-i=ask></i>Enquete</b><button type="button" aria-label="Tirar a enquete">×</button>'; box.prepend(ph); ph.querySelector('button').addEventListener('click', () => box.querySelector('.rdc2-t[data-t=question]')?.click()); }
+    const pk = box.querySelector(':scope > .rdc2-pick');
+    if (pk && pk.textContent.trim() !== 'Sobre um livro?') { pk.dataset.ze = '1'; [...pk.childNodes].forEach((n) => { if (n.nodeType === 3) n.remove(); }); pk.append('Sobre um livro?'); }
+    const sp = box.querySelector(':scope > .rdc-sp');
+    if (sp && sp.querySelector('#rdc-sp')?.checked) sp.classList.add('ze-open');
+    if (sp && !sp.classList.contains('ze-open') && !spl) { spl = document.createElement('button'); spl.type = 'button'; spl.className = 'ze-spl'; spl.textContent = 'Tem spoiler?'; sp.before(spl);
+      spl.addEventListener('click', () => { sp.classList.add('ze-open'); spl.remove(); sp.querySelector('#rdc-sp')?.focus(); }); }
+    if (sp && sp.classList.contains('ze-open') && spl) spl.remove();
+  };
+  new MutationObserver(shell).observe(TR, { childList: true, subtree: true });
 }
 // --- zz_v2_pormes_lista.js ---
 // Leituras por mês ("Por mês" na Meta, em Estatísticas e no perfil) — Bia, 22/11:
