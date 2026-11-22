@@ -233,9 +233,12 @@ v2QdayHTML = function () {
     <div class="qft"><span>${Q.total} ${Q.total === 1 ? 'voto' : 'votos'} · você votou em <b>${esc(Q.mine.title)}</b></span><button type="button" data-q6go="1">Ver o debate ›</button></div></section>`;
   const bks = (() => { try { return v2QBooks(from); } catch { return []; } })();
   return `<section class="v2-qd" data-v2qd="1"><div class="k">${DEB.nome}</div><div class="q">${esc(q)}</div>
-    <div class="qpicks">${bks.map((e) => `<button type="button" data-qb="${esc(e.id)}">${cvh(e.title, e.cover, 'qcv')}<span>${esc(e.title)}</span></button>`).join('')}<button type="button" class="o" data-qb=""><span class="qcv qo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span><span>Outro livro</span></button></div>
+    ${v6QdPicks(bks)}
     <div class="qft"><span>${Q && Q.total ? Q.total + (Q.total === 1 ? ' voto até agora' : ' votos até agora') : 'Vote e veja o resultado'}</span><button type="button" data-q6go="1">Ver o debate ›</button></div></section>`;
 };
+// capas para votar (Hoje e aba Debate): as sugeridas + "Outro livro" com busca; a do seu voto fica marcada
+function v6QdPicks(bks, mine) { const mk = mine ? normT(mine.title || '') : '';
+  return `<div class="qpicks">${bks.map((e) => { const on = mk && normT(e.title) === mk; return `<button type="button" data-qb="${esc(e.id)}"${on ? ' class="on" aria-pressed="true"' : ''}>${cvh(e.title, e.cover, 'qcv')}<span>${esc(e.title)}</span></button>`; }).join('')}<button type="button" class="o" data-qb=""><span class="qcv qo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span><span>Outro livro</span></button></div>`; }
 async function v6Vote(book) {
   if (!connected() || !socialProfile) return toast('Entre na sua conta para votar');
   try { const r = await sapi('POST', '/v1/qday/vote', { book: { title: String(book.title).slice(0, 300), author: book.author ? String(book.author).slice(0, 300) : null, cover: /^https:\/\//.test(book.cover || '') ? String(book.cover).slice(0, 2000) : null } });

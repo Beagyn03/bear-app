@@ -61,7 +61,11 @@ function v6DesDone(items) {
   if (items.some((it) => it.mine || (it.user && it.user.handle && it.user.handle === me))) { try { localStorage.setItem(key, wk); } catch {} return true; }
   try { return localStorage.getItem(key) === wk; } catch { return false; }
 }
-const v6DesLeft = () => { const d = new Date().getDay(); return d === 0 ? 'termina hoje' : d === 6 ? 'termina amanhã (domingo)' : `termina domingo · faltam ${7 - d} dias`; };
+const v6DesLeft = () => {
+  const t = todayISO(), Q = (typeof V6QD !== 'undefined' && V6QD) || {}, dm = (x) => x.slice(8, 10) + '/' + x.slice(5, 7), nd = (a, b) => Math.round((Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 864e5);
+  if (Q.weekStart && Q.weekEnd) { if (t < Q.weekStart) { const n = nd(t, Q.weekStart); return (n === 1 ? 'começa amanhã' : 'começa ' + dm(Q.weekStart)) + ' · termina domingo, ' + dm(Q.weekEnd); }
+    const n = nd(t, Q.weekEnd); return n <= 0 ? 'termina hoje' : n === 1 ? 'termina amanhã' : `termina domingo, ${dm(Q.weekEnd)} · faltam ${n} dias`; }
+  const d = new Date().getDay(); return d === 0 ? 'termina hoje' : d === 6 ? 'termina amanhã (domingo)' : `termina domingo · faltam ${7 - d} dias`; };
 
 // ---------- pedaços comuns ----------
 function v6TabsHTML() {
@@ -129,7 +133,7 @@ function v6Fin(R) {
 // novas ações (o v6Click do bloco i0 cuida do resto)
 { const _vc = v6Click; v6Click = function (ev) {
     const b = ev.target.closest && ev.target.closest('[data-a]'), a = b && b.dataset.a, S6 = v6S();
-    if (a === 'v6dgo') { ev.stopPropagation(); ev.preventDefault(); return openRdComposer({ kind: 'comment', desafio: v6WkQ(0) }); }
+    if (a === 'v6dgo') { ev.stopPropagation(); ev.preventDefault(); return v6DebFocus(); }
     if (a === 'v6dbk') { ev.stopPropagation(); ev.preventDefault(); S6.desBk = S6.desBk === b.dataset.k ? null : b.dataset.k; return v6Paint(); }
     // lista recolhível dos debates anteriores (sem <details>: fechada, os itens nem existem na tela)
     if (a === 'v6dhs') { ev.stopPropagation(); ev.preventDefault(); if (S6.desWk) { S6.desWk = 0; S6.desHOpen = false; } else S6.desHOpen = !S6.desHOpen; return v6Paint(); }
