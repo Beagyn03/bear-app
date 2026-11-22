@@ -9977,6 +9977,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
@@ -23836,6 +23837,18 @@ function v9DelReview(e) {
         { label: 'Apagar avaliação', fn: () => sheet('Apagar sua avaliação de “' + le.title + '”?', [['Apagar avaliação', () => { v9DelReview(le); toast('Avaliação apagada'); }]]) }]); }
     return _rm.apply(this, arguments); }; }
 // --- u3_v2_capa_segurar.js ---
+// Livro que já está na Biblioteca, mesmo com o título escrito de outro jeito (Bia, 21/11: em leitura conjunta o menu oferecia
+// "Adicionar à Biblioteca" para um livro dela). Compara título normalizado, sem subtítulo, e o autor quando houver.
+function lvOwnBook(title, author) {
+  const L = (typeof lib === 'function' ? lib() : []) || []; const k = normT(title || ''); if (!k) return null;
+  const base = (t) => normT(String(t || '').split(/\s[-–—:]\s|:|\(/)[0]);
+  const ka = normT(author || ''), kb = base(title);
+  let e = L.find((x) => normT(x.title) === k); if (e) return e;
+  const c = L.filter((x) => { const xt = normT(x.title), xb = base(x.title); return (kb && xb && (xb === kb)) || (xt.length > 3 && k.length > 3 && (xt.startsWith(k) || k.startsWith(xt))); });
+  if (c.length === 1) return c[0];
+  if (c.length > 1 && ka) return c.find((x) => { const xa = normT(x.author || ''); return xa && (xa.includes(ka) || ka.includes(xa)); }) || c[0];
+  return c[0] || null;
+}
 // Segurar qualquer capa abre opções (Bia, 20/11; regra do protótipo: tocar abre a página, segurar abre o menu).
 // Antes só valia na Biblioteca. Agora vale em toda capa do app (Hoje, perfis, Top 3, Comunidade, Busca, Metas, páginas):
 // livro seu → o menu do livro; livro que não está com você → Ver o livro / Adicionar à estante.
@@ -23875,7 +23888,7 @@ function v9DelReview(e) {
   try { Object.assign(V3EMO, { send: '<path d="M20.5 3.5 3.5 10.5l7 2.5 2.5 7z"/><path d="M20.5 3.5 10.5 13"/>' }); } catch {}
   const vFnSafe = (k) => { try { return typeof vFn === 'function' ? vFn(k) : true; } catch { return true; } };
   const abrir = (n) => {
-    const t0 = titulo(n); if (!t0) return; let e = null; try { e = lib().find((x) => normT(x.title) === normT(t0)); } catch {}
+    const t0 = titulo(n); if (!t0) return; let e = null; try { e = lvOwnBook(t0, n.dataset.a || n.dataset.author || ''); } catch {}
     longAt = window.lvLongAt = Date.now(); try { navigator.vibrate && navigator.vibrate(12); } catch {}
     const d = perfilDeOutra(n); if (d) return menuPerfil(n, d, t0, e);
     if (e) { try { return v5Menu(e); } catch { try { return bookMenuOpen(n, { e, title: e.title }); } catch {} } return; }
@@ -26765,6 +26778,39 @@ function shDragArm(sr) {
   // a estante desenha dentro de um shadow root (.v5host): observar também os que aparecerem
   const seen = new WeakSet(); setInterval(() => { TR.querySelectorAll('*').forEach((h) => { if (h.shadowRoot && !seen.has(h.shadowRoot)) { seen.add(h.shadowRoot); mo.observe(h.shadowRoot, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] }); } }); }, 1500);
   const _gt = goTab; goTab = function () { const r = _gt.apply(this, arguments); try { if (!raf) raf = requestAnimationFrame(sync); } catch {} return r; }; }
+// --- wl_v2_menus_fecham.js ---
+// Menus flutuantes nunca ficam presos na tela (Bia, 21/11: abriu o menu de uma capa na leitura conjunta, saiu da tela e o menu
+// ficou por cima do Hoje). Uma função central fecha o menu (.pop) e os menus de livro/estante (.bkm) quando: troca de aba,
+// abre/fecha página ou folha, volta (botão, gesto, histórico), rola a página, Esc, ou o elemento que abriu o menu some/esconde.
+{ let anchor = null, openedAt = 0, sheetsAt = 0;
+  const sheets = () => document.querySelectorAll('.sheet').length + TR.querySelectorAll('.sheet').length;
+  const has = () => !!TR.querySelector('.pop, .bkm');
+  window.lvCloseMenus = function () { try { closePop(); } catch {} try { bqClose(); } catch {} anchor = null; };
+  const close = () => { if (has()) lvCloseMenus(); };
+  // guarda quem abriu o menu
+  const _pm = popMenu; popMenu = function (a, items) { const r = _pm.apply(this, arguments); anchor = a || null; openedAt = Date.now(); sheetsAt = sheets(); return r; };
+  // navegação: aba, página do livro, tela de leitura, estante, histórico
+  const wrapNav = (name) => { try { const f = window[name] || eval(name); if (typeof f !== 'function') return; const w = function () { close(); return f.apply(this, arguments); };
+    try { eval(name + ' = w'); } catch { window[name] = w; } } catch {} };
+  ['goTab', 'openBookPage', 'v4Open', 'openShelfV3', 'openAnyBook', 'openBuddyPage', 'openProfile', 'openGoalPage'].forEach(wrapNav);
+  window.addEventListener('popstate', close, true);
+  window.addEventListener('hashchange', close, true);
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') close(); }, true);
+  // rolar a página fecha (rolar dentro do próprio menu não)
+  const onScroll = (ev) => { if (!has() || Date.now() - openedAt < 250) return; const p = ev.composedPath ? ev.composedPath() : [ev.target];
+    if (p.some((n) => n && n.classList && (n.classList.contains('pop') || n.classList.contains('bkm')))) return; close(); };
+  window.addEventListener('scroll', onScroll, true); TR.addEventListener('scroll', onScroll, true);
+  // tocar fora também fecha os menus .bkm (o .pop já fecha sozinho)
+  const outside = (ev) => { if (!TR.querySelector('.bkm') || Date.now() - openedAt < 250) return; const p = ev.composedPath ? ev.composedPath() : [ev.target];
+    if (p.some((n) => n && n.classList && (n.classList.contains('bkm') || n.classList.contains('pop')))) return; close(); };
+  TR.addEventListener('pointerdown', outside, true);
+  // folhas e páginas abrindo/fechando, e âncora sumindo ou escondida
+  let raf = 0; const check = () => { raf = 0; if (!has()) return;
+    if (anchor && (!anchor.isConnected || !anchor.getClientRects().length)) return lvCloseMenus();
+    if (TR.querySelector('.pop') && Date.now() - openedAt > 250 && sheets() !== sheetsAt) return lvCloseMenus(); };
+  const mo = new MutationObserver(() => { if (!raf && has()) raf = requestAnimationFrame(check); });
+  mo.observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class', 'style'] });
+  mo.observe(document.body, { childList: true }); }
 // --- x0_v2_vocabulario.js ---
 // Vocabulário único (Bia, 20/11; glossário aprovado): os textos dos blocos v2 já foram trocados na fonte.
 // Aqui ficam só as frases que ainda moram no código antigo (fora de v2src/r2) e aparecem em telas que a v2 abre.

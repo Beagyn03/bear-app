@@ -1,3 +1,15 @@
+// Livro que já está na Biblioteca, mesmo com o título escrito de outro jeito (Bia, 21/11: em leitura conjunta o menu oferecia
+// "Adicionar à Biblioteca" para um livro dela). Compara título normalizado, sem subtítulo, e o autor quando houver.
+function lvOwnBook(title, author) {
+  const L = (typeof lib === 'function' ? lib() : []) || []; const k = normT(title || ''); if (!k) return null;
+  const base = (t) => normT(String(t || '').split(/\s[-–—:]\s|:|\(/)[0]);
+  const ka = normT(author || ''), kb = base(title);
+  let e = L.find((x) => normT(x.title) === k); if (e) return e;
+  const c = L.filter((x) => { const xt = normT(x.title), xb = base(x.title); return (kb && xb && (xb === kb)) || (xt.length > 3 && k.length > 3 && (xt.startsWith(k) || k.startsWith(xt))); });
+  if (c.length === 1) return c[0];
+  if (c.length > 1 && ka) return c.find((x) => { const xa = normT(x.author || ''); return xa && (xa.includes(ka) || ka.includes(xa)); }) || c[0];
+  return c[0] || null;
+}
 // Segurar qualquer capa abre opções (Bia, 20/11; regra do protótipo: tocar abre a página, segurar abre o menu).
 // Antes só valia na Biblioteca. Agora vale em toda capa do app (Hoje, perfis, Top 3, Comunidade, Busca, Metas, páginas):
 // livro seu → o menu do livro; livro que não está com você → Ver o livro / Adicionar à estante.
@@ -37,7 +49,7 @@
   try { Object.assign(V3EMO, { send: '<path d="M20.5 3.5 3.5 10.5l7 2.5 2.5 7z"/><path d="M20.5 3.5 10.5 13"/>' }); } catch {}
   const vFnSafe = (k) => { try { return typeof vFn === 'function' ? vFn(k) : true; } catch { return true; } };
   const abrir = (n) => {
-    const t0 = titulo(n); if (!t0) return; let e = null; try { e = lib().find((x) => normT(x.title) === normT(t0)); } catch {}
+    const t0 = titulo(n); if (!t0) return; let e = null; try { e = lvOwnBook(t0, n.dataset.a || n.dataset.author || ''); } catch {}
     longAt = window.lvLongAt = Date.now(); try { navigator.vibrate && navigator.vibrate(12); } catch {}
     const d = perfilDeOutra(n); if (d) return menuPerfil(n, d, t0, e);
     if (e) { try { return v5Menu(e); } catch { try { return bookMenuOpen(n, { e, title: e.title }); } catch {} } return; }
