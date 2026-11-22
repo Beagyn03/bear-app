@@ -10008,6 +10008,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 00_v2_capa_canvas.js ---
 // Capa para canvas (Bia, 22/11): o Google Livros não manda CORS, então o canvas não pode ler os pixels dessas capas
@@ -26631,7 +26632,7 @@ function shMode() { return SHX_CTX ? null : SHX_MODE; }
 const shView = () => (v5P().shView === 'prat' ? 'prat' : 'grade');
 const shDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
 // livro da Biblioteca no formato do protótipo
-const shB = (e) => ({ id: String(e.id), t: e.title || '', a: e.author || '', st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || 0, img: e.cover || null });
+const shB = (e) => ({ id: String(e.id), t: e.title || '', a: e.author || '', st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || Number(e.meta && (e.meta.pages || e.meta.pageCount)) || 0, img: e.cover || null });
 function shById(id) { if (SHX_VB) { const x = SHX_VB[id]; return x ? { id, ...x } : null; } const e = v5Book(id); return e ? shB(e) : null; }
 function shEdOf(b) { const e = b && shc().ed && shc().ed[b.id]; return e ? { t: e.t, e: e.e } : { t: 'auto' }; }
 let SH_SPN_TEX = 'cor'; // textura da lombada da capa: 'cor' (cor amostrada) ou 'fatia' (borda esquerda da capa)
@@ -26643,8 +26644,10 @@ const shMix = (hex, t, to) => { const p = (x) => { const m = String(x).replace('
 // formato → altura (px por cm ≈ 6,1); páginas → grossura
 const SH_FMT = [['p', 18, 8], ['a', 21, 45], ['m', 23, 25], ['h', 23.5, 15], ['g', 24, 7]];
 function spnGeo(b, sm) { const h0 = spnHash(b.t + '|' + (b.a || '')); let r = h0 % 100, f = SH_FMT[1]; for (const x of SH_FMT) { if (r < x[2]) { f = x; break; } r -= x[2]; }
-  const pages = b.tot || (150 + (h0 >>> 7) % 520), ov = shEdOf(b), hc0 = f[0] === 'h' || (f[0] === 'g' && h0 % 2 === 0), hc = ov.t === 'hc' || ov.t === 'ep' ? true : (ov.t === 'pb' || ov.t === 'bp') ? false : hc0;
-  let h = Math.round(f[1] * 6.15 + ((h0 >>> 3) % 5) - 2) + (hc && !hc0 ? 5 : 0), w = Math.round(Math.max(12, Math.min(46, pages * 0.066 + (hc ? 4 : 1))));
+  // 22/11 (Bia): grossura proporcional às páginas (100 p ≈ 10 px … 1.000 p ≈ 64 px; teto só acima de ~1.100 p). Sem páginas: 300 (neutro).
+  // Capa dura só soma espessura (+2 px) quando a edição escolhida pela pessoa diz capa dura; nada sorteado.
+  const pages = b.tot || 300, ov = shEdOf(b), hc0 = f[0] === 'h' || (f[0] === 'g' && h0 % 2 === 0), hc = ov.t === 'hc' || ov.t === 'ep' ? true : (ov.t === 'pb' || ov.t === 'bp') ? false : hc0;
+  let h = Math.round(f[1] * 6.15 + ((h0 >>> 3) % 5) - 2) + (hc && !hc0 ? 5 : 0), w = Math.round(Math.max(8, Math.min(70, 10 + (pages - 100) * 0.06 + (ov.t === 'hc' || ov.t === 'ep' ? 2 : 0))));
   if (sm) { h = Math.round(h * 0.6); w = Math.max(8, Math.round(w * 0.6)); } return { h, w, hc, pages, h0 }; }
 function spnColors(b) { const g = spnHash(b.t + '|' + (b.a || '')); const p = SH_PAL[g % SH_PAL.length], q = SH_PAL[(g >>> 5) % SH_PAL.length]; return [p[0], p[1], q[0]]; }
 // ação de tocar num livro: na sua estante abre o livro (segurar abre o menu); na estante de outra pessoa abre a página do livro
@@ -26668,15 +26671,16 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   const kk = fi === 2 ? 0.86 : fi === 3 ? 0.5 : 0.56; let fs = Math.min(w * 0.6, 13.5 * sz), nl = 1;
   // não cabe numa linha: quebra entre palavras (2 linhas; 3 na lombada larga) antes de diminuir a letra
   if (t.length * fs * kk > L) { const words = t.split(/\s+/).length, mx = sm || words < 2 ? 1 : Math.min(words, w >= 40 ? 3 : 2);
-    for (let n = 2; n <= mx && nl === 1; n++) { const f2 = Math.min(13.5 * sz, (w * 0.84) / (n * 1.06)); if ((t.length / n) * 1.22 * f2 * kk <= L && f2 >= 7 * sz) { fs = f2; nl = n; } }
-    if (nl === 1 && mx >= 2) { const f2 = Math.min((w * 0.84) / 2.12, (L * 2) / (t.length * kk * 1.22)); if (f2 > L / (t.length * kk) && f2 >= 5.6 * sz) { fs = f2; nl = 2; } }
+    for (let n = 2; n <= mx && nl === 1; n++) { const f2 = Math.min(13.5 * sz, (w * 0.84) / (n * 1.06)); if ((t.length / n) * 1.34 * f2 * kk <= L - 4 && f2 >= 7 * sz) { fs = f2; nl = n; } }
+    if (nl === 1 && mx >= 2) { const f2 = Math.min((w * 0.84) / 2.12, ((L - 4) * 2) / (t.length * kk * 1.34)); if (f2 > L / (t.length * kk) && f2 >= 5.6 * sz) { fs = f2; nl = 2; } }
     if (nl === 1) fs = L / (t.length * kk); }
   fs = Math.max(5.6 * sz, fs);
   const smp = cvUrl ? shSampled(b) : null, cc = smp ? smp.c : c, kx = sty === 'ep' ? '#efd28a' : smp ? smp.k : k;
   let deco = '';
   if (sty === 'dt') deco += `<span class="tb" style="height:${Math.round(h * 0.17)}px;--c2:${c2}"></span>`;
-  if (sty === 'hc') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px;opacity:.3"></span><span class="fb" style="bottom:${Math.round(h * 0.27)}px"></span><span class="fb" style="bottom:4px"></span>`;
-  if (sty === 'ep') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px"></span><span class="orn" style="top:${Math.max(12, topR - 9)}px"></span><span class="orn" style="bottom:${Math.max(9, botR - 7)}px"></span><span class="fb" style="bottom:8px"></span><span class="fb" style="bottom:5px"></span>`;
+  // frisos nunca cruzam texto: o do meio fica entre o título e o autor (22/11)
+  if (sty === 'hc') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px;opacity:.3"></span><span class="fb" style="bottom:${hasAu ? botR - 3 : Math.round(h * 0.27)}px"></span><span class="fb" style="bottom:2px"></span>`;
+  if (sty === 'ep') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px"></span><span class="orn" style="top:${Math.max(12, topR - 9)}px"></span><span class="orn" style="bottom:${Math.max(9, botR - 4)}px"></span><span class="fb" style="bottom:3px"></span><span class="fb" style="bottom:1px"></span>`;
   if (sty === 'cl') deco += `<span class="lb" style="top:${topR - 3}px;height:${L + 6}px"></span><span class="fb" style="top:4px;opacity:.6"></span><span class="fb" style="bottom:4px;opacity:.6"></span>`;
   const edge = ov.t === 'bp' ? `<span class="eg" style="--eg:${ov.e || '#b3283f'}"></span>` : sty === 'ep' ? '<span class="eg" style="--eg:linear-gradient(90deg,#8a6a22,#f4dd8e 45%,#8a6a22)"></span>' : '';
   if (cvUrl && SH_SPN_TEX === 'fatia') deco += `<span class="cs" style="background-image:${cvUrl}"></span>`;
@@ -26800,15 +26804,31 @@ function pratHTML(list0, sm, wBsh) {
 // O resultado fica guardado por livro/tamanho: redesenhar a estante não mede de novo (estante grande abre rápido).
 const SH_FIT = new Map();
 function shFit(root) { const rg = document.createRange();
+  // 22/11 (Bia): mede de verdade. Não coube numa linha: quebra em 2 (3 na lombada larga) pela largura real da lombada;
+  // só diminui até ~8 px; reticências só se nem assim couber (no fim da última linha).
   root.querySelectorAll('.bsh .sp .tt, .bsh .sp .au').forEach((el) => { if (el.dataset.fit) return; el.dataset.fit = 1; const tn = el.firstChild; if (!tn) return;
-    const sp = el.parentElement, key = (el.classList.contains('au') ? 'a|' : 't|') + sp.dataset.bid + '|' + sp.style.width + '|' + el.style.height + '|' + el.style.fontSize + '|' + sp.className;
-    const got = SH_FIT.get(key); if (got) { el.style.fontSize = got[0]; if (got[1]) el.classList.add('w2'); return; }
-    const room = el.clientHeight - 2, min = el.classList.contains('au') ? 4.4 : 5.2; let fs = parseFloat(el.style.fontSize) || parseFloat(getComputedStyle(el).fontSize);
-    el.style.textOverflow = 'clip'; rg.selectNodeContents(tn); let len = rg.getBoundingClientRect().height, n = 0;
-    while (len > room && fs > min && n++ < 30) { fs = Math.max(min, fs * Math.max(0.6, room / len) - 0.1); el.style.fontSize = fs.toFixed(2) + 'px'; len = rg.getBoundingClientRect().height; }
-    if (len > room && !el.classList.contains('au') && el.clientWidth >= 21) { el.classList.add('w2'); fs = Math.min(el.clientWidth * 0.42, 9); el.style.fontSize = fs.toFixed(2) + 'px'; len = rg.getBoundingClientRect().height; n = 0;
-      while (len > room && fs > 5 && n++ < 20) { fs = Math.max(5, fs - 0.4); el.style.fontSize = fs.toFixed(2) + 'px'; len = rg.getBoundingClientRect().height; } }
-    el.style.textOverflow = ''; if (room > 0) SH_FIT.set(key, [el.style.fontSize, el.classList.contains('w2')]); });
+    const sp = el.parentElement, au = el.classList.contains('au'), key = (au ? 'a|' : 't|') + sp.dataset.bid + '|' + sp.style.width + '|' + el.style.height + '|' + el.style.fontSize + '|' + sp.className;
+    const got = SH_FIT.get(key); if (got) { el.style.fontSize = got[0]; el.classList.toggle('w2', !!got[1]); if (got[2] != null) tn.textContent = got[2]; return; }
+    const room = el.clientHeight - 3; if (room <= 0) return; const full = tn.textContent, spW = sp.clientWidth || parseFloat(sp.style.width) || 20, lineW = Math.max(6, spW - 5);
+    const len = () => { rg.selectNodeContents(tn); const b = rg.getBoundingClientRect(); return { h: b.height, w: b.width }; };
+    const fits = () => { const m = len(); return m.h <= room && m.w <= lineW + 0.5; };
+    let fs = parseFloat(el.style.fontSize) || parseFloat(getComputedStyle(el).fontSize); const fs0 = fs; el.style.textOverflow = 'clip'; el.classList.remove('w2');
+    const setF = (f) => { fs = f; el.style.fontSize = f.toFixed(2) + 'px'; };
+    let ok = fits(); const minS = au ? 4.4 : 6.5;
+    // 1 linha: só um pouco menor
+    for (let n = 0; !ok && n < 12 && fs > Math.max(minS, fs0 * 0.82); n++) { setF(fs - 0.3); ok = fits(); }
+    if (!ok && !au && /\s/.test(full)) { const mx = spW >= 30 ? 3 : 2; el.classList.add('w2');
+      for (let L = 2; L <= mx && !ok; L++) { setF(Math.max(minS, Math.min(fs0, (lineW / L) / 1.06))); ok = fits(); for (let n = 0; !ok && n < 30 && fs > minS; n++) { setF(Math.max(minS, fs - 0.3)); ok = fits(); } if (!ok && L < mx) setF(fs0); } }
+    if (!ok && au) { for (let n = 0; !ok && n < 30 && fs > minS; n++) { setF(Math.max(minS, fs - 0.3)); ok = fits(); } }
+    // fonte do título ainda carregando: a medida não vale; mede de novo quando ela chegar (sem guardar nada)
+    if (document.fonts && document.fonts.status !== 'loaded') { tn.textContent = full; el.style.textOverflow = ''; delete el.dataset.fit; if (!shFit.wt) { shFit.wt = 1; document.fonts.ready.then(() => { shFit.wt = 0; try { shFit(root); } catch {} }); } return; }
+    let txt = null; if (!ok) { // reticências no fim da última linha
+      const w = full.split(' '); let lo = 1, hi = full.length; while (lo < hi) { const mid = Math.ceil((lo + hi) / 2); tn.textContent = full.slice(0, mid).trimEnd() + '…'; if (fits()) lo = mid; else hi = mid - 1; } tn.textContent = full.slice(0, lo).trimEnd() + '…'; void w;
+      // sobrariam 1–3 letras: melhor a letra menor (até 5,5 px) com o título inteiro
+      if (lo < 4) { tn.textContent = full; el.classList.remove('w2'); for (let n = 0; !fits() && n < 40 && fs > 5.5; n++) setF(Math.max(5.5, fs - 0.3)); el.style.textOverflow = ''; return; }
+      // medida feita cedo demais (fonte/estilo ainda chegando) deixava reticências para sempre: confere de novo uma vez, sem guardar
+      if (!el.dataset.retry) { el.dataset.retry = 1; setTimeout(() => { if (!el.isConnected) return; tn.textContent = full; delete el.dataset.fit; SH_FIT.delete(key); shFit(root); }, 1500); } el.style.textOverflow = ''; return; }
+    el.style.textOverflow = ''; SH_FIT.set(key, [el.style.fontSize, el.classList.contains('w2'), txt]); });
   root.querySelectorAll('.bsh .pb span').forEach((el) => { if (el.dataset.fit) return; el.dataset.fit = 1; let fs = parseFloat(getComputedStyle(el).fontSize), n = 0; const room = el.parentElement.clientWidth - 14;
     while (el.scrollWidth > room && fs > 5.4 && n++ < 12) { fs -= 0.4; el.style.fontSize = fs.toFixed(1) + 'px'; } }); }
 
@@ -26929,7 +26949,7 @@ function v5ClickLongGuard(ev) { const r = ev.currentTarget; if (r.dataset.longAt
 function shSnap() { const L = typeof window.v6ProfOrder === 'function' ? window.v6ProfOrder() : shSh().filter((s) => !s.priv);
   const sh = L.map((s) => ({ n: s.name, ids: (s.bookIds || []).map(String).filter((id) => v5Book(id)) })).filter((x) => x.ids.length);
   const ids = [...new Set(sh.flatMap((x) => x.ids))].slice(0, 400), set = new Set(ids); sh.forEach((x) => { x.ids = x.ids.filter((id) => set.has(id)); });
-  const b = {}; ids.forEach((id) => { const e = v5Book(id); b[id] = { t: String(e.title || '').slice(0, 120), a: String(e.author || '').slice(0, 80), st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || 0, img: e.cover && !/^data:/.test(e.cover) && e.cover.length < 600 ? e.cover : null }; });
+  const b = {}; ids.forEach((id) => { const e = v5Book(id); b[id] = { t: String(e.title || '').slice(0, 120), a: String(e.author || '').slice(0, 80), st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || Number(e.meta && (e.meta.pages || e.meta.pageCount)) || 0, img: e.cover && !/^data:/.test(e.cover) && e.cover.length < 600 ? e.cover : null }; });
   const C = shc(), pick = (o) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => set.has(k)));
   let budget = 90000; const sp = {}; ids.forEach((id) => { const u = C.sp && C.sp[id]; if (u && u.length < budget) { sp[id] = u; budget -= u.length; } });
   return { v: 1, sh, b, C: { ed: pick(C.ed), sp, ord: (C.ord || []).filter((id) => set.has(id)), lay: pick(C.lay), pos: pick(C.pos), spb: pick(C.spb), plq: (C.plq || []).slice(0, 24), manual: C.manual ? 1 : 0, deco: C.deco, wood: C.wood, wall: C.wall, lt: C.lt, lights: Array.isArray(C.lights) ? C.lights.slice(0, 3) : undefined, spMode: C.spMode } }; }
@@ -27250,7 +27270,7 @@ function shDragArm(sr) {
 // luzinhas com modelos e lugares (até 3 cordões), acabamento das luzes/objetos/madeira, leitor digital,
 // e a aba Estante das Leituras por mês com a mesma estante (ordem de leitura + plaquinha por mês).
 var SHX_PQT = '', SHX_PICK = null, SHX_PKP = 'pe', SHX_TRF = 'todos', SHX_TRS = 'ord', SHX_LBP = 0, SHX_PQE = -1, SHX_PQS = 'mad', SHX_LTE = 0, SHX_LTN = 0, SHX_PQD = null;
-SH_CAT.push(['leitor', 'Leitor digital']); SH_DN.leitor = 'Leitor digital'; SH_DW.leitor = 50; SH_DH.leitor = 84;
+SH_CAT.push(['leitor', 'Leitor digital']); SH_DN.leitor = 'Leitor digital'; SH_DW.leitor = 84; SH_DH.leitor = 120;
 
 const SHX_CSS3 = `
 .v4ler .bsh,.v4ler .bsh *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
@@ -27327,15 +27347,19 @@ const SHX_CSS3 = `
 .v4ler .bsh .dec.lk{pointer-events:auto;cursor:pointer}
 .v4ler .bsh.w-madeira{--bk-wall:color-mix(in srgb,var(--bk-w3) 72%,#160c05);--bk-back:color-mix(in srgb,var(--bk-w2) 70%,#22130a);--bk-hint:#f1dfc4;background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.14) 0 1px,transparent 1px 46px),repeating-linear-gradient(90deg,rgba(255,236,206,.03) 0 3px,transparent 3px 11px)}
 .v4ler .bsh.w-madeira .bay{background:linear-gradient(180deg,rgba(0,0,0,.36),rgba(0,0,0,0) 26px),radial-gradient(120% 60% at 50% 105%,var(--bk-glow),transparent 70%),repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 1px,transparent 1px 44px),repeating-linear-gradient(90deg,rgba(255,232,196,.04) 0 2px,transparent 2px 7px,rgba(0,0,0,.035) 7px 9px,transparent 9px 13px),var(--bk-back)}
-/* leitor digital */
-.v4ler .erd{position:relative;display:block}
-.v4ler .erd .bz{position:absolute;left:7%;right:7%;top:0;bottom:11%;border-radius:5px;background:linear-gradient(155deg,#55555b,#2c2c31 38%,#1c1c20);box-shadow:inset 0 0 0 .7px rgba(255,255,255,.16),inset 1px 1px 0 rgba(255,255,255,.12),2px 3px 5px rgba(0,0,0,.38);transform:perspective(160px) rotateX(4deg);transform-origin:50% 100%}
-.v4ler .erd .scr{position:absolute;left:9%;right:9%;top:7%;bottom:15%;background:#e8e5dc;border-radius:1px;overflow:hidden;box-shadow:inset 0 0 2px rgba(0,0,0,.45)}
-.v4ler .erd .im{position:absolute;inset:0;background-size:cover;background-position:center;filter:grayscale(1) contrast(1.18) brightness(1.06);mix-blend-mode:multiply;opacity:.92}
-.v4ler .erd.cor .im{filter:saturate(.9);mix-blend-mode:normal;opacity:1}
-.v4ler .erd .tx{position:absolute;inset:12% 10%;font:italic 600 7px/1.2 var(--f-disp,Georgia,serif);color:#2a2a2a;text-align:center;display:grid;place-items:center}
-.v4ler .erd .scr::after{content:'';position:absolute;inset:0;background:radial-gradient(rgba(0,0,0,.05) .5px,transparent .8px) 0 0/2.5px 2.5px,linear-gradient(125deg,rgba(255,255,255,.34),rgba(255,255,255,0) 34%,rgba(255,255,255,0) 70%,rgba(255,255,255,.08))}
-.v4ler .erd .st{position:absolute;left:24%;right:24%;bottom:0;height:13%;background:linear-gradient(180deg,#45454a,#202024);clip-path:polygon(16% 0,84% 0,100% 100%,0 100%);border-radius:1px}
+/* leitor digital (22/11): e-reader em pé, proporção ~0,7, capinha colorida (verde bebê por padrão), tela e-ink com a capa inteira */
+.v4ler .erd{position:relative;display:block;overflow:visible}
+.v4ler .erd .bk{position:absolute;right:-5%;bottom:2%;width:34%;height:38%;background:var(--cs,#A9CFB4);border-radius:3px;transform:skewY(-14deg);opacity:.9}
+.v4ler .erd .bz{position:absolute;left:4%;right:4%;top:0;bottom:4%;border-radius:9px;background:linear-gradient(150deg,var(--cp,#CFE8D5),var(--cs,#A9CFB4));box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),inset 1.5px 1.5px 0 rgba(255,255,255,.45),3px 4px 8px rgba(0,0,0,.3);overflow:hidden;transform:perspective(220px) rotateX(5deg);transform-origin:50% 100%}
+.v4ler .erd .scr{position:absolute;left:8%;right:8%;top:7%;bottom:13%;background:#e7e3da;border-radius:2px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18),inset 0 1px 3px rgba(0,0,0,.25)}
+.v4ler .erd .scr > *{position:absolute;inset:6%;width:88%!important;height:88%!important;max-width:none!important;margin:0!important}
+.v4ler .erd .scr img{object-fit:contain;filter:saturate(.55) sepia(.06) contrast(.97)}
+.v4ler .erd .scr .gen.hd{display:none}
+.v4ler .erd .scr .gen{filter:saturate(.45) sepia(.08) contrast(.96);display:block;overflow:hidden;border-radius:1px}
+.v4ler .erd .scr .gen > *{width:100%!important;height:100%!important;max-width:none!important}
+.v4ler .erd.gr .scr img,.v4ler .erd.gr .scr .gen{filter:grayscale(1) contrast(1.05) brightness(1.04)}
+.v4ler .erd .scr::after{content:'';position:absolute;inset:0;background:radial-gradient(rgba(0,0,0,.05) .5px,transparent .8px) 0 0/2.5px 2.5px,linear-gradient(125deg,rgba(255,255,255,.3),rgba(255,255,255,0) 34%);pointer-events:none}
+.v4ler .erd .lg{position:absolute;left:50%;bottom:4.5%;width:16%;height:1.6%;margin-left:-8%;border-radius:2px;background:rgba(0,0,0,.14)}
 /* luzinhas: miolo claro, halo em camadas, luz que cai na madeira e nas lombadas */
 .v4ler .bsh .lgt{position:absolute;pointer-events:none;z-index:3}
 .v4ler .bsh .lgt.w-f{left:4px;right:4px;top:6px;height:22px;z-index:4}
@@ -27403,9 +27427,13 @@ const SHX_CSS3 = `
 // ---------- objetos com volume (luz do topo à esquerda) ----------
 SH_DEC.vela = (s) => `<span class="vlw" style="width:${78 * s}px;height:${78 * s}px;left:${-22 * s}px;top:${-26 * s}px"></span><svg width="${34 * s}" height="${56 * s}" viewBox="0 0 34 56" aria-hidden="true" style="position:relative"><defs><linearGradient id="bkvj" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".22" stop-color="#fff" stop-opacity=".5"/><stop offset=".5" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity=".24"/></linearGradient><linearGradient id="bkvw" x1="0" x2="1"><stop offset="0" stop-color="#f6ecd6"/><stop offset=".35" stop-color="#fffaf0"/><stop offset="1" stop-color="#d4c09c"/></linearGradient><radialGradient id="bkvf" cx="50%" cy="72%" r="62%"><stop offset="0" stop-color="#fff"/><stop offset=".32" stop-color="#ffefb8"/><stop offset=".72" stop-color="#ffac40"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient></defs><path d="M5 24h24v27a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" fill="#f4ecdc" fill-opacity=".28" stroke="rgba(255,255,255,.55)" stroke-width=".6"/><path d="M7 31h20v19a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3z" fill="url(#bkvw)"/><ellipse cx="17" cy="31" rx="10" ry="1.7" fill="#fff6dc"/><ellipse cx="17" cy="31" rx="4" ry=".9" fill="#ffd98a" fill-opacity=".8"/><path d="M17 31v-4.5" stroke="#2b1d12" stroke-width="1" stroke-linecap="round"/><g class="vfl"><path d="M17 12.5c3.4 3.8 3.8 8.6 0 13-3.8-4.4-3.4-9.2 0-13z" fill="url(#bkvf)"/><path d="M17 18.6c1.3 1.7 1.3 3.9 0 5.6-1.3-1.7-1.3-3.9 0-5.6z" fill="#fff" fill-opacity=".9"/></g><path d="M5 24h24v27a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z" fill="url(#bkvj)"/></svg>`;
 SH_DEC.planta = (s) => `<svg width="${62 * s}" height="${120 * s}" viewBox="0 0 62 120" aria-hidden="true" style="margin-bottom:${-34 * s}px"><defs><linearGradient id="bkpp" x1="0" x2="1"><stop offset="0" stop-color="#faf6ee"/><stop offset=".5" stop-color="#e4dbcb"/><stop offset="1" stop-color="#b3a68f"/></linearGradient><linearGradient id="bkpl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#86c991"/><stop offset="1" stop-color="#2d6a3b"/></linearGradient><linearGradient id="bkpl2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a6dcab"/><stop offset="1" stop-color="#3b7d49"/></linearGradient></defs><g fill="none" stroke="#3a6a43" stroke-width="1.3" stroke-linecap="round"><path d="M20 64c-8 8-12 22-10 38s4 14 2 16"/><path d="M42 64c6 10 9 24 8 36"/></g><g fill="url(#bkpl)"><ellipse cx="11" cy="76" rx="5" ry="3" transform="rotate(-30 11 76)"/><ellipse cx="9" cy="92" rx="5" ry="3" transform="rotate(20 9 92)"/><ellipse cx="12" cy="108" rx="4.6" ry="2.8" transform="rotate(-20 12 108)"/><ellipse cx="48" cy="78" rx="5" ry="3" transform="rotate(30 48 78)"/><ellipse cx="51" cy="94" rx="4.6" ry="2.8" transform="rotate(-25 51 94)"/></g><g fill="url(#bkpl)"><path d="M31 60C21 51 15 39 17 24c9 8 14 21 14 36z"/><path d="M31 60c10-9 16-21 14-36-9 8-14 21-14 36z"/><path d="M31 60c-11-5-21-6-28-2 8 6 19 7 28 2z"/></g><g fill="url(#bkpl2)"><path d="M31 60c-2-15 0-31 6-43 4 15 1 31-6 43z"/><path d="M31 60c11-5 21-6 28-2-8 6-19 7-28 2z"/></g><g stroke="rgba(255,255,255,.38)" stroke-width=".6" fill="none" stroke-linecap="round"><path d="M31 59C25 49 21 39 19 29"/><path d="M31 59c6-11 10-21 12-31"/><path d="M31 59c1-13 2-26 5-37"/></g><path d="M16 60h30l-3 26H19z" fill="url(#bkpp)"/><path d="M15 57.5h32v4.5H15z" fill="#f3ede2"/><path d="M15 57.5h32" stroke="#fff" stroke-opacity=".8" stroke-width=".8"/><path d="M16 62h30l-.4 3H16.4z" fill="rgba(0,0,0,.12)"/><path d="M19 86h24" stroke="rgba(0,0,0,.18)"/></svg>`;
-SH_DEC.leitor = (s, d) => { const b = shLeitorBook(d || {}), w = 50 * s, h = 84 * s;
-  const scr = b && b.img ? `<span class="im" style="background-image:${cssUrl(b.img)}"></span>` : `<span class="tx">${esc(b ? b.t : 'Leitor digital')}</span>`;
-  return `<span class="erd${d && d.cor ? ' cor' : ''}" style="width:${w}px;height:${h}px" aria-hidden="true"><span class="bz"><span class="scr">${scr}</span></span><span class="st"></span></span>`; };
+// capinha: verde bebê (padrão), rosa, lilás, preto, areia, azul-claro — [nome, frente, lateral]
+const SH_ERD = { verde: ['Verde bebê', '#CFE8D5', '#A9CFB4'], rosa: ['Rosa', '#F3D3DC', '#DDB0BE'], lilas: ['Lilás', '#DCD3F0', '#B9ACDD'], preto: ['Preto', '#3a3a40', '#1c1c20'], areia: ['Areia', '#E8DCC4', '#CDBC98'], azul: ['Azul-claro', '#CFE3F2', '#A8C6DE'] };
+SH_DEC.leitor = (s, d) => { const b = shLeitorBook(d || {}), w = 84 * s, h = 120 * s, C = SH_ERD[(d && d.cap) || 'verde'] || SH_ERD.verde;
+  // a capa cabe inteira na tela (contain); sem capa ou se a imagem falhar, fica a capa gerada que está por baixo
+  let gen = ''; try { gen = typeof v4cv === 'function' ? v4cv({ title: b ? b.t : 'Leitor digital', author: b ? b.a : '', cover: null }) : ''; } catch {}
+  const scr = `<span class="gen${b && b.img ? ' hd' : ''}">${gen || `<span style="display:grid;place-items:center;height:100%;font:italic 600 9px/1.2 Georgia,serif;color:#333;text-align:center;padding:8%">${esc(b ? b.t : 'Leitor digital')}</span>`}</span>${b && b.img ? `<img alt="" loading="lazy" src="${esc(b.img)}" onerror="if(this.previousElementSibling)this.previousElementSibling.classList.remove('hd');this.remove()">` : ''}`;
+  return `<span class="erd${d && d.gr ? ' gr' : ''}" style="width:${w}px;height:${h}px;--cp:${C[1]};--cs:${C[2]}" aria-hidden="true"><span class="bz"><span class="scr">${scr}</span><span class="lg"></span></span></span>`; };
 function shLeitorBook(d) { let b = d && d.bk ? shById(String(d.bk)) : null; if (b) return b;
   if (SHX_VB) { const ks = Object.keys(SHX_VB); const k = ks.find((x) => SHX_VB[x].st === 'lendo') || ks[0]; return k ? shById(k) : null; }
   try { const L = lib(), e = L.find((x) => x.status === 'LENDO') || L[0]; return e ? shB(e) : null; } catch { return null; } }
@@ -27653,7 +27681,7 @@ function shLtSave(fn) { const C0 = shc(), Ls = JSON.parse(JSON.stringify(shLight
       const bpl = T.closest('.bsh:not(.sm) .bpl[data-r]'); if (bpl && SHX_PQE >= 0 && C0.plq && C0.plq[SHX_PQE]) { stop(); const R0 = bpl.getBoundingClientRect(); C0.plq[SHX_PQE].r = +bpl.dataset.r; C0.plq[SHX_PQE].p = Math.max(0.04, Math.min(0.96, (ev.clientX - R0.left) / R0.width)); shSave(); return v5Redraw(); }
       const dk = T.closest('.bsh .dec[data-dk]'); const dd = dk && C0.deco && C0.deco[+dk.dataset.dk];
       if (dd && dd.k === 'leitor') { stop(); const i = +dk.dataset.dk, cur = shLeitorBook(dd);
-        return shX('Leitor digital', [['Escolher livro do visor', () => shPickBook('Escolher livro do visor', cur && cur.id, (id) => { C0.deco[i].bk = id; shSave(); v5Redraw(); toast('“' + shTitle(id).slice(0, 40) + '” no visor'); })], [dd.cor ? 'Visor em tons de cinza' : 'Mostrar a capa colorida', () => { C0.deco[i].cor = dd.cor ? 0 : 1; shSave(); v5Redraw(); }], ['Trocar por outro enfeite', () => { SHX_DKS = i; SHX_DKT = 'enf'; v5Redraw(); }], ['Tirar da estante', () => { C0.deco.splice(i, 1); shSave(); v5Redraw(); toast('Enfeite tirado'); }]]); } }
+        return shX('Leitor digital', [['Escolher livro do visor', () => shPickBook('Escolher livro do visor', cur && cur.id, (id) => { C0.deco[i].bk = id; shSave(); v5Redraw(); toast('“' + shTitle(id).slice(0, 40) + '” no visor'); })], [dd.gr ? 'Capa colorida no visor' : 'Visor em tons de cinza', () => { C0.deco[i].gr = dd.gr ? 0 : 1; shSave(); v5Redraw(); }], ['Cor da capinha', () => shX('Cor da capinha', Object.entries(SH_ERD).map(([k, v]) => [((dd.cap || 'verde') === k ? '✓ ' : '') + v[0], () => { C0.deco[i].cap = k; shSave(); v5Redraw(); }]))], ['Trocar por outro enfeite', () => { SHX_DKS = i; SHX_DKT = 'enf'; v5Redraw(); }], ['Tirar da estante', () => { C0.deco.splice(i, 1); shSave(); v5Redraw(); toast('Enfeite tirado'); }]]); } }
     return _sc.apply(this, arguments); }; }
 
 // ---------- arrastar plaquinha (Decorar) ----------
@@ -30241,8 +30269,9 @@ function flHTML(list0) { const C0 = shc(), F = FL_PV ? FL_PV.free : C0.free, md 
   const PK = (FLX.pk || (FLX.sel && FLX.sel.ids.length)) && md === 'org', pkW = PK ? flPkW() : 0;
   const rowsH = F.rows.map((row, k) => { const bnd = flBounds(row); let nich = '', dvs = '';
     for (let n = 0; n < bnd.length - 1; n++) { const li = n > 0 ? FL_INS : 0, ri = n < bnd.length - 2 ? FL_INS : 0, NW = flNW(row, n, BW), nb = (row.nb && row.nb[n]) || {};
-      const its = row.it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) })); if (!flFit(its, NW)) its.reduce((e, q) => { q.x = e; return e + q.w; }, 0);
-      let h = its.map((q) => flItemHTML(q.o, q.x, md)).join(''); if (PK) h += flTargets(k, n, its, NW, pkW);
+      const its = row.it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) })); let sc = 1; if (!flFit(its, NW)) { const tot = its.reduce((a, q) => a + q.w, 0); sc = tot > NW && NW > 0 ? Math.max(0.6, NW / tot) : 1; its.reduce((e, q) => { q.x = e; return e + q.w * sc; }, 0); }
+      // prateleira cheia (estante arrumada noutra largura): estreita as peças por igual em vez de transbordar
+      let h = its.map((q) => { const t = flItemHTML(q.o, q.x, md); return sc < 1 ? t.replace(/style="left:([\d.-]+)px"/, `style="left:$1px;transform:scaleX(${sc.toFixed(3)});transform-origin:0 100%"`) : t; }).join(''); if (PK) h += flTargets(k, n, its, NW, pkW);
       const sel = md === 'deco' && FLX.ns === k + ':' + n;
       nich += `<div class="nich${nb.bg ? ' bg-' + esc(nb.bg) : ''}${nb.lt ? ' nlt nlt' + esc(String(nb.lt)) : ''}${sel ? ' sel' : ''}" data-r="${k}" data-n="${n}" style="left:calc(${(bnd[n] * 100).toFixed(3)}% + ${li}px);width:calc(${((bnd[n + 1] - bnd[n]) * 100).toFixed(3)}% - ${li + ri}px)">${nb.lt ? '<i class="npk" aria-hidden="true"></i>' : ''}${h}</div>`;
       if (n > 0) dvs += `<span class="ndv" data-r="${k}" data-i="${n - 1}" style="left:calc(${(bnd[n] * 100).toFixed(3)}% - ${FL_INS}px)"${md === 'deco' ? ` role="slider" tabindex="0" aria-label="Divisória da ${k + 1}ª prateleira: arraste ou use as setas" aria-valuenow="${Math.round(bnd[n] * 100)}" aria-valuemin="5" aria-valuemax="95"` : ' aria-hidden="true"'}></span>`; }
@@ -30348,7 +30377,8 @@ function flDecoAdd(k) { const C0 = shc(), F = C0.free, BW = flBW();
   toast('Sem espaço livre: tire um livro ou um enfeite antes'); }
 function flDecoSheet(u) { const f = flFind(u); if (!f) return; const o = f.o, C0 = shc();
   const items = []; if (o.k === 'leitor') { const cur = shLeitorBook({ k: o.k, ...(o.o || {}) }); items.push(['Escolher livro do visor', () => shPickBook('Escolher livro do visor', cur && cur.id, (id) => { o.o = { ...(o.o || {}), bk: id }; shSave(); flRender(); toast('“' + shTitle(id).slice(0, 40) + '” no visor'); })]);
-    items.push([o.o && o.o.cor ? 'Visor em tons de cinza' : 'Mostrar a capa colorida', () => { o.o = { ...(o.o || {}), cor: o.o && o.o.cor ? 0 : 1 }; shSave(); flRender(); }]); }
+    items.push([o.o && o.o.gr ? 'Capa colorida no visor' : 'Visor em tons de cinza', () => { o.o = { ...(o.o || {}), gr: o.o && o.o.gr ? 0 : 1 }; shSave(); flRender(); }]);
+    items.push(['Cor da capinha', () => shX('Cor da capinha', Object.entries(SH_ERD).map(([k, v]) => [(((o.o && o.o.cap) || 'verde') === k ? '✓ ' : '') + v[0], () => { o.o = { ...(o.o || {}), cap: k }; shSave(); flRender(); toast('Capinha ' + v[0].toLowerCase()); }]))]); }
   items.push(['Trocar por outro enfeite', () => { FLX.swap = u; SHX_DKT = 'enf'; flRender(); toast('Escolha o novo enfeite'); }]);
   items.push(['Tirar da estante', () => { const bk = shBk(); C0.free.rows[f.r].it = C0.free.rows[f.r].it.filter((x) => x.u !== u); shSave(); toast('Enfeite tirado', shUndo(bk)); flRender(); }]);
   shX(SH_DN[o.k] || 'Enfeite', items); }
@@ -30844,7 +30874,7 @@ try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-shxfl]
     try { l.mo && l.mo.disconnect(); } catch {} removeEventListener('scroll', l.onScroll, true); removeEventListener('keydown', l.onKey, true);
     if (l.box.isConnected) { if (back && l.cv && !RM() && l.cv.animate) { const a = l.cv.animate([{ transform: 'translateY(0) rotateY(0)', opacity: 1 }, { transform: `translateY(${l.dy}px) rotateY(80deg)`, opacity: .2 }], { duration: 180, easing: 'ease-in' }); a.onfinish = () => l.box.remove(); } else l.box.remove(); } }
   function lift(el, a, ev) { if (L && L.el === el) return; cleanup(false);
-    const id = el.dataset.id || el.dataset.bid; if (!id) return; const kind = el.closest('.pb') || el.classList.contains('pb') ? 'pile' : el.classList.contains('face') ? 'face' : 'spine';
+    const id = el.dataset.id || el.dataset.bid; if (!id) return; const kind = el.closest('.pile') ? 'pile' : el.classList.contains('face') ? 'face' : 'spine'; // .pb também é a lombada brochura: pilha é quem está dentro de .pile
     const r = el.getBoundingClientRect(); if (!r.width) return; const I = info(id);
     const box = document.createElement('div'); box.className = 'pop lvlift'; ensureCss(); box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', (I.t || 'Livro') + ': toque de novo para abrir');
     const l = L = { el, a, id, box, dy: 0 };
@@ -30854,7 +30884,9 @@ try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-shxfl]
       cvEl = document.createElement('div'); cvEl.className = 'lvl-cv'; cvEl.style.cssText = `left:${lft}px;top:${top}px;width:${w}px;height:${h}px`;
       let html = ''; try { html = typeof v4cv === 'function' ? v4cv({ title: I.t, author: I.a, cover: I.img }) : ''; } catch {}
       cvEl.innerHTML = html || (I.img ? `<img alt="" src="${esc(I.img)}">` : `<span class="lvl-gen" style="background:${getComputedStyle(el).getPropertyValue('--c') || '#4b3f66'}">${esc(I.t)}</span>`);
-      box.append(cvEl); l.cv = cvEl; setSt(el, { visibility: 'hidden' }); cx = lft + w / 2;
+      box.append(cvEl); l.cv = cvEl;
+      // capa que falha ao carregar vira a capa gerada (com o título); a animação não espera a imagem
+      { const gen = () => { try { cvEl.innerHTML = typeof v4cv === 'function' ? v4cv({ title: I.t, author: I.a, cover: null }) : `<span class="lvl-gen">${esc(I.t)}</span>`; } catch {} }; const im = cvEl.querySelector('img'); if (im) { im.addEventListener('error', gen, { once: true }); if (im.complete && !im.naturalWidth) gen(); } } setSt(el, { visibility: 'hidden' }); cx = lft + w / 2;
       if (!RM() && cvEl.animate) cvEl.animate([{ transform: `translateY(${l.dy}px) rotateY(80deg) scaleX(${(r.width / w).toFixed(3)})`, opacity: .6 }, { transform: 'translateY(0) rotateY(0) scaleX(1)', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.2,1.3,.4,1)' }); }
     else { setSt(el, { transform: kind === 'pile' ? 'translateX(22%)' : 'translateY(-12%)', transition: RM() ? 'none' : 'transform .26s cubic-bezier(.2,1.3,.4,1)', filter: 'drop-shadow(0 8px 10px rgba(0,0,0,.35))', position: 'relative', 'z-index': '5' }); const hit = document.createElement('div'); hit.className = 'lvl-cv'; hit.style.cssText = `left:${r.left + (kind === 'pile' ? r.width * 0.22 : 0)}px;top:${r.top - (kind === 'pile' ? 0 : r.height * 0.12)}px;width:${r.width}px;height:${r.height}px;background:transparent;box-shadow:none`; box.append(hit); l.cv = null; l.hit = hit; top = r.top - (kind === 'pile' ? 0 : r.height * 0.12); }
     const tag = document.createElement('div'); tag.className = 'lvl-tag'; tag.innerHTML = `<b>${esc(I.t || 'Livro')}</b>${I.s ? `<small>${esc(I.s)}</small>` : ''}<i>toque de novo para abrir</i>`;
