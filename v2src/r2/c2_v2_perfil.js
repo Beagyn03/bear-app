@@ -195,7 +195,6 @@ function v2Afi(d) {
   const emComum = thD ? thD.map(([g]) => g).filter((g) => mineG.has(g)).slice(0, 3).map(v2Low) : [];
   return `<section class="v2afi"><div class="t"><span><b>Vocês combinam</b><small>${both.length ? `${both.length} ${both.length === 1 ? 'livro' : 'livros'} em comum` : 'gostos de leitura parecidos'}</small></span><span class="pc">${pc}%</span></div>
     ${both.length ? `<div class="row">${both.slice(0, 10).map((b) => cvh(b.title, b.cover, 'v2a-cv')).join('')}</div>` : ''}
-    ${thArq ? `<div class="cm">Jeito de ler${nome ? ' de ' + nome : ''}: <b>${esc(thArq.t)}</b></div>` : ''}
     ${emComum.length ? `<div class="cm">Vocês combinam em: ${esc(emComum.join(', '))}</div>` : ''}</section>`;
 }
 { let tm = 0;
@@ -208,12 +207,7 @@ function v2Afi(d) {
       top.classList.add('v2-old'); v.querySelector('.yo-nums')?.classList.add('v2-old');
       const html = v2pvOwnHTML(d, v), key = d.handle + '|' + html.length; let h = v.querySelector('.v2pv');
       if (!h || h.dataset.k !== key) { const w = document.createElement('div'); w.innerHTML = html; const n = w.firstElementChild; n.dataset.k = key; v2pvBind(n, v, d); if (h) h.replaceWith(n); else top.before(n); }
-      const J = v2JeitoData(), jh = v2JeitoHTML(J); let x = v.querySelector('.v2jl');
-      if (!x || x.dataset.h !== String(jh.length) + '|' + jh.slice(-80)) {
-        const w = document.createElement('div'); w.innerHTML = jh; const n = w.firstElementChild; n.dataset.h = String(jh.length) + '|' + jh.slice(-80);
-        n.addEventListener('click', (ev) => { if (ev.target.closest('[data-jl=share]')) v2JeitoShare(v2JeitoData()); });
-        if (x) x.replaceWith(n); else ((v.classList.contains('v3pf-on') && v.querySelector('.v3pane[data-k=sobre]')) ? v.querySelector('.v3pane[data-k=sobre]').prepend(n) : (v.querySelector('.v2pv') || v.querySelector('.yo-nums')).after(n)); } // logo abaixo do cabeçalho
-      else if (!v.classList.contains('v3pf-on') && x.previousElementSibling !== v.querySelector('.v2pv') && v.querySelector('.v2pv')) v.querySelector('.v2pv').after(x); // no perfil novo (f3) o jeito de ler mora na aba Sobre
+      v.querySelectorAll('.v2jl').forEach((x) => x.remove()); // "Seu jeito de ler" saiu do perfil (Bia, 21/11: não diz de onde vem nem dá para editar)
     } else if (!v.querySelector('.v2afi') && !v.dataset.v2afi) {
       v.querySelectorAll('.yo-nums > *').forEach((c) => { const b = c.querySelector('b, strong') || c; if (/^\s*(0|–|—|-)\s*$/.test(b.textContent || '')) c.classList.add('v2-zero'); });
       v.dataset.v2afi = d.handle; const html = v2Afi(d); if (html) { const w = document.createElement('div'); w.innerHTML = html; (v.querySelector('.yo-nums') || top).after(w.firstElementChild); try { paintCv(v); } catch {} }

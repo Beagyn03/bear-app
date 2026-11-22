@@ -25,7 +25,7 @@
   };
   const stars = (p) => { const n = Math.round(p); return '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i>'; };
   const fmt = (p) => String(p).replace('.', ',');
-  const SKIP = '.ct-it, .v4psh, .v4fx, .v2gc, .v3at, .rd-card, .bp-hero, .v3tp3, .v3tp, .rd-post, .fd-post, .v3x, .v3hero, .ys-g, .ys-row, .yv-tb, .lj2-inv, .lj2-card';
+  const SKIP = '.v8mp, .ct-it, .v4psh, .v4fx, .v2gc, .v3at, .rd-card, .bp-hero, .v3tp3, .v3tp, .rd-post, .fd-post, .v3x, .v3hero, .ys-g, .ys-row, .yv-tb, .lj2-inv, .lj2-card';
   const place = (cv) => {
     cv.dataset.v6 = '1'; const p = Number(cv.dataset.rt) || 0; if (!p) return;
     if (!cv.closest('#shelflist') || cv.closest(SKIP)) return;

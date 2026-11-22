@@ -16,6 +16,8 @@ try { Object.assign(V3EMO, { sort: '<path d="M4 7h10M4 12h7M4 17h4M18 5v14M15 16
 { const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments);
     try { const body = v.querySelector('.sl-body'), pE = body && body.querySelector(':scope > .v3pane[data-k=est]'); if (!pE || !d) return r;
       if (!d.self) { if (!pE.querySelector(':scope > .v4psh')) { const h = '<p class="v2wempty">Nenhuma estante no perfil.</p>'; if (pE.innerHTML !== h) pE.innerHTML = h; } return r; }
+      // prévia "como as amizades veem": a barra Organizar/Nova estante não existe; recriá-la aqui brigava com a prateleira da prévia (wk) e o perfil tremia (Bia, 21/11)
+      if (S.v3prev) return r;
       const L = v5Shelves().filter((s) => !s.arch);
       const sig = JSON.stringify(L.map((s) => [s.id, s.name, s.priv, (s.bookIds || []).slice(0, 7), (s.bookIds || []).length]));
       if (pE.dataset.mysig === sig && pE.querySelector(':scope > .v4mysh-bar')) return r;
