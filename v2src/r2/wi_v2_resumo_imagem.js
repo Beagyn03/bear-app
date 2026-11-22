@@ -119,25 +119,25 @@
   }
   window.v2RsDraw = draw; // usado pelos testes
 
-  const toBlob = (c) => new Promise((r) => c.toBlob(r, 'image/png'));
+  const toBlob = (c) => new Promise((r) => c.toBlob(r, 'image/jpeg', 0.86)); // JPEG: a PNG dava ~3 MB (22/11)
   v2RsShare = async function (M, d) {
     TR.querySelector('.v2ri')?.remove();
     const ov = document.createElement('div'); ov.className = 'v2ri'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Compartilhar o resumo do mês');
     ov.innerHTML = '<button type="button" class="x" aria-label="Fechar">×</button><div class="tg" role="group" aria-label="Formato"><button type="button" data-f="stories" aria-pressed="true">Stories</button><button type="button" data-f="quadrado" aria-pressed="false">Quadrado</button></div><div class="ld">Montando sua imagem…</div><img class="pv" alt="Prévia do resumo do mês" hidden><div class="ac"><button type="button" class="dl">Baixar imagem</button><button type="button" class="pri sh">Compartilhar</button></div>';
     TR.append(ov); let fmt = 'stories', cur = null, tok = 0;
     const pv = ov.querySelector('.pv'), ld = ov.querySelector('.ld');
-    const render = async () => { const my = ++tok; ld.hidden = false; pv.hidden = true; const c = await draw(M, d, fmt); if (my !== tok) return; cur = c; pv.src = c.toDataURL('image/png'); pv.hidden = false; ld.hidden = true; };
+    const render = async () => { const my = ++tok; ld.hidden = false; pv.hidden = true; const c = await draw(M, d, fmt); if (my !== tok) return; cur = c; pv.src = c.toDataURL('image/jpeg', 0.8); pv.hidden = false; ld.hidden = true; };
     const close = () => { ov.remove(); document.removeEventListener('keydown', esc1, true); };
     const esc1 = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); close(); } };
     document.addEventListener('keydown', esc1, true);
     ov.querySelector('.x').addEventListener('click', close);
     ov.addEventListener('click', (ev) => { if (ev.target === ov) close(); });
     ov.querySelectorAll('.tg button').forEach((b) => b.addEventListener('click', () => { fmt = b.dataset.f; ov.querySelectorAll('.tg button').forEach((y) => y.setAttribute('aria-pressed', String(y === b))); render(); }));
-    const name = () => 'livroverso-' + M.ym + (fmt === 'quadrado' ? '-quadrado' : '') + '.png';
+    const name = () => 'livroverso-' + M.ym + (fmt === 'quadrado' ? '-quadrado' : '') + '.jpg';
     const download = (blob) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name(); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('Imagem salva'); };
     ov.querySelector('.dl').addEventListener('click', async () => { if (!cur) return; const b = await toBlob(cur); if (b) download(b); else toast('Não consegui gerar a imagem'); });
     ov.querySelector('.sh').addEventListener('click', async () => { if (!cur) return; const b = await toBlob(cur); if (!b) return toast('Não consegui gerar a imagem');
-      const file = new File([b], name(), { type: 'image/png' });
+      const file = new File([b], name(), { type: 'image/jpeg' });
       try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Meu ' + M.nome + ' em livros' }); return; } } catch (err) { if (err && err.name === 'AbortError') return; }
       download(b); });
     ov.querySelector('.sh').focus();
