@@ -10000,6 +10000,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 00_v2_debate.js ---
 // Debate semanal (Bia, 22/11): a Pergunta do dia e o Desafio da semana viraram UMA pergunta por semana (API /v1/qday, de segunda a
@@ -20108,7 +20109,6 @@ async function v4UpdSave(k) {
   e.updU = U.u; U.cap = U.u === 'cap' && uv ? String(uv) : '';
   const pg = noTot ? now : U.pg;
   if (inSes && pg < s.pg0 && !confirm(`A página ${pg} é antes de onde você começou (${s.pg0}). Salvar mesmo assim?`)) return;
-  try { localStorage.setItem('lv.upVis', U.vis); } catch {}
   let hits = [], secs = 0, min = 0;
   if (inSes) { secs = v4Clock(s).secs; min = Math.max(1, Math.round(secs / 60));
     if (secs >= 60) { db.focus = [...(db.focus || []), { id: uid(), date: todayISO(), start: new Date(s.start).toISOString(), minutes: min, libId: e.id, fromPage: now, pages: Math.max(0, pg - now), via: 'ler', ...(U.cap ? { chapter: U.cap } : {}), ...(U.fe.length ? { feel: [...U.fe] } : {}) }]; save(); }
@@ -20354,7 +20354,7 @@ function v4Click(ev) {
   if (a === 'upf') { const k = d.e, i = U.fe.indexOf(k); if (i >= 0) U.fe.splice(i, 1); else if (U.fe.length < 3) U.fe.push(k); else return toast('Escolha até 3'); b.classList.toggle('on', U.fe.includes(k)); return; }
   if (a === 'upmic') return v4Dictate((t) => { U.text = (U.text ? U.text + ' ' : '') + t; const ta = V4.querySelector('#v4upc'); if (ta) ta.value = U.text; }, (on) => { U.rec = on; const bx = V4.querySelector('.cbox'); if (bx) bx.classList.toggle('rec', on); const m = V4.querySelector('.cbox .mic2'); if (m) m.innerHTML = on ? '<i></i><i></i><i></i>' : v4ic('mic', 18); });
   if (a === 'uppub') { U.pub = b.checked; const x = V4.querySelector('#v4pubx'); if (x) x.hidden = !U.pub; const sm = V4.querySelector('#v4pubs'); if (sm) sm.textContent = U.pub ? (U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê') : 'fica só no seu diário'; return; }
-  if (a === 'upvis') { U.vis = d.k; V4.querySelectorAll('#v4pubx .seg button').forEach((x) => x.classList.toggle('on', x === b)); const sm = V4.querySelector('#v4pubs'); if (sm) sm.textContent = U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê'; return; }
+  if (a === 'upvis') { U.vis = d.k; try { localStorage.setItem('lv.upVis', U.vis); } catch {} V4.querySelectorAll('#v4pubx .seg button').forEach((x) => x.classList.toggle('on', x === b)); const sm = V4.querySelector('#v4pubs'); if (sm) sm.textContent = U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê'; return; }
   if (a === 'upsp') { U.sp = b.checked; return v4UpdSync(e); }
   if (a === 'savepg') { if (v4SpAsk(U)) return v4SpModal(U); return v4UpdSave(st.sheet); }
   if (a === 'spv') return v4SpView(V4.querySelector('.spmod'), d.k);
@@ -29828,6 +29828,31 @@ let avInert = function (on) { try { const root = V4 && V4.getRootNode(); if (!ro
 { let mo = null; const watch = () => { try { const host = V4 && V4.parentNode; if (!host || mo) return; mo = new MutationObserver(() => { let open = false; try { open = !!(V4 && V4.isConnected && v4State().view === 'fim'); } catch {} if (!open) { const root = host.getRootNode(); [...root.querySelectorAll('.v4ler[data-av-in]'), ...TR.querySelectorAll('.v5host[data-av-in]')].forEach((x) => { x.inert = false; x.style.visibility = ''; delete x.dataset.avIn; }); } }); mo.observe(host, { childList: true }); } catch {} };
   const _i = avInert; avInert = function (on) { if (on) watch(); return _i(on); };
   const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments); try { if (v4State().view !== 'fim') avInert(false); } catch {} return r; }; }
+// (Bia, 22/11) avaliações e comentários começam visíveis para toda a comunidade; a pessoa pode trocar.
+// Avaliação nova: "Toda a comunidade"; a que já existe mantém o que tem. Comentário do Atualizar: publicar ligado.
+{ const _fo = v4FimOpen; v4FimOpen = function (e) { try { const r = (e && e.review) || {}; S.avNew = !(r.paws || r.texto); } catch {} const out = _fo.apply(this, arguments);
+    try { const F = v4State().F; if (F && S.avNew && !v4State().fimDemo) { F.share = true; v4Draw(); } } catch {} return out; }; }
+{ const _ui = v4UpdInit; v4UpdInit = function () { const r = _ui.apply(this, arguments); try { const U = v4State().upd; if (U) U.pub = true; } catch {} return r; }; }
+// convite "Adicionar lembranças" na página do livro: uma vez, depois de salvar a avaliação sem lembranças
+{ const _fs = v4FimSave; v4FimSave = function () { let e = null, F = null; try { const st = v4State(); F = st.F; e = F && !st.fimDemo && lib().find((x) => x.id === st.fim); } catch {}
+    const r = _fs.apply(this, arguments);
+    try { if (e && e.status === 'LIDO' && !avLbN(F) && !e.lbInv) { e.lbInv = 1; save(); } } catch {} return r; };
+  const st2 = document.createElement('style'); st2.textContent = `.av-inv{display:flex;align-items:center;gap:10px;margin:10px 0;padding:11px 12px;border:1.5px dashed var(--acc);border-radius:14px;background:color-mix(in srgb,var(--acc) 8%,var(--panel))}
+.av-inv div{flex:1;min-width:0}.av-inv b{display:block;font-size:.9rem;color:var(--ink)}.av-inv small{display:block;font-size:.76rem;color:var(--ink-2);font-weight:700}
+.av-inv .av-go{border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:99px;padding:.45rem .8rem;font:inherit;font-weight:800;font-size:.8rem;min-height:40px;cursor:pointer}
+.av-inv .av-x{border:0;background:none;color:var(--ink-2);font-size:1.2rem;width:40px;height:40px;cursor:pointer}`; try { TR.append(st2); } catch {}
+  let gone = false, cur = null;
+  const put = (e) => { if (gone) return true; const v = $('#shelflist'); const body = v && !v.hidden && v.querySelector('.sl-body'); if (!body || body.querySelector('.av-inv')) return !!(body && body.querySelector('.av-inv'));
+    const c = document.createElement('div'); c.className = 'av-inv'; c.innerHTML = '<div><b>Adicionar lembranças</b><small>como o livro te deixou, personagens e trecho favorito</small></div><button type="button" class="av-go">Adicionar</button><button type="button" class="av-x" aria-label="Fechar">×</button>';
+    body.prepend(c); e.lbInv = 2; save();
+    c.querySelector('.av-x').addEventListener('click', () => { gone = true; c.remove(); });
+    c.querySelector('.av-go').addEventListener('click', () => { gone = true; c.remove(); try { v4FimOpen(e); const F = v4State().F; if (F) { F.tab = 'lb'; v4Draw(); } } catch (err) { console.warn('lembranças', err); } });
+    return true; };
+  const _ob = openBookPage; openBookPage = function (e) { const r = _ob.apply(this, arguments);
+    try { if (e && e.lbInv === 1 && e.status === 'LIDO') { gone = false; cur = e; const v = $('#shelflist'); const t0 = Date.now();
+        // a página pode ser redesenhada logo depois de abrir: o convite volta para o lugar enquanto ela estiver aberta (até 8 s)
+        const mo = new MutationObserver(() => { if (gone || Date.now() - t0 > 8000 || !v || v.hidden) return mo.disconnect(); put(cur); }); if (v) mo.observe(v, { childList: true, subtree: true });
+        let n = 0; const tick = () => { if (put(e) || ++n > 15) return; setTimeout(tick, 200); }; setTimeout(tick, 150); } } catch {} return r; }; }
 // --- zg_v2_debate_semanal.js ---
 // Debate semanal (Bia, 22/11): a pergunta da semana vem do servidor (/v1/qday). A página e o cartão da Comunidade usavam a lista
 // local de temas (V2WK, um por semana); agora mostram a mesma pergunta do Hoje. Enquanto o servidor não responde, fica a guardada.
