@@ -9,6 +9,17 @@ Object.assign(V3EMO, { x: '<path d="M6 6l12 12M18 6 6 18"/>', sino: '<path d="M6
 { const st = document.createElement('style'); st.textContent = `
 .v4pg-intro{font-size:.82rem;color:var(--ink-2);line-height:1.45;margin:.1rem 0 .8rem}
 .v4pg-foot{font-size:.74rem;color:var(--ink-2);margin:.7rem .1rem 0;line-height:1.4}
+.v4ln-h{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin:.2rem .1rem .6rem;font-size:.8rem;font-weight:800;color:var(--ink-2)}
+.v4hadd{flex:none;min-height:44px;padding:0 1rem;border-radius:999px;border:1.5px solid color-mix(in srgb,var(--acc) 55%,var(--line));background:none;color:var(--acc);font:inherit;font-size:.86rem;font-weight:900;cursor:pointer}
+.v4ln-empty{display:grid;gap:.6rem;justify-items:center;text-align:center;border:1px dashed var(--line);border-radius:16px;padding:1.1rem 1rem}
+.v4ln-empty p{margin:0;font-size:.86rem;color:var(--ink-2)}.v4ln-empty small{font-size:.74rem;color:var(--ink-2)}.v4ln-empty .v4btn-w{margin:0;width:100%}
+.v4lnpk .box{max-height:86vh;display:flex;flex-direction:column}
+.v4lnpk .pk-q{margin:0 0 .5rem}.v4lnpk .pk-list{overflow-y:auto;min-height:0;flex:1;margin:0 -.2rem;padding:0 .2rem}
+.v4lnpk h4{margin:.7rem 0 .3rem;font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.v4lnpk .pk-note{margin:0 0 .3rem;font-size:.74rem;color:var(--ink-2)}.v4lnpk .pk-empty{font-size:.86rem;color:var(--ink-2);text-align:center;margin:1rem 0}
+.v4lnpk .pk{display:flex;align-items:center;gap:.7rem;width:100%;min-height:56px;padding:.4rem .3rem;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.v4lnpk .pk .cv{width:34px!important;height:50px!important;flex:none;border-radius:3px 5px 5px 3px!important;font-size:.36rem!important}
+.v4lnpk .pk span{display:grid;min-width:0}.v4lnpk .pk b{font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v4lnpk .pk small{font-size:.76rem;color:var(--ink-2)}
 .v4seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:14px;background:var(--panel);border:1px solid var(--line);margin:.2rem 0 .8rem}
 .v4seg button{border:0;background:none;border-radius:10px;padding:.5rem .2rem;font:inherit;font-size:.78rem;font-weight:800;color:var(--ink-2);line-height:1.15;cursor:pointer}
 .v4seg button small{display:inline;margin-left:.15rem;font-size:.72rem;font-weight:800;opacity:.85}
@@ -33,13 +44,56 @@ Object.assign(V3EMO, { x: '<path d="M6 6l12 12M18 6 6 18"/>', sino: '<path d="M6
 #lista.v4inner-l > .v3-top{display:none!important}
 #shelflist.v4inner .sl-body > .sl-top.v4empty{height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
 `; TR.append(st); }
-const v4Page = (title, html, reopen) => { if (reopen) { reopen.key = 'v4|' + title; try { navEnter(reopen); } catch {} } const v = $('#shelflist'); try { closeEd(); } catch {} v.classList.remove('feedview', 'tabroot', 'mine-page', 'v2des', 'v2pf');
-  v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>' + esc(title) + '</b><span></span></div>' + html;
+const v4Page = (title, html, reopen) => { const from = (() => { try { return v2OnTab(); } catch { return ''; } })(); if (reopen) { reopen.key = 'v4|' + title; try { navEnter(reopen); } catch {} } const v = $('#shelflist'); try { closeEd(); } catch {} v.classList.remove('feedview', 'tabroot', 'mine-page', 'v2des', 'v2pf');
+  v.querySelector('.sl-body').innerHTML = '<div class="sl-top"' + (from ? ' data-v4from="' + esc(from) + '"' : '') + '><button type="button" class="sl-back">‹ Voltar</button><b>' + esc(title) + '</b><span></span></div>' + html;
   v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; try { syncTopTitle(); } catch {} });
-  try { paintCv(v); } catch {} v.hidden = false; v.scrollTop = 0; try { syncTopTitle(); } catch {} return v; };
+  try { paintCv(v); } catch {} v.hidden = false; v.scrollTop = 0; try { syncTopTitle(); } catch {} try { drawTabbar(); } catch {} return v; };
+// barra de baixo: a página aberta por cima continua marcando a aba de onde veio (Bia, 22/11: Empréstimos aberto pelo Você marcava Hoje,
+// porque a página tira a classe mine-page do perfil e a barra caía na aba de baixo)
+{ const _ot = v2OnTab; v2OnTab = function () { const v = $('#shelflist'), top = v && !v.hidden && v.querySelector('.sl-body > .sl-top[data-v4from]'); return top ? top.dataset.v4from : _ot.apply(this, arguments); }; }
 const v4Mod = (k) => { const m = v2Mods(); if (k === 'presentes') return m.presentes === undefined ? m.emprest !== false : m.presentes !== false; return m[k] !== false; };
 
 // ---------- Empréstimos: página com Emprestei · Peguei ----------
+// "+ Emprestar": escolhe um livro da Biblioteca (regra do Emprestar do menu: fora de Lendo; quem tem o exemplar vem primeiro)
+// e segue a folha de Emprestar que já existe (exSheet, modo loan)
+function v4LoanPick() {
+  TR.querySelector('.esn-sheet.v4lnpk')?.remove();
+  const ok = (e) => e.status !== 'LENDO' && !exOf(e).loan && exOf(e).own !== 'pegou' && exOf(e).own !== 'quero';
+  const all = (() => { try { return sortList(lib().filter(ok), 'titulo'); } catch { return lib().filter(ok); } })();
+  const sh = document.createElement('div'); sh.className = 'esn-sheet v4lnpk'; let q = '';
+  const close = () => sh.remove();
+  const row = (e) => '<button type="button" class="pk" data-id="' + esc(String(e.id)) + '">' + cvh(e.title, e.cover, '') + '<span><b>' + esc(e.title) + '</b><small>' + esc(String(e.author || '').split(',')[0]) + '</small></span></button>';
+  const list = () => { const nq = normT(q), L = all.filter((e) => !nq || normT(e.title + ' ' + (e.author || '')).includes(nq)), tem = L.filter((e) => exOf(e).own === 'tenho'), out = L.filter((e) => exOf(e).own !== 'tenho');
+    if (!L.length) return '<p class="pk-empty">' + (all.length ? 'Nenhum livro seu com esse nome.' : 'Nenhum livro para emprestar agora. Livros em Lendo não entram.') + '</p>';
+    return (tem.length ? '<h4>Seus exemplares</h4>' + tem.slice(0, 120).map(row).join('') : '') + (out.length ? '<h4>' + (tem.length ? 'Outros da Biblioteca' : 'Da sua Biblioteca') + '</h4><p class="pk-note">Ao emprestar, o livro fica marcado como seu exemplar.</p>' + out.slice(0, 120).map(row).join('') : ''); };
+  const paint = () => { const box = sh.querySelector('.pk-list'); box.innerHTML = list(); try { paintCv(box); } catch {}
+    box.querySelectorAll('.pk').forEach((b) => b.addEventListener('click', () => { const e = lib().find((x) => String(x.id) === b.dataset.id); close(); if (e) exSheet(e, 'loan'); })); };
+  sh.innerHTML = '<div class="box"><h3>Emprestar qual livro?</h3><input type="search" class="pk-q" placeholder="Buscar na sua Biblioteca" aria-label="Buscar na sua Biblioteca" autocomplete="off" enterkeyhint="search"><div class="pk-list"></div><div class="acts" style="grid-template-columns:1fr"><button type="button" data-a="cancel">Cancelar</button></div></div>';
+  sh.querySelector('.pk-q').addEventListener('input', (ev) => { q = ev.target.value; paint(); });
+  sh.querySelector('[data-a=cancel]').addEventListener('click', close);
+  sh.addEventListener('click', (ev) => { if (ev.target === sh) close(); });
+  TR.append(sh); paint();
+}
+// "+ Peguei emprestado": busca no catálogo (o livro pode não estar na Biblioteca), depois a folha "De quem e até quando" (exSheet,
+// modo borrow). Só entra na Biblioteca (Quero ler) se o empréstimo for salvo.
+function v4BorrowPick() {
+  searchSheet({ title: 'Peguei emprestado', onPick: (item) => {
+    if (!item || !item.title) return;
+    const k = normT(item.title), a = normT(String(item.author || '').split(',')[0]);
+    let e = lib().find((x) => normT(x.title) === k && (!a || !x.author || normT(String(x.author).split(',')[0]) === a)), novo = false;
+    if (e && exOf(e).own === 'pegou' && exOf(e).borrow) return toast('Esse livro já está em Peguei');
+    if (!e) { try { e = addToLibrary(item, null, 'QUERO', { quiet: true }); } catch {} if (!e) e = lib().find((x) => normT(x.title) === k); novo = !!e; }
+    if (!e) return toast('Não deu para adicionar esse livro. Tente de novo.');
+    exSheet(e, 'borrow');
+    const sh = TR.querySelector('.esn-sheet.ex-sh'); if (!sh) return;
+    const mo = new MutationObserver(() => { if (sh.isConnected) return; mo.disconnect();
+      const x = e.ex || {};
+      if (novo && !x.own && !x.borrow) { const i = db.library.indexOf(e); if (i >= 0) db.library.splice(i, 1); try { save(); } catch {} }
+      else if (novo) { try { save(); renderHome(todayISO()); } catch {} toast('“' + e.title + '” entrou em Quero ler e em Peguei'); }
+      try { if (S.listRedraw) S.listRedraw(); } catch {} });
+    mo.observe(TR, { childList: true });
+  } });
+}
 function openLoans() {
   const tab = () => S.v4lnTab || 'out';
   const save2 = (e) => { if (e.ex && !e.ex.own && !e.ex.loan && !(e.ex.log || []).length) delete e.ex; save(); try { publishSnapshot(); } catch {} try { exApiLoan(e); } catch {} };
@@ -56,10 +110,15 @@ function openLoans() {
       return '<div class="v2gc" data-id="' + esc(String(e.id)) + '">' + cvh(e.title, e.cover, '') + '<div><b>' + esc(e.title) + '</b><small>de ' + esc(exName(p.from) || 'alguém') + (p.at ? ' · desde ' + exD(p.at) : '') + ' · ' + (p.due ? 'devolver até ' + exD(p.due) : 'sem data') + '</small>'
         + (late ? '<span class="late">passou ' + plural(late, 'dia', 'dias') + '</span>' : '')
         + '<div class="act"><button type="button" class="p" data-a="gave"><i class=v3e data-i=ok></i>Já devolvi</button>' + (friend ? '<button type="button" data-a="more"><i class=v3e data-i=cal></i>Pedir mais prazo</button>' : '<button type="button" data-a="bdate"><i class=v3e data-i=cal></i>Data</button>') + '</div></div></div>'; };
+    // registrar empréstimo pela própria página (Bia, 22/11): ação no cabeçalho da aba; lista vazia ganha o botão grande no lugar
+    const addLbl = t === 'out' ? 'Emprestar' : 'Peguei emprestado';
     const empty = t === 'out' ? 'Nenhum livro emprestado agora.' : 'Você não está com livro de ninguém agora.';
-    const v = v4Page('Empréstimos', tabs + (L.length ? L.map(card).join('') : '<p class="v2wempty">' + empty + '</p>')
-      + '<p class="v4pg-foot">Para emprestar: segure a capa do livro e toque em Emprestar. Perto da data, o lembrete aparece no Hoje.</p>', () => openLoans());
+    const body = L.length
+      ? '<div class="v4ln-h"><span>' + plural(L.length, 'livro', 'livros') + '</span><button type="button" class="v4hadd" data-ln="add">+ ' + addLbl + '</button></div>' + L.map(card).join('')
+      : '<div class="v4ln-empty"><p>' + empty + '</p><button type="button" class="v4btn-w" data-ln="add"><i class=v3e data-i=plus></i>' + addLbl + '</button><small>Perto da data, o lembrete aparece no Hoje.</small></div>';
+    const v = v4Page('Empréstimos', tabs + body, () => openLoans());
     v.querySelectorAll('.v2pr-tabs [data-t]').forEach((b) => b.addEventListener('click', () => { S.v4lnTab = b.dataset.t; draw(); }));
+    v.querySelectorAll('[data-ln=add]').forEach((b) => b.addEventListener('click', () => (t === 'out' ? v4LoanPick() : v4BorrowPick())));
     v.querySelectorAll('.v2gc [data-a]').forEach((b) => b.addEventListener('click', () => {
       const e = lib().find((y) => String(y.id) === b.closest('.v2gc').dataset.id); if (!e) return; const x = e.ex = e.ex || {}, a = b.dataset.a;
       if (a === 'back') { exLog(e, { t: 'devolveram', to: x.loan && x.loan.to, at: x.loan && x.loan.at }); delete x.loan; save2(e); toast('Voltou para a sua estante'); return draw(); }

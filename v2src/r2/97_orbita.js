@@ -26,17 +26,17 @@
 .orb-pg .orb-tx{font-size:.8rem;line-height:1.4;color:var(--ink-2);margin:.2rem 0 .8rem}
 .orb-cal{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:.75rem}
 .orb-mn{display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem}.orb-mn b{font-size:.95rem}
-.orb-mn button{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:900}.orb-mn button:disabled{opacity:.3}
+.orb-mn button{width:44px;height:44px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--ink) 55%,var(--panel));background:var(--panel);color:var(--ink);font:inherit;font-size:1.3rem;font-weight:900;line-height:1;display:grid;place-items:center;cursor:pointer}.orb-mn button:disabled{opacity:.35;cursor:default}
 .orb-sum{font-size:.76rem;font-weight:800;color:var(--acc);margin:0 0 .5rem}
 .orb-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .orb-g .h{font-size:.6rem;font-weight:900;color:var(--ink-2);text-align:center;text-transform:uppercase}
 .orb-g .d{position:relative;aspect-ratio:3/4;border-radius:8px;background:color-mix(in srgb,var(--ink) 5%,transparent);overflow:hidden;font-size:.62rem;font-weight:800;color:var(--ink-2)}
 .orb-g .d > i{position:absolute;top:3px;left:4px;font-style:normal;z-index:2}
-.orb-g .d.rd > i{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+.orb-g .d.rd > i{top:2px;left:2px;min-width:16px;padding:1px 4px;border-radius:99px;background:rgba(18,12,8,.78);color:#fff;text-align:center;line-height:1.25;text-shadow:none}
 .orb-g .d .cv{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;border-radius:0!important;background-size:cover!important;background-position:center!important;font-size:.36rem!important}
-.orb-g .d.hj{outline:2px solid var(--acc);outline-offset:-2px}.orb-g .d.fut{opacity:.45}.orb-g .d.empty{background:none}
-.orb-g .d u{position:absolute;right:3px;bottom:2px;z-index:2;text-decoration:none;font-size:.7rem;color:#ffe08a;text-shadow:0 0 4px rgba(255,200,80,.95)}
-.orb-leg{display:flex;gap:.8rem;margin-top:.6rem;font-size:.7rem;color:var(--ink-2);font-weight:700}
+.orb-g .d.hj::after{content:'';position:absolute;inset:0;z-index:3;border:2.5px solid var(--acc);border-radius:inherit;pointer-events:none}.orb-g .d.hj:not(.rd) > i{color:var(--acc);font-weight:900}.orb-g .d.fut{background:none;border:1.5px dashed color-mix(in srgb,var(--ink) 14%,transparent)}.orb-g .d.fut > i{color:var(--ink-2)}.orb-g .d.empty{background:none}
+.orb-g .d u{position:absolute;right:2px;bottom:2px;z-index:4;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;text-decoration:none;font-size:.62rem;line-height:1;background:rgba(18,12,8,.78);color:#ffd257}
+.orb-leg{display:flex;align-items:center;gap:.8rem;margin-top:.6rem;font-size:.72rem;color:var(--ink-2);font-weight:700}.orb-leg .lk{display:inline-flex;align-items:center;gap:.3rem}.orb-leg .lk-hj{width:14px;height:18px;border-radius:4px;border:2.5px solid var(--acc);box-sizing:border-box}.orb-leg .lk-st{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:.62rem;background:rgba(18,12,8,.78);color:#ffd257}
 `; TR.append(st); }
 const ORB_IMG = 'img/orbita.webp';
 // ícone de traço no lugar do planeta colorido (Bia, 20/11: acabamento); mesmo desenho do cartão do topo do Hoje
@@ -96,19 +96,20 @@ function openOrbita(ym) {
     // meta do prazo batida por dia (mesma conta do histórico do diário)
     const ok = new Set(); lib().forEach((e) => { if (!e.dueAt || !e.dueSince) return; try { tlEvents(e).forEach((x) => { if (x.ok) ok.add(x.d); }); } catch {} });
     let cells = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map((d) => '<span class="h">' + d + '</span>').join('') + '<span class="d empty"></span>'.repeat(lead);
-    let nRead = 0, pages = 0;
+    let nRead = 0, pages = 0, nStar = 0;
     for (let d = 1; d <= nDays; d++) {
       const iso = Y + '-' + String(M).padStart(2, '0') + '-' + String(d).padStart(2, '0'), x = s.days.get(iso);
       let cv = ''; if (x) { nRead++; pages += x.pages; const top = [...x.books.entries()].sort((a, b) => b[1] - a[1])[0]; const e = top && byId(top[0]); if (e) cv = cvh(e.title, e.cover, ''); }
-      cells += '<span class="d' + (x ? ' rd' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + '"><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u>★</u>' : '') + '</span>';
+      if (ok.has(iso)) nStar++;
+      cells += '<span class="d' + (x ? ' rd' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + '"' + (iso === t ? ' aria-current="date"' : '') + '><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u aria-label="meta do prazo batida">★</u>' : '') + '</span>';
     }
     const minYM = ([...s.days.keys()].sort()[0] || t).slice(0, 7);
-    v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Sua órbita de leitura</b><span></span></div>'
+    v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Órbita</b><span></span></div>'
       + '<div class="orb-pg"><div class="orb-big"><span class="orb-ic' + (s.today ? '' : ' off') + '">' + ORB_SVG + '</span><div><b>' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small>' + (s.cur ? 'em órbita' + (s.since ? ' · sem parar desde ' + s.since.slice(8, 10) + '/' + s.since.slice(5, 7) : '') : 'fora de órbita') + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div>'
       + '<p class="orb-tx">Cada dia em que você atualiza a página de um livro conta. Um dia sem leitura e a órbita recomeça. Dias de folga de um prazo não quebram a órbita.</p>'
-      + '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (S.orbYM <= minYM ? ' disabled' : '') + '>‹</button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (S.orbYM >= t.slice(0, 7) ? ' disabled' : '') + '>›</button></div>'
+      + '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (S.orbYM <= minYM ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (S.orbYM >= t.slice(0, 7) ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>'
       + '<p class="orb-sum">' + (nRead ? nRead + (nRead === 1 ? ' dia lido' : ' dias lidos') + ' · ' + pages.toLocaleString('pt-BR') + ' páginas' : 'Nenhuma leitura registrada neste mês') + '</p><div class="orb-g">' + cells + '</div>'
-      + '<div class="orb-leg"><span>★ meta do prazo batida</span><span style="outline:2px solid var(--acc);border-radius:4px;padding:0 4px">hoje</span></div></div></div>';
+      + '<div class="orb-leg">' + (S.orbYM === t.slice(0, 7) ? '<span class="lk"><i class="lk-hj"></i>hoje</span>' : '') + (nStar ? '<span class="lk"><i class="lk-st">★</i>meta do prazo batida</span>' : '') + '</div></div></div>';
     try { paintCv(v); } catch {}
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
     v.querySelectorAll('.orb-mn [data-m]').forEach((b) => b.addEventListener('click', () => { const [y, m] = S.orbYM.split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.m), 1); S.orbYM = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); draw(); }));

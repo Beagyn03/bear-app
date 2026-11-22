@@ -43,6 +43,8 @@
 .mtn .mrow .pbar{height:5px;border-radius:5px;background:color-mix(in srgb,var(--line) 80%,transparent);overflow:hidden;margin-top:4px}.mtn .mrow .pbar i{display:block;height:100%;background:var(--acc)}
 .mtn .mrow.done>svg{color:#3f9a64}.mtn .mempty{margin:0 4px 8px;color:var(--ink-2);font-size:13.5px}
 .mtn .madd{display:block;margin:2px 4px 0;border:0;background:none;color:var(--acc);font:inherit;font-weight:800;min-height:40px;padding:0;cursor:pointer}
+.mtn .msec-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.mtn .mhadd{flex:none;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid color-mix(in srgb,var(--acc) 55%,var(--line));background:none;color:var(--acc);font:inherit;font-size:14px;font-weight:900;letter-spacing:0;text-transform:none;cursor:pointer}
 @media (prefers-reduced-motion: reduce){.mtn .mring .fgc{transition:none}}
 `; TR.append(st); }
 const MTN_MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -106,18 +108,17 @@ function mtnBaixo() {
   let h = `<div class="msec">Lembrete</div><button type="button" class="mrow" data-mt="lem">${v4ic('sino', 20)}<span class="t"><b>Lembrete para ler</b><small>${esc(lem)}</small></span>${v4ic('chev', 16)}</button>`;
   // prazos dos livros
   const t = todayISO(), comPrazo = lib().filter((e) => e.status === 'LENDO' && e.dueAt && e.dueAt >= t);
-  h += '<div class="msec">Prazos dos livros</div>';
+  // adicionar fica no cabeçalho da seção (Bia, 22/11: a lista pode ser enorme e o botão no fim obrigava a rolar)
+  h += '<div class="msec msec-h"><span>Prazos dos livros</span><button type="button" class="mhadd" data-mt="novo" aria-label="Novo prazo ou meta com prazo">+ Novo</button></div>';
   if (comPrazo.length) h += comPrazo.map((e) => { const tot = Number(e.totalPages) || 0, pg = Number(libProgress(e)) || 0, left = Math.max(0, tot - pg), dias = Math.max(1, Math.round((new Date(e.dueAt + 'T12:00:00') - new Date(t + 'T12:00:00')) / 86400000) + 1), pct = tot ? Math.round(pg / tot * 100) : 0;
     const dt = new Date(e.dueAt + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     return `<button type="button" class="mrow" data-mt="prazo" data-id="${esc(e.id)}">${mtnCv(e)}<span class="t"><b>${esc(e.title)}</b><small>até ${dt}${tot ? ` · faltam ${left} pág. · ${Math.ceil(left / dias)} por dia` : ''}</small><span class="pbar"><i style="width:${pct}%"></i></span></span>${v4ic('chev', 16)}</button>`; }).join('');
   else h += '<p class="mempty">Nenhum livro com prazo agora.</p>';
-  if (lib().some((e) => e.status === 'LENDO')) h += '<button type="button" class="madd" data-mt="novoprazo">+ Prazo para um livro</button>';
   // metas com prazo antigas (listas de livros com data): continuam aqui, nada se perde
   const gs = (db.goals || []).filter((g) => g && g.targetDate), ativas = [], feitas = [];
   for (const g of gs) { const tot = g.books.reduce((a, b) => a + (b.totalPages || 0), 0); let dn = 0; try { dn = g.books.reduce((a, b) => a + pagesOf(g, b), 0); } catch {}
     const pct = tot ? Math.round(dn / tot * 100) : 0; (pct >= 100 ? feitas : ativas).push({ g, pct, tot, dn }); }
   if (ativas.length) h += ativas.map(({ g, pct, tot, dn }) => `<button type="button" class="mrow" data-mt="goal" data-g="${esc(g.id)}">${v4ic('meta', 20)}<span class="t"><b>${esc(g.name)}</b><small>${plural(g.books.length, 'livro', 'livros')} · ${dn} de ${tot} pág.${g.targetDate ? ' · até ' + new Date(g.targetDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : ''}</small><span class="pbar"><i style="width:${pct}%"></i></span></span>${v4ic('chev', 16)}</button>`).join('');
-  h += '<button type="button" class="madd" id="gl-new">+ Meta com prazo para vários livros</button>';
   // metas concluídas
   const done = [], cy = todayISO().slice(0, 4);
   for (const [y, n] of Object.entries(db.yearGoals || {})) { if (y >= cy || !(Number(n) > 0)) continue; const c = lib().filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').startsWith(y)).length; if (c >= Number(n)) done.push([`Meta de ${y}`, `${c} de ${n} livros`, '']); }
@@ -139,6 +140,8 @@ function mtnDraw(first) {
   else { const body = v.querySelector('.sl-body'); const box = body && body.querySelector('.mtn'); if (box) box.outerHTML = mtnHTML(); else v4Page('Metas', mtnHTML()); try { paintCv(v); } catch {} v.scrollTop = sc; }
   S.listRedraw = () => mtnDraw(false); S.navView = { t: 'metas', a: [S.mtnTab] };
 }
+function mtnNovoPrazo() { const L = lib().filter((e) => e.status === 'LENDO'); if (!L.length) return; if (L.length === 1) { try { dueSheet(L[0]); } catch {} return; }
+  try { sheet('Prazo para qual livro?', L.map((e) => [e.title, () => dueSheet(e)])); } catch {} }
 function openMetasV2(tab) { S.mtnTab = tab || S.mtnTab || 'ano'; S.mtnEd = null; mtnDraw(true); }
 openGoalsV4 = function () { openMetasV2('ano'); };
 { const _orbCal = openOrbita; window.__orbCal = _orbCal; openOrbita = function () { openMetasV2('dia'); }; }
@@ -165,7 +168,9 @@ TR.addEventListener('click', (ev) => {
   if (a === 'conta') { try { yearShelfSheet(todayISO().slice(0, 4)); } catch {} return; }
   if (a === 'lem') { try { openLembretes(); } catch {} return; }
   if (a === 'prazo') { const e = lib().find((x) => x.id === b.dataset.id); if (e) try { dueSheet(e); } catch {} return; }
-  if (a === 'novoprazo') { const L = lib().filter((e) => e.status === 'LENDO'); if (L.length === 1) { try { dueSheet(L[0]); } catch {} return; }
-    try { sheet('Prazo para qual livro?', L.map((e) => [e.title, () => dueSheet(e)])); } catch {} return; }
+  if (a === 'novo') { const temLendo = lib().some((e) => e.status === 'LENDO'), nova = () => { try { openGoalNew(); } catch {} };
+    if (!temLendo) return nova();
+    try { sheet('Adicionar', [['Prazo para um livro', () => mtnNovoPrazo()], ['Meta para vários livros', nova]]); } catch {} return; }
+  if (a === 'novoprazo') return mtnNovoPrazo();
   if (a === 'goal') { const g = (db.goals || []).find((x) => x.id === b.dataset.g); const v = $('#shelflist'); if (v) v.hidden = true; try { screen('desafios'); if (g) setTimeout(() => open(g), 60); } catch {} return; }
 }, true);
