@@ -223,14 +223,20 @@ const SH_CAT = [['lua', 'Lua aparadora'], ['planeta', 'Planeta com anel'], ['tel
 const SH_DN = Object.fromEntries(SH_CAT);
 // cor da lombada amostrada na capa (borda esquerda da imagem): fica guardada no aparelho e entra nos elementos já desenhados.
 // Capa de outro site sem permissão de leitura (CORS): a imagem não carrega no canvas e a lombada fica com a cor da paleta.
-const SH_SC = (() => { try { return JSON.parse(localStorage.getItem('lv.shsc') || '{}') || {}; } catch { return {}; } })(), SH_SCq = {};
-let SH_SCt = 0; const shScSave = () => { clearTimeout(SH_SCt); SH_SCt = setTimeout(() => { try { const ks = Object.keys(SH_SC); if (ks.length > 900) ks.slice(0, ks.length - 900).forEach((k) => delete SH_SC[k]); localStorage.setItem('lv.shsc', JSON.stringify(SH_SC)); } catch {} }, 1500); };
+const SH_SC = (() => { try { return JSON.parse(localStorage.getItem('lv.shsc2') || '{}') || {}; } catch { return {}; } })(), SH_SCq = {};
+let SH_SCt = 0; const shScSave = () => { clearTimeout(SH_SCt); SH_SCt = setTimeout(() => { try { const ks = Object.keys(SH_SC); if (ks.length > 900) ks.slice(0, ks.length - 900).forEach((k) => delete SH_SC[k]); localStorage.setItem('lv.shsc2', JSON.stringify(SH_SC)); } catch {} }, 1500); };
 function shSampled(b) { const key = spnHash(b.img); const v = SH_SC[key]; if (v) return v === 1 ? null : { c: v[0], k: v[1] }; if (!SH_SCq[key]) { SH_SCq[key] = 1; setTimeout(() => shSample(b.img, key), 0); } return null; }
+// cor predominante da capa (a mesma para lombada, bandeja e Arrumar por cor): capa inteira em 48x72, sem 8% das bordas, histograma por tons; se a mais frequente for quase branca/preta e houver uma cor viva com mais de 20% da área, fica a viva
+function shDomRgb(im) { const W = 48, H = 72, cn = document.createElement('canvas'); cn.width = W; cn.height = H; const x = cn.getContext('2d'); x.drawImage(im, 0, 0, W, H); const d = x.getImageData(0, 0, W, H).data, bins = new Map(), mx = Math.round(W * 0.08), my = Math.round(H * 0.08); let tot = 0;
+  for (let yy = my; yy < H - my; yy++) for (let xx = mx; xx < W - mx; xx++) { const i = (yy * W + xx) * 4, r = d[i], g = d[i + 1], b = d[i + 2], k = (r >> 5) * 64 + (g >> 5) * 8 + (b >> 5); const o = bins.get(k) || { n: 0, r: 0, g: 0, b: 0 }; o.n++; o.r += r; o.g += g; o.b += b; bins.set(k, o); tot++; }
+  const L = [...bins.values()].map((o) => { const r = o.r / o.n, g = o.g / o.n, b = o.b / o.n, M = Math.max(r, g, b), m = Math.min(r, g, b); return { n: o.n, c: [r, g, b], sat: M ? (M - m) / M : 0, l: (0.299 * r + 0.587 * g + 0.114 * b) / 255 }; });
+  // tons parecidos somam (vizinhos no histograma): junta por cor próxima
+  const C = []; L.sort((a, z) => z.n - a.n).forEach((p) => { const q = C.find((k) => Math.abs(k.c[0] - p.c[0]) + Math.abs(k.c[1] - p.c[1]) + Math.abs(k.c[2] - p.c[2]) < 70); if (q) { const t = q.n + p.n; q.c = q.c.map((v, i) => (v * q.n + p.c[i] * p.n) / t); q.n = t; q.sat = Math.max(q.sat, p.sat); } else C.push({ ...p, c: p.c.slice() }); });
+  C.sort((a, z) => z.n - a.n); if (!C.length) return null; let best = C[0]; const neutral = (k) => k.sat < 0.18 || k.l > 0.9 || k.l < 0.1;
+  if (neutral(best)) { const viva = C.find((k) => !neutral(k) && k.n / tot > 0.2); if (viva) best = viva; } return best.c.map(Math.round); }
 function shSample(u, key) { if (!u) return; const im = new Image(); if (!/^data:/.test(u)) im.crossOrigin = 'anonymous';
   im.onerror = () => { SH_SC[key] = 1; shScSave(); };
-  im.onload = () => { try { const cn = document.createElement('canvas'); cn.width = 40; cn.height = 60; const x = cn.getContext('2d'); x.drawImage(im, 0, 0, 40, 60);
-    const d = x.getImageData(0, 0, 10, 60).data; let r = 0, g = 0, bb = 0, n = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; bb += d[i + 2]; n++; }
-    r = Math.round(r / n); g = Math.round(g / n); bb = Math.round(bb / n); const lum = (0.299 * r + 0.587 * g + 0.114 * bb) / 255;
+  im.onload = () => { try { const rgb = shDomRgb(im); if (!rgb) throw 0; const [r, g, bb] = rgb; const lum = (0.299 * r + 0.587 * g + 0.114 * bb) / 255;
     const v = [`rgb(${r},${g},${bb})`, lum > 0.56 ? '#1f150d' : '#f7efe2']; SH_SC[key] = v; shScSave();
     SHX_ROOTS.forEach((R) => { if (!R.isConnected && !(R.host && R.host.isConnected)) { SHX_ROOTS.delete(R); return; } R.querySelectorAll(`.bsh .sp.cvs[data-sk="${key}"]`).forEach((el) => { el.style.setProperty('--c', v[0]); if (!el.classList.contains('ep')) el.style.setProperty('--k', v[1]); }); }); } catch (e) { SH_SC[key] = 1; shScSave(); } };
   im.src = coverCanvasUrl(u); }

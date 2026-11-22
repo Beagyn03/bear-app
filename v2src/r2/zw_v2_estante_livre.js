@@ -55,8 +55,8 @@ function flResolve(others, M, NW) { let x = Math.round(M.x / FL_SN) * FL_SN; x =
   const m = { u: '__m', x, w: M.w }; const arr = others.map((o) => ({ ...o })).concat([m]).sort((a, z) => (a.x + a.w / 2) - (z.x + z.w / 2)), i0 = arr.indexOf(m);
   for (let i = i0 + 1; i < arr.length; i++) arr[i].x = Math.max(arr[i].x, arr[i - 1].x + arr[i - 1].w);
   for (let i = i0 - 1; i >= 0; i--) arr[i].x = Math.min(arr[i].x, arr[i + 1].x - arr[i].w);
-  return flFit(arr, NW) ? arr : null; }
-function flItems(r, n) { return shc().free.rows[r].it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x); }
+  if (flFit(arr, NW)) return arr; let e = 0; arr.forEach((o) => { o.x = Math.max(o.x, e); e = o.x + o.w; }); arr.over = 1; return arr; }
+function flItems(r, n) { return shc().free.rows[r].it.filter((o) => (o.n || 0) === n && !o.z).sort((a, z) => a.x - z.x); }
 function flFind(u) { const F = shc().free; if (!F) return null; for (let r = 0; r < F.rows.length; r++) { const o = F.rows[r].it.find((x) => x.u === u); if (o) return { r, o }; } return null; }
 function flGroupOf(r, u) { const L = flItems(r, flFind(u).o.n || 0), i = L.findIndex((o) => o.u === u); let a = i, z = i;
   while (a > 0 && L[a].x - (L[a - 1].x + flW(L[a - 1])) <= 2) a--; while (z < L.length - 1 && L[z + 1].x - (L[z].x + flW(L[z])) <= 2) z++; return L.slice(a, z + 1); }
@@ -64,23 +64,23 @@ const flStructOf = (F) => ({ st: F.st, rows: F.rows.map((r) => ({ dv: (r.dv || [
 function flNewRow(F, rowsDef) { const r = F.rows.length, d = rowsDef && rowsDef[r]; F.rows.push({ dv: d ? d.dv.slice() : flTplDv(F.st, r), nb: d ? JSON.parse(JSON.stringify(d.nb || [])) : [], it: [] }); return F.rows[r]; }
 // reorganiza tudo, na ordem de leitura, numa estrutura nova (os espaços entre grupos se fecham)
 function flUnpile(all, maxW) { for (let i = 0; i < all.length; i++) { const o = all[i]; if (o.t === 'p' && flW(o) > maxW) { all.splice(i, 1, ...o.ids.map((id) => ({ u: flUid(), t: 'b', id, n: o.n, x: o.x }))); i += o.ids.length - 1; } } return all; }
-function flReflow(F, st, rowsDef) { const BW = flBW(), all = []; F.rows.forEach((row) => { for (let n = 0; n < flNiches(row); n++) row.it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x).forEach((o) => all.push(o)); });
+function flReflow(F, st, rowsDef) { const BW = flBW(), all = [], zs = []; F.rows.forEach((row, ri) => row.it.forEach((o) => { if (o.z) zs.push({ o, ri }); })); F.rows.forEach((row) => { for (let n = 0; n < flNiches(row); n++) row.it.filter((o) => (o.n || 0) === n && !o.z).sort((a, z) => a.x - z.x).forEach((o) => all.push(o)); });
   let minNW = 1e9; for (let r = 0; r < 4; r++) { const rw = { dv: rowsDef && rowsDef[r] ? rowsDef[r].dv : flTplDv(st, r) }; for (let n = 0; n < flNiches(rw); n++) minNW = Math.min(minNW, flNW(rw, n, BW)); } flUnpile(all, minNW);
   const nR = Math.max(3, F.rows.length); F.st = st; F.rows = []; let row = flNewRow(F, rowsDef), n = 0, cur = 0, NW = flNW(row, 0, BW);
   all.forEach((o) => { const w = flW(o); let g = 0; while (cur + w > NW && !(cur === 0 && w > NW) && g++ < 60) { if (n < flNiches(row) - 1) { n++; cur = 0; NW = flNW(row, n, BW); } else { row = flNewRow(F, rowsDef); n = 0; cur = 0; NW = flNW(row, 0, BW); } }
     o.n = n; o.x = cur; cur += w; row.it.push(o); });
-  while (F.rows.length < nR) flNewRow(F, rowsDef); }
+  while (F.rows.length < nR) flNewRow(F, rowsDef); zs.forEach(({ o, ri }) => { const row = F.rows[Math.min(ri, F.rows.length - 1)]; o.n = Math.min(o.n || 0, flNiches(row) - 1); row.it.push(o); }); }
 // nada sobra fora do nicho: o que não cabe passa para o começo do próximo
 function flNormalize(F) { const BW = flBW();
   for (let r = 0; r < F.rows.length; r++) { const row = F.rows[r]; for (let n = 0; n < flNiches(row); n++) { let g = 0;
-    while (g++ < 200) { const its = row.it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) }));
+    while (g++ < 200) { const its = row.it.filter((o) => (o.n || 0) === n && !o.z).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) }));
       if (flFit(its, flNW(row, n, BW))) { its.forEach((q) => { q.o.x = Math.round(q.x); }); break; }
       if (its.length === 1) { const o = its[0].o; if (o.t === 'p') { row.it.splice(row.it.indexOf(o), 1, ...o.ids.map((id, j) => ({ u: flUid(), t: 'b', id, n, x: j }))); continue; } o.x = 0; break; }
       const last = its[its.length - 1].o; row.it.splice(row.it.indexOf(last), 1);
       let tr = row, tn = n + 1; if (tn >= flNiches(row)) { tr = F.rows[r + 1] || flNewRow(F); tn = 0; } last.n = tn; last.x = -1; tr.it.push(last); } } } }
 // livro novo: fim do grupo mais à direita que tiver espaço, ou o primeiro vão; senão, prateleira nova
 function flAdd(F, o) { const BW = flBW(), w = flW(o);
-  for (const row of F.rows) for (let n = 0; n < flNiches(row); n++) { const NW = flNW(row, n, BW), its = row.it.filter((q) => (q.n || 0) === n).sort((a, z) => a.x - z.x);
+  for (const row of F.rows) for (let n = 0; n < flNiches(row); n++) { const NW = flNW(row, n, BW), its = row.it.filter((q) => (q.n || 0) === n && !q.z).sort((a, z) => a.x - z.x);
     let prev = 0; const gaps = []; its.forEach((q) => { gaps.push([prev, q.x]); prev = q.x + flW(q); }); gaps.push([prev, NW]);
     const g = gaps.slice(1).concat(gaps.slice(0, 1)).find(([a, z]) => z - a >= w); if (g) { o.n = n; o.x = Math.round(g[0]); row.it.push(o); return; } }
   const row = flNewRow(F); o.n = 0; o.x = 0; row.it.push(o); }
@@ -123,8 +123,8 @@ function flIntoPile(srcKey, tu, before) { const C0 = shc(), bk = shBk(), [su, sb
   // mesma pilha: troca os dois de lugar (tocar no de cima e depois no de baixo põe um no lugar do outro)
   if (su === tu && sb && before && t.o.ids.includes(sb)) { const a0 = t.o.ids.slice(), ia = a0.indexOf(sb), ib = a0.indexOf(before); if (ia >= 0 && ib >= 0) { [a0[ia], a0[ib]] = [a0[ib], a0[ia]]; ids = a0.filter((x) => x !== id); i = a0.indexOf(id); } }
   if (ids.length >= 8) { shRestore(bk); return toast('Pilha cheia (8 livros)'); }
-  ids.splice(i, 0, id); t.o.ids = ids; const row = C0.free.rows[t.r], its = row.it.filter((x) => (x.n || 0) === (t.o.n || 0)).sort((a, z) => a.x - z.x).map((x) => ({ o: x, x: x.x, w: flW(x) }));
-  if (!flFit(its, flNW(row, t.o.n || 0, flBW()))) { shRestore(bk); return toast('Assim não cabe nesta prateleira'); } its.forEach((q) => { q.o.x = Math.round(q.x); });
+  ids.splice(i, 0, id); t.o.ids = ids; const row = C0.free.rows[t.r], its = row.it.filter((x) => (x.n || 0) === (t.o.n || 0) && !x.z).sort((a, z) => a.x - z.x).map((x) => ({ o: x, x: x.x, w: flW(x) }));
+  if (!flFit(its, flNW(row, t.o.n || 0, flBW()))) { let e = 0; its.forEach((q) => { q.x = Math.max(q.x, e); e = q.x + q.w; }); its.forEach((q) => { q.o.x = Math.round(q.x); }); flNormalize(C0.free); } else its.forEach((q) => { q.o.x = Math.round(q.x); });
   C0.manual = 1; C0.arr = null; FLX.pk = null; FLX.sel = null; FLX.pos = null; shSave(); toast(su === tu && sb ? 'Pilha reordenada' : 'Livro deitado na pilha', shUndo(bk)); flRender(); }
 function flItemHTML(o, x, md) { const P = shc().pos || {}; let inner = '';
   if (o.t === 'b') { const b = shById(o.id); if (!b) return '';
@@ -135,7 +135,7 @@ function flItemHTML(o, x, md) { const P = shc().pos || {}; let inner = '';
   const sel = o.t === 'p' ? (FLX.pos === o.u || (FLX.posG && FLX.posG.includes(o.u))) : (FLX.pos === o.u || (FLX.posG && FLX.posG.includes(o.u)) || (FLX.pk && FLX.pk.u === o.u) || (FLX.sel && FLX.sel.src === 'shelf' && FLX.sel.ids.includes(o.u)));
   const num = o.t === 'b' ? flSelNum(o, o.id) : 0;
   const lab = o.t === 'd' && md ? ` role="button" tabindex="${md === 'deco' ? 0 : -1}" aria-label="${esc(SH_DN[o.k] || 'Enfeite')}${md === 'deco' ? ': toque para trocar ou tirar, ou arraste' : ''}"` : '';
-  return `<span class="fli fl-${o.t}${sel ? ' flsel' : ''}" data-u="${o.u}" style="left:${Math.round(x)}px"${lab}>${inner}${num ? `<i class="flnum">${num}</i>` : ''}</span>`; }
+  return `<span class="fli fl-${o.t}${sel ? ' flsel' : ''}${o.t === 'p' && FLX.fan === o.u ? ' flfan' : ''}" data-u="${o.u}" style="left:${Math.round(x)}px"${lab}>${inner}${num ? `<i class="flnum">${num}</i>` : ''}</span>`; }
 function flKeyW(k) { const [u, b] = String(k).split('|'); if (b) return flW({ t: 'b', id: b }); const f = flFind(u); return f ? flW(f.o) : 0; }
 function flPkW() { if (FLX.sel && FLX.sel.ids.length) { const S0 = FLX.sel; return S0.src === 'tray' ? S0.ids.reduce((a, id) => a + flW({ t: 'b', id }), 0) : S0.ids.reduce((a, k) => a + flKeyW(k), 0); } const P = FLX.pk; if (!P) return 0; if (P.pb) return flW({ t: 'b', id: P.pb }); if (P.from === 'tray') return flW({ t: 'b', id: P.id }); const f = flFind(P.u); return f ? flW(f.o) : 20; }
 function flTargets(r, n, its, NW, w) {
@@ -150,9 +150,9 @@ function flHTML(list0) { const C0 = shc(), F = FL_PV ? FL_PV.free : C0.free, md 
   const PK = (FLX.pk || (FLX.sel && FLX.sel.ids.length)) && md === 'org', pkW = PK ? flPkW() : 0;
   const rowsH = F.rows.map((row, k) => { const bnd = flBounds(row); let nich = '', dvs = '';
     for (let n = 0; n < bnd.length - 1; n++) { const li = n > 0 ? FL_INS : 0, ri = n < bnd.length - 2 ? FL_INS : 0, NW = flNW(row, n, BW), nb = (row.nb && row.nb[n]) || {};
-      const its = row.it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) })); let sc = 1; if (!flFit(its, NW)) { const tot = its.reduce((a, q) => a + q.w, 0); sc = tot > NW && NW > 0 ? Math.max(0.6, NW / tot) : 1; its.reduce((e, q) => { q.x = e; return e + q.w * sc; }, 0); }
+      const its = row.it.filter((o) => (o.n || 0) === n && !o.z).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) })); let sc = 1; if (!flFit(its, NW)) { const tot = its.reduce((a, q) => a + q.w, 0); sc = tot > NW && NW > 0 ? Math.max(0.6, NW / tot) : 1; its.reduce((e, q) => { q.x = e; return e + q.w * sc; }, 0); }
       // prateleira cheia (estante arrumada noutra largura): estreita as peças por igual em vez de transbordar
-      let h = its.map((q) => { const t = flItemHTML(q.o, q.x, md); return sc < 1 ? t.replace(/style="left:([\d.-]+)px"/, `style="left:$1px;transform:scaleX(${sc.toFixed(3)});transform-origin:0 100%"`) : t; }).join(''); if (PK) h += flTargets(k, n, its, NW, pkW);
+      let h = its.map((q) => { const t = flItemHTML(q.o, q.x, md); return sc < 1 ? t.replace(/style="left:([\d.-]+)px"/, `style="left:$1px;transform:scaleX(${sc.toFixed(3)});transform-origin:0 100%"`) : t; }).join(''); if (PK) h += flTargets(k, n, its, NW, pkW); h += row.it.filter((o) => o.z && (o.n || 0) === n).map((o) => flItemHTML(o, Math.max(0, Math.min(NW - flW(o), o.x || 0)), md).replace('class="fli ', 'class="fli flz ')).join('');
       const sel = md === 'deco' && FLX.ns === k + ':' + n;
       nich += `<div class="nich${nb.bg ? ' bg-' + esc(nb.bg) : ''}${nb.lt ? ' nlt nlt' + esc(String(nb.lt)) : ''}${sel ? ' sel' : ''}" data-r="${k}" data-n="${n}" style="left:calc(${(bnd[n] * 100).toFixed(3)}% + ${li}px);width:calc(${((bnd[n + 1] - bnd[n]) * 100).toFixed(3)}% - ${li + ri}px)">${nb.lt ? '<i class="npk" aria-hidden="true"></i>' : ''}${h}</div>`;
       if (n > 0) dvs += `<span class="ndv" data-r="${k}" data-i="${n - 1}" style="left:calc(${(bnd[n] * 100).toFixed(3)}% - ${FL_INS}px)"${md === 'deco' ? ` role="slider" tabindex="0" aria-label="Divisória da ${k + 1}ª prateleira: arraste ou use as setas" aria-valuenow="${Math.round(bnd[n] * 100)}" aria-valuemin="5" aria-valuemax="95"` : ' aria-hidden="true"'}></span>`; }
@@ -186,8 +186,8 @@ function flPosPanel() { const sr = shBibRoot(); if (!sr) return; sr.querySelecto
   el.scrollIntoView({ block: 'nearest' }); const E = el.getBoundingClientRect(), p = document.createElement('div'); p.className = 'flpos'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Como o livro fica');
   const G = FLX.posG && FLX.posG.length > 1 ? FLX.posG.length : 0;
   p.innerHTML = `<div class="fph"><b>${G ? G + ' livros juntos' : esc(b.t)}</b><button type="button" class="ok" data-flp="ok">Pronto</button></div><div class="fpc" role="radiogroup" aria-label="Posição">${[['pe', 'Em pé'], ['dei', 'Deitado'], ['fre', 'De frente'], ['inc', 'Inclinado']].map(([k, l]) => `<button type="button" role="radio" aria-checked="${cur === k}" class="${cur === k ? 'on' : ''}" data-flp="${k}">${l}</button>`).join('')}</div>${G ? '' : '<button type="button" class="fplb" data-flp="lomb">Lombada e edição ›</button>'}`;
-  R.appendChild(p); const ph = p.offsetHeight, pw = p.offsetWidth, W = innerWidth; let top = E.top - ph - 14, below = false; if (top < 64) { top = Math.min(E.bottom + 14, innerHeight - ph - 8); below = true; }
-  const left = Math.max(8, Math.min(W - pw - 8, E.left + E.width / 2 - pw / 2)); p.style.top = top + 'px'; p.style.left = left + 'px'; p.style.setProperty('--ax', Math.max(16, Math.min(pw - 16, E.left + E.width / 2 - left)) + 'px'); p.classList.toggle('below', below); }
+  R.appendChild(p); const ph = p.offsetHeight, pw = p.offsetWidth, cSide = flColSide(), W = innerWidth - (cSide === 'R' ? 60 : 0), L0 = cSide === 'L' ? 68 : 8; let top = E.top - ph - 14, below = false; if (top < 64) { top = Math.min(E.bottom + 14, innerHeight - ph - 8); below = true; }
+  const left = Math.max(L0, Math.min(W - pw - 8, E.left + E.width / 2 - pw / 2)); p.style.top = top + 'px'; p.style.left = left + 'px'; p.style.setProperty('--ax', Math.max(16, Math.min(pw - 16, E.left + E.width / 2 - left)) + 'px'); p.classList.toggle('below', below); }
 
 // ---------- ações ----------
 function flRender() { const sc = shScroller(), y = sc ? sc.scrollTop : 0; v5Redraw(); const s2 = shScroller(); if (s2 && Math.abs(s2.scrollTop - y) > 1) s2.scrollTop = y; }
@@ -196,12 +196,12 @@ function flPlace(r, n, x, mv) { const C0 = shc(), F = C0.free, BW = flBW(), row 
   const blk = mv.ids ? mv.ids.map((id) => ({ u: flUid(), t: 'b', id })) : mv.items ? mv.items : [{ u: flUid(), t: 'b', id: mv.id }];
   let offs; if (seq) { let e = 0; offs = blk.map((o) => { const v = e; e += flW(o); return v; }); } else { const base = mv.items ? Math.min(...blk.map((o) => o.x)) : 0; offs = blk.map((o) => (mv.items ? o.x - base : 0)); }
   const tw = Math.max(...blk.map((o, i) => offs[i] + flW(o)));
-  const others = row.it.filter((o) => (o.n || 0) === n && !uS.has(o.u)).map((o) => { const w = flW(o); return { u: o.u, x: Math.max(0, Math.min(o.x, NW - w)), w, o }; }), res = flResolve(others, { x, w: tw }, NW); if (!res) return null; // peça que passou da borda (estante desenhada noutra largura) volta para dentro
+  const others = row.it.filter((o) => (o.n || 0) === n && !o.z && !uS.has(o.u)).map((o) => { const w = flW(o); return { u: o.u, x: Math.max(0, Math.min(o.x, NW - w)), w, o }; }), res = flResolve(others, { x, w: tw }, NW); if (!res) return null; // peça que passou da borda (estante desenhada noutra largura) volta para dentro
   const bk = shBk(); if (mv.items) F.rows.forEach((rw) => { rw.it = rw.it.filter((o) => !uS.has(o.u)); });
   res.forEach((q) => { if (q.u === '__m') blk.forEach((o, i) => { o.x = Math.round(q.x + offs[i]); o.n = n; row.it.push(o); }); else q.o.x = Math.round(q.x); });
   const gone = mv.ids ? new Set(mv.ids) : mv.id ? new Set([mv.id]) : null;
   if (gone) { C0.tray = (C0.tray || []).filter((t) => !gone.has(t)); if (!C0.tray.length) { delete C0.tray; delete C0.trayBk; } }
-  C0.manual = 1; C0.arr = null; shSave(); return { bk, u: blk[0].u, us: blk.map((o) => o.u), n: blk.length }; }
+  if (res.over) flNormalize(F); C0.manual = 1; C0.arr = null; shSave(); return { bk, u: blk[0].u, us: blk.map((o) => o.u), n: blk.length, over: !!res.over }; }
 // vários de uma vez: se não cabem todos, põe os que couberem (na ordem) e avisa quantos ficaram
 function flPlaceMany(r, n, x, mv) { const all = mv.ids || mv.items; for (let k = all.length; k >= 1; k--) { const part = mv.ids ? { ids: all.slice(0, k) } : { items: all.slice(0, k), seq: 1 }; const res = flPlace(r, n, x, part); if (res) { res.left = all.length - k; res.part = part; return res; } } return null; }
 function flAfterPlace(res, mv, r) { try { navigator.vibrate && navigator.vibrate(10); } catch {} if (res.part) mv = res.part;
@@ -228,7 +228,7 @@ function flPosAct(k) { const f = flFind(FLX.pos); if (!f) return; const o = f.o,
   if (k === 'dei') { o.t = 'p'; o.ids = [id]; delete o.id; }
   if (k === 'inc') C0.pos[id] = 'lean';
   if (k === 'fre') { row.it.forEach((x) => { if (x !== o && x.t === 'b' && C0.pos[x.id] === 'face') { delete C0.pos[x.id]; swp = shTitle(x.id); } }); C0.pos[id] = 'face'; }
-  const its = row.it.filter((x) => (x.n || 0) === (o.n || 0)).sort((a, z) => a.x - z.x).map((x) => ({ o: x, x: x.x, w: flW(x) }));
+  const its = row.it.filter((x) => (x.n || 0) === (o.n || 0) && !x.z).sort((a, z) => a.x - z.x).map((x) => ({ o: x, x: x.x, w: flW(x) }));
   if (!flFit(its, flNW(row, o.n || 0, flBW()))) { shRestore(bk); requestAnimationFrame(flPosPanel); return toast('Assim não cabe nesta prateleira'); }
   its.forEach((q) => { q.o.x = Math.round(q.x); }); shSave();
   toast(({ pe: 'Em pé', dei: 'Deitado', fre: 'De frente', inc: 'Inclinado' })[k] + (swp ? ' · ' + swp.slice(0, 24) + ' ficou em pé' : ''), shUndo(bk)); flRender(); }
@@ -240,26 +240,31 @@ function flPosGroup(k) { const C0 = shc(), F = C0.free, bk = shBk(); C0.pos = C0
   ids.forEach((id) => { delete C0.pos[id]; if (C0.lay) delete C0.lay[id]; if (k === 'inc') C0.pos[id] = 'lean'; });
   const nw = []; if (k === 'dei') { for (let i = 0; i < ids.length; i += 5) nw.push({ u: flUid(), t: 'p', ids: ids.slice(i, i + 5), n }); } else ids.forEach((id) => nw.push({ u: flUid(), t: 'b', id, n }));
   let e = x0; nw.forEach((o) => { o.x = e; e += flW(o); row.it.push(o); });
-  const all = row.it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) }));
+  const all = row.it.filter((o) => (o.n || 0) === n && !o.z).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) }));
   if (!flFit(all, flNW(row, n, flBW()))) { shRestore(bk); requestAnimationFrame(flPosPanel); return toast('Assim não cabe nesta prateleira'); }
   all.forEach((q) => { q.o.x = Math.round(q.x); }); FLX.pos = nw[0].u; FLX.posG = nw.length > 1 ? nw.map((o) => o.u) : null; shSave();
   toast(({ pe: 'Todos em pé', dei: 'Deitados em pilha', inc: 'Todos inclinados' })[k] || 'Pronto', shUndo(bk)); flRender(); }
-function flEmpty() { const C0 = shc(), F = C0.free, bk = shBk(), ids = []; F.rows.forEach((row) => { for (let n = 0; n < flNiches(row); n++) row.it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x).forEach((o) => { if (o.t === 'b') ids.push(o.id); if (o.t === 'p') ids.push(...o.ids); }); row.it = row.it.filter((o) => o.t === 'd'); });
+function flEmpty() { const C0 = shc(), F = C0.free, bk = shBk(), ids = []; F.rows.forEach((row) => { for (let n = 0; n < flNiches(row); n++) row.it.filter((o) => (o.n || 0) === n && !o.z).sort((a, z) => a.x - z.x).forEach((o) => { if (o.t === 'b') ids.push(o.id); if (o.t === 'p') ids.push(...o.ids); }); row.it = row.it.filter((o) => o.t === 'd'); });
   C0.trayBk = bk; C0.tray = ids; SHX_TRF = 'todos'; FLX.open = false; FLX.pk = null; shSave(); toast('Estante vazia: arraste os livros um a um', { label: 'Desfazer', fn: shTrayUndo }); flRender(); }
 function flAuto() { const C0 = shc(), bk = shBk(); C0.freePend = flStructOf(C0.free); C0.ord = null; C0.lay = {}; C0.manual = 0; C0.arr = null; delete C0.free; delete C0.tray; delete C0.trayBk; shSave(); toast('A estante voltou a se arrumar sozinha', shUndo(bk)); flRender(); }
-function flCloseGaps() { const C0 = shc(), bk = shBk(); C0.free.rows.forEach((row) => { for (let n = 0; n < flNiches(row); n++) { let e = 0; row.it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x).forEach((o) => { o.x = e; e += flW(o); }); } }); shSave(); toast('Espaços fechados', shUndo(bk)); flRender(); }
+function flCloseGaps() { const C0 = shc(), bk = shBk(); C0.free.rows.forEach((row) => { for (let n = 0; n < flNiches(row); n++) { let e = 0; row.it.filter((o) => (o.n || 0) === n && !o.z).sort((a, z) => a.x - z.x).forEach((o) => { o.x = e; e += flW(o); }); } }); shSave(); toast('Espaços fechados', shUndo(bk)); flRender(); }
 { const _a = shArrange; shArrange = function (k) { const C0 = shc(); if (!C0.free || !flBase()) return _a.apply(this, arguments); const st = flStructOf(C0.free), r = _a.apply(this, arguments); delete C0.free; C0.freePend = st; shSave(); flRender(); return r; }; }
 function flTpl(k) { const C0 = shc(), bk = shBk(); flReflow(C0.free, k, null); FLX.ns = null; shSave(); toast('Estrutura: ' + (FL_TPL.find((x) => x[0] === k) || ['', ''])[1], shUndo(bk)); flRender(); }
 function flDecoAdd(k) { const C0 = shc(), F = C0.free, BW = flBW();
   if (FLX.swap) { const f = flFind(FLX.swap); FLX.swap = null; if (f) { const bk = shBk(); f.o.k = k; delete f.o.o; flNormalize(F); shSave(); toast((SH_DN[k] || k) + ' no lugar', shUndo(bk)); return flRender(); } }
   const o = { u: flUid(), t: 'd', k }, w = flW(o);
-  for (let r = 0; r < F.rows.length; r++) { const row = F.rows[r]; for (let n = flNiches(row) - 1; n >= 0; n--) { const NW = flNW(row, n, BW), its = row.it.filter((q) => (q.n || 0) === n).sort((a, z) => a.x - z.x), e = its.length ? its[its.length - 1].x + flW(its[its.length - 1]) : 0;
+  let r0 = 0; try { const sr = flR(), bays = sr ? [...sr.querySelectorAll('.bsh.flx .bay.fl')] : [], i = bays.findIndex((b) => { const q = b.getBoundingClientRect(); return q.bottom > 120 && q.top < innerHeight * 0.6; }); if (i >= 0) r0 = +bays[i].dataset.r || 0; } catch {}
+  const order = [r0, r0 + 1, r0 + 2].filter((i) => i < F.rows.length); // só nas prateleiras à vista; senão, fica na frente dos livros
+  for (const r of order) { const row = F.rows[r]; for (let n = flNiches(row) - 1; n >= 0; n--) { const NW = flNW(row, n, BW), its = row.it.filter((q) => (q.n || 0) === n && !q.z).sort((a, z) => a.x - z.x), e = its.length ? its[its.length - 1].x + flW(its[its.length - 1]) : 0;
     if (NW - e >= w) { const bk = shBk(); o.n = n; o.x = NW - w; row.it.push(o); shSave(); toast((SH_DN[k] || k) + ' na ' + (r + 1) + 'ª prateleira · arraste para mudar de lugar', shUndo(bk)); return flRender(); } } }
-  toast('Sem espaço livre: tire um livro ou um enfeite antes'); }
+  // sem vão livre: o enfeite fica na frente dos livros, na prateleira que está à vista
+  const rv = r0;
+  const row = F.rows[rv] || F.rows[0], NW = flNW(row, 0, BW), bk = shBk(); o.z = 1; o.n = 0; o.x = Math.max(0, Math.round(NW * 0.5 - w / 2)); row.it.push(o); shSave(); toast((SH_DN[k] || k) + ' na frente dos livros · arraste para mudar de lugar', shUndo(bk)); flRender(); }
 function flDecoSheet(u) { const f = flFind(u); if (!f) return; const o = f.o, C0 = shc();
-  const items = []; if (o.k === 'leitor') { const cur = shLeitorBook({ k: o.k, ...(o.o || {}) }); items.push(['Escolher livro do visor', () => shPickBook('Escolher livro do visor', cur && cur.id, (id) => { o.o = { ...(o.o || {}), bk: id }; shSave(); flRender(); toast('“' + shTitle(id).slice(0, 40) + '” no visor'); })]);
+  const items = []; if (o.k === 'leitor') { const cur = shLeitorBook({ k: o.k, ...(o.o || {}) }); items.push(['Trocar livro do visor', () => shPickBook('Escolher livro do visor', cur && cur.id, (id) => { o.o = { ...(o.o || {}), bk: id }; shSave(); flRender(); toast('“' + shTitle(id).slice(0, 40) + '” no visor'); })]);
     items.push([o.o && o.o.gr ? 'Capa colorida no visor' : 'Visor em tons de cinza', () => { o.o = { ...(o.o || {}), gr: o.o && o.o.gr ? 0 : 1 }; shSave(); flRender(); }]);
     items.push(['Cor da capinha', () => shX('Cor da capinha', Object.entries(SH_ERD).map(([k, v]) => [(((o.o && o.o.cap) || 'verde') === k ? '✓ ' : '') + v[0], () => { o.o = { ...(o.o || {}), cap: k }; shSave(); flRender(); toast('Capinha ' + v[0].toLowerCase()); }]))]); }
+  items.push([o.z ? 'Levar para trás (entre os livros)' : 'Trazer para frente dos livros', () => { const bk = shBk(); if (o.z) { delete o.z; const row = C0.free.rows[f.r]; row.it = row.it.filter((x) => x.u !== u); const res = flPlace(f.r, o.n || 0, o.x || 0, { items: [o] }); if (!res) { shRestore(bk); return; } toast('Enfeite entre os livros', shUndo(bk)); } else { o.z = 1; C0.manual = 1; shSave(); toast('Enfeite na frente dos livros', shUndo(bk)); } flRender(); }]);
   items.push(['Trocar por outro enfeite', () => { FLX.swap = u; SHX_DKT = 'enf'; flRender(); toast('Escolha o novo enfeite'); }]);
   items.push(['Tirar da estante', () => { const bk = shBk(); C0.free.rows[f.r].it = C0.free.rows[f.r].it.filter((x) => x.u !== u); shSave(); toast('Enfeite tirado', shUndo(bk)); flRender(); }]);
   shX(SH_DN[o.k] || 'Enfeite', items); }
@@ -342,7 +347,7 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
     else if (D.seqU) { D.items = D.seqU.map((k) => flFind(String(k).split('|')[0])).filter(Boolean).map((f) => f.o); if (!D.items.length) { D.on = false; return; } let e = 0, h = 0, L0 = null;
       D.items.forEach((o) => { const el = sh.querySelector(`.fli[data-u="${o.u}"]`); if (!el) return; const R = el.getBoundingClientRect(); if (o.u === D.u) L0 = R; h = Math.max(h, R.height); const c = el.cloneNode(true); c.removeAttribute('data-u'); c.classList.remove('flsel', 'flgrp'); c.style.left = e + 'px'; c.style.top = 'auto'; c.style.bottom = '0'; c.style.transition = 'none'; gin.appendChild(c); el.style.visibility = 'hidden'; e += flW(o); });
       if (D.items.length > 1) gin.insertAdjacentHTML('beforeend', `<i class="flcnt">${D.items.length}</i>`); D.w = e; D.h = h; gin.style.width = e + 'px'; gin.style.height = h + 'px'; D.offX = L0 ? Math.min(e, D.x - L0.left) : e / 2; D.offY = L0 ? D.y - (L0.bottom - h) : h * 0.55; D.seq = 1; }
-    else { const f = flFind(D.u); if (!f) { D.on = false; return; } if (!D.grp && f.o.t === 'd' && /^aparador/.test(f.o.k)) { D.grp = true; D.gitems = flGroupOf(f.r, D.u); }
+    else { const f = flFind(D.u); if (!f) { D.on = false; return; } 
       D.items = D.grp ? D.gitems : [f.o]; const els = D.items.map((o) => sh.querySelector(`.fli[data-u="${o.u}"]`)).filter(Boolean), rs = els.map((e) => e.getBoundingClientRect()); if (!els.length) { D.on = false; return; }
       const L = Math.min(...rs.map((r) => r.left)), T = Math.min(...rs.map((r) => r.top)), B = Math.max(...rs.map((r) => r.bottom)); D.w = Math.max(...D.items.map((o) => o.x + flW(o))) - Math.min(...D.items.map((o) => o.x)); D.offX = D.x - L; D.offY = D.y - T; D.h = B - T;
       els.forEach((e, i) => { const c = e.cloneNode(true); c.removeAttribute('data-u'); c.classList.remove('flsel', 'flgrp'); c.style.left = (rs[i].left - L) + 'px'; c.style.top = (rs[i].top - T) + 'px'; c.style.bottom = 'auto'; c.style.transition = 'none'; gin.appendChild(c); e.style.visibility = 'hidden'; }); gin.style.height = D.h + 'px'; gin.style.width = D.w + 'px'; }
@@ -353,6 +358,8 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
     if (!D.armed && BR && y > Math.max(SR.top + 70, BR.top) && y < Math.min(SR.bottom - 70, BR.bottom)) D.armed = true; D.vy = !D.armed ? 0 : y < SR.top + 70 ? -Math.ceil((SR.top + 70 - y) / 5) : y > SR.bottom - 90 ? Math.ceil((y - SR.bottom + 90) / 5) : 0;
     if (D.pb || (D.items && D.items.length === 1 && D.items[0].t === 'b' && !D.seq)) { const sr0 = flR(), el = sr0 && sr0.elementFromPoint(x, y), pl = el && el.closest && el.closest('.bsh.flx .fli.fl-p'), pbu = el && el.closest && el.closest('.pb[data-bid]');
       sr0 && sr0.querySelectorAll('.flpbto').forEach((e) => e.classList.remove('flpbto')); if (pl && pbu) { D.pile = { u: pl.dataset.u, before: pbu.dataset.bid }; pbu.classList.add('flpbto'); if (D.nn) { resetNiche(D.nn); D.nn = null; } D.tgt = null; tip(pl.dataset.u === D.u ? 'Solte para mudar a ordem da pilha' : 'Solte para deitar na pilha', x, y - D.offY - 14); return; } D.pile = null; }
+    D.front = null; if (D.items && D.items.length === 1 && D.items[0].t === 'd' && !D.seq) { const nf0 = nicheAt(x, y), bk1 = nf0 && [...nf0.querySelectorAll('.fli')].find((e) => { if (e.style.visibility === 'hidden') return false; const q = e.getBoundingClientRect(); return x >= q.left && x <= q.right && y >= q.top - 6 && y <= q.bottom; });
+      if (bk1 && bk1.dataset.u !== D.items[0].u) { const nf = bk1.closest('.nich'); if (nf) { if (D.nn) { resetNiche(D.nn); D.nn = null; } const NR = nf.getBoundingClientRect(); D.front = { r: +nf.dataset.r, n: +nf.dataset.n, x: Math.max(0, Math.min(nf.clientWidth - D.w, x - NR.left - D.offX)) }; D.tgt = null; tip('Solte: fica na frente dos livros', x, y - D.offY - 14); return; } } }
     const nn = nicheAt(x, y); if (D.nn && D.nn !== nn) { resetNiche(D.nn); D.nn = null; }
     if (!nn) { D.tgt = null; D.bad = false; tip(D.src === 'tray' ? 'Solte numa prateleira' : 'Solte numa prateleira (fora daqui cancela)', x, y - D.offY - 14); return; }
     D.nn = nn; const r = +nn.dataset.r, n = +nn.dataset.n, NW = nn.clientWidth, R = nn.getBoundingClientRect(), mv = new Set((D.items || []).map((o) => o.u));
@@ -366,7 +373,7 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
   function loop() { const D = FLX.D; if (!D || !D.on) return; const sc = shScroller(); if (sc && D.vy) { sc.scrollTop += D.vy; move(D, D.lx, D.ly); } raf = requestAnimationFrame(loop); }
   // divisória (Decorar)
   function dvMove(D, x) { const C0 = shc(), row = C0.free.rows[D.r], b = flBounds(row), BW = D.BW, i = D.i, lo = b[i], hi = b[i + 2];
-    const need = (n) => row.it.filter((o) => (o.n || 0) === n).reduce((s, o) => s + flW(o), 0) + 2 * FL_INS + 6, minW = 48;
+    const need = (n) => row.it.filter((o) => (o.n || 0) === n && !o.z).reduce((s, o) => s + flW(o), 0) + 2 * FL_INS + 6, minW = 48;
     const f = Math.max(lo + Math.max(need(i), minW) / BW, Math.min(hi - Math.max(need(i + 1), minW) / BW, (x - D.L) / BW)); D.f = f;
     const dv = row.dv.slice(); dv[i] = f; const nb = [0, ...dv, 1], bay = flQ(`.bsh.flx .bay.fl[data-r="${D.r}"]`); if (!bay) return;
     [i, i + 1].forEach((n) => { const e = bay.querySelector(`.nich[data-n="${n}"]`), li = n > 0 ? FL_INS : 0, ri = n < nb.length - 2 ? FL_INS : 0; if (e) { e.style.left = `calc(${(nb[n] * 100).toFixed(3)}% + ${li}px)`; e.style.width = `calc(${((nb[n + 1] - nb[n]) * 100).toFixed(3)}% - ${li + ri}px)`; } });
@@ -375,7 +382,7 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
   window.flCancelDrag = function () { const D = FLX.D; if (!D) return false; FLX.D = null; clearTimeout(D.holdT); cancelAnimationFrame(raf); try { D.g && D.g.remove(); } catch {} tip('', 0, 0); const R = R5(); if (R) R.classList.remove('fldrag'); if (D.nn) resetNiche(D.nn); flQA('.bsh.flx .fli').forEach((e) => { e.style.visibility = ''; }); return true; };
   window.addEventListener('pointerdown', (ev) => { if (!flActive() || ev.button > 0) return; const md = SHX_MODE; if (md !== 'org' && md !== 'deco') return; const T = flTgt(ev); if (!T || !T.closest) return;
     const dv = md === 'deco' && T.closest('.bsh.flx .ndv'); if (dv) { ev.stopImmediatePropagation(); if (ev.cancelable) ev.preventDefault(); flPx(shc().free); const br = dv.closest('.brow').getBoundingClientRect(); if (FLX.dkx) { FLX.dkx = false; const p = flQ('.dkpan.flbig'); if (p) p.classList.remove('flbig'); } FLX.D = { kind: 'dv', pid: ev.pointerId, r: +dv.dataset.r, i: +dv.dataset.i, L: br.left, BW: br.width, f: null }; dv.classList.add('on'); return; }
-    const tr = md === 'org' && T.closest('.fldock [data-fltr]'), fli = T.closest('.bsh.flx .fli'); if (!tr && !fli) return; if (fli && md === 'deco' && !fli.classList.contains('fl-d')) return; if (fli && md === 'org' && FLX.pk && FLX.pk.u !== fli.dataset.u) return;
+    const tr = md === 'org' && T.closest('.fldock [data-fltr]'), fli = flHitFli(T, ev.clientX, ev.clientY); if (!tr && !fli) return; if (fli && md === 'deco' && !fli.classList.contains('fl-d')) return; if (fli && md === 'org' && FLX.pk && FLX.pk.u !== fli.dataset.u) return;
     flPx(shc().free);
     if (fli) { ev.stopImmediatePropagation(); if (ev.cancelable && ev.pointerType !== 'mouse') ev.preventDefault(); }
     const pbE = fli && fli.classList.contains('fl-p') && md === 'org' ? T.closest('.pb[data-bid]') : null;
@@ -383,18 +390,19 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
     const SL = FLX.sel; if (tr && SL && SL.src === 'tray' && SL.ids.includes(D.id)) D.ids = SL.ids.slice(); if (fli && SL && SL.src === 'shelf' && (SL.ids.includes(D.u) || (D.pb && SL.ids.includes(flKeyOf(D.u, D.pb))))) D.seqU = SL.ids.slice();
     // bandeja: segurar entra na seleção de vários
     if (tr && !SL) D.holdT = setTimeout(() => { if (FLX.D !== D || D.on) return; FLX.D = null; FLX.pk = null; FLX.sel = { src: 'tray', ids: [D.id] }; FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 700); try { navigator.vibrate && navigator.vibrate(16); } catch {} flRender(); }, 480);
-    if (fli && !D.seqU) D.holdT = setTimeout(() => { if (FLX.D !== D || D.on) return; const f = flFind(D.u); if (!f) return; const g = D.pb ? [f.o] : flGroupOf(f.r, D.u); if (g.length < 2 && !D.pb) return; D.pb = null; D.grp = true; D.gitems = g; FLX.swallow = 1;
-      g.forEach((o) => { const e = flQ(`.bsh.flx .fli[data-u="${o.u}"]`); if (e) e.classList.add('flgrp'); }); try { navigator.vibrate && navigator.vibrate(16); } catch {} tip('Grupo de ' + g.length + ': arraste', ev.clientX, ev.clientY - 40); }, 480); }, true);
+ }, true);
   window.addEventListener('pointermove', (ev) => { const D = FLX.D; if (!D || ev.pointerId !== D.pid) return;
     if (D.kind === 'dv') { ev.preventDefault(); return dvMove(D, ev.clientX); }
     const dx = ev.clientX - D.x, dy = ev.clientY - D.y;
-    if (!D.on) { if (Math.hypot(dx, dy) < 8) return; if (D.src === 'tray' && Math.abs(dx) > Math.abs(dy)) { FLX.D = null; return; } start(D); if (!D.on) { FLX.D = null; return; } }
+    if (!D.on) { if (Math.hypot(dx, dy) < 6) return; if (D.src === 'tray' && Math.abs(dx) > Math.abs(dy)) { FLX.D = null; return; } start(D); if (!D.on) { FLX.D = null; return; } }
     ev.preventDefault(); move(D, ev.clientX, ev.clientY); }, { capture: true, passive: false });
   const end = (ev) => { const D = FLX.D; if (!D || ev.pointerId !== D.pid) return; FLX.D = null; clearTimeout(D.holdT); tip('', 0, 0);
     if (D.kind === 'dv') { const d = flQ('.bsh.flx .ndv.on'); if (d) d.classList.remove('on'); FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); if (D.f != null && ev.type === 'pointerup') dvCommit(D.r, D.i, D.f); else flRender(); return; }
     if (!D.on) { if (D.grp) { setTimeout(() => { FLX.swallow = 0; }, 400); flQA('.flgrp').forEach((e) => e.classList.remove('flgrp')); } return; }
     cancelAnimationFrame(raf); if (D.g) D.g.remove(); const R = R5(); if (R) R.classList.remove('fldrag'); FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); SHX_JD = 1; setTimeout(() => { SHX_JD = 0; }, 350);
     if (D.pile && ev.type === 'pointerup') { const pi = D.pile; flQA('.flpbto').forEach((e) => e.classList.remove('flpbto')); return flIntoPile(D.pb ? flKeyOf(D.u, D.pb) : D.u, pi.u, pi.before); }
+    if (D.front && ev.type === 'pointerup') { const fr = D.front, o = D.items[0], C0 = shc(), bk = shBk(), f0 = flFind(o.u); if (f0) { C0.free.rows[f0.r].it = C0.free.rows[f0.r].it.filter((q) => q.u !== o.u); o.z = 1; o.n = fr.n; o.x = Math.round(fr.x); C0.free.rows[fr.r].it.push(o); C0.manual = 1; shSave(); try { navigator.vibrate && navigator.vibrate(10); } catch {} toast('Enfeite na frente dos livros', shUndo(bk)); } return flRender(); }
+    if (D.items) D.items.forEach((o) => { delete o.z; });
     if (!D.tgt || ev.type === 'pointercancel') { if (D.nn) resetNiche(D.nn); flRender(); if (ev.type === 'pointercancel') return; return toast(D.bad ? 'Não coube aí' + (D.src === 'tray' ? ': o livro voltou para a bandeja' : '; nada mudou') : D.src === 'tray' ? 'O livro voltou para a bandeja' : 'Nada mudou de lugar'); }
     let bk0 = null; if (D.pb && !D.grp) { bk0 = shBk(); const it = flExtract(flKeyOf(D.u, D.pb)); D.items = it ? [it] : []; } else if (D.seq && D.seqU.some((k) => String(k).includes('|'))) { bk0 = shBk(); D.items = D.seqU.map(flExtract).filter(Boolean); }
     const many = !!(D.ids || D.seq), mv = D.src === 'tray' ? (D.ids ? { ids: D.ids } : { id: D.id }) : D.seq ? { items: D.items, seq: 1 } : { items: D.items }, res = D.items && !D.items.length && D.src !== 'tray' ? null : many ? flPlaceMany(D.tgt.r, D.tgt.n, D.tgt.x, mv) : flPlace(D.tgt.r, D.tgt.n, D.tgt.x, mv); if (!res) { if (bk0) shRestore(bk0); flRender(); return toast('Não cabe aqui'); } if (bk0) res.bk = bk0;
@@ -403,19 +411,23 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
   window.addEventListener('pointerup', end, true); window.addEventListener('pointercancel', end, true);
   window.addEventListener('contextmenu', (ev) => { if (!flActive() || !SHX_MODE) return; const T = flTgt(ev); if (T && T.closest && T.closest('.bsh.flx, .fldock')) ev.preventDefault(); }, true);
   window.addEventListener('keydown', (ev) => { if (!flActive()) return;
-    if (ev.key === 'Escape' && (FLX.pk || FLX.pos || FLX.sel)) { FLX.pk = null; FLX.pos = null; FLX.posG = null; FLX.sel = null; ev.stopImmediatePropagation(); return flRender(); }
+    if (ev.key === 'Escape' && (FLX.pk || FLX.pos || FLX.sel || FLX.fan)) { FLX.pk = null; FLX.pos = null; FLX.posG = null; FLX.sel = null; FLX.fan = null; ev.stopImmediatePropagation(); return flRender(); }
     const T = flTgt(ev), dv = T && T.closest && T.closest('.bsh.flx.deco .ndv'); if (dv && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) { ev.preventDefault(); ev.stopImmediatePropagation(); flPx(shc().free); const r = +dv.dataset.r, i = +dv.dataset.i, br = dv.closest('.brow').getBoundingClientRect(), row = shc().free.rows[r], D = { r, i, L: br.left, BW: br.width };
       dvMove(D, br.left + (row.dv[i] + (ev.key === 'ArrowLeft' ? -0.03 : 0.03)) * br.width); dvCommit(r, i, D.f); setTimeout(() => { const e = flQ(`.bsh.flx .ndv[data-r="${r}"][data-i="${i}"]`); if (e) e.focus(); }, 30); } }, true);
 }
 
 // ---------- toques ----------
 // o nicho tocado: o próprio, ou (luzinhas e sombras por cima) o nicho da prateleira na altura do dedo
+// toque por proximidade: livro fino, colado na moldura ou no meio de outros responde pelo centro mais próximo (área mínima de 28 px)
+function flHitFli(T, x, y) { if (!T || !T.closest) return null; const dk = SHX_MODE === 'deco', own0 = T.closest('.bsh.flx .fli'), own = own0 && (!dk || own0.classList.contains('fl-d')) ? own0 : null; if (own && own.getBoundingClientRect().width >= 28 && !own.classList.contains('fl-p')) return own; if (own && own.classList.contains('fl-p')) return own;
+  const bay = T.closest('.bsh.flx .bay.fl') || (own && own.closest('.bay.fl')); if (!bay) return own; let best = null, bd = 1e9; bay.querySelectorAll(dk ? '.fli.fl-d' : '.fli').forEach((e) => { const R = e.getBoundingClientRect(); if (y < R.top - 14 || y > R.bottom + 10) return; const cx = R.left + R.width / 2, half = Math.max(R.width / 2, 14), d = Math.abs(x - cx); if (d <= half + 2 && d < bd) { bd = d; best = e; } }); return best || own; }
 function flNicheAt(T, x) { const n = T.closest('.bsh.flx .nich'); if (n) return n; const bay = T.closest('.bsh.flx .bay.fl'); if (!bay) return null; return [...bay.querySelectorAll('.nich')].find((e) => { const R = e.getBoundingClientRect(); return x >= R.left - 2 && x <= R.right + 2; }) || null; }
 window.addEventListener('click', (ev) => { if (!flActive()) return; const md = SHX_MODE, T = flTgt(ev); if (!T || !T.closest) return; if (!T.closest('.v5est') || T.closest('.shx-sx,.shbp,.flarr')) return;
   const st = () => { ev.stopImmediatePropagation(); ev.preventDefault(); };
   if (FLX.swallow) { FLX.swallow = 0; if (T.closest('.bsh.flx, .fldock, .flpos, .flcol')) return st(); }
   const pp = T.closest('.flpos'); if (pp) { st(); const b = T.closest('[data-flp]'); if (b) flPosAct(b.dataset.flp); return; }
-  if (FLX.pos) { FLX.pos = null; flQA('.flpos').forEach((e) => e.remove()); if (!T.closest('.bsh.flx .fli, .fldock [data-fltr]')) { st(); return flRender(); } }
+  if (FLX.pos) { FLX.pos = null; flQA('.flpos').forEach((e) => e.remove()); if (!T.closest('.bsh.flx .fli, .fldock [data-fltr], .flcol, .bsh.flx .nich')) { st(); return flRender(); } }
+  if (FLX.fan && !T.closest('.bsh.flx .fli[data-u="' + FLX.fan + '"]')) { FLX.fan = null; if (!T.closest('.bsh.flx .fli, [data-fl], .fldock, .flcol, .flt')) { st(); return flRender(); } }
   const a = T.closest('[data-fl]'); if (a) { st(); return flAct(a.dataset.fl, a); }
   if (md === 'org') {
     if (T.closest('[data-a="shdone"]')) { FLX.pk = null; FLX.pos = null; FLX.open = false; return; }
@@ -424,11 +436,12 @@ window.addEventListener('click', (ev) => { if (!flActive()) return; const md = S
       if (FLX.sel || multi) { if (!FLX.sel || FLX.sel.src !== 'tray') FLX.sel = { src: 'tray', ids: FLX.pk && FLX.pk.from === 'tray' && FLX.pk.id !== id ? [FLX.pk.id] : [] }; FLX.pk = null; const L = FLX.sel.ids, i = L.indexOf(id); if (i >= 0) L.splice(i, 1); else L.push(id); try { navigator.vibrate && navigator.vibrate(6); } catch {} return flRender(); }
       FLX.pk = FLX.pk && FLX.pk.id === id ? null : { from: 'tray', id }; try { navigator.vibrate && navigator.vibrate(8); } catch {} return flRender(); }
     const t = T.closest('.flt[data-flt]'); if (t && (FLX.pk || (FLX.sel && FLX.sel.ids.length))) { st(); const [r, n, x] = t.dataset.flt.split(':').map(Number); return flTapPlace(r, n, x); }
-    const fli = T.closest('.bsh.flx .fli'); if (fli) { st(); const u = fli.dataset.u, f = flFind(u); if (!f) return; const pbE = f.o.t === 'p' ? T.closest('.pb[data-bid]') : null, pb = pbE ? pbE.dataset.bid : null;
+    const fli = flHitFli(T, ev.clientX, ev.clientY); if (fli) { st(); const u = fli.dataset.u, f = flFind(u); if (!f) return; const pbE = f.o.t === 'p' ? T.closest('.pb[data-bid]') : null, pb = pbE ? pbE.dataset.bid : null;
       if (FLX.sel && FLX.sel.src === 'tray' && FLX.sel.ids.length) return flTapPlace(f.r, f.o.n || 0, f.o.x - flPkW());
       if (FLX.pk && pb && !(FLX.pk.u === u && FLX.pk.pb === pb) && FLX.pk.from === 'shelf' && (FLX.pk.pb || (flFind(FLX.pk.u) || {}).o?.t === 'b')) return flIntoPile(flKeyOf(FLX.pk.u, FLX.pk.pb), u, pb);
       if ((FLX.sel || multi) && pb) { if (!FLX.sel || FLX.sel.src !== 'shelf') FLX.sel = { src: 'shelf', ids: [] }; FLX.pk = null; const k = flKeyOf(u, pb), L = FLX.sel.ids, i = L.indexOf(k), iw = L.indexOf(u); if (iw >= 0) { L.splice(iw, 1); f.o.ids.forEach((x) => { if (x !== pb) L.push(flKeyOf(u, x)); }); } else if (i >= 0) L.splice(i, 1); else L.push(k); try { navigator.vibrate && navigator.vibrate(6); } catch {} return flRender(); }
-      if (pb && !FLX.pk) { FLX.pk = { from: 'shelf', u, id: pb, pb }; try { if (!localStorage.getItem('lv.flpiletip')) { localStorage.setItem('lv.flpiletip', '1'); toast('Toque num livro para mover só ele · segure para levar a pilha'); } } catch {} try { navigator.vibrate && navigator.vibrate(8); } catch {} return flRender(); }
+      if (f.o.t === 'p' && f.o.ids.length > 1 && !FLX.pk && !FLX.sel && FLX.fan !== u) { FLX.fan = u; try { navigator.vibrate && navigator.vibrate(6); } catch {} try { if (!localStorage.getItem('lv.flfantip')) { localStorage.setItem('lv.flfantip', '1'); toast('Toque no livro que quer mover'); } } catch {} return flRender(); }
+      if (pb && !FLX.pk) { FLX.fan = null; FLX.pk = { from: 'shelf', u, id: pb, pb }; try { navigator.vibrate && navigator.vibrate(8); } catch {} return flRender(); }
       if (FLX.pk && FLX.pk.u === u && FLX.pk.pb && pb === FLX.pk.pb) { FLX.pk = null; return flRender(); }
       if ((FLX.sel || multi) && f.o.t !== 'd') { if (!FLX.sel || FLX.sel.src !== 'shelf') FLX.sel = { src: 'shelf', ids: FLX.pk && FLX.pk.u && FLX.pk.u !== u ? [FLX.pk.u] : [] }; FLX.pk = null; const L = FLX.sel.ids, i = L.indexOf(u); if (i >= 0) L.splice(i, 1); else L.push(u); try { navigator.vibrate && navigator.vibrate(6); } catch {} return flRender(); }
       if (FLX.pk && FLX.pk.u === u) { FLX.pk = null; return flRender(); }
@@ -452,7 +465,7 @@ window.addEventListener('click', (ev) => { if (!flActive()) return; const md = S
     try { r = _sd.apply(this, arguments);
       if (!FL_BUSY && flWanted() && !shc().free && flQ('.bsh:not(.sm) .bay')) { FL_BUSY = 1; try { const C0 = shc(); if (!C0.deco) { shDecoInit(); drawEstante(box); } if (flFreeze()) { shSave(); drawEstante(box); } } finally { FL_BUSY = 0; } }
       const R = flQ('.v5est'); if (R) { R.classList.toggle('flmode', flActive() && !!SHX_MODE); flColMount(R); if (FL_ARRW && !R.contains(FL_ARRW)) { if (flActive() && SHX_MODE === 'org') R.append(FL_ARRW); else FL_ARRW = null; }
-        if (FLX.hintFor !== SHX_MODE) { FLX.hintFor = SHX_MODE; if (SHX_MODE === 'org' && flActive()) setTimeout(() => { try { toast('Arraste um livro · segure para levar o grupo'); } catch {} }, 350); }
+        if (FLX.hintFor !== SHX_MODE) { FLX.hintFor = SHX_MODE; if (SHX_MODE === 'org' && flActive()) setTimeout(() => { try { toast('Arraste um livro ou enfeite para onde quiser'); } catch {} }, 350); }
         if (flActive() && SHX_MODE === 'org') { const sp = [...R.querySelectorAll('div[aria-hidden="true"]')].find((d) => /48vh/.test(d.getAttribute('style') || '')); if (sp) sp.style.height = (FLX.open ? 46 : 22) + 'vh'; }
         if (flActive() && SHX_MODE === 'deco') { const sp = [...R.querySelectorAll('div[aria-hidden="true"]')].find((d) => /44vh/.test(d.getAttribute('style') || '')); if (sp) sp.style.height = (FLX.dkx ? 70 : 36) + 'vh'; } }
       if (FLX.pos) requestAnimationFrame(flPosPanel);
@@ -479,8 +492,8 @@ shX = function (title, items) { const sr = shBibRoot(), R = sr && sr.querySelect
 
 // ---------- cor da capa: a cor que mais aparece (sem bordas e sem o texto), por família de matiz ----------
 const FL_FAM = ['vermelho', 'laranja', 'amarelo', 'verde', 'azul', 'roxo', 'rosa', 'marrom', 'branco', 'cinza', 'preto'];
-const FLCC = (() => { try { return JSON.parse(localStorage.getItem('lv.cvcol') || '{}') || {}; } catch { return {}; } })(), FLCQ = {}; let FLCC_T = 0, FLCC_W = [];
-const flCcSave = () => { clearTimeout(FLCC_T); FLCC_T = setTimeout(() => { try { const ks = Object.keys(FLCC); if (ks.length > 1500) ks.slice(0, ks.length - 1500).forEach((k) => delete FLCC[k]); localStorage.setItem('lv.cvcol', JSON.stringify(FLCC)); } catch {} }, 1200); };
+const FLCC = (() => { try { return JSON.parse(localStorage.getItem('lv.cvcol2') || '{}') || {}; } catch { return {}; } })(), FLCQ = {}; let FLCC_T = 0, FLCC_W = [];
+const flCcSave = () => { clearTimeout(FLCC_T); FLCC_T = setTimeout(() => { try { const ks = Object.keys(FLCC); if (ks.length > 1500) ks.slice(0, ks.length - 1500).forEach((k) => delete FLCC[k]); localStorage.setItem('lv.cvcol2', JSON.stringify(FLCC)); } catch {} }, 1200); };
 function flHex2rgb(c) { const m = String(c || '').match(/^#?([0-9a-f]{6})$/i); if (m) { const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; } const r = String(c || '').match(/rgb\((\d+),\s*(\d+),\s*(\d+)/); return r ? [+r[1], +r[2], +r[3]] : null; }
 function flHslOf(rgb) { const [r, g, b] = rgb.map((v) => v / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn; let h = 0, s = 0; if (d) { s = d / (1 - Math.abs(2 * l - 1)); h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; if (h < 0) h += 360; } return [h, s, l]; }
 function flFamOf(rgb) { const [h, s, l] = flHslOf(rgb);
@@ -490,12 +503,7 @@ function flFamOf(rgb) { const [h, s, l] = flHslOf(rgb);
 function flSampleCover(u, key) { const im = new Image(); if (!/^data:/.test(u)) im.crossOrigin = 'anonymous';
   const done = (v) => { FLCC[key] = v; flCcSave(); const W = FLCC_W; FLCC_W = []; W.forEach((f) => { try { f(); } catch {} }); };
   im.onerror = () => done(0);
-  im.onload = () => { try { const cn = document.createElement('canvas'), W = 24, H = 36; cn.width = W; cn.height = H; const x = cn.getContext('2d'); x.drawImage(im, 0, 0, W, H);
-    const d = x.getImageData(0, 0, W, H).data, bins = new Map(); // ignora 12% das bordas; agrupa em 8 tons por canal; o texto (pouca área) perde para o fundo
-    for (let yy = Math.round(H * 0.12); yy < H - Math.round(H * 0.12); yy++) for (let xx = Math.round(W * 0.12); xx < W - Math.round(W * 0.12); xx++) { const i = (yy * W + xx) * 4, r = d[i], g = d[i + 1], b = d[i + 2], k = (r >> 5) * 64 + (g >> 5) * 8 + (b >> 5);
-      const o = bins.get(k) || { n: 0, r: 0, g: 0, b: 0 }; o.n++; o.r += r; o.g += g; o.b += b; bins.set(k, o); }
-    let best = null; bins.forEach((o) => { if (!best || o.n > best.n) best = o; }); if (!best) return done(0);
-    done([Math.round(best.r / best.n), Math.round(best.g / best.n), Math.round(best.b / best.n)]); } catch (e) { done(0); } }; // canvas bloqueado (CORS): 0
+  im.onload = () => { try { const v = shDomRgb(im); done(v || 0); } catch (e) { done(0); } }; // canvas bloqueado (CORS): 0
   im.src = coverCanvasUrl(u); }
 // cor de um livro: capa (amostrada) > lombada já calculada > capa gerada (sem imagem); null = sem cor (vai para o fim)
 function flBookRgb(b, ask) { if (!b) return null; if (!b.img) { try { return flHex2rgb(colorOf(b.t || '')); } catch { return null; } }
@@ -571,7 +579,7 @@ function flArrBuild(k, withPq) { const C0 = shc(), F0 = C0.free; flPx(F0); const
     if (lastP[g.at.r] != null && cx - wq / 2 < lastP[g.at.r] + 6) return; lastP[g.at.r] = cx + wq / 2; auto.push({ t: String(g.l).slice(0, 24), s: sty, r: g.at.r, p: Math.max(0.05, Math.min(0.95, cx / BW)), a: 1 }); });
   while (F.rows.length < 3) flNewRow(F);
   // enfeites: voltam para a prateleira em que estavam, no último espaço livre dela (se não couber, vão para outra)
-  decos.forEach(({ r: rr, o }) => { const rw = F.rows[rr]; let ok = false; if (rw) for (let nn = flNiches(rw) - 1; nn >= 0 && !ok; nn--) { const NW = flNW(rw, nn, BW), its = rw.it.filter((q) => (q.n || 0) === nn).sort((a, z) => a.x - z.x), e = its.length ? its[its.length - 1].x + flW(its[its.length - 1]) : 0, w = flW(o); if (NW - e >= w) { o.n = nn; o.x = NW - w; rw.it.push(o); ok = true; } } if (!ok) flAdd(F, o); });
+  decos.forEach(({ r: rr, o }) => { const rw = F.rows[rr]; let ok = false; if (rw) for (let nn = flNiches(rw) - 1; nn >= 0 && !ok; nn--) { const NW = flNW(rw, nn, BW), its = rw.it.filter((q) => (q.n || 0) === nn && !q.z).sort((a, z) => a.x - z.x), e = its.length ? its[its.length - 1].x + flW(its[its.length - 1]) : 0, w = flW(o); if (NW - e >= w) { o.n = nn; o.x = NW - w; rw.it.push(o); ok = true; } } if (!ok) flAdd(F, o); });
   return { free: F, plq: (C0.plq || []).filter((q) => !q.a).concat(auto).slice(0, 24), ord: S.map((b) => b.id), auto: auto.length, sem: k === 'cor' ? S.filter((b) => flColKey(b)[0] === 99).length : 0 }; }
 // FLIP: os livros visíveis deslizam do lugar antigo ao novo (~300 ms); sem animação com movimento reduzido
 function flFlipRender(fn) { const sr = shBibRoot(), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, old = new Map();
@@ -660,7 +668,7 @@ const SHX_CSSFL = `
 .v4ler .flpill{position:fixed;left:12px;right:12px;bottom:calc(var(--shx-tab,0px) + 12px + env(safe-area-inset-bottom,0px));z-index:9400;max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 10px;border-radius:16px;background:var(--ink);color:var(--bg);box-shadow:0 8px 22px rgba(0,0,0,.32)}
 .v4ler .flpill .pkc{width:26px;height:38px;border-radius:2px;flex:none;position:relative;overflow:hidden;background:var(--soft)}.v4ler .flpill b{flex:1;min-width:0;font-size:13px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v4ler .flpill small{display:block;font-weight:600;opacity:.85;font-size:12px;white-space:normal}
 .v4ler .flpill button{min-height:44px;padding:0 14px;border:0;border-radius:11px;background:var(--bg);color:var(--ink);font:inherit;font-weight:800;cursor:pointer;flex:none}
-.v4ler .flpos{position:fixed;z-index:10002;width:min(330px,calc(100vw - 24px));box-sizing:border-box;padding:10px;border-radius:16px;background:var(--card);color:var(--ink);box-shadow:0 14px 34px rgba(0,0,0,.38);border:1px solid var(--line);animation:flpin .16s ease-out}
+.v4ler .flpos{position:fixed;z-index:10002;width:min(330px,calc(100vw - 84px));box-sizing:border-box;padding:10px;border-radius:16px;background:var(--card);color:var(--ink);box-shadow:0 14px 34px rgba(0,0,0,.38);border:1px solid var(--line);animation:flpin .16s ease-out}
 @keyframes flpin{from{opacity:0;transform:translateY(6px)}}
 .v4ler .flpos::after{content:"";position:absolute;left:var(--ax,50%);bottom:-8px;width:14px;height:14px;margin-left:-7px;background:var(--card);border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
 .v4ler .flpos.below::after{bottom:auto;top:-8px;transform:rotate(225deg)}
