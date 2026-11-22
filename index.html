@@ -9978,6 +9978,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
@@ -27271,6 +27272,23 @@ function shToastLift(R) { const T = shToasts(); if (!T.length) return;
   const pan = () => { const p = R && R.isConnected && R.querySelector('.shpk,.shtr,.dkpan'); return p && p.getClientRects().length ? p : null; };
   const set = () => { const p = pan(); if (p) { T.forEach((t) => { t.style.setProperty('bottom', 'auto', 'important'); t.style.setProperty('top', 'calc(64px + env(safe-area-inset-top,0px))', 'important'); }); return true; } T.forEach((t) => { t.style.removeProperty('bottom'); t.style.removeProperty('top'); }); return false; };
   if (set() && !SHX_TLI) SHX_TLI = setInterval(() => { if (!set()) { clearInterval(SHX_TLI); SHX_TLI = 0; } }, 600); }
+// ---------- sair da tela fecha a edição da prateleira (Bia, 21/11) ----------
+// trocar de aba, abrir outra tela, voltar do navegador ou ir para segundo plano: sai do Organizar/Decorar, fecha menus e folhas da
+// prateleira e desfaz o que estava pela metade (livro na mão, arrasto em curso). O que já foi feito continua salvo.
+function shExitEdit() { const had = SHX_MODE || SHX_PICK || SHX_D || SHX_PQD || SHX_LBP || SHX_PQE >= 0; if (!had) return false;
+  if (SHX_D) { try { SHX_D.tgt = null; window.dispatchEvent(new PointerEvent('pointercancel', { pointerId: SHX_D.pid })); } catch {} SHX_D = null; }
+  if (SHX_PQD) { try { SHX_PQD.r = null; SHX_PQD.on = false; } catch {} SHX_PQD = null; }
+  SHX_MODE = null; SHX_PICK = null; SHX_PKP = 'pe'; SHX_LBP = 0; SHX_PQE = -1; SHX_PQT = ''; SHX_DKS = null; SHX_JD = 0;
+  const sr = shBibRoot(); if (sr) sr.querySelectorAll('.shx-sx,.shbp,.shpk,.shtr,.dkpan,.shghostw,.shind').forEach((x) => x.remove());
+  shToasts().forEach((t) => { t.style.removeProperty('top'); t.style.removeProperty('bottom'); });
+  try { const R = sr && sr.querySelector('.v5est'); if (R && R.getClientRects().length) v5Redraw(); } catch {}
+  return true; }
+{ const _gt = goTab; goTab = function () { try { shExitEdit(); } catch {} return _gt.apply(this, arguments); }; }
+{ const _ob = openBookPage; openBookPage = function () { try { shExitEdit(); } catch {} return _ob.apply(this, arguments); }; }
+window.addEventListener('popstate', () => { try { shExitEdit(); } catch {} }, true);
+document.addEventListener('visibilitychange', () => { if (document.hidden) try { shExitEdit(); } catch {} });
+try { TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closest('#tabbar [data-tab], .gtop button, .gtop a')) shExitEdit(); }, true);
+  const SL = TR.querySelector('#shelflist'); if (SL) new MutationObserver(() => { if (!SL.hidden) shExitEdit(); }).observe(SL, { attributes: true, attributeFilter: ['hidden'] }); } catch {}
 // --- wl_v2_estante_sem_barra.js ---
 // Organizar e Decorar sem a barra de abas (teste de estresse, 21/11): o painel do Decorar encostava no botão central "Ler".
 // Enquanto um dos dois modos está aberto na Biblioteca, a barra de abas some e o painel desce até o fim da tela; ao concluir, volta.
