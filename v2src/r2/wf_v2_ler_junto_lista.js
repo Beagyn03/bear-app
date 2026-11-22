@@ -281,11 +281,14 @@ function ljDraw() {
   }));
 }
 // "+ Ler junto": escolhe um livro de Lendo ou Quero ler e abre o convite que já existe (inviteBuddy)
+// fechar a folha volta uma página no histórico; o voltar (bloco z4) fecharia a folha que abrisse nesse meio-tempo.
+// Abre a próxima só depois que esse voltar passa (ou em 350 ms, se não houver voltar).
+function ljAfterClose(fn) { let done = false; const go = () => { if (done) return; done = true; window.removeEventListener('popstate', go, true); setTimeout(fn, 30); }; window.addEventListener('popstate', go, true); setTimeout(go, 350); }
 function ljPick() {
   const busy = new Set(ljOn(ljItems()).map((x) => x.bookKey)), st = (e) => (e.status === 'LENDO' ? 0 : 1);
   const L = lib().filter((e) => e.status === 'LENDO' || e.status === 'QUERO').sort((a, b) => st(a) - st(b) || (a.prio || 2) - (b.prio || 2)).slice(0, 40);
   if (!L.length) return toast('Coloque um livro em Lendo ou Quero ler para chamar alguém', { label: 'Buscar livro', fn: () => { try { goTab('buscar', true); } catch {} } });
-  sheetList('Ler junto qual livro?', L.map((e) => ({ label: esc(e.title), sub: (e.status === 'LENDO' ? 'Lendo' : 'Quero ler') + (busy.has(bookKey(e)) ? ' · já tem leitura conjunta' : ''), fn: () => { try { inviteBuddy(e); } catch { toast('Não consegui abrir o convite', { label: 'Repetir', fn: ljPick }); } } })));
+  sheetList('Ler junto qual livro?', L.map((e) => ({ label: esc(e.title), sub: (e.status === 'LENDO' ? 'Lendo' : 'Quero ler') + (busy.has(bookKey(e)) ? ' · já tem leitura conjunta' : ''), fn: () => ljAfterClose(() => { try { inviteBuddy(e); } catch { toast('Não consegui abrir o convite', { label: 'Repetir', fn: ljPick }); } }) })));
 }
 function openJuntos() {
   const v = $('#shelflist'); try { closeEd(); } catch {} v.classList.remove('feedview', 'tabroot', 'mine-page'); v.classList.add('v4inner');
