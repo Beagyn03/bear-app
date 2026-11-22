@@ -9995,7 +9995,14 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
+// --- 00_v2_debate.js ---
+// Debate semanal (Bia, 22/11): a Pergunta do dia e o Desafio da semana viraram UMA pergunta por semana (API /v1/qday, de segunda a
+// domingo). O nome mora só aqui: rótulo da aba da Comunidade, nome completo e o prefixo dos posts que respondem à pergunta.
+// Posts antigos com "Desafio da semana:" ou "Pergunta do dia:" continuam reconhecidos (DEB_RE).
+const DEB = { aba: 'Debate', nome: 'Debate semanal', resp: 'Respondeu ao debate' };
+const DEB_RE = /^(Debate semanal|Desafio da semana|Pergunta do dia):/i;
 // --- 00_v2_render_marca.js ---
 // Tela parada (22/11), parte 1 de 2 (a outra é zz_v2_render_estavel.js): guarda como cada tela por cima (#shelflist) ficou logo
 // depois de desenhada, ANTES dos enfeites que outros blocos aplicam em seguida. Este observador é criado primeiro, então roda antes
@@ -12235,7 +12242,7 @@ function openRdComposer(pre = {}) {
         ${bkLine(R.book, 1, R.kind === 'quote' || R.kind === 'rec' || R.paws || R.feelings.length ? 'Escolher o livro' : 'Escolher livro (opcional)')}
         ${R.kind === 'rec' ? `<div class="rdc2-rec"><span>Se você gostou deste, leia:</span>${bkLine(R.book2, 2, 'Escolher o livro indicado')}</div>` : ''}
         ${R.kind === 'quote' ? `<div class="rdc2-q"><textarea id="rdc-q" rows="3" maxlength="600" placeholder="Copie aqui a frase do livro">${esc(R.quote)}</textarea><label>pág. <input type="number" id="rdc-pg" min="1" inputmode="numeric" value="${esc(R.page)}"></label></div>` : ''}
-        ${R.desafio ? `<div class="rdc2-tags rdc-des"><span>${typeof V6DEB !== "undefined" ? V6DEB.nome : "Debate semanal"} · ${esc(R.desafio)}<button type="button" id="rdc-desx" aria-label="Tirar a marca do debate">×</button></span></div>` : ''}
+        ${R.desafio ? `<div class="rdc2-tags rdc-des"><span>${DEB.nome} · ${esc(R.desafio)}<button type="button" id="rdc-desx" aria-label="Tirar a marca do debate">×</button></span></div>` : ''}
         <div class="rdc2-tx"><textarea id="rdc-t" rows="4" maxlength="320" placeholder="${esc(rdPlaceholder(R.kind, R.book))}">${esc(R.text)}</textarea><div class="rdc-cnt" id="rdc-c"></div></div>
         ${fNames.length && !OPEN.fe ? `<div class="rdc2-tags">${fNames.map((n) => `<span>${esc(n)}</span>`).join('')}</div>` : ''}
         ${R.paws && !OPEN.pw ? `<div class="rdc2-tags"><span>★ nota ${R.paws}</span></div>` : ''}
@@ -12290,7 +12297,7 @@ function openRdComposer(pre = {}) {
     // spoiler = um interruptor (Bia, 21/11): desligado e com livro, confirma antes de publicar
     if (!skipCheck && !AS.on && R.book) return sheet('Seu post não conta nada do enredo?', [['Não tem spoiler, publicar', () => publish(true)], ['Marcar como spoiler', () => { R.sp = true; publish(true); }]]);
     const AS2 = rdAutoSp(R); const spoiler = AS2.on ? AS2.spoiler : null;
-    const desPre = R.desafio ? `Desafio da semana: ${R.desafio}\n` : '';
+    const desPre = R.desafio ? `${DEB.nome}: ${R.desafio}\n` : '';
     if ((desPre + R.text).length > 280) return toast(`Use até ${280 - desPre.length} letras`);
     const body = { kind: R.kind, text: desPre + R.text, visibility: R.vis, feelings: R.feelings, ...(R.book ? { book: R.book } : {}), ...(R.kind === 'rec' ? { book2: R.book2 } : {}),
       ...(R.kind === 'quote' ? { quote: R.quote.slice(0, 600), ...(Number(R.page) > 0 ? { page: Math.round(Number(R.page)) } : {}) } : {}), ...(R.paws ? { paws: R.paws } : {}), ...(spoiler ? { spoiler } : {}), ...(R.image ? { image: R.image } : {}), ...(R.book && readerPctOf(R.book.title) != null ? { readerPct: readerPctOf(R.book.title) } : {}) };
@@ -17517,19 +17524,19 @@ function v2QBooks(from) {
 }
 function v2QdayHTML() {
   const [q, from] = v2QOfDay(), d = v2Today(), a = (db.prefs || {}).qday;
-  if (a && a.date === d) { const e = lib().find((x) => x.title === a.answer); return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div><div class="done">${e ? cvh(e.title, e.cover, 'qcv') : ''}<span>Você respondeu<b>${esc(a.answer)}</b></span></div><div class="qft"><span>Respostas aparecem na Comunidade</span><button type="button" data-qgo="1">Ver respostas ›</button></div></section>`; }
+  if (a && a.date === d) { const e = lib().find((x) => x.title === a.answer); return `<section class="v2-qd" data-v2qd="1"><div class="k">${DEB.nome}</div><div class="q">${esc(q)}</div><div class="done">${e ? cvh(e.title, e.cover, 'qcv') : ''}<span>Você respondeu<b>${esc(a.answer)}</b></span></div><div class="qft"><span>Respostas aparecem na Comunidade</span><button type="button" data-qgo="1">Ver respostas ›</button></div></section>`; }
   const bks = v2QBooks(from);
-  return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div>
+  return `<section class="v2-qd" data-v2qd="1"><div class="k">${DEB.nome}</div><div class="q">${esc(q)}</div>
     <div class="qpicks">${bks.map((e) => `<button type="button" data-qb="${esc(e.id)}">${cvh(e.title, e.cover, 'qcv')}<span>${esc(e.title)}</span></button>`).join('')}<button type="button" class="o" data-qb=""><span class="qcv qo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span><span>Outro livro</span></button></div><div class="qft"><span>Escolha e conte por quê</span></div></section>`;
 }
 function v2QAnswer(id) {
   const [q] = v2QOfDay(), e = id ? byId(id) : null;
   const book = e ? { title: String(e.title).slice(0, 200), author: e.author ? String(e.author).slice(0, 120) : null, cover: smallCoverOk(e.cover) } : null;
   db.prefs = { ...(db.prefs || {}), qday: { date: v2Today(), answer: e ? e.title : 'Outro livro' } }; save();
-  try { openRdComposer({ kind: 'comment', book, text: `Pergunta do dia: ${q}\n` }); } catch (err) { console.warn('pergunta do dia', err); }
+  try { openRdComposer({ kind: 'comment', book, text: `${DEB.nome}: ${q}\n` }); } catch (err) { console.warn('pergunta do dia', err); }
 }
 // Personalizar Hoje: a Pergunta do dia vira uma seção que liga/desliga e muda de lugar
-if (!HOME_SECS.some((x) => x[0] === 'qday')) HOME_SECS.splice(0, 0, ['qday', 'Pergunta do dia']);
+if (!HOME_SECS.some((x) => x[0] === 'qday')) HOME_SECS.splice(0, 0, ['qday', DEB.nome]);
 const V2_SEC_EL = {
   recs: (box) => [box.querySelector('#rc-host')],
   tambem: (box) => { const sh = [...box.querySelectorAll('.v3-sh')].find((x) => /^Também lendo/.test(x.textContent.trim())); return sh ? [sh, sh.nextElementSibling] : []; },
@@ -17977,8 +17984,8 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
   b.classList.remove('v2pop'); void b.offsetWidth; b.classList.add('v2pop'); }, true);
 // Desafio da semana mora no próprio cartão do post novo (19/11): antes eram dois cartões seguidos pedindo para postar.
 { let tm = 0; const put = () => { const nw = TR.querySelector('#lista > .cm-new'); if (!nw || nw.dataset.wk) return; const q = v2WkQ(); nw.dataset.wk = '1'; nw.classList.add('v2wk-new');
-    const sp = nw.querySelector('span'); if (sp) sp.innerHTML = `<em>Desafio da semana</em><b>${esc(q)}</b><small>Responda ou escreva o que quiser</small>`;
-    nw.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); openRdComposer({ kind: 'comment', text: `Desafio da semana: ${q}\n` }); }, true); };
+    const sp = nw.querySelector('span'); if (sp) sp.innerHTML = `<em>${DEB.nome}</em><b>${esc(q)}</b><small>Responda ou escreva o que quiser</small>`;
+    nw.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); openRdComposer({ kind: 'comment', text: `${DEB.nome}: ${q}\n` }); }, true); };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true }); setInterval(put, 600); }
 // --- c4_v2_funcoes.js ---
 // v2 "Funções do app" (Bia, 19/11, branch livroverso-2): em Ajustes, o primeiro item escolhe o que aparece no app.
@@ -17986,7 +17993,7 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
 // Guardado em db.prefs.mods (padrão: tudo ligado).
 const V2MODS = [
   ['metas', 'Metas e prazos', 'meta do ano, prazo para terminar e a semana do prazo'],
-  ['comunidade', 'Comunidade', 'aba Comunidade, amizades, Pergunta do dia e Desafio da semana'],
+  ['comunidade', 'Comunidade', 'aba Comunidade, amizades e o ' + DEB.nome],
   ['trechos', 'Trechos e diário', 'trechos, anotações e o diário da leitura'],
   ['emprest', 'Empréstimos e presentes', 'meu exemplar, emprestei, peguei emprestado e presentes'],
   ['orbita', 'Órbita', 'os dias seguidos de leitura'],
@@ -21046,15 +21053,14 @@ function v6Act(it) {
     return `<span class="pact av2">${ic('quote')}Avaliou${p ? ` <i class="st">${'★'.repeat(Math.round(p))}<u>${'★'.repeat(5 - Math.round(p))}</u></i>` : ''}</span>`;
   }
   const t = String(it.text || '');
-  if (/^Desafio da semana:/i.test(t)) return `<span class="pact de">${ic('ach')}Respondeu ao debate</span>`;
-  if (/^Pergunta do dia:/i.test(t)) return `<span class="pact de">${ic('quote')}Pergunta do dia</span>`;
+  if (DEB_RE.test(t)) return `<span class="pact de">${ic('ach')}${DEB.resp}</span>`;
   if (it.kind === 'rec') return `<span class="pact in">${ic('heart')}Indicou</span>`;
   if (it.kind === 'question') return `<span class="pact qu">${ic('reply')}Perguntou</span>`;
   if (it.kind === 'quote') return `<span class="pact le">${ic('quote')}Trecho${v2PctTxt(it.readerPct, it.page, (it.book || {}).title, ' · ')}</span>`;
   if (it.readerPct === 100) return `<span class="pact te">${ic('ok')}Terminou</span>`;
   return `<span class="pact le">${ic('ler')}Lendo${it.readerPct != null ? ' · ' + Math.round(it.readerPct) + '%' : ''}</span>`;
 }
-const v6Body = (t) => String(t || '').replace(/^(Desafio da semana|Pergunta do dia):[^\n]*\n?/i, (m) => m).trim();
+const v6Body = (t) => String(t || '').replace(/^(Debate semanal|Desafio da semana|Pergunta do dia):[^\n]*\n?/i, (m) => m).trim();
 function v6PostHTML(it, i) {
   const u = it.user || {}, mine = it.mine || (u.handle && u.handle === v6Me()), S6 = v6S(), key = it.type + it.id;
   const sp = (() => { try { return rdSpoil(it); } catch { return it.spoiler ? 'spoiler' : null; } })(), open = !!S6.open[key] || mine;
@@ -21151,7 +21157,7 @@ function v6V4Click(ev) {
   if (!it) return v6SheetClose();
   if (a === 'v6edit') { if (it.type !== 'post') { v6SheetClose(); const le = lib().find((x) => x.id === it.libId) || lib().find((x) => it.book && normT(x.title) === normT(it.book.title)); try { if (le) return v4FimOpen(le); } catch {} return toast('Abra o livro para editar a avaliação'); } c.t = null; st.sheet = 'v6edit'; return v4Draw(); }
   if (a === 'v6editok') { const t = (st.v6.t != null ? st.v6.t : v6Body(it.text)).trim(); if (!t && !it.quote && !it.book2 && !it.hasImage) return toast('Escreva alguma coisa');
-    const pre = String(it.text || '').match(/^(Desafio da semana|Pergunta do dia):[^\n]*\n?/i); return v6Patch(it, { text: ((pre ? pre[0] : '') + t).slice(0, 280) }).then((ok) => { if (ok) { toast('Post editado'); v6SheetClose(); v6Paint(); } }); }
+    const pre = String(it.text || '').match(/^(Debate semanal|Desafio da semana|Pergunta do dia):[^\n]*\n?/i); return v6Patch(it, { text: ((pre ? pre[0] : '') + t).slice(0, 280) }).then((ok) => { if (ok) { toast('Post editado'); v6SheetClose(); v6Paint(); } }); }
   if (a === 'v6vis') { const k = b.dataset.k; if (k === it.visibility) return; return v6Patch(it, { visibility: k }).then((ok) => { if (ok) { toast(k === 'friends' ? 'Agora só suas amizades veem' : 'Agora todo mundo vê'); v4Draw(); v6Paint(); } }); }
   if (a === 'v6spk') return v6Patch(it, { spoiler: it.spoiler ? null : { kind: 'yes' } }).then((ok) => { if (ok) { toast(it.spoiler ? 'Marcado como spoiler' : 'Marca de spoiler tirada'); v6SheetClose(); v6Paint(); } });
   if (a === 'v6delok') { (async () => {
@@ -21165,7 +21171,7 @@ function v6V4Input(ev) { const t = ev.target; if (t && t.id === 'v6ta') { const 
 // a pergunta e o seu voto do dia ficam guardados no aparelho: o Hoje já abre com eles (reteste G4: abria com outra pergunta,
 // sem voto e capas vazias, e trocava sozinho segundos depois). Sem nada guardado, o cartão espera a resposta em vez de chutar.
 const V6QDK = 'lv.qday';
-let V6QD = (() => { try { const c = JSON.parse(localStorage.getItem(V6QDK) || 'null'); return c && c.d === todayISO() && c.q && c.q.question ? c.q : null; } catch { return null; } })(), V6QDAt = 0, V6QDBusy = false;
+let V6QD = (() => { try { const c = JSON.parse(localStorage.getItem(V6QDK) || 'null'); return c && c.q && c.q.question && (c.q.weekEnd ? todayISO() <= c.q.weekEnd : c.d === todayISO()) ? c.q : null; } catch { return null; } })(), V6QDAt = 0, V6QDBusy = false;
 const v6QdKeep = () => { try { if (V6QD && V6QD.question) localStorage.setItem(V6QDK, JSON.stringify({ d: todayISO(), q: V6QD })); } catch {} };
 async function v6QdLoad(force) {
   if (!connected() || !socialProfile || V6QDBusy || (!force && Date.now() - V6QDAt < 10 * 60000)) return; V6QDBusy = true;
@@ -21184,15 +21190,15 @@ v2QdayHTML = function () {
   let q0 = '', from = 'lidos'; try { [q0, from] = v2QOfDay(); } catch {}
   let Q = V6QD;
   // ainda sem resposta do servidor (nem guardada): reserva o lugar do cartão, sem mostrar uma pergunta que vai trocar
-  try { if (!Q && connected() && socialProfile !== null) { if (!v2QdayHTML.t) v2QdayHTML.t = setTimeout(() => { v2QdayHTML.t = 0; v6QdLoad(); if (!V6QD && !V6QDBusy) { V6QD = { failed: true }; v6QdRefresh(); } }, 6000); return `<section class="v2-qd v6qd-wait" data-v2qd="1" aria-busy="true"><div class="k">Pergunta do dia</div><div class="q">&nbsp;</div><div class="qpicks" style="min-height:96px"></div><div class="qft"><span>&nbsp;</span></div></section>`; } } catch {}
+  try { if (!Q && connected() && socialProfile !== null) { if (!v2QdayHTML.t) v2QdayHTML.t = setTimeout(() => { v2QdayHTML.t = 0; v6QdLoad(); if (!V6QD && !V6QDBusy) { V6QD = { failed: true }; v6QdRefresh(); } }, 6000); return `<section class="v2-qd v6qd-wait" data-v2qd="1" aria-busy="true"><div class="k">${DEB.nome}</div><div class="q">&nbsp;</div><div class="qpicks" style="min-height:96px"></div><div class="qft"><span>&nbsp;</span></div></section>`; } } catch {}
   if (Q && Q.failed) Q = null;
   const q = (Q && Q.question) || q0;
-  if (Q && Q.mine) return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div><div class="v6ql">${(Q.top || []).map((x, i) => v6QdRow(x, Q.total, i, Q.mine)).join('')}</div>
-    <div class="qft"><span>${Q.total} ${Q.total === 1 ? 'voto' : 'votos'} · você votou em <b>${esc(Q.mine.title)}</b></span><button type="button" data-q6go="1">Mais votados ›</button></div></section>`;
+  if (Q && Q.mine) return `<section class="v2-qd" data-v2qd="1"><div class="k">${DEB.nome}</div><div class="q">${esc(q)}</div><div class="v6ql">${(Q.top || []).map((x, i) => v6QdRow(x, Q.total, i, Q.mine)).join('')}</div>
+    <div class="qft"><span>${Q.total} ${Q.total === 1 ? 'voto' : 'votos'} · você votou em <b>${esc(Q.mine.title)}</b></span><button type="button" data-q6go="1">Ver o debate ›</button></div></section>`;
   const bks = (() => { try { return v2QBooks(from); } catch { return []; } })();
-  return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div>
+  return `<section class="v2-qd" data-v2qd="1"><div class="k">${DEB.nome}</div><div class="q">${esc(q)}</div>
     <div class="qpicks">${bks.map((e) => `<button type="button" data-qb="${esc(e.id)}">${cvh(e.title, e.cover, 'qcv')}<span>${esc(e.title)}</span></button>`).join('')}<button type="button" class="o" data-qb=""><span class="qcv qo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span><span>Outro livro</span></button></div>
-    <div class="qft"><span>${Q && Q.total ? Q.total + (Q.total === 1 ? ' voto até agora' : ' votos até agora') : 'Vote e veja o resultado'}</span><button type="button" data-q6go="1">Mais votados ›</button></div></section>`;
+    <div class="qft"><span>${Q && Q.total ? Q.total + (Q.total === 1 ? ' voto até agora' : ' votos até agora') : 'Vote e veja o resultado'}</span><button type="button" data-q6go="1">Ver o debate ›</button></div></section>`;
 };
 async function v6Vote(book) {
   if (!connected() || !socialProfile) return toast('Entre na sua conta para votar');
@@ -21229,8 +21235,8 @@ v4Draw = function () {
   let q0 = '', from = 'lidos'; try { [q0, from] = v2QOfDay(); } catch {}
   const bks = (() => { try { return v2QBooks(from); } catch { return []; } })();
   const sh = st.sheet ? `<div class="veil" data-a="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${v4SheetHTML(st.sheet)}</div>` : '';
-  R.innerHTML = `<section class="page v6q"><header class="top"><button class="ib" data-a="v6qx" aria-label="Voltar">${v4ic('back')}</button><h1 style="font-size:20px">Pergunta do dia</h1></header><div class="scr">
-    <div class="card qhead"><div class="eb acc">Pergunta de hoje</div><h3>${esc(Q.question || q0)}</h3><span class="mut">${T.total || 0} ${(T.total || 0) === 1 ? 'voto' : 'votos'} · fecha à meia-noite</span></div>
+  R.innerHTML = `<section class="page v6q"><header class="top"><button class="ib" data-a="v6qx" aria-label="Voltar">${v4ic('back')}</button><h1 style="font-size:20px">${DEB.nome}</h1></header><div class="scr">
+    <div class="card qhead"><div class="eb acc">Pergunta da semana</div><h3>${esc(Q.question || q0)}</h3><span class="mut">${T.total || 0} ${(T.total || 0) === 1 ? 'voto' : 'votos'} · fecha domingo</span></div>
     ${voted ? '' : `<div class="card ph" style="margin-top:10px"><b>Vote para ver o resultado</b><div class="qpk">${bks.map((e) => `<button data-a="v6qv" data-id="${esc(e.id)}">${cvh(e.title, e.cover)}<span>${esc(e.title)}</span></button>`).join('')}<button class="o" data-a="v6qv" data-id=""><span class="cv">${v4ic('busca', 22)}</span><span>Outro livro</span></button></div></div>`}
     <div class="h2">Mais votados</div>
     <div class="card qlist">${!T.items.length ? '<p class="mut" style="margin:0">Ninguém votou ainda. Seja a primeira pessoa.</p>' : voted ? T.items.map((x, i) => v6QdRow(x, T.total, i, Q.mine)).join('') : T.items.slice(0, 3).map((x, i) => `<div class="qr"><span class="n">${i + 1}</span>${cvh(x.title, x.cover, '', 'width:30px;height:45px;font-size:6px;filter:blur(3px)')}<span class="t"><b class="mut">resultado depois do seu voto</b></span></div>`).join('')}</div>
@@ -21245,7 +21251,7 @@ v4Draw = function () {
     if (a === 'v6qv') { ev.stopPropagation(); const id = b.dataset.id; if (id) { const e = lib().find((x) => String(x.id) === String(id)); if (e) return v6Vote({ title: e.title, author: e.author, cover: e.cover }).then(() => v6QdayOpen()); }
       try { return findBook('Votar em qual livro?', (x) => v6Vote({ title: x.title, author: x.author, cover: x.cover }).then(() => v6QdayOpen())); } catch { return; } }
     if (a === 'v6qall') { ev.stopPropagation(); const st = v4State(); st.view = null; v4Close(); try { v6S().f = 'todos'; } catch {} return goTab('comunidade'); }
-    if (a === 'v6qc') { ev.stopPropagation(); const q = (V6QD && V6QD.question) || ''; const st = v4State(); st.view = null; v4Close(); return openRdComposer({ kind: 'comment', text: `Pergunta do dia: ${q}\n` }); }
+    if (a === 'v6qc') { ev.stopPropagation(); const q = (V6QD && V6QD.question) || ''; const st = v4State(); st.view = null; v4Close(); return openRdComposer({ kind: 'comment', text: `${DEB.nome}: ${q}\n` }); }
     return prev.apply(this, arguments);
   }; }
 // --- i1_v2_comunidade_abas.js ---
@@ -21255,14 +21261,14 @@ v4Draw = function () {
 // - Desafio: o campo de cima vira "Participar do desafio…"; tema e prazo; "Mais citados até agora" (top 3 dos livros das respostas,
 //   pontos = respostas que citam o livro + curtidas dessas respostas; só com 3+ respostas; tocar filtra as respostas);
 //   respostas no cartão do feed (com Responder no cartão); "Desafios anteriores" recolhido, cada um com o vencedor e o resultado.
-//   Ponto na aba enquanto a pessoa não respondeu ao desafio da semana. Os dados vêm do feed que o app já carrega (sem rota nova):
-//   resposta = post que começa com "Desafio da semana: <tema>"; desafio de semanas antigas só conta o que está carregado.
+//   Ponto na aba enquanto a pessoa não votou nem respondeu. Debate semanal (22/11): o ranking soma o do servidor (votos do Hoje e posts
+//   públicos, /v1/qday) com as respostas carregadas; as semanas anteriores e os vencedores vêm de /v1/qday/history.
 // - Ler junto: o campo de cima vira "+ Ler junto"; Convites, Mensagens novas, Em andamento e Encerradas recolhidas (mesma lista e
 //   mesmo "•••" da página Ler junto: ljBodyHTML('com') + ljWire). Ponto na aba com convite, mensagem nova ou convite parado no aparelho.
 //   A aba some quando a função Ler junto está desligada.
-// rótulos do Debate semanal (Bia, 22/11: "Desafio" virou "Debate"). A chave interna continua 'desafio' e o texto gravado nos posts
-// continua começando com "Desafio da semana: <tema>" (é assim que as respostas são reconhecidas; mudar isso pede migração/API).
-const V6DEB = { tab: 'Debate', nome: 'Debate semanal', participar: 'Participar do debate…', participou: 'Você já participou desta semana', anteriores: 'Debates anteriores',
+// rótulos do Debate semanal: nome e aba vêm de DEB (00_v2_debate.js). A chave interna continua 'desafio'. A pergunta é a mesma do Hoje
+// (API /v1/qday, uma por semana); respostas = posts cuja 1ª linha é "<nome>: <pergunta>" (DEB_RE aceita os nomes antigos).
+const V6DEB = { tab: DEB.aba, nome: DEB.nome, participar: 'Participar do debate…', comentar: 'Comentar sua escolha…', participou: 'Você já participou desta semana', anteriores: 'Debates anteriores',
   desta: 'Debate desta semana', responder: 'Responder ao debate', vazio: 'Ninguém respondeu ainda', vazioTx: 'Conte qual livro você escolheria para este tema.', ranking: 'Mais citados até agora', passada: 'Resultado da semana passada' };
 const V6TABS = [['amigos', 'Amizades'], ['todos', 'Todos'], ['desafio', V6DEB.tab], ['junto', 'Ler junto'], ['salvos', 'Salvos']];
 const V6FIL = [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['coment', 'Comentários']];
@@ -21278,12 +21284,16 @@ function v6FixTab() { const S6 = v6S();
 // ---------- desafio: semanas, respostas, ranking ----------
 function v6WkAt(back) { const d = new Date(); d.setDate(d.getDate() - 7 * (back || 0)); const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())), day = t.getUTCDay() || 7;
   t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return t.getUTCFullYear() * 100 + Math.ceil(((t - y0) / 864e5 + 1) / 7); }
-const v6WkQ = (back) => { try { return V2WK[v6WkAt(back) % V2WK.length]; } catch { return ''; } };
+// pergunta da semana: a desta semana vem do servidor (a mesma do Hoje); as anteriores, do histórico do servidor (/v1/qday/history)
+const V6DHK = 'lv.debHist'; let V6DH = (() => { try { const c = JSON.parse(localStorage.getItem(V6DHK) || 'null'); return c && Array.isArray(c.items) ? c.items : []; } catch { return []; } })(), V6DHAt = 0;
+async function v6DebHist() { if (!connected() || Date.now() - V6DHAt < 30 * 60000) return; V6DHAt = Date.now();
+  try { const r = await sapi('GET', '/v1/qday/history?weeks=4'); if (r.status === 200 && r.data && Array.isArray(r.data.items)) { const b = JSON.stringify(V6DH); V6DH = r.data.items; try { localStorage.setItem(V6DHK, JSON.stringify({ items: V6DH })); } catch {} if (JSON.stringify(V6DH) !== b && S.tab === 'comunidade') v6Paint(); } } catch { V6DHAt = Date.now() - 25 * 60000; } }
+const v6WkQ = (back) => { back = back || 0; try { if (!back) return (typeof V6QD !== 'undefined' && V6QD && V6QD.question) || V2WK[v6WkAt(0) % V2WK.length]; const h = V6DH[back - 1]; return h ? h.question : ''; } catch { return ''; } };
 // domingo que fecha a semana "back" semanas atrás
 const v6WkEnd = (back) => { const d = new Date(); d.setDate(d.getDate() - 7 * (back || 0) + ((7 - (d.getDay() || 7)) % 7)); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); };
 function v6DesItems(q) {
-  const pre = ('Desafio da semana: ' + q).toLowerCase(), seen = new Set(), out = [];
-  ['rede', 'amigos'].forEach((sc) => { try { v6Feed(sc).items.forEach((x) => { const k = x.type + x.id; if (seen.has(k)) return; if (String(x.text || '').toLowerCase().startsWith(pre)) { seen.add(k); out.push(x); } }); } catch {} });
+  const qq = String(q || '').toLowerCase().trim(), seen = new Set(), out = []; if (!qq) return out;
+  ['rede', 'amigos'].forEach((sc) => { try { v6Feed(sc).items.forEach((x) => { const k = x.type + x.id; if (seen.has(k)) return; const l1 = String(x.text || '').split('\n')[0].toLowerCase().trim(); if (DEB_RE.test(l1) && l1.endsWith(qq)) { seen.add(k); out.push(x); } }); } catch {} });
   try { return rdVisible(out); } catch { return out; }
 }
 const v6BkKey = (b) => (b && b.title ? normT(b.title) : '');
@@ -21292,6 +21302,14 @@ function v6Rank(items) {
   items.forEach((it) => { const k = v6BkKey(it.book); if (!k) return; const r = (m[k] = m[k] || { k, title: it.book.title, author: it.book.author, cover: it.book.cover, n: 0, pts: 0, best: null });
     r.n++; r.pts += 1 + (Number(it.likes) || 0); if (!r.cover && it.book.cover) r.cover = it.book.cover; if (!r.best || (Number(it.likes) || 0) > (Number(r.best.likes) || 0)) r.best = it; });
   return Object.values(m).sort((a, z) => z.pts - a.pts || z.n - a.n || a.title.localeCompare(z.title));
+}
+function v6RankW(back, items) {
+  const r = v6Rank(items), by = new Map(r.map((x) => [x.k, x]));
+  const put = (t, n, pts) => { const k = normT(t.title || ''); if (!k) return; const x = by.get(k); if (x) { x.n = Math.max(x.n, n); x.pts = Math.max(x.pts, pts); if (!x.cover && t.cover) x.cover = t.cover; }
+    else { const y = { k, title: t.title, author: t.author || null, cover: t.cover || null, n, pts, best: null }; by.set(k, y); r.push(y); } };
+  try { if (!back && V6QD && Array.isArray(V6QD.top)) V6QD.top.forEach((t) => put(t, (t.votes || 0) + (t.cites || 0), t.score != null ? t.score : (t.votes || 0)));
+    const h = back && V6DH[back - 1]; if (h && h.winner) put(h.winner, h.winner.cites || 0, h.winner.score || 0); } catch {}
+  return r.sort((a, z) => z.pts - a.pts || z.n - a.n || a.title.localeCompare(z.title));
 }
 const v6Cit = (n) => `citado ${n} ${n === 1 ? 'vez' : 'vezes'}`;
 // respondeu ao desafio da semana: post seu no feed ou marca guardada no aparelho (por conta e semana)
@@ -21305,7 +21323,7 @@ const v6DesLeft = () => { const d = new Date().getDay(); return d === 0 ? 'termi
 // ---------- pedaços comuns ----------
 function v6TabsHTML() {
   const S6 = v6S(), T = V6TABS.filter(([k]) => k !== 'junto' || v6JuntoOn());
-  const dot = (k) => { try { if (k === 'desafio') return !v6DesDone(v6DesItems(v6WkQ(0)));
+  const dot = (k) => { try { if (k === 'desafio') return !v6DesDone(v6DesItems(v6WkQ(0))) && !(V6QD && V6QD.mine);
       if (k === 'junto') { const L = ljItems(); return ljInv(L).length > 0 || ljOn(L).some((x) => ljNew(x) > 0) || ljLocal().length > 0; } } catch {} return false; };
   return `<div class="ctabs c5" role="tablist" aria-label="Comunidade">${T.map(([k, l]) => { const d = S6.f !== k && dot(k);
     return `<button role="tab" aria-selected="${S6.f === k}" class="${S6.f === k ? 'on' : ''}" data-a="v6tab" data-k="${k}">${l}${d ? '<i class="cdot" aria-label=", tem novidade"></i>' : ''}</button>`; }).join('')}</div>`;
@@ -21327,27 +21345,29 @@ function v6PaintTab(R) {
     return v6Fin(R);
   }
   // Desafio
-  const back = S6.desWk || 0, q = v6WkQ(back), items = v6DesItems(q), rank = v6Rank(items), done = v6DesDone(back ? v6DesItems(v6WkQ(0)) : items);
+  try { v6DebHist(); v6QdLoad(); } catch {}
+  const back = S6.desWk || 0, q = v6WkQ(back), items = v6DesItems(q), rank = v6RankW(back, items), done = v6DesDone(back ? v6DesItems(v6WkQ(0)) : items);
   const F = v6Feed('rede'); if (!F.at && !F.busy) setTimeout(() => { try { v6Load('rede'); } catch {} }, 0);
   const bk = S6.desBk && rank.some((r) => r.k === S6.desBk) ? S6.desBk : null; if (!bk) S6.desBk = null;
   const list = bk ? items.filter((it) => v6BkKey(it.book) === bk) : items; S6.list = list;
   // dentro da aba o tema já está no cartão de cima: a resposta aparece sem o "Desafio da semana: <tema>" na frente
-  const pre = new RegExp('(<p>)Desafio da semana: ' + esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'gi');
+  const pre = new RegExp('(<p>)(?:Debate semanal|Desafio da semana|Pergunta do dia): ' + esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'gi');
   const posts = list.map((it, i) => v6PostHTML(it, i)).join('').replace(pre, '$1');
   const bar = back ? '' : done ? `<div class="cbar cbar-ok">${v6MeAv()}<span class="cpart ok">${v4ic('ok', 16)}${V6DEB.participou}</span></div>`
-    : `<div class="cbar">${v6MeAv()}<button class="cin cpart" type="button" data-a="v6dgo">${V6DEB.participar}</button></div>`;
-  const pod = rank.length && items.length >= 3 && !back ? `<div class="dh">${V6DEB.ranking}</div><div class="dpod" role="group" aria-label="Filtrar respostas por livro">${[rank[1], rank[0], rank[2]].filter(Boolean).map((x) => { const pos = rank.indexOf(x) + 1, on = bk === x.k;
+    : `<div class="cbar">${v6MeAv()}<button class="cin cpart" type="button" data-a="v6dgo">${V6QD && V6QD.mine ? V6DEB.comentar : V6DEB.participar}</button></div>`;
+  const pod = rank.length && (items.length + ((V6QD && V6QD.total) || 0)) >= 3 && !back ? `<div class="dh">${V6DEB.ranking}</div><div class="dpod" role="group" aria-label="Filtrar respostas por livro">${[rank[1], rank[0], rank[2]].filter(Boolean).map((x) => { const pos = rank.indexOf(x) + 1, on = bk === x.k;
       return `<button type="button" class="dpod-i p${pos}${on ? ' on' : ''}" data-a="v6dbk" data-k="${esc(x.k)}" aria-pressed="${on}" aria-label="${pos}º ${esc(x.title)}, ${v6Cit(x.n)}; mostrar só essas respostas">${v6Cv(x.title, x.cover)}<span class="dpod-n"><b>${pos}º</b> ${x.n}×</span></button>`; }).join('')}</div>` : '';
   const flt = bk ? `<div class="dflt"><span>Respostas sobre <b>${esc((rank.find((r) => r.k === bk) || {}).title || '')}</b></span><button type="button" class="lnk" data-a="v6dbk" data-k="${esc(bk)}">Limpar</button></div>` : '';
   const res = (r3, b) => { const w = r3[0]; if (!w) return `<div class="card des-c"><div class="eb acc">Resultado · semana até ${v6WkEnd(b)}</div><h3>${esc(v6WkQ(b))}</h3><span class="mut">${items.length ? 'Nenhuma resposta citou um livro' : 'Sem respostas carregadas desta semana'}</span></div>`;
     const bb = w.best; return `<div class="card des-res"><div class="eb acc">Resultado · ${esc(v6WkQ(b))}</div>
-      <div class="des-w">${v6Cv(w.title, w.cover)}<div><small class="mut">Venceu</small><h3>${esc(w.title)}</h3><span class="mut">${v6Cit(w.n)} · ${w.pts} ${w.pts === 1 ? 'ponto' : 'pontos'}</span>${bb && bb.text ? `<blockquote>“${esc(v6Body(bb.text).replace(/^Desafio da semana:[^\n]*\n?/i, '').slice(0, 140))}”<small>${esc((bb.user && (bb.user.displayName || bb.user.handle)) || '')}${bb.likes ? ` · ${bb.likes} ${bb.likes === 1 ? 'curtida' : 'curtidas'}` : ''}</small></blockquote>` : ''}</div></div>
+      <div class="des-w">${v6Cv(w.title, w.cover)}<div><small class="mut">Venceu</small><h3>${esc(w.title)}</h3><span class="mut">${v6Cit(w.n)} · ${w.pts} ${w.pts === 1 ? 'ponto' : 'pontos'}</span>${bb && bb.text ? `<blockquote>“${esc(v6Body(bb.text).replace(/^(Debate semanal|Desafio da semana|Pergunta do dia):[^\n]*\n?/i, '').slice(0, 140))}”<small>${esc((bb.user && (bb.user.displayName || bb.user.handle)) || '')}${bb.likes ? ` · ${bb.likes} ${bb.likes === 1 ? 'curtida' : 'curtidas'}` : ''}</small></blockquote>` : ''}</div></div>
       ${r3.length > 1 ? `<div class="des-rest">${r3.slice(1, 3).map((x, k) => `<span>${v6Cv(x.title, x.cover)}<b>${k + 2}º</b> ${esc(x.title)}<small>${v6Cit(x.n)}</small></span>`).join('')}</div>` : ''}</div>`; };
   // semana passada: o resultado aparece em cima na segunda e na terça
-  const dw = new Date().getDay(), prevRank = !back && (dw === 1 || dw === 2) ? v6Rank(v6DesItems(v6WkQ(1))) : [];
+  const dw = new Date().getDay(), prevRank = !back && (dw === 1 || dw === 2) && v6WkQ(1) ? v6RankW(1, v6DesItems(v6WkQ(1))) : [];
   const prevLine = prevRank[0] ? `<button type="button" class="des-prev" data-a="v6dwk" data-k="1">${v6Cv(prevRank[0].title, prevRank[0].cover)}<span><small>${V6DEB.passada}</small><b>${esc(prevRank[0].title)} venceu</b></span>${v4ic('chev', 14)}</button>` : '';
   const card = back ? res(rank, back) : `<div class="card des-c"><div class="eb acc">${V6DEB.nome}</div><h3>${esc(q)}</h3><span class="mut">${esc(v6DesLeft())} · ${items.length} ${items.length === 1 ? 'resposta' : 'respostas'}</span></div>`;
-  const H = [1, 2, 3, 4].map((b) => { const its = v6DesItems(v6WkQ(b)), w = v6Rank(its)[0];
+  const HW = V6DH.map((_, i) => i + 1).slice(0, 4);
+  const H = HW.map((b) => { const its = v6DesItems(v6WkQ(b)), w = v6RankW(b, its)[0];
     return `<button type="button" class="des-hi${b === back ? ' on' : ''}" data-a="v6dwk" data-k="${b}"${b === back ? ' aria-current="true"' : ''}>${w ? v6Cv(w.title, w.cover) : `<span class="des-hn">${v4ic('ach', 16)}</span>`}<span class="t"><b>${esc(v6WkQ(b))}</b><small>até ${v6WkEnd(b)} · ${its.length} ${its.length === 1 ? 'resposta' : 'respostas'}${w ? ' · venceu ' + esc(w.title) : ''}</small></span>${v4ic('chev', 14)}</button>`; }).join('');
   const empty = !F.at ? '<div class="msg">Carregando as respostas…</div>'
     : back ? '<div class="msg">Nenhuma resposta desta semana no que está carregado.</div>'
@@ -21355,7 +21375,7 @@ function v6PaintTab(R) {
   R.innerHTML = `${bar}${v6TabsHTML()}${back ? `<button type="button" class="des-back" data-a="v6dwk" data-k="0">${v4ic('back', 16)}${V6DEB.desta}</button>` : prevLine}
     ${card}${pod}${flt}
     <div class="dh">${back ? 'Respostas' : 'Respostas'}${list.length ? ` <small>${list.length}</small>` : ''}</div>${posts || empty}
-    <div class="des-h${S6.desHOpen || back ? ' open' : ''}"><button type="button" class="des-hs" data-a="v6dhs" aria-expanded="${!!(S6.desHOpen || back)}">${V6DEB.anteriores} · 4</button>${S6.desHOpen || back ? H : ''}</div>`;
+    <div class="des-h${S6.desHOpen || back ? ' open' : ''}"${HW.length ? '' : ' hidden'}><button type="button" class="des-hs" data-a="v6dhs" aria-expanded="${!!(S6.desHOpen || back)}">${V6DEB.anteriores} · ${HW.length}</button>${S6.desHOpen || back ? H : ''}</div>`;
   // guarda aberto/fechado já no toque (o evento toggle chega depois; uma repintura no meio fechava a lista)
   return v6Fin(R);
 }
@@ -22453,7 +22473,7 @@ body > .sheet form.pv2 input[type=checkbox]::before{display:none!important}`; do
 var V6SUB = { junto: 'comunidade', qday: 'comunidade' };
 function vFn(k) { try { const m = v2Mods(); if (V6SUB[k] && m[V6SUB[k]] === false) return false; if (k === 'presentes') return v4Mod('presentes'); return m[k] !== false; } catch { return true; } }
 { const add = (after, item) => { const i = V2MODS.findIndex((x) => x[0] === after); if (V2MODS.some((x) => x[0] === item[0])) return; V2MODS.splice(i < 0 ? V2MODS.length : i + 1, 0, item); };
-  add('comunidade', ['qday', 'Pergunta do dia', 'cartão do Hoje e Mais votados']);
+  add('comunidade', ['qday', DEB.nome, 'cartão do Hoje e o ranking da semana']);
   add('comunidade', ['junto', 'Ler junto', 'convites e leitura com amizades']);
   add('qday', ['ecos', 'Ecos', 'frases que leitores deixam nas páginas']);
   add('metas', ['prazos', 'Prazos', 'data para terminar um livro, plano do dia e lembrete']);
@@ -22490,7 +22510,7 @@ function vFn(k) { try { const m = v2Mods(); if (V6SUB[k] && m[V6SUB[k]] === fals
 // Próxima conquista, Meta do ano e Na fila (estão na Linha do dia e em A seguir). Sem duplicar Funções do app: item de função
 // desligada fica cinza ("desligado em Funções do app") e o toque leva para lá. Guardado em db.prefs.home2; as escolhas
 // antigas (db.prefs.home.off) migram uma vez: Indicações → Para você, Na fila → A seguir, Pergunta do dia → Destaque.
-var V6H = [['dia', 'Linha do dia', 'Órbita e Meta, logo abaixo do livro'], ['dest', 'Destaque do dia', 'Pergunta do dia, lembretes e Resumo do mês'], ['seguir', 'A seguir', 'o próximo da fila e "Qual leio agora?"'], ['pv', 'Para você', 'indicações de livros e Seus gostos']];
+var V6H = [['dia', 'Linha do dia', 'Órbita e Meta, logo abaixo do livro'], ['dest', 'Destaque do dia', DEB.nome + ', lembretes e Resumo do mês'], ['seguir', 'A seguir', 'o próximo da fila e "Qual leio agora?"'], ['pv', 'Para você', 'indicações de livros e Seus gostos']];
 { const P = () => { db.prefs = db.prefs || {}; if (!db.prefs.home2) { const old = (db.prefs.home && db.prefs.home.off) || [], off = [];
       if (old.includes('recs')) off.push('pv'); if (old.includes('fila')) off.push('seguir'); if (old.includes('qday')) off.push('dest');
       db.prefs.home2 = { order: V6H.map((x) => x[0]), off }; } const h = db.prefs.home2; V6H.forEach(([k]) => { if (!h.order.includes(k)) h.order.push(k); }); return h; };
@@ -22982,7 +23002,7 @@ function v8DiaMsg() {
     if (L.length) { const e = L[0], a = Number(t.slice(0, 4)) - Number(String(e.finishedAt).slice(0, 4)), r = reviewOfLib(e) || {};
       return ['memoria', 'heart', a === 1 ? 'Há 1 ano' : `Há ${a} anos`, `Você terminou ${e.title}`, r.paws ? `deu ★${String(r.paws).replace('.', ',')}` : 'toque para rever o livro', 'Ver o livro', e.id]; } } catch {}
   // 6. Pergunta do dia (ainda sem o seu voto)
-  if (on('qday') && !sk('qday')) { try { const Q = typeof V6QD !== 'undefined' ? V6QD : null; if (Q && Q.question && !Q.mine && Q.total > 0) return ['qday', 'reply', 'Pergunta do dia', `${Q.total} ${Q.total === 1 ? 'pessoa já votou' : 'pessoas já votaram'}`, 'falta o seu voto', 'Votar']; } catch {} }
+  if (on('qday') && !sk('qday')) { try { const Q = typeof V6QD !== 'undefined' ? V6QD : null; if (Q && Q.question && !Q.mine && Q.total > 0) return ['qday', 'reply', DEB.nome, `${Q.total} ${Q.total === 1 ? 'pessoa já votou' : 'pessoas já votaram'}`, 'falta o seu voto', 'Votar']; } catch {} }
   // 7. trecho salvo (um por dia, sempre o mesmo no dia)
   if (!sk('trecho')) try { const Qs = []; for (const e of lib()) for (const q of e.quotes || []) if (q && q.t && String(q.t).length <= 160) Qs.push([e, q]);
     if (Qs.length) { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) | 0; const [e, q] = Qs[Math.abs(h) % Qs.length];
@@ -23229,7 +23249,7 @@ function v9Data(d, M) {
   M = M || {}; const E = M.ecos || {};
   D.ecos = { me: Number(E.me) || 0, el: Number(E.them) || 0, livro: E.livro || null };
   D.coinc = [...(M.abandonaram || []).slice(0, 1).map((t) => ['stop', 'As duas abandonaram ' + t]), ...(M.ressaca || []).slice(0, 1).map((t) => ['wave', t + ' deu ressaca nas duas']),
-    ...(M.qday || []).slice(0, 1).map((q) => ['vote', 'Votaram em ' + q.title + ' na Pergunta do dia de ' + String(q.day).slice(8, 10) + '/' + String(q.day).slice(5, 7)])];
+    ...(M.qday || []).slice(0, 1).map((q) => ['vote', 'Votaram em ' + q.title + ' no ' + DEB.nome + ' da semana de ' + String(q.day).slice(8, 10) + '/' + String(q.day).slice(5, 7)])];
   D.since = M.since || null;
   // foco (migração 037): só quando as duas mandaram o resumo do mesmo ano; janela de 2 h a partir da hora mais comum
   const FO = M.focus;
@@ -23794,7 +23814,7 @@ addEventListener('click', (ev) => {
 // sem "Biblioteca", "Amigos" ou o menu antigo. A busca é a lupa do topo.
 TOUR.splice(0, TOUR.length,
   [null, 'Boas-vindas ao Livroverso', 'Um passeio rápido pelo app. Leva menos de um minuto.'],
-  ['#tabbar [data-tab=inicio]', 'Hoje', 'O livro que você está lendo, seu prazo, a órbita, a meta e a Pergunta do dia. Use Atualizar no cartão do livro para marcar a página.'],
+  ['#tabbar [data-tab=inicio]', 'Hoje', 'O livro que você está lendo, seu prazo, a órbita, a meta e o Debate semanal. Use Atualizar no cartão do livro para marcar a página.'],
   ['#tabbar [data-tab=estante]', 'Biblioteca', 'Todos os seus livros em Livros, suas estantes em Estantes e o que você guardou em Trechos. Toque na capa para abrir; segure para o menu.'],
   ['#v5ler', 'Ler', 'Toque no planeta para começar uma sessão de leitura com cronômetro, luz e ecos de quem leu a mesma página.'],
   ['#tabbar [data-tab=jornada]', 'Jornada', 'Suas metas, órbita, estatísticas, resumos do mês e a Retrospectiva, num lugar só.'],
@@ -24457,7 +24477,7 @@ function lvEyes(root) {
 
 // ---------- textos e detalhes do primeiro acesso ----------
 // tour: explica órbita e eco e não manda usar um cartão que a conta nova ainda não tem (itens 32)
-try { for (const t of TOUR) { if (t[1] === 'Hoje') t[2] = 'Seu dia de leitura: o livro que você está lendo, o prazo, a órbita (os dias seguidos em que você leu), a meta e a Pergunta do dia. Quando começar um livro, marque a página pelo cartão dele.';
+try { for (const t of TOUR) { if (t[1] === 'Hoje') t[2] = 'Seu dia de leitura: o livro que você está lendo, o prazo, a órbita (os dias seguidos em que você leu), a meta e o Debate semanal. Quando começar um livro, marque a página pelo cartão dele.';
   if (t[1] === 'Ler') t[2] = 'Comece uma sessão de leitura com cronômetro e luz. Os ecos são recados de quem leu a mesma página, e só aparecem quando você chega nela.'; } } catch {}
 // "Catálogo B.E.A.R" (nome interno) na lista de resultados vira "Livroverso" (item 14)
 { const fix = (root) => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); for (let n; (n = w.nextNode());) if (n.nodeValue.includes('Catálogo B.E.A.R')) n.nodeValue = n.nodeValue.split('Catálogo B.E.A.R').join('Livroverso'); };
@@ -25425,8 +25445,8 @@ const WDES_CSS = `
 const wdesArm = (sr) => { if (sr && !sr.querySelector('style[data-wdes]')) { const st = document.createElement('style'); st.dataset.wdes = 1; st.textContent = WDES_CSS; sr.append(st); } };
 const wdesQ = () => { try { return v2WkQ(); } catch { return ''; } };
 const wdesLeft = () => { const d = new Date().getDay(); const n = d === 0 ? 0 : 7 - d; return n === 0 ? 'termina hoje (domingo)' : n === 1 ? 'termina amanhã (domingo)' : `termina domingo · faltam ${n} dias`; };
-const wdesItems = () => { const q = wdesQ(), pre = ('Desafio da semana: ' + q).toLowerCase(), seen = new Set(), out = [];
-  ['rede', 'amigos'].forEach((sc) => { try { v6Feed(sc).items.forEach((x) => { const k = x.type + x.id; if (seen.has(k)) return; if (String(x.text || '').toLowerCase().startsWith(pre)) { seen.add(k); out.push(x); } }); } catch {} });
+const wdesItems = () => { const q = wdesQ(), qq = q.toLowerCase().trim(), seen = new Set(), out = [];
+  ['rede', 'amigos'].forEach((sc) => { try { v6Feed(sc).items.forEach((x) => { const k = x.type + x.id; if (seen.has(k)) return; const l1 = String(x.text || '').split('\n')[0].toLowerCase().trim(); if (qq && DEB_RE.test(l1) && l1.endsWith(qq)) { seen.add(k); out.push(x); } }); } catch {} });
   try { return rdVisible(out); } catch { return out; } };
 { const _p = v6Paint; v6Paint = function () {
     const r = _p.apply(this, arguments);
@@ -25437,8 +25457,8 @@ const wdesItems = () => { const q = wdesQ(), pre = ('Desafio da semana: ' + q).t
       if (!F.at && !F.busy) setTimeout(() => { try { v6Load('rede'); } catch {} }, 0);
       // "Carregando…" só na primeira vez: ao recarregar o feed, a página mantinha a lista vazia/respostas trocando com "Carregando…" (tremor, 22/11)
       const posts = list.map((it, i) => v6PostHTML(it, i)).join('');
-      R.innerHTML = `<div class="wdes"><div class="wdes-top"><button data-a="wdesback" aria-label="Voltar">${v4ic('back', 20)}</button><b>Desafio da semana</b></div>
-        <div class="wdes-card"><span class="eb">Tema desta semana</span><h2>${esc(q)}</h2><small>${esc(wdesLeft())}</small><button class="wdes-go btn p" data-a="wdesgo">Participar</button></div>
+      R.innerHTML = `<div class="wdes"><div class="wdes-top"><button data-a="wdesback" aria-label="Voltar">${v4ic('back', 20)}</button><b>${DEB.nome}</b></div>
+        <div class="wdes-card"><span class="eb">Pergunta da semana</span><h2>${esc(q)}</h2><small>${esc(wdesLeft())}</small><button class="wdes-go btn p" data-a="wdesgo">Participar</button></div>
         <div class="wdes-h">Respostas${list.length ? ' · ' + list.length : ''}</div>
         ${posts || (!F.at ? '<div class="wdes-empty">Carregando…</div>' : '<div class="wdes-empty"><b>Ninguém respondeu ainda</b><span>Conte qual livro você escolheria para este tema.</span><button class="btn s" data-a="wdesgo">Responder ao desafio</button></div>')}</div>`;
       R.querySelectorAll('[data-avh]').forEach((n) => { try { const d = avatarOf(n.dataset.avh); if (d) { n.style.backgroundImage = `url("${d}")`; n.textContent = ''; } } catch {} });
@@ -29296,13 +29316,13 @@ const v6QdSetOff = (on) => { try { if (on) localStorage.setItem(V6QDX, JSON.stri
     if (v6QdOff()) return '<section class="v6qd-off" data-v2qd="1" style="display:none" aria-hidden="true"></section>';
     if (v6QdOpenDay === v6QdDay()) return html.replace('<section class="v2-qd"', '<section class="v2-qd v6qd-open"').replace(/<\/section>\s*$/, '<button type="button" class="v6qd-rc" data-q6x="close">Recolher</button></section>');
     const mine = (Q.top || []).find((x) => normT(x.title) === normT(Q.mine.title)), pc = mine && Q.total ? Math.round(mine.votes / Q.total * 100) : 0;
-    return `<section class="v2-qd v6qd-mini" data-v2qd="1"><button type="button" class="m" data-q6x="open" aria-label="Pergunta do dia: ver resultado"><span class="k">Pergunta do dia${pc ? ` · ${pc}%` : ''}</span><span class="t">seu voto: <b>${esc(Q.mine.title)}</b></span><em>Resultado ›</em>${pc ? `<span class="bar"><i style="width:${pc}%"></i></span>` : ''}</button><button type="button" class="x" data-q6x="off" aria-label="Dispensar até a próxima pergunta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></section>`;
+    return `<section class="v2-qd v6qd-mini" data-v2qd="1"><button type="button" class="m" data-q6x="open" aria-label="${DEB.nome}: ver resultado"><span class="k">${DEB.nome}${pc ? ` · ${pc}%` : ''}</span><span class="t">seu voto: <b>${esc(Q.mine.title)}</b></span><em>Resultado ›</em>${pc ? `<span class="bar"><i style="width:${pc}%"></i></span>` : ''}</button><button type="button" class="x" data-q6x="off" aria-label="Dispensar até a próxima pergunta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></section>`;
   };
 }
 const v6QdRe = () => { try { v2HojeEnsure(); } catch {} };
 function v6QdDismiss() {
   v6QdSetOff(true); v6QdOpenDay = ''; v6QdRe();
-  try { toast('Pergunta do dia escondida até amanhã', { label: 'Desfazer', fn: () => { v6QdSetOff(false); v6QdRe(); } }); } catch {}
+  try { toast(DEB.nome + ' escondido até a próxima semana', { label: 'Desfazer', fn: () => { v6QdSetOff(false); v6QdRe(); } }); } catch {}
 }
 // votar pelo próprio cartão: abre o resultado nesta visita
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('[data-v2qd] [data-qb]'); if (b) v6QdOpenDay = v6QdDay(); }, true);
@@ -29595,6 +29615,15 @@ TR.addEventListener('click', (ev) => {
     ev.preventDefault(); const to = backTo; backTo = null; cur = to; _go(to);
   });
 }
+// --- zg_v2_debate_semanal.js ---
+// Debate semanal (Bia, 22/11): a pergunta da semana vem do servidor (/v1/qday). A página e o cartão da Comunidade usavam a lista
+// local de temas (V2WK, um por semana); agora mostram a mesma pergunta do Hoje. Enquanto o servidor não responde, fica a guardada.
+const debSync = () => { try { if (V6QD && V6QD.question && (V2WK.length !== 1 || V2WK[0] !== V6QD.question)) { V2WK.length = 0; V2WK.push(V6QD.question); } } catch {} };
+debSync();
+{ const _r = v6QdRefresh; v6QdRefresh = function () { debSync(); const r = _r.apply(this, arguments); try { if (S.tab === 'comunidade' && v6S().f === 'desafio') v6Paint(); } catch {} return r; }; }
+{ const _l = v6QdLoad; v6QdLoad = async function () { const r = await _l.apply(this, arguments); debSync(); return r; }; }
+// "Ver o debate ›" no cartão do Hoje leva à aba Debate da Comunidade (a página "Mais votados" deixou de existir à parte)
+v6QdayOpen = function () { try { const S6 = v6S(); S6.f = 'desafio'; S6.desWk = 0; S6.desBk = null; } catch {} try { goTab('comunidade'); } catch {} try { v6Paint(); } catch {} };
 // --- zy_v2_jornada.js ---
 // Planeta Ler + aba Jornada (Bia, 22/11; protótipo v196 aprovado).
 //  - A barra de baixo fica Hoje · Biblioteca · Jornada · Comunidade · Você. O botão Ler do meio sai.
