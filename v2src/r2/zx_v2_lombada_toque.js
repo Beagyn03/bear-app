@@ -37,7 +37,7 @@
     try { l.mo && l.mo.disconnect(); } catch {} removeEventListener('scroll', l.onScroll, true); removeEventListener('keydown', l.onKey, true);
     if (l.box.isConnected) { if (back && l.cv && !RM() && l.cv.animate) { const a = l.cv.animate([{ transform: 'translateY(0) rotateY(0)', opacity: 1 }, { transform: `translateY(${l.dy}px) rotateY(80deg)`, opacity: .2 }], { duration: 180, easing: 'ease-in' }); a.onfinish = () => l.box.remove(); } else l.box.remove(); } }
   function lift(el, a, ev) { if (L && L.el === el) return; cleanup(false);
-    const id = el.dataset.id || el.dataset.bid; if (!id) return; const kind = el.closest('.pb') || el.classList.contains('pb') ? 'pile' : el.classList.contains('face') ? 'face' : 'spine';
+    const id = el.dataset.id || el.dataset.bid; if (!id) return; const kind = el.closest('.pile') ? 'pile' : el.classList.contains('face') ? 'face' : 'spine'; // .pb também é a lombada brochura: pilha é quem está dentro de .pile
     const r = el.getBoundingClientRect(); if (!r.width) return; const I = info(id);
     const box = document.createElement('div'); box.className = 'pop lvlift'; ensureCss(); box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', (I.t || 'Livro') + ': toque de novo para abrir');
     const l = L = { el, a, id, box, dy: 0 };
@@ -47,7 +47,9 @@
       cvEl = document.createElement('div'); cvEl.className = 'lvl-cv'; cvEl.style.cssText = `left:${lft}px;top:${top}px;width:${w}px;height:${h}px`;
       let html = ''; try { html = typeof v4cv === 'function' ? v4cv({ title: I.t, author: I.a, cover: I.img }) : ''; } catch {}
       cvEl.innerHTML = html || (I.img ? `<img alt="" src="${esc(I.img)}">` : `<span class="lvl-gen" style="background:${getComputedStyle(el).getPropertyValue('--c') || '#4b3f66'}">${esc(I.t)}</span>`);
-      box.append(cvEl); l.cv = cvEl; setSt(el, { visibility: 'hidden' }); cx = lft + w / 2;
+      box.append(cvEl); l.cv = cvEl;
+      // capa que falha ao carregar vira a capa gerada (com o título); a animação não espera a imagem
+      { const gen = () => { try { cvEl.innerHTML = typeof v4cv === 'function' ? v4cv({ title: I.t, author: I.a, cover: null }) : `<span class="lvl-gen">${esc(I.t)}</span>`; } catch {} }; const im = cvEl.querySelector('img'); if (im) { im.addEventListener('error', gen, { once: true }); if (im.complete && !im.naturalWidth) gen(); } } setSt(el, { visibility: 'hidden' }); cx = lft + w / 2;
       if (!RM() && cvEl.animate) cvEl.animate([{ transform: `translateY(${l.dy}px) rotateY(80deg) scaleX(${(r.width / w).toFixed(3)})`, opacity: .6 }, { transform: 'translateY(0) rotateY(0) scaleX(1)', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.2,1.3,.4,1)' }); }
     else { setSt(el, { transform: kind === 'pile' ? 'translateX(22%)' : 'translateY(-12%)', transition: RM() ? 'none' : 'transform .26s cubic-bezier(.2,1.3,.4,1)', filter: 'drop-shadow(0 8px 10px rgba(0,0,0,.35))', position: 'relative', 'z-index': '5' }); const hit = document.createElement('div'); hit.className = 'lvl-cv'; hit.style.cssText = `left:${r.left + (kind === 'pile' ? r.width * 0.22 : 0)}px;top:${r.top - (kind === 'pile' ? 0 : r.height * 0.12)}px;width:${r.width}px;height:${r.height}px;background:transparent;box-shadow:none`; box.append(hit); l.cv = null; l.hit = hit; top = r.top - (kind === 'pile' ? 0 : r.height * 0.12); }
     const tag = document.createElement('div'); tag.className = 'lvl-tag'; tag.innerHTML = `<b>${esc(I.t || 'Livro')}</b>${I.s ? `<small>${esc(I.s)}</small>` : ''}<i>toque de novo para abrir</i>`;

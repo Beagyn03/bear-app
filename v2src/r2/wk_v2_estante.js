@@ -135,7 +135,7 @@ function shMode() { return SHX_CTX ? null : SHX_MODE; }
 const shView = () => (v5P().shView === 'prat' ? 'prat' : 'grade');
 const shDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
 // livro da Biblioteca no formato do protótipo
-const shB = (e) => ({ id: String(e.id), t: e.title || '', a: e.author || '', st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || 0, img: e.cover || null });
+const shB = (e) => ({ id: String(e.id), t: e.title || '', a: e.author || '', st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || Number(e.meta && (e.meta.pages || e.meta.pageCount)) || 0, img: e.cover || null });
 function shById(id) { if (SHX_VB) { const x = SHX_VB[id]; return x ? { id, ...x } : null; } const e = v5Book(id); return e ? shB(e) : null; }
 function shEdOf(b) { const e = b && shc().ed && shc().ed[b.id]; return e ? { t: e.t, e: e.e } : { t: 'auto' }; }
 let SH_SPN_TEX = 'cor'; // textura da lombada da capa: 'cor' (cor amostrada) ou 'fatia' (borda esquerda da capa)
@@ -147,8 +147,10 @@ const shMix = (hex, t, to) => { const p = (x) => { const m = String(x).replace('
 // formato → altura (px por cm ≈ 6,1); páginas → grossura
 const SH_FMT = [['p', 18, 8], ['a', 21, 45], ['m', 23, 25], ['h', 23.5, 15], ['g', 24, 7]];
 function spnGeo(b, sm) { const h0 = spnHash(b.t + '|' + (b.a || '')); let r = h0 % 100, f = SH_FMT[1]; for (const x of SH_FMT) { if (r < x[2]) { f = x; break; } r -= x[2]; }
-  const pages = b.tot || (150 + (h0 >>> 7) % 520), ov = shEdOf(b), hc0 = f[0] === 'h' || (f[0] === 'g' && h0 % 2 === 0), hc = ov.t === 'hc' || ov.t === 'ep' ? true : (ov.t === 'pb' || ov.t === 'bp') ? false : hc0;
-  let h = Math.round(f[1] * 6.15 + ((h0 >>> 3) % 5) - 2) + (hc && !hc0 ? 5 : 0), w = Math.round(Math.max(12, Math.min(46, pages * 0.066 + (hc ? 4 : 1))));
+  // 22/11 (Bia): grossura proporcional às páginas (100 p ≈ 10 px … 1.000 p ≈ 64 px; teto só acima de ~1.100 p). Sem páginas: 300 (neutro).
+  // Capa dura só soma espessura (+2 px) quando a edição escolhida pela pessoa diz capa dura; nada sorteado.
+  const pages = b.tot || 300, ov = shEdOf(b), hc0 = f[0] === 'h' || (f[0] === 'g' && h0 % 2 === 0), hc = ov.t === 'hc' || ov.t === 'ep' ? true : (ov.t === 'pb' || ov.t === 'bp') ? false : hc0;
+  let h = Math.round(f[1] * 6.15 + ((h0 >>> 3) % 5) - 2) + (hc && !hc0 ? 5 : 0), w = Math.round(Math.max(8, Math.min(70, 10 + (pages - 100) * 0.06 + (ov.t === 'hc' || ov.t === 'ep' ? 2 : 0))));
   if (sm) { h = Math.round(h * 0.6); w = Math.max(8, Math.round(w * 0.6)); } return { h, w, hc, pages, h0 }; }
 function spnColors(b) { const g = spnHash(b.t + '|' + (b.a || '')); const p = SH_PAL[g % SH_PAL.length], q = SH_PAL[(g >>> 5) % SH_PAL.length]; return [p[0], p[1], q[0]]; }
 // ação de tocar num livro: na sua estante abre o livro (segurar abre o menu); na estante de outra pessoa abre a página do livro
@@ -172,15 +174,16 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   const kk = fi === 2 ? 0.86 : fi === 3 ? 0.5 : 0.56; let fs = Math.min(w * 0.6, 13.5 * sz), nl = 1;
   // não cabe numa linha: quebra entre palavras (2 linhas; 3 na lombada larga) antes de diminuir a letra
   if (t.length * fs * kk > L) { const words = t.split(/\s+/).length, mx = sm || words < 2 ? 1 : Math.min(words, w >= 40 ? 3 : 2);
-    for (let n = 2; n <= mx && nl === 1; n++) { const f2 = Math.min(13.5 * sz, (w * 0.84) / (n * 1.06)); if ((t.length / n) * 1.22 * f2 * kk <= L && f2 >= 7 * sz) { fs = f2; nl = n; } }
-    if (nl === 1 && mx >= 2) { const f2 = Math.min((w * 0.84) / 2.12, (L * 2) / (t.length * kk * 1.22)); if (f2 > L / (t.length * kk) && f2 >= 5.6 * sz) { fs = f2; nl = 2; } }
+    for (let n = 2; n <= mx && nl === 1; n++) { const f2 = Math.min(13.5 * sz, (w * 0.84) / (n * 1.06)); if ((t.length / n) * 1.34 * f2 * kk <= L - 4 && f2 >= 7 * sz) { fs = f2; nl = n; } }
+    if (nl === 1 && mx >= 2) { const f2 = Math.min((w * 0.84) / 2.12, ((L - 4) * 2) / (t.length * kk * 1.34)); if (f2 > L / (t.length * kk) && f2 >= 5.6 * sz) { fs = f2; nl = 2; } }
     if (nl === 1) fs = L / (t.length * kk); }
   fs = Math.max(5.6 * sz, fs);
   const smp = cvUrl ? shSampled(b) : null, cc = smp ? smp.c : c, kx = sty === 'ep' ? '#efd28a' : smp ? smp.k : k;
   let deco = '';
   if (sty === 'dt') deco += `<span class="tb" style="height:${Math.round(h * 0.17)}px;--c2:${c2}"></span>`;
-  if (sty === 'hc') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px;opacity:.3"></span><span class="fb" style="bottom:${Math.round(h * 0.27)}px"></span><span class="fb" style="bottom:4px"></span>`;
-  if (sty === 'ep') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px"></span><span class="orn" style="top:${Math.max(12, topR - 9)}px"></span><span class="orn" style="bottom:${Math.max(9, botR - 7)}px"></span><span class="fb" style="bottom:8px"></span><span class="fb" style="bottom:5px"></span>`;
+  // frisos nunca cruzam texto: o do meio fica entre o título e o autor (22/11)
+  if (sty === 'hc') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px;opacity:.3"></span><span class="fb" style="bottom:${hasAu ? botR - 3 : Math.round(h * 0.27)}px"></span><span class="fb" style="bottom:2px"></span>`;
+  if (sty === 'ep') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px"></span><span class="orn" style="top:${Math.max(12, topR - 9)}px"></span><span class="orn" style="bottom:${Math.max(9, botR - 4)}px"></span><span class="fb" style="bottom:3px"></span><span class="fb" style="bottom:1px"></span>`;
   if (sty === 'cl') deco += `<span class="lb" style="top:${topR - 3}px;height:${L + 6}px"></span><span class="fb" style="top:4px;opacity:.6"></span><span class="fb" style="bottom:4px;opacity:.6"></span>`;
   const edge = ov.t === 'bp' ? `<span class="eg" style="--eg:${ov.e || '#b3283f'}"></span>` : sty === 'ep' ? '<span class="eg" style="--eg:linear-gradient(90deg,#8a6a22,#f4dd8e 45%,#8a6a22)"></span>' : '';
   if (cvUrl && SH_SPN_TEX === 'fatia') deco += `<span class="cs" style="background-image:${cvUrl}"></span>`;
@@ -304,15 +307,31 @@ function pratHTML(list0, sm, wBsh) {
 // O resultado fica guardado por livro/tamanho: redesenhar a estante não mede de novo (estante grande abre rápido).
 const SH_FIT = new Map();
 function shFit(root) { const rg = document.createRange();
+  // 22/11 (Bia): mede de verdade. Não coube numa linha: quebra em 2 (3 na lombada larga) pela largura real da lombada;
+  // só diminui até ~8 px; reticências só se nem assim couber (no fim da última linha).
   root.querySelectorAll('.bsh .sp .tt, .bsh .sp .au').forEach((el) => { if (el.dataset.fit) return; el.dataset.fit = 1; const tn = el.firstChild; if (!tn) return;
-    const sp = el.parentElement, key = (el.classList.contains('au') ? 'a|' : 't|') + sp.dataset.bid + '|' + sp.style.width + '|' + el.style.height + '|' + el.style.fontSize + '|' + sp.className;
-    const got = SH_FIT.get(key); if (got) { el.style.fontSize = got[0]; if (got[1]) el.classList.add('w2'); return; }
-    const room = el.clientHeight - 2, min = el.classList.contains('au') ? 4.4 : 5.2; let fs = parseFloat(el.style.fontSize) || parseFloat(getComputedStyle(el).fontSize);
-    el.style.textOverflow = 'clip'; rg.selectNodeContents(tn); let len = rg.getBoundingClientRect().height, n = 0;
-    while (len > room && fs > min && n++ < 30) { fs = Math.max(min, fs * Math.max(0.6, room / len) - 0.1); el.style.fontSize = fs.toFixed(2) + 'px'; len = rg.getBoundingClientRect().height; }
-    if (len > room && !el.classList.contains('au') && el.clientWidth >= 21) { el.classList.add('w2'); fs = Math.min(el.clientWidth * 0.42, 9); el.style.fontSize = fs.toFixed(2) + 'px'; len = rg.getBoundingClientRect().height; n = 0;
-      while (len > room && fs > 5 && n++ < 20) { fs = Math.max(5, fs - 0.4); el.style.fontSize = fs.toFixed(2) + 'px'; len = rg.getBoundingClientRect().height; } }
-    el.style.textOverflow = ''; if (room > 0) SH_FIT.set(key, [el.style.fontSize, el.classList.contains('w2')]); });
+    const sp = el.parentElement, au = el.classList.contains('au'), key = (au ? 'a|' : 't|') + sp.dataset.bid + '|' + sp.style.width + '|' + el.style.height + '|' + el.style.fontSize + '|' + sp.className;
+    const got = SH_FIT.get(key); if (got) { el.style.fontSize = got[0]; el.classList.toggle('w2', !!got[1]); if (got[2] != null) tn.textContent = got[2]; return; }
+    const room = el.clientHeight - 3; if (room <= 0) return; const full = tn.textContent, spW = sp.clientWidth || parseFloat(sp.style.width) || 20, lineW = Math.max(6, spW - 5);
+    const len = () => { rg.selectNodeContents(tn); const b = rg.getBoundingClientRect(); return { h: b.height, w: b.width }; };
+    const fits = () => { const m = len(); return m.h <= room && m.w <= lineW + 0.5; };
+    let fs = parseFloat(el.style.fontSize) || parseFloat(getComputedStyle(el).fontSize); const fs0 = fs; el.style.textOverflow = 'clip'; el.classList.remove('w2');
+    const setF = (f) => { fs = f; el.style.fontSize = f.toFixed(2) + 'px'; };
+    let ok = fits(); const minS = au ? 4.4 : 6.5;
+    // 1 linha: só um pouco menor
+    for (let n = 0; !ok && n < 12 && fs > Math.max(minS, fs0 * 0.82); n++) { setF(fs - 0.3); ok = fits(); }
+    if (!ok && !au && /\s/.test(full)) { const mx = spW >= 30 ? 3 : 2; el.classList.add('w2');
+      for (let L = 2; L <= mx && !ok; L++) { setF(Math.max(minS, Math.min(fs0, (lineW / L) / 1.06))); ok = fits(); for (let n = 0; !ok && n < 30 && fs > minS; n++) { setF(Math.max(minS, fs - 0.3)); ok = fits(); } if (!ok && L < mx) setF(fs0); } }
+    if (!ok && au) { for (let n = 0; !ok && n < 30 && fs > minS; n++) { setF(Math.max(minS, fs - 0.3)); ok = fits(); } }
+    // fonte do título ainda carregando: a medida não vale; mede de novo quando ela chegar (sem guardar nada)
+    if (document.fonts && document.fonts.status !== 'loaded') { tn.textContent = full; el.style.textOverflow = ''; delete el.dataset.fit; if (!shFit.wt) { shFit.wt = 1; document.fonts.ready.then(() => { shFit.wt = 0; try { shFit(root); } catch {} }); } return; }
+    let txt = null; if (!ok) { // reticências no fim da última linha
+      const w = full.split(' '); let lo = 1, hi = full.length; while (lo < hi) { const mid = Math.ceil((lo + hi) / 2); tn.textContent = full.slice(0, mid).trimEnd() + '…'; if (fits()) lo = mid; else hi = mid - 1; } tn.textContent = full.slice(0, lo).trimEnd() + '…'; void w;
+      // sobrariam 1–3 letras: melhor a letra menor (até 5,5 px) com o título inteiro
+      if (lo < 4) { tn.textContent = full; el.classList.remove('w2'); for (let n = 0; !fits() && n < 40 && fs > 5.5; n++) setF(Math.max(5.5, fs - 0.3)); el.style.textOverflow = ''; return; }
+      // medida feita cedo demais (fonte/estilo ainda chegando) deixava reticências para sempre: confere de novo uma vez, sem guardar
+      if (!el.dataset.retry) { el.dataset.retry = 1; setTimeout(() => { if (!el.isConnected) return; tn.textContent = full; delete el.dataset.fit; SH_FIT.delete(key); shFit(root); }, 1500); } el.style.textOverflow = ''; return; }
+    el.style.textOverflow = ''; SH_FIT.set(key, [el.style.fontSize, el.classList.contains('w2'), txt]); });
   root.querySelectorAll('.bsh .pb span').forEach((el) => { if (el.dataset.fit) return; el.dataset.fit = 1; let fs = parseFloat(getComputedStyle(el).fontSize), n = 0; const room = el.parentElement.clientWidth - 14;
     while (el.scrollWidth > room && fs > 5.4 && n++ < 12) { fs -= 0.4; el.style.fontSize = fs.toFixed(1) + 'px'; } }); }
 
@@ -433,7 +452,7 @@ function v5ClickLongGuard(ev) { const r = ev.currentTarget; if (r.dataset.longAt
 function shSnap() { const L = typeof window.v6ProfOrder === 'function' ? window.v6ProfOrder() : shSh().filter((s) => !s.priv);
   const sh = L.map((s) => ({ n: s.name, ids: (s.bookIds || []).map(String).filter((id) => v5Book(id)) })).filter((x) => x.ids.length);
   const ids = [...new Set(sh.flatMap((x) => x.ids))].slice(0, 400), set = new Set(ids); sh.forEach((x) => { x.ids = x.ids.filter((id) => set.has(id)); });
-  const b = {}; ids.forEach((id) => { const e = v5Book(id); b[id] = { t: String(e.title || '').slice(0, 120), a: String(e.author || '').slice(0, 80), st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || 0, img: e.cover && !/^data:/.test(e.cover) && e.cover.length < 600 ? e.cover : null }; });
+  const b = {}; ids.forEach((id) => { const e = v5Book(id); b[id] = { t: String(e.title || '').slice(0, 120), a: String(e.author || '').slice(0, 80), st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || Number(e.meta && (e.meta.pages || e.meta.pageCount)) || 0, img: e.cover && !/^data:/.test(e.cover) && e.cover.length < 600 ? e.cover : null }; });
   const C = shc(), pick = (o) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => set.has(k)));
   let budget = 90000; const sp = {}; ids.forEach((id) => { const u = C.sp && C.sp[id]; if (u && u.length < budget) { sp[id] = u; budget -= u.length; } });
   return { v: 1, sh, b, C: { ed: pick(C.ed), sp, ord: (C.ord || []).filter((id) => set.has(id)), lay: pick(C.lay), pos: pick(C.pos), spb: pick(C.spb), plq: (C.plq || []).slice(0, 24), manual: C.manual ? 1 : 0, deco: C.deco, wood: C.wood, wall: C.wall, lt: C.lt, lights: Array.isArray(C.lights) ? C.lights.slice(0, 3) : undefined, spMode: C.spMode } }; }

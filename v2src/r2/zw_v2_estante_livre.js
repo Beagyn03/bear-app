@@ -150,8 +150,9 @@ function flHTML(list0) { const C0 = shc(), F = FL_PV ? FL_PV.free : C0.free, md 
   const PK = (FLX.pk || (FLX.sel && FLX.sel.ids.length)) && md === 'org', pkW = PK ? flPkW() : 0;
   const rowsH = F.rows.map((row, k) => { const bnd = flBounds(row); let nich = '', dvs = '';
     for (let n = 0; n < bnd.length - 1; n++) { const li = n > 0 ? FL_INS : 0, ri = n < bnd.length - 2 ? FL_INS : 0, NW = flNW(row, n, BW), nb = (row.nb && row.nb[n]) || {};
-      const its = row.it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) })); if (!flFit(its, NW)) its.reduce((e, q) => { q.x = e; return e + q.w; }, 0);
-      let h = its.map((q) => flItemHTML(q.o, q.x, md)).join(''); if (PK) h += flTargets(k, n, its, NW, pkW);
+      const its = row.it.filter((o) => (o.n || 0) === n).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) })); let sc = 1; if (!flFit(its, NW)) { const tot = its.reduce((a, q) => a + q.w, 0); sc = tot > NW && NW > 0 ? Math.max(0.6, NW / tot) : 1; its.reduce((e, q) => { q.x = e; return e + q.w * sc; }, 0); }
+      // prateleira cheia (estante arrumada noutra largura): estreita as peças por igual em vez de transbordar
+      let h = its.map((q) => { const t = flItemHTML(q.o, q.x, md); return sc < 1 ? t.replace(/style="left:([\d.-]+)px"/, `style="left:$1px;transform:scaleX(${sc.toFixed(3)});transform-origin:0 100%"`) : t; }).join(''); if (PK) h += flTargets(k, n, its, NW, pkW);
       const sel = md === 'deco' && FLX.ns === k + ':' + n;
       nich += `<div class="nich${nb.bg ? ' bg-' + esc(nb.bg) : ''}${nb.lt ? ' nlt nlt' + esc(String(nb.lt)) : ''}${sel ? ' sel' : ''}" data-r="${k}" data-n="${n}" style="left:calc(${(bnd[n] * 100).toFixed(3)}% + ${li}px);width:calc(${((bnd[n + 1] - bnd[n]) * 100).toFixed(3)}% - ${li + ri}px)">${nb.lt ? '<i class="npk" aria-hidden="true"></i>' : ''}${h}</div>`;
       if (n > 0) dvs += `<span class="ndv" data-r="${k}" data-i="${n - 1}" style="left:calc(${(bnd[n] * 100).toFixed(3)}% - ${FL_INS}px)"${md === 'deco' ? ` role="slider" tabindex="0" aria-label="Divisória da ${k + 1}ª prateleira: arraste ou use as setas" aria-valuenow="${Math.round(bnd[n] * 100)}" aria-valuemin="5" aria-valuemax="95"` : ' aria-hidden="true"'}></span>`; }
@@ -257,7 +258,8 @@ function flDecoAdd(k) { const C0 = shc(), F = C0.free, BW = flBW();
   toast('Sem espaço livre: tire um livro ou um enfeite antes'); }
 function flDecoSheet(u) { const f = flFind(u); if (!f) return; const o = f.o, C0 = shc();
   const items = []; if (o.k === 'leitor') { const cur = shLeitorBook({ k: o.k, ...(o.o || {}) }); items.push(['Escolher livro do visor', () => shPickBook('Escolher livro do visor', cur && cur.id, (id) => { o.o = { ...(o.o || {}), bk: id }; shSave(); flRender(); toast('“' + shTitle(id).slice(0, 40) + '” no visor'); })]);
-    items.push([o.o && o.o.cor ? 'Visor em tons de cinza' : 'Mostrar a capa colorida', () => { o.o = { ...(o.o || {}), cor: o.o && o.o.cor ? 0 : 1 }; shSave(); flRender(); }]); }
+    items.push([o.o && o.o.gr ? 'Capa colorida no visor' : 'Visor em tons de cinza', () => { o.o = { ...(o.o || {}), gr: o.o && o.o.gr ? 0 : 1 }; shSave(); flRender(); }]);
+    items.push(['Cor da capinha', () => shX('Cor da capinha', Object.entries(SH_ERD).map(([k, v]) => [(((o.o && o.o.cap) || 'verde') === k ? '✓ ' : '') + v[0], () => { o.o = { ...(o.o || {}), cap: k }; shSave(); flRender(); toast('Capinha ' + v[0].toLowerCase()); }]))]); }
   items.push(['Trocar por outro enfeite', () => { FLX.swap = u; SHX_DKT = 'enf'; flRender(); toast('Escolha o novo enfeite'); }]);
   items.push(['Tirar da estante', () => { const bk = shBk(); C0.free.rows[f.r].it = C0.free.rows[f.r].it.filter((x) => x.u !== u); shSave(); toast('Enfeite tirado', shUndo(bk)); flRender(); }]);
   shX(SH_DN[o.k] || 'Enfeite', items); }
