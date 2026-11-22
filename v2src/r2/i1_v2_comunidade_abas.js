@@ -63,9 +63,8 @@ function v6DesDone(items) {
 }
 const v6DesLeft = () => {
   const t = todayISO(), Q = (typeof V6QD !== 'undefined' && V6QD) || {}, dm = (x) => x.slice(8, 10) + '/' + x.slice(5, 7), nd = (a, b) => Math.round((Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 864e5);
-  if (Q.weekStart && Q.weekEnd) { if (t < Q.weekStart) { const n = nd(t, Q.weekStart); return (n === 1 ? 'começa amanhã' : 'começa ' + dm(Q.weekStart)) + ' · termina domingo, ' + dm(Q.weekEnd); }
-    const n = nd(t, Q.weekEnd); return n <= 0 ? 'termina hoje' : n === 1 ? 'termina amanhã' : `termina domingo, ${dm(Q.weekEnd)} · faltam ${n} dias`; }
-  const d = new Date().getDay(); return d === 0 ? 'termina hoje' : d === 6 ? 'termina amanhã (domingo)' : `termina domingo · faltam ${7 - d} dias`; };
+  if (Q.weekEnd) { const n = nd(t, Q.weekEnd); return n <= 0 ? 'termina hoje' : n === 1 ? 'termina amanhã' : 'até domingo, ' + dm(Q.weekEnd); }
+  const d = new Date().getDay(); return d === 0 ? 'termina hoje' : d === 6 ? 'termina amanhã' : 'até domingo'; };
 
 // ---------- pedaços comuns ----------
 function v6TabsHTML() {
@@ -99,7 +98,7 @@ function v6PaintTab(R) {
   const list = bk ? items.filter((it) => v6BkKey(it.book) === bk) : items; S6.list = list;
   // dentro da aba o tema já está no cartão de cima: a resposta aparece sem o "Desafio da semana: <tema>" na frente
   const pre = new RegExp('(<p>)(?:Debate semanal|Desafio da semana|Pergunta do dia): ' + esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'gi');
-  const posts = list.map((it, i) => v6PostHTML(it, i)).join('').replace(pre, '$1');
+  const posts = list.map((it, i) => { const h = v6PostHTML(it, i); return it.spoiler && it.book && it.book.title ? h.replace('Cuidado, spoiler</em><small>Eu quero ver mesmo assim', 'Contém spoiler de ' + esc(it.book.title) + '</em><small>Mostrar') : h; }).join('').replace(pre, '$1');
   const bar = back ? '' : done ? `<div class="cbar cbar-ok">${v6MeAv()}<span class="cpart ok">${v4ic('ok', 16)}${V6DEB.participou}</span></div>`
     : `<div class="cbar">${v6MeAv()}<button class="cin cpart" type="button" data-a="v6dgo">${V6QD && V6QD.mine ? V6DEB.comentar : V6DEB.participar}</button></div>`;
   const pod = rank.length && (items.length + ((V6QD && V6QD.total) || 0)) >= 3 && !back ? `<div class="dh">${V6DEB.ranking}</div><div class="dpod" role="group" aria-label="Filtrar respostas por livro">${[rank[1], rank[0], rank[2]].filter(Boolean).map((x) => { const pos = rank.indexOf(x) + 1, on = bk === x.k;

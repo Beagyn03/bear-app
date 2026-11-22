@@ -3,7 +3,7 @@
 // - Depois do voto: "Seu voto: <livro> · Trocar" e o campo "Quer contar por quê? (opcional)" + Enviar, que publica a resposta do
 //   debate ("<nome>: <pergunta>\n<texto>", citando o livro votado) direto pela API. Sem texto, o voto já vale.
 // - "Participar do debate…" e "Responder ao debate" rolam até o cartão e destacam as capas (ou o campo, se já votou).
-const V6DQ = { troca: false, txt: '', busy: false, sent: '' };
+const V6DQ = { troca: false, txt: '', busy: false, sent: '', sp: false };
 const V6DQCSS = `.v6dq{margin-top:12px}.v6dq .qpicks{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 4px}
 .v6dq .qpicks button{display:grid;gap:5px;justify-items:center;align-content:start;border:0;background:none;padding:0;font:inherit;font-size:11.5px;font-weight:800;color:var(--ink-2);width:72px;flex:none;text-align:center;cursor:pointer;min-height:44px}
 .v6dq .qpicks button span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -18,6 +18,7 @@ const V6DQCSS = `.v6dq{margin-top:12px}.v6dq .qpicks{display:flex;gap:10px;overf
 .v6dq .dqc textarea{width:100%;box-sizing:border-box;min-height:64px;resize:vertical;border:1px solid var(--line);border-radius:12px;background:var(--bg,var(--panel));color:var(--ink);font:inherit;font-size:15px;padding:10px 12px}
 .v6dq .dqc .row{display:flex;justify-content:space-between;align-items:center;gap:8px}.v6dq .dqc small{color:var(--ink-2);font-size:12px}
 .v6dq .dqc .btn{min-height:44px;padding:0 18px;border-radius:99px;border:0;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:900;cursor:pointer}.v6dq .dqc .btn:disabled{opacity:.5;cursor:default}
+.v6dq .dqsp{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--ink-2);min-height:44px;cursor:pointer}.v6dq .dqsp input{width:18px;height:18px;accent-color:var(--acc)}.v6dq .dqsp:has(input:disabled){opacity:.5;cursor:default}
 .v6dq .dqok{margin-top:10px;font-size:13px;font-weight:800;color:var(--ink-2)}`;
 function v6DebVoteHTML(q) {
   const Q = (typeof V6QD !== 'undefined' && V6QD) || {}, mine = Q.mine;
@@ -30,6 +31,7 @@ function v6DebVoteHTML(q) {
   return `<div class="v6dq"><div class="dqm">${cvh(mine.title, mine.cover, 'qcv')}<span class="t">Seu voto: <b>${esc(mine.title)}</b></span><button type="button" data-a="v6dqtroca">Trocar</button></div>
     ${sent ? `<div class="dqok">Comentário publicado. Ele aparece nas respostas abaixo.</div>` : `<div class="dqc"><label for="v6dqt">Quer contar por quê? (opcional)</label>
     <textarea id="v6dqt" maxlength="260" placeholder="O que esse livro tem a ver com a pergunta">${esc(V6DQ.txt)}</textarea>
+    <label class="dqsp"><input type="checkbox" data-a="v6dqsp"${V6DQ.sp ? ' checked' : ''}${V6DQ.txt.trim() ? '' : ' disabled'}>Tem spoiler</label>
     <div class="row"><small>Sem comentário, o voto já vale.</small><button type="button" class="btn" data-a="v6dqsend"${V6DQ.busy || !V6DQ.txt.trim() ? ' disabled' : ''}>Enviar</button></div></div>`}</div>`;
 }
 // coloca a votação dentro do cartão da pergunta (só na semana atual)
@@ -50,8 +52,8 @@ async function v6DebSend() {
   V6DQ.busy = true; v6Paint();
   try {
     const b = Q.mine, book = { title: b.title, ...(b.author ? { author: b.author } : {}), ...(/^https:\/\//.test(b.cover || '') ? { cover: b.cover } : {}) };
-    const r = await sapi('POST', '/v1/posts', { kind: 'comment', text: `${DEB.nome}: ${q}\n${txt}`.slice(0, 320), visibility: 'public', book });
-    if (r.status === 200 || r.status === 201) { V6DQ.txt = ''; V6DQ.sent = q; toast('Comentário publicado');
+    const r = await sapi('POST', '/v1/posts', { kind: 'comment', text: `${DEB.nome}: ${q}\n${txt}`.slice(0, 320), visibility: 'public', book, ...(V6DQ.sp ? { spoiler: { kind: 'end' } } : {}) });
+    if (r.status === 200 || r.status === 201) { V6DQ.txt = ''; V6DQ.sp = false; V6DQ.sent = q; toast('Comentário publicado');
       try { ['rede', 'amigos'].forEach((sc) => { v6Feed(sc).at = 0; }); v6Load('rede'); v6Load('amigos'); } catch {}
       try { V6QDAt = 0; v6QdLoad(true); } catch {}
     } else toast('Não consegui publicar agora. Seu texto continua aqui.');
@@ -63,12 +65,14 @@ async function v6DebSend() {
     if (qb) { ev.stopPropagation(); ev.preventDefault(); V6DQ.troca = false; return v2QAnswer(qb.dataset.qb); }
     const b = ev.target.closest && ev.target.closest('[data-a]'), a = b && b.dataset.a;
     if (a === 'v6dqtroca') { ev.stopPropagation(); ev.preventDefault(); V6DQ.troca = true; return v6Paint(); }
+    if (a === 'v6dqsp') { ev.stopPropagation(); V6DQ.sp = !!b.checked; return; }
     if (a === 'v6dqsend') { ev.stopPropagation(); ev.preventDefault(); return v6DebSend(); }
     return _vc.apply(this, arguments);
   }; }
 // o texto do comentário fica guardado entre repinturas (e o Enviar liga quando há texto)
 document.addEventListener('input', (ev) => { const t = ev.composedPath && ev.composedPath()[0]; if (!t || t.id !== 'v6dqt') return; V6DQ.txt = t.value;
-  const s = t.closest('.dqc') && t.closest('.dqc').querySelector('[data-a=v6dqsend]'); if (s) s.disabled = V6DQ.busy || !t.value.trim(); }, true);
+  const s = t.closest('.dqc') && t.closest('.dqc').querySelector('[data-a=v6dqsend]'); if (s) s.disabled = V6DQ.busy || !t.value.trim();
+  const c = t.closest('.dqc') && t.closest('.dqc').querySelector('[data-a=v6dqsp]'); if (c) { c.disabled = !t.value.trim(); if (c.disabled) { c.checked = false; V6DQ.sp = false; } } }, true);
 // voto feito em qualquer lugar (Hoje ou aba): sai do modo "trocar"
 { const _v = v6Vote; v6Vote = async function () { const r = await _v.apply(this, arguments); V6DQ.troca = false; return r; }; }
 // enquanto a pessoa digita o comentário, a aba não é refeita (o feed que chega pinta depois, ao sair do campo)

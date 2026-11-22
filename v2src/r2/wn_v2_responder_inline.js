@@ -49,7 +49,7 @@ const irpAv = (h, name, cls = 'irp-av') => { let d = null; try { d = avatarOf(h)
   return `<span class="${cls}" style="background-color:${friendColor(h || '')}${d ? `;background-image:url('${d}')` : ''}">${d ? '' : esc(initial(name || h || '?'))}</span>`; };
 const irpRepHTML = (it, x, i) => {
   const u = x.user || {}; let sp = null;
-  if (x.spoiler && !x.mine && !(S.rdOpen && S.rdOpen.has('reply' + x.id))) { try { sp = rdSpoil({ ...x, type: 'reply', book: it.book, spoiler: x.spoiler }); } catch { sp = { label: 'Cuidado, spoiler' }; } }
+  const xs = x.spoiler || it.spoiler || null; if (xs && !x.mine && !(S.rdOpen && S.rdOpen.has('reply' + x.id))) { try { sp = rdSpoil({ ...x, type: 'reply', book: it.book, spoiler: xs }); } catch { sp = { label: 'Cuidado, spoiler' }; } }
   return `<div class="irp-r">${irpAv(u.handle, u.displayName)}<div class="irp-b"><b>${esc(u.displayName || '@' + (u.handle || ''))}</b><small>${esc(relTime(x.createdAt))}</small>
     ${sp ? `<button type="button" class="irp-sp" data-irp="sp" data-r="${i}">${esc(sp.label || 'Cuidado, spoiler')}<u>Mostrar</u></button>` : `<p>${esc(x.text || '')}</p>`}</div></div>`;
 };
