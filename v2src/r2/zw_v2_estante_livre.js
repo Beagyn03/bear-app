@@ -134,7 +134,7 @@ function flHTML(list0) { const C0 = shc(), F = C0.free, md = shMode(), BW = flBW
     return `<div class="bay fl" data-r="${k}">${shLtRow(k, false, 'b')}<div class="brow flr">${nich}${dvs}</div></div><div class="bpl"${pq ? '' : ' aria-hidden="true"'} data-r="${k}">${shLtRow(k, false, 'f')}${pq}</div>`; }).join('');
   const hint = md ? '' : `<div class="hint"><span><i class="k1"></i>lendo</span><span><i class="k2">✦</i>lido</span><span class="r">Minha arrumação · toque abre · segure para opções</span></div>`;
   const ltOff = C0.lt && C0.lt.on === 0;
-  const cls = `bsh flx${md ? ' ' + md : ''}${shDark() ? ' dk' : ''}${/^c[23]$/.test(F.st) ? ' cubo' : ''}${PK ? ' flpk' : ''} w-${C0.wall || 'linho'} lt-${ltOff ? 'off' : (C0.lt && C0.lt.c) || 'quente'}`;
+  const cls = `bsh flx${md ? ' ' + md : ''}${shDark() ? ' dk' : ''}${/^c[23]$/.test(F.st) ? ' cubo' : ''}${PK ? ' flpk' : ''}${md === 'deco' && SHX_LBP ? ' lbp' : ''} w-${C0.wall || 'linho'} lt-${ltOff ? 'off' : (C0.lt && C0.lt.c) || 'quente'}`;
   return `<div class="${cls}" style="${shWoodVars(C0.wood)}">${hint}<div class="case">${shLtFrame(false)}<div class="crown"></div>${rowsH}</div></div>`; }
 { const _p = pratHTML; pratHTML = function (list0, sm, wBsh) { try { if (!sm && FL_MAIN && flActive()) { FL_WB = wBsh || FL_WB; return flHTML(list0); } } catch (err) { console.warn('estante livre', err); } return _p.apply(this, arguments); }; }
 
@@ -525,6 +525,7 @@ const SHX_CSSFL = `
 .v4ler .bsh.flx .nich.nlt2::after{background:radial-gradient(55% 75% at 50% 0,rgba(176,214,255,.42),transparent 72%)}
 .v4ler .bsh.flx .nich .npk{position:absolute;left:50%;top:1px;width:28px;height:5px;margin-left:-14px;border-radius:0 0 7px 7px;background:#f6e2b4;box-shadow:0 0 10px 3px rgba(255,206,140,.75);z-index:4}
 .v4ler .bsh.flx .nich.nlt2 .npk{background:#e3f0ff;box-shadow:0 0 10px 3px rgba(176,214,255,.75)}
+.v4ler .bsh.flx.deco:not(.lbp) .fli.fl-b,.v4ler .bsh.flx.deco:not(.lbp) .fli.fl-p{pointer-events:none}
 .v4ler .bsh.flx.org .fli{touch-action:none;cursor:grab}.v4ler .bsh.flx.deco .fli.fl-d{touch-action:none;cursor:grab}
 .v4ler .bsh.flx.org .fli *,.v4ler .bsh.flx .fli .dec{pointer-events:none}.v4ler .bsh.flx .fli .dec.lk{pointer-events:auto}.v4ler .bsh.flx:not(.org):not(.deco) .fli *{pointer-events:auto}.v4ler .bsh.flx:not(.org):not(.deco) .fli .dec:not(.lk){pointer-events:none}
 .v4ler .bsh.flx.org,.v4ler .bsh.flx.deco,.v4ler .fldock,.v4ler .flpill,.v4ler.fldrag,.v4ler .fldrag{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
