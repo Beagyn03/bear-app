@@ -231,12 +231,11 @@ function ppPaths(id) {
     const A = (sel, t, x, o) => ({ keep: 1, go: openFim, sel: () => { const y = typeof sel === 'function' ? sel() : ppFindAny(sel); return y; }, t, x, adv: 'btn', ...(o || {}) });
     const FOLHA = [
       A('#v4st5', 'Sua nota', 'Meia estrela vale. Opcional.', { also: '#v4nlbl' }),
-      A('#v4fimfe', 'O que sentiu', 'Marque até 3. Opcional.'),
-      A(() => { const b = ppFindAny('[data-a=fimr]'); return b ? b.parentElement : null; }, 'Ressaca literária', 'Deu ressaca ou curou uma? Ajuda outras pessoas a escolher.'),
-      A('.v4fim details.nvd', 'Níveis do enredo', 'Opcional: ajuda quem vai escolher o próximo livro.'),
+      A('.v4fim .avtabs [data-t=lb]', 'Lembranças', 'Emoções, personagens e trecho favorito. Opcional.'),
+      A('.v4fim #avnv', 'Níveis do enredo', 'Opcional: ajuda quem vai escolher o próximo livro.'),
       A('#v4fimt', 'O que você achou', 'Seu texto, se quiser.'),
-      A(() => { const b = ppFindAny('[data-a=fimsp]'); return b ? b.closest('label') : null; }, 'Tem spoiler', 'Esconde o texto de quem ainda não leu.'),
-      A(() => { const b = ppFindAny('[data-a=fimshare]'); return b ? b.closest('label') : null; }, 'Publicar na Comunidade', 'Desligado: fica só para você.', { opt: 1 }),
+      A(() => { const b = ppFindAny('[data-av=sp]'); return b ? b.closest('label') : null; }, 'Contém spoiler', 'Esconde o texto de quem ainda não leu.'),
+      A(() => ppFindAny('[data-av=qv]'), 'Quem vê', 'Toda a comunidade ou só você.', { opt: 1 }),
     ];
     if (!real) return [
       { keep: 1, go: () => { if (e && !ppFindAny('.v4fim')) { try { v4FimOpen(e, 1); } catch (er) { console.warn('demo', er); } } }, sel: '.v4fim .fimdemo', t: 'Demonstração', x: 'Veja o que dá para registrar ao terminar um livro. Nada será salvo.', adv: 'btn' },
