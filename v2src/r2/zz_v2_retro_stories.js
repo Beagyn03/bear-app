@@ -551,7 +551,7 @@ app.addEventListener('click', (ev) => { const el = ev.target.closest && ev.targe
   function preload(D) { const ids = new Set([...(D.livros || []), ...(D.top5 || []).map((t) => t[0]), ...((D.autor && D.autor.ids) || []), D.jornada && D.jornada.longo[0], D.jornada && D.jornada.rapido && D.jornada.rapido[0], D.livro && D.livro.id, D.trecho && D.trecho.b, D.twist && D.twist.b].filter(Boolean));
     ids.forEach((id) => { const b = RTB.get(id); if (!b || !b.img || b.ok || b.tried) return; b.tried = 1; const im = new Image(); im.crossOrigin = 'anonymous'; im.decoding = 'async';
       im.onload = () => { if (im.naturalWidth < 16) return; try { const c = document.createElement('canvas'); c.width = c.height = 2; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 2, 2); x.getImageData(0, 0, 1, 1); b.ok = im; const cv0 = app.querySelector('#rtcv'); if (cv0 && S.rt) rtDraw(cv0, rtD(), rtShareSpec(rtD())); } catch {} };
-      im.src = b.img; }); }
+      im.src = coverCanvasUrl(b.img); }); }
   function openWith(D) { if (!D) return false; RT_CUR = D; preload(D); rtOpen(D.kind); return true; }
   // fontes do tema: carregadas só ao abrir e esperadas (até 1,5 s) antes da 1ª tela, para o texto não trocar de fonte no meio
   const FONTS = { fan: ['700 40px Cinzel', '400 40px Cinzel'], rom: ['700 40px "Playfair Display"', 'italic 700 40px "Playfair Display"'], sus: ['400 40px "Bebas Neue"'] };

@@ -225,7 +225,7 @@ function shSample(u, key) { if (!u) return; const im = new Image(); if (!/^data:
     r = Math.round(r / n); g = Math.round(g / n); bb = Math.round(bb / n); const lum = (0.299 * r + 0.587 * g + 0.114 * bb) / 255;
     const v = [`rgb(${r},${g},${bb})`, lum > 0.56 ? '#1f150d' : '#f7efe2']; SH_SC[key] = v; shScSave();
     SHX_ROOTS.forEach((R) => { if (!R.isConnected && !(R.host && R.host.isConnected)) { SHX_ROOTS.delete(R); return; } R.querySelectorAll(`.bsh .sp.cvs[data-sk="${key}"]`).forEach((el) => { el.style.setProperty('--c', v[0]); if (!el.classList.contains('ep')) el.style.setProperty('--k', v[1]); }); }); } catch (e) { SH_SC[key] = 1; shScSave(); } };
-  im.src = u; }
+  im.src = coverCanvasUrl(u); }
 function shWoodVars(w) { if (w === 'tema') return '--bk-w1:color-mix(in srgb,var(--acc) 58%,#6b4a2a);--bk-w2:color-mix(in srgb,var(--acc) 44%,#3e2716);--bk-w3:color-mix(in srgb,var(--acc) 26%,#1f130a);--bk-top:color-mix(in srgb,var(--acc) 50%,#f3d7a8)';
   const p = SH_WOOD[w]; return p ? `--bk-w1:${p[0]};--bk-w2:${p[1]};--bk-w3:${p[2]};--bk-top:${p[3]}` : ''; }
 const SH_WOOD = { clara: ['#d6aa76', '#b98551', '#8e5f36', '#e8c597'], escura: ['#6b4a32', '#4d3322', '#2f1f15', '#7d5a3e'], branca: ['#f2eee7', '#ddd6ca', '#bcb3a5', '#fcfaf6'] };

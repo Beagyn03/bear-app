@@ -425,7 +425,7 @@ function flSampleCover(u, key) { const im = new Image(); if (!/^data:/.test(u)) 
       const o = bins.get(k) || { n: 0, r: 0, g: 0, b: 0 }; o.n++; o.r += r; o.g += g; o.b += b; bins.set(k, o); }
     let best = null; bins.forEach((o) => { if (!best || o.n > best.n) best = o; }); if (!best) return done(0);
     done([Math.round(best.r / best.n), Math.round(best.g / best.n), Math.round(best.b / best.n)]); } catch (e) { done(0); } }; // canvas bloqueado (CORS): 0
-  im.src = u; }
+  im.src = coverCanvasUrl(u); }
 // cor de um livro: capa (amostrada) > lombada já calculada > capa gerada (sem imagem); null = sem cor (vai para o fim)
 function flBookRgb(b, ask) { if (!b) return null; if (!b.img) { try { return flHex2rgb(colorOf(b.t || '')); } catch { return null; } }
   const key = spnHash(b.img), v = FLCC[key]; if (Array.isArray(v)) return v;
