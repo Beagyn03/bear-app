@@ -156,13 +156,15 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   let sty = G.hc ? (hh % 3 === 0 ? 'cl' : 'hc') : (hh % 5 === 0 ? 'dt' : 'pb');
   if (ov.t === 'hc' && sty === 'cl') sty = 'hc'; if (ov.t === 'ep') sty = 'ep'; if (ov.t === 'pb' && sty === 'dt') sty = 'pb';
   // lombada: foto da pessoa > tirada da capa (faixa da borda esquerda + cor amostrada) > desenhada
-  const photo = (C0.sp && C0.sp[b.id]) || null, cvUrl = !photo && C0.spMode !== 'desenho' && b.img ? cssUrl(b.img) : '';
+  const photo = (C0.sp && C0.sp[b.id]) || null, spM = (C0.spb && C0.spb[b.id]) || C0.spMode, cvUrl = !photo && spM !== 'desenho' && b.img ? cssUrl(b.img) : '';
+  // lombada da capa: cor sólida + faixa da arte; sem etiqueta escura nem tarja (nada de caixa por trás do título)
+  if (cvUrl && (sty === 'cl' || sty === 'dt')) sty = G.hc ? 'hc' : 'pb';
   let fi = sty === 'cl' ? 4 : sty === 'ep' ? 0 : (hh >>> 9) % 4; if (String(b.t).length > 13 && fi === 2) fi = hh % 2 ? 3 : 0;
   const cls = `sp ${sty} f${fi}${b.lean ? ' lean' : ''}${cvUrl ? ' cvs' : ''}${photo ? ' ph' : ''}`;
   // título de cima para baixo; ocupa o meio da lombada; autor no terço de baixo; marca da editora no pé
   const t = String(b.t), au = String(b.a || '').split(' ').slice(-1)[0], sz = sm ? 0.6 : 1;
   const hasAu = !sm && w >= 15 && !!au, auH0 = hasAu ? Math.round(h * 0.22) : 0, foot = sm ? 5 : (w >= 13 ? 15 : 7);
-  const topR = Math.round(h * (sty === 'dt' ? 0.21 : cvUrl ? 0.1 : 0.07)), botR = foot + auH0 + (hasAu ? 5 : 0), L = h - topR - botR;
+  const bandH = cvUrl ? Math.round(h * (sm ? 0.12 : 0.14)) : 0, topR0 = cvUrl ? bandH + Math.round(h * 0.05) : Math.round(h * (sty === 'dt' ? 0.21 : 0.07)), topR = b.st === 'lido' && !cvUrl ? Math.max(topR0, sm ? 11 : 16) : topR0, botR = foot + auH0 + (hasAu ? 5 : 0), L = h - topR - botR;
   const kk = fi === 2 ? 0.86 : fi === 3 ? 0.5 : 0.56; let fs = Math.min(w * 0.6, 13.5 * sz);
   if (t.length * fs * kk > L) fs = L / (t.length * kk);
   fs = Math.max(5.6 * sz, fs);
@@ -173,13 +175,13 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   if (sty === 'ep') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px"></span><span class="orn" style="top:${Math.max(12, topR - 9)}px"></span><span class="orn" style="bottom:${Math.max(9, botR - 7)}px"></span><span class="fb" style="bottom:8px"></span><span class="fb" style="bottom:5px"></span>`;
   if (sty === 'cl') deco += `<span class="lb" style="top:${topR - 3}px;height:${L + 6}px"></span><span class="fb" style="top:4px;opacity:.6"></span><span class="fb" style="bottom:4px;opacity:.6"></span>`;
   const edge = ov.t === 'bp' ? `<span class="eg" style="--eg:${ov.e || '#b3283f'}"></span>` : sty === 'ep' ? '<span class="eg" style="--eg:linear-gradient(90deg,#8a6a22,#f4dd8e 45%,#8a6a22)"></span>' : '';
-  if (cvUrl) deco += `<span class="tp" style="top:${topR - 4}px;height:${L + 8}px"></span>`;
+  if (cvUrl) deco += `<span class="cb" style="height:${bandH}px;background-image:${cvUrl}"></span>`;
   const mk = b.st === 'lendo' ? '<span class="rb" aria-hidden="true"></span>' : b.st === 'lido' ? '<span class="sr" aria-hidden="true">✦</span>' : '';
   const lab = `${t}${b.a ? ', ' + b.a : ''}${b.st === 'lendo' ? ', lendo' : b.st === 'lido' ? ', lido' : b.st === 'quero' ? ', quero ler' : b.st === 'pausado' ? ', pausado' : b.st === 'abandonado' ? ', abandonado' : ''}`;
   const tag = sm ? 'span' : 'button', at = sm || shMode() ? '' : shAct(b, true);
   const auH = hasAu ? `<span class="au" style="bottom:${foot}px;height:${auH0}px;font-size:${Math.min(6.8, w * 0.36).toFixed(1)}px">${esc(au)}</span>` : '';
   const pm = (!sm && w >= 13) ? `<span class="pm p${(hh >>> 13) % 4}" aria-hidden="true"></span>` : '';
-  const bg = photo ? `;background-image:url('${photo}')` : cvUrl ? `;background-image:${cvUrl}` : '';
+  const bg = photo ? `;background-image:url('${photo}')` : '';
   const inner = photo ? edge : `${deco}${edge}<span class="tt" style="top:${topR}px;height:${L}px;font-size:${fs.toFixed(1)}px">${esc(t)}</span>${auH}${pm}`;
   return `<${tag}${tag === 'button' ? ' type="button"' : ''} class="${cls}"${at} data-bid="${esc(b.id)}"${cvUrl ? ` data-sk="${spnHash(b.img)}"` : ''} aria-label="${esc(lab)}" style="width:${w}px;height:${h}px;--c:${cc};--k:${kx}${bg}${b.lean ? `;margin-left:${Math.ceil(h * 0.125)}px` : ''}">${inner}${mk}</${tag}>`; }
 // objetos (desenho próprio, nos tons do universo do app); s = escala
@@ -226,13 +228,17 @@ const SH_WOOD = { clara: ['#d6aa76', '#b98551', '#8e5f36', '#e8c597'], escura: [
 // largura da estante (px): na Biblioteca ela ocupa a largura toda da tela; no perfil, a da caixa
 function pratHTML(list0, sm, wBsh) {
   const C0 = shc(), md = sm ? null : shMode(), sc = sm ? 0.6 : 1, W = Math.max(200, Math.min(480, wBsh || 390)) - (sm ? 56 : 40);
-  let list = list0.map((b) => ({ ...b }));
+  let list = list0.map((b) => ({ ...b })); if (typeof SHX_LTN !== 'undefined') SHX_LTN = 0;
+  // Esvaziar e arrumar: no Organizar, os livros da bandeja saem da estante (fora dele ficam no fim, até a pessoa terminar)
+  const TRAY = !sm && md === 'org' && Array.isArray(C0.tray) && C0.tray.length ? new Set(C0.tray) : null; if (TRAY) list = list.filter((b) => !TRAY.has(b.id));
+  const POS = C0.pos || {}; list.forEach((b) => { if (POS[b.id] === 'lean') b.lean = 1; });
   // "Minha ordem" (Organizar): vale dentro do filtro; o que não está na ordem salva vai para o fim
   if (C0.ord && C0.ord.length) { const ix = new Map(C0.ord.map((id, i) => [id, i])); list = list.map((b, i) => [b, ix.has(b.id) ? ix.get(b.id) : 1e6 + i]).sort((x, y) => x[1] - y[1]).map((x) => x[0]); }
   const man = !!C0.manual || Object.keys(C0.lay || {}).some((id) => C0.lay[id]);
   // sequência: livro em pé; deitados (Organizar) viram pilha no lugar deles; sem arrumação manual, a estante arruma sozinha (pilhas, livro de frente)
   const seq = []; for (let i = 0; i < list.length; i++) { const b = list[i];
     if (C0.lay && C0.lay[b.id]) { const bs = [b]; while (list[i + 1] && C0.lay[list[i + 1].id] && bs.length < 5) bs.push(list[++i]); seq.push({ k: 'pile', bs, top: null }); continue; }
+    if (POS[b.id] === 'face' && b.img !== undefined) { seq.push({ k: 'face', b }); continue; }
     if (!man && !sm && list.length >= 20 && i % 14 === 9 && list[i + 1]) { const n = list[i + 2] && i % 28 === 9 ? 3 : 2; seq.push({ k: 'pile', bs: list.slice(i, i + n), top: ['vela', 'cristal'][(i / 14 | 0) % 2] }); i += n - 1; continue; }
     if (!man && !sm && list.length >= 20 && i % 19 === 13 && b.img) { seq.push({ k: 'face', b }); continue; }
     seq.push({ k: 'sp', b }); }
@@ -252,30 +258,39 @@ function pratHTML(list0, sm, wBsh) {
     from.shift(); cur.push(it); used += w; }
   if (cur.length || !rows.length) rows.push(cur);
   // estante nunca fica com uma prateleira só: no mínimo 3; um enfeite da pessoa numa prateleira mais baixa garante que ela exista
-  const minR = sm ? 1 : Math.max(3, ...(UD ? UD.map((d) => d.r + 1) : [0]));
+  const minR = sm ? 1 : Math.max(C0.minR || 3, ...(UD ? UD.map((d) => d.r + 1) : [0]));
   while (rows.length < minR) rows.push([]);
   // o último livro de algumas fileiras cheias encosta no vizinho, inclinado (só na arrumação automática)
-  if (!man && !md) rows.forEach((r, k) => { const last = r[r.length - 1]; if (!sm && last && last.k === 'sp' && k % 3 === 1 && r.length > 4) last.b.lean = 1; });
+  // livro inclinado só quando a pessoa escolhe (Organizar › Inclinado)
   const pileHTML = (bs, top) => `<span class="pile">${top ? `<span class="dec" style="margin:0 0 0 18px">${SH_DEC[top](0.9)}</span>` : ''}${bs.map((x, j) => { const G = spnGeo(x, false), [c, k] = spnColors(x), ov = shEdOf(x), wv = Math.round(G.h * 0.86 * sc) - j * 3, ht = Math.max(13, Math.min(26, Math.round(G.w * 0.8)));
     const fe = ov.t === 'bp' || ov.t === 'ep', act = md ? '' : shAct(x, true);
     // bordas pintadas (ou douradas): o livro deitado mostra o corte das páginas, não a lombada
     return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}${fe ? ', bordas ' + (ov.t === 'ep' ? 'douradas' : 'pintadas') : ''}"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (ov.e || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : `<span>${esc(x.t)}</span>`}</span>`; }).join('')}</span>`;
-  const decHTML = (d) => { const edit = md === 'deco' && d.i != null; return `<span class="dec${edit ? ' u' : ''}"${edit ? ` data-dk="${d.i}" role="button" tabindex="0" aria-label="${esc(SH_DN[d.k] || d.k)}: trocar, tirar ou arrastar"` : ''}>${SH_DEC[d.k](sc)}</span>`; };
+  const decHTML = (d) => { const edit = md === 'deco' && d.i != null, lb = !edit && !md && !sm && d.k === 'leitor' && typeof shLeitorBook === 'function' ? shLeitorBook(d) : null; return `<span class="dec${edit ? ' u' : ''}${lb ? ' lk' : ''}"${edit ? ` data-dk="${d.i}" role="button" tabindex="0" aria-label="${esc(SH_DN[d.k] || d.k)}: trocar, tirar ou arrastar"` : lb ? `${shAct(lb, false)} role="button" tabindex="0" aria-label="Leitor digital: ${esc(lb.t)}"` : ''}>${SH_DEC[d.k](sc, d)}</span>`; };
   const itemHTML = (it) => it.k === 'sp' ? spnHTML(it.b, sm) : it.k === 'pile' ? pileHTML(it.bs, it.top) : `<button type="button" class="face" data-bid="${esc(it.b.id)}"${md ? '' : shAct(it.b, true)} aria-label="${esc(it.b.t)}, de frente">${v4cv({ title: it.b.t, cover: it.b.img })}</button>`;
+  // toque para pegar (Organizar): marcadores grandes onde o livro pode entrar; por cima das pilhas, deitar nela
+  const PK = md === 'org' && typeof SHX_PICK !== 'undefined' && SHX_PICK ? String(SHX_PICK) : null;
+  const firstId = (it) => it.k === 'pile' ? it.bs[0].id : it.b.id, lastId = (it) => it.k === 'pile' ? it.bs[it.bs.length - 1].id : it.b.id;
+  const insB = (ref, after, lab) => `<span class="ins"><button type="button" data-ins="${esc(ref)}" data-af="${after ? 1 : 0}" aria-label="${esc(lab)}">+</button></span>`;
+  const itemPK = (it) => { const h = itemHTML(it); if (!PK) return h; if (it.k === 'pile' && !it.bs.some((x) => x.id === PK)) return h.replace('<span class="pile">', `<span class="pile"><button type="button" class="insp" data-insp="${esc(lastId(it))}" aria-label="Deitar em cima desta pilha">+</button>`); return h; };
   const ltOff = C0.lt && C0.lt.on === 0;
   const rowHTML = (r, k) => { let items;
-    if (UD) { const arr = r.map(itemHTML); udRow(k).reverse().forEach((d) => arr.splice(Math.min(d.p, arr.length), 0, decHTML(d))); items = arr.join('');
-      if (!r.length && !udRow(k).length && !sm && k === rows.length - 1 && list.length < 16) items = '<span class="ghost">Seus próximos livros ficam aqui</span>'; }
-    else { items = r.map(itemHTML).join('');
-      if (!r.length && !sm) items = `<span class="dec">${SH_DEC.quadro(1)}</span><span style="flex:1"></span><span class="dec">${SH_DEC[k % 2 ? 'telescopio' : 'globo'](1)}</span>`;
-      let d = r.length ? decOf(k) : null; if (d === 'lua' && !(r[r.length - 1] && r[r.length - 1].k === 'sp')) d = 'globo'; if (d) { const dec = `<span class="dec">${SH_DEC[d](sc)}</span>`; items = (d === 'lua' || k % 2) ? items + dec : dec + items; }
-      if (!r.length && !sm && k === rows.length - 1 && list.length < 16) items = items.replace('<span style="flex:1"></span>', '<span class="ghost">Seus próximos livros ficam aqui</span>'); }
+    const r0 = r; if (PK) { const arr0 = []; r.forEach((it) => { if (firstId(it) !== PK) arr0.push(insB(firstId(it), false, 'Colocar aqui, antes de ' + (it.k === 'pile' ? it.bs[0].t : it.b.t))); arr0.push(itemPK(it)); }); if (r.length && lastId(r[r.length - 1]) !== PK) arr0.push(insB(lastId(r[r.length - 1]), true, 'Colocar no fim desta prateleira')); if (!r.length) arr0.push(`<span class="ins wide"><button type="button" data-ins="" data-af="1" aria-label="Colocar nesta prateleira">+ guardar aqui</button></span>`); r = { map: (f) => arr0.map((x) => ({ __h: x })).map((o) => o.__h), length: arr0.length, __pk: 1 }; }
+    if (UD) { const arr = r.__pk ? r.map() : r.map(itemHTML); udRow(k).reverse().forEach((d) => arr.splice(Math.min(d.p, arr.length), 0, decHTML(d))); items = arr.join('');
+      if (!r0.length && !PK && !udRow(k).length && !sm && k === rows.length - 1 && list.length < 16) items = '<span class="ghost">Seus próximos livros ficam aqui</span>'; }
+    else { items = r.__pk ? r.map().join('') : r.map(itemHTML).join('');
+      if (!r0.length && !sm && !PK) items = `<span class="dec">${SH_DEC.quadro(1)}</span><span style="flex:1"></span><span class="dec">${SH_DEC[k % 2 ? 'telescopio' : 'globo'](1)}</span>`;
+      let d = r0.length ? decOf(k) : null; if (d === 'lua' && !(r0[r0.length - 1] && r0[r0.length - 1].k === 'sp')) d = 'globo'; if (d) { const dec = `<span class="dec">${SH_DEC[d](sc)}</span>`; items = (d === 'lua' || k % 2) ? items + dec : dec + items; }
+      if (!r0.length && !sm && k === rows.length - 1 && list.length < 16) items = items.replace('<span style="flex:1"></span>', '<span class="ghost">Seus próximos livros ficam aqui</span>'); }
     const n = sm ? 0 : 9, bulbs = Array.from({ length: n }, (_, i) => { const x = (i + 0.5) / n, t = (x * 3) % 1, y = 1 + 10 * Math.sin(Math.PI * t); return `<i style="left:${(x * 100).toFixed(2)}%;top:${y.toFixed(1)}px"></i>`; }).join('');
-    const wire = (sm || k % 2 || ltOff) ? '' : `<span class="lt" aria-hidden="true"><svg viewBox="0 0 300 18" preserveAspectRatio="none"><path d="M0 1 Q50 22 100 1 T200 1 T300 1" fill="none" stroke="rgba(30,20,10,.55)" stroke-width="1" vector-effect="non-scaling-stroke"/></svg>${bulbs}</span>`;
-    return `<div class="bay" data-r="${k}"><div class="brow">${items}</div></div><div class="bpl" aria-hidden="true">${wire}</div>`; };
+    const wire = typeof shLtRow === 'function' ? shLtRow(k, sm, 'f') : (sm || k % 2 || ltOff) ? '' : `<span class="lt" aria-hidden="true"><svg viewBox="0 0 300 18" preserveAspectRatio="none"><path d="M0 1 Q50 22 100 1 T200 1 T300 1" fill="none" stroke="rgba(30,20,10,.55)" stroke-width="1" vector-effect="non-scaling-stroke"/></svg>${bulbs}</span>`;
+    // Leituras por mês: plaquinha do mês onde ele começa (C0.mk = {id: 'jan'})
+    let mkq = ''; if (C0.mk && !PK) { let x = 12; r0.forEach((it) => { const id = it.k === 'pile' ? it.bs[0].id : it.b.id; if (C0.mk[id]) mkq += `<span class="plq mk s-${esc(C0.mkS || 'latao')}" style="left:${Math.min(x, W - 22)}px">${esc(C0.mk[id])}</span>`; x += wOf(it); }); }
+    const pq = mkq + (C0.plq || []).map((q, i) => ({ ...q, i })).filter((q) => q.r === k && q.t).map((q) => `<span class="plq s-${esc(q.s || 'mad')}${md === 'deco' ? ' u' : ''}" style="left:${Math.max(4, Math.min(96, (q.p == null ? 0.5 : q.p) * 100)).toFixed(1)}%"${md === 'deco' ? ` data-pq="${q.i}" role="button" tabindex="0"` : ''}>${esc(String(q.t).slice(0, 24))}</span>`).join('');
+    return `<div class="bay" data-r="${k}">${typeof shLtRow === 'function' ? shLtRow(k, sm, 'b') : ''}<div class="brow">${items}</div></div><div class="bpl"${pq ? '' : ' aria-hidden="true"'} data-r="${k}">${wire}${pq}</div>`; };
   const hint = sm || md ? '' : `<div class="hint"><span><i class="k1"></i>lendo</span><span><i class="k2">✦</i>lido</span><span class="r">${man ? 'Minha ordem · ' : ''}toque abre · segure para opções</span></div>`;
   const cls = `bsh${sm ? ' sm' : ''}${md ? ' ' + md : ''}${shDark() ? ' dk' : ''} w-${C0.wall || 'linho'} lt-${ltOff ? 'off' : (C0.lt && C0.lt.c) || 'quente'}`;
-  return `<div class="${cls}" style="${shWoodVars(C0.wood)}">${hint}<div class="case"><div class="crown"></div>${rows.map(rowHTML).join('')}</div></div>`; }
+  return `<div class="${cls}" style="${shWoodVars(C0.wood)}">${hint}<div class="case">${typeof shLtFrame === 'function' ? shLtFrame(sm) : ''}<div class="crown"></div>${rows.map(rowHTML).join('')}</div></div>`; }
 // ajusta o título na lombada depois de desenhar: diminui a letra até caber (e corta com reticências só no limite).
 // O resultado fica guardado por livro/tamanho: redesenhar a estante não mede de novo (estante grande abre rápido).
 const SH_FIT = new Map();
@@ -354,7 +369,7 @@ function shOpen(k, ctx) { shArmV4(); v5Sheet(k, ctx || {}); shArmV4(); }
 { const _sh = v4SheetHTML; v4SheetHTML = function (k) { if (!String(k).startsWith('shx')) return _sh.apply(this, arguments);
     try { return shSheetHTML(k); } catch (err) { console.warn('folha da estante', err); return '<p class="mut">Não deu para abrir.</p>'; } }; }
 function shSheetHTML(k) {
-  if (k === 'shxleg') return `<h3>Como ler a estante</h3><div class="shleg"><div><span class="k1"></span>Fitinha: você está lendo</div><div><span class="k2">✦</span>Estrela: você já leu</div><div>${v4ic('ler', 18)}Toque num livro para abrir · segure para ver as opções</div></div>`;
+  if (k === 'shxleg') return `<h3>Como ler a estante</h3><div class="shleg"><div><span class="k1"></span>Fitinha: você está lendo</div><div><span class="k2">✦</span>Estrela: você já leu</div><div>${v4ic('ler', 18)}Toque num livro para abrir · segure para ver as opções</div><div>${v4ic('estante', 18)}Trocar a lombada: Organizar › toque no livro › Lombada, ou segure o livro › Mais › Lombada e edição</div><div>${v4ic('lua', 18)}Decorar: enfeites, plaquinhas, madeira, parede, luzinhas e o estilo das lombadas</div></div>`;
   if (k === 'shxfilt') { const f = shF(), cnt = (x) => shList(x).length, L = shSh();
     return `<div class="shfl"><h3>Mostrar na estante</h3><div class="list">${SHF.map(([x, nm]) => `<button type="button" class="li${f === x ? ' on' : ''}" data-a="shfil" data-k="${x}" aria-pressed="${f === x}"><span class="t">${nm}</span><small>${cnt(x)}</small></button>`).join('')}</div>${L.length ? `<h4>Suas estantes</h4><div class="list">${L.map((s) => `<button type="button" class="li${f === 'sh:' + s.id ? ' on' : ''}" data-a="shfil" data-k="sh:${esc(String(s.id))}" aria-pressed="${f === 'sh:' + s.id}"><span class="t">${esc(s.name)}</span><small>${(s.bookIds || []).filter((id) => v5Book(id)).length}</small></button>`).join('')}</div>` : ''}</div>`; }
   return typeof shSheetHTML2 === 'function' ? shSheetHTML2(k) : ''; }
@@ -412,5 +427,5 @@ function shSnap() { const L = typeof window.v6ProfOrder === 'function' ? window.
   const b = {}; ids.forEach((id) => { const e = v5Book(id); b[id] = { t: String(e.title || '').slice(0, 120), a: String(e.author || '').slice(0, 80), st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || 0, img: e.cover && !/^data:/.test(e.cover) && e.cover.length < 600 ? e.cover : null }; });
   const C = shc(), pick = (o) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => set.has(k)));
   let budget = 90000; const sp = {}; ids.forEach((id) => { const u = C.sp && C.sp[id]; if (u && u.length < budget) { sp[id] = u; budget -= u.length; } });
-  return { v: 1, sh, b, C: { ed: pick(C.ed), sp, ord: (C.ord || []).filter((id) => set.has(id)), lay: pick(C.lay), manual: C.manual ? 1 : 0, deco: C.deco, wood: C.wood, wall: C.wall, lt: C.lt, spMode: C.spMode } }; }
+  return { v: 1, sh, b, C: { ed: pick(C.ed), sp, ord: (C.ord || []).filter((id) => set.has(id)), lay: pick(C.lay), pos: pick(C.pos), spb: pick(C.spb), plq: (C.plq || []).slice(0, 24), manual: C.manual ? 1 : 0, deco: C.deco, wood: C.wood, wall: C.wall, lt: C.lt, lights: Array.isArray(C.lights) ? C.lights.slice(0, 3) : undefined, spMode: C.spMode } }; }
 { const _ps = profShelvesSnap; profShelvesSnap = function (snapshot) { const r = _ps.apply(this, arguments); try { if (snapshot && snapshot.shelf) snapshot.shelf.prat = shSnap(); } catch (err) { console.warn('prateleira no resumo', err); } return r; }; }
