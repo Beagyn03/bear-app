@@ -332,23 +332,26 @@ async function v4UpdSave(k) {
     if (secs >= 60) { db.focus = [...(db.focus || []), { id: uid(), date: todayISO(), start: new Date(s.start).toISOString(), minutes: min, libId: e.id, fromPage: now, pages: Math.max(0, pg - now), via: 'ler', ...(U.cap ? { chapter: U.cap } : {}), ...(U.fe.length ? { feel: [...U.fe] } : {}) }]; save(); }
     const before = new Set(((V4ECO.get(e.id) || {}).seen || []).map((x) => x.id)); const E = await v4EcoLoad(e, pg); if (E) hits = (E.seen || []).filter((x) => !x.mine && !before.has(x.id));
     v2SesPut(null); v4Stop(); v4AmbPlay(''); }
+  // a página salva vem primeiro; trecho, anotação, emoções e comentário usam a página que ficou salva (Bia, 22/11:
+  // emoção com pág. 108 e progresso em 81). Se o registro da página não aplicar, os itens ficam na página atual.
+  if (pg !== now) { try { if (gb) quickLog(g, gb, String(pg)); else libLog(e, String(pg), false); } catch (err) { console.warn('v4 log', err); } }
+  else if (!inSes) toast('Página salva');
+  const ip = (() => { try { const x = v4Info(e).now; return Number.isFinite(x) ? x : pg; } catch { return pg; } })();
   const text = U.text.trim(), fe = [...U.fe];
   // Trecho (sempre coberto quando compartilhado) e Anotação (só você vê), da página cheia
   const tre = (U.tre || '').trim(), ano = (U.ano || '').trim();
-  if (tre) { e.quotes = [...(e.quotes || []), { t: tre.slice(0, 600), p: pg || null, at: new Date().toISOString() }].slice(-200); save();
+  if (tre) { e.quotes = [...(e.quotes || []), { t: tre.slice(0, 600), p: ip || null, at: new Date().toISOString() }].slice(-200); save();
     if (U.treVis !== 'eu' && v4On('comunidade') && connected() && socialProfile) {
-      sapi('POST', '/v1/posts', { kind: 'quote', text: '', quote: tre.slice(0, 600), ...(pg > 0 ? { page: pg } : {}), visibility: U.treVis === 'friends' ? 'friends' : 'public', readerPct: total ? Math.min(100, Math.round(pg / total * 100)) : null,
+      sapi('POST', '/v1/posts', { kind: 'quote', text: '', quote: tre.slice(0, 600), ...(ip > 0 ? { page: ip } : {}), visibility: U.treVis === 'friends' ? 'friends' : 'public', readerPct: total ? Math.min(100, Math.round(ip / total * 100)) : null,
         book: { title: String(e.title).slice(0, 200), author: e.author ? String(e.author).slice(0, 120) : null, cover: /^https:\/\//.test(e.cover || '') ? e.cover : null },
-        spoiler: pg > 0 && total && pg < total ? { kind: 'page', at: pg } : total && pg >= total ? { kind: 'end' } : { kind: 'yes' } }).catch(() => {}); } }
-  if (ano) { try { addNote(e, ano, pg); } catch {} }
-  if (text || fe.length) { const pct = total ? Math.round(pg / total * 100) : 0; e.diary = [...(e.diary || []), { d: todayISO(), page: pg, pct, text, fe, ...(U.cap ? { cap: U.cap } : {}) }].slice(-200); save();
+        spoiler: ip > 0 && total && ip < total ? { kind: 'page', at: ip } : total && ip >= total ? { kind: 'end' } : { kind: 'yes' } }).catch(() => {}); } }
+  if (ano) { try { addNote(e, ano, ip); } catch {} }
+  if (text || fe.length) { const pct = total ? Math.round(ip / total * 100) : 0; e.diary = [...(e.diary || []), { d: todayISO(), page: ip, pct, text, fe, ...(U.cap ? { cap: U.cap } : {}) }].slice(-200); save();
     if (text && U.pub && v4On('comunidade') && connected() && socialProfile) {
       sapi('POST', '/v1/posts', { kind: 'comment', text: ((U.cap ? 'cap. ' + U.cap + ' · ' : '') + text).slice(0, 280), feelings: fe.slice(0, 3), visibility: U.vis === 'friends' ? 'friends' : 'public', readerPct: Math.min(100, pct),
         book: { title: String(e.title).slice(0, 200), author: e.author ? String(e.author).slice(0, 120) : null, cover: /^https:\/\//.test(e.cover || '') ? e.cover : null },
-        ...(U.sp ? (pg > 0 && total && pg < total ? { spoiler: { kind: 'page', at: pg } } : total && pg >= total ? { spoiler: { kind: 'end' } } : { spoiler: { kind: 'yes' } }) : {}) })
+        ...(U.sp ? (ip > 0 && total && ip < total ? { spoiler: { kind: 'page', at: ip } } : total && ip >= total ? { spoiler: { kind: 'end' } } : { spoiler: { kind: 'yes' } }) : {}) })
         .then((x) => { if (x.status === 201) toast(U.vis === 'friends' ? 'Comentário postado para suas amizades' : 'Comentário postado na Comunidade'); else if (x.status >= 400) toast('Salvo no seu diário (não deu para postar agora)'); }).catch(() => {}); } }
-  if (pg !== now) { try { if (gb) quickLog(g, gb, String(pg)); else libLog(e, String(pg), false); } catch (err) { console.warn('v4 log', err); } }
-  else if (!inSes) toast('Página salva');
   st.upd = null;
   if (inSes) { st.sum = { min: secs < 60 ? 0 : min, pages: Math.max(0, pg - s.pg0), hits }; st.sheet = 'sum'; return v4Draw(); }
   st.sheet = null; if (st.view) v4Draw(); else v4Close();
