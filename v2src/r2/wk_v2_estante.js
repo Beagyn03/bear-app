@@ -41,7 +41,7 @@ const SHX_CSS1 = `.v4ler .bsh{--bk-wall:#efe7da;--bk-back:#e4d8c5;--bk-w1:#d6aa7
 .v4ler .bsh .sp .tb{position:absolute;left:0;right:0;top:0;background:var(--c2)}
 .v4ler .bsh .sp .fb{position:absolute;left:2px;right:2px;height:1px;background:var(--k);opacity:.55}
 .v4ler .bsh .sp .lb{position:absolute;left:2px;right:2px;border-radius:1px;background:rgba(0,0,0,.42);box-shadow:inset 0 0 0 .5px rgba(255,220,150,.45)}
-.v4ler .bsh .sp .tt,.v4ler .bsh .sp .au{position:absolute;left:0;right:0;display:block;writing-mode:vertical-rl;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1;z-index:1;margin:auto}
+.v4ler .bsh .sp .tt,.v4ler .bsh .sp .au{position:absolute;left:0;right:0;display:block;width:fit-content;max-width:100%;writing-mode:vertical-rl;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1;z-index:1;margin:auto}
 .v4ler .bsh .sp .tt.w2{white-space:normal;line-height:1.02;text-overflow:clip}
 .v4ler .bsh .sp .au{font-size:6.6px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;opacity:.78}
 .v4ler .bsh .sp .pm{position:absolute;left:50%;bottom:5px;width:6px;height:6px;margin-left:-3px;z-index:1;opacity:.75}
@@ -164,12 +164,17 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   let fi = sty === 'cl' ? 4 : sty === 'ep' ? 0 : (hh >>> 9) % 4; if (String(b.t).length > 13 && fi === 2) fi = hh % 2 ? 3 : 0;
   const cls = `sp ${sty} f${fi}${b.lean ? ' lean' : ''}${cvUrl ? ' cvs' : ''}${photo ? ' ph' : ''}`;
   // título de cima para baixo; ocupa o meio da lombada; autor no terço de baixo; marca da editora no pé
-  const t = String(b.t), au = String(b.a || '').split(' ').slice(-1)[0], sz = sm ? 0.6 : 1;
+  // 22/11 (Bia): sem o sufixo de série "(Next, #1)" na lombada; a página do livro continua com ele
+  const t = String(b.t).replace(/\s*\((?=[^)]*#\s*\d)[^)]*\)\s*$/, '').trim() || String(b.t), au = String(b.a || '').split(' ').slice(-1)[0], sz = sm ? 0.6 : 1;
   const hasAu = !sm && w >= 15 && !!au, auH0 = hasAu ? Math.round(h * 0.22) : 0, foot = sm ? (b.st === 'lido' ? 9 : 5) : (w >= 13 || b.st === 'lido' ? 15 : 7);
   // 22/11 (Bia): sem a faixa de capa no topo; a lombada leva a cor da capa (modo fatia: borda esquerda da capa, escurecida)
   const topR0 = Math.round(h * (sty === 'dt' ? 0.21 : 0.07)), topR = topR0, botR = foot + auH0 + (hasAu ? 5 : 0), L = h - topR - botR;
-  const kk = fi === 2 ? 0.86 : fi === 3 ? 0.5 : 0.56; let fs = Math.min(w * 0.6, 13.5 * sz);
-  if (t.length * fs * kk > L) fs = L / (t.length * kk);
+  const kk = fi === 2 ? 0.86 : fi === 3 ? 0.5 : 0.56; let fs = Math.min(w * 0.6, 13.5 * sz), nl = 1;
+  // não cabe numa linha: quebra entre palavras (2 linhas; 3 na lombada larga) antes de diminuir a letra
+  if (t.length * fs * kk > L) { const words = t.split(/\s+/).length, mx = sm || words < 2 ? 1 : Math.min(words, w >= 40 ? 3 : 2);
+    for (let n = 2; n <= mx && nl === 1; n++) { const f2 = Math.min(13.5 * sz, (w * 0.84) / (n * 1.06)); if ((t.length / n) * 1.22 * f2 * kk <= L && f2 >= 7 * sz) { fs = f2; nl = n; } }
+    if (nl === 1 && mx >= 2) { const f2 = Math.min((w * 0.84) / 2.12, (L * 2) / (t.length * kk * 1.22)); if (f2 > L / (t.length * kk) && f2 >= 5.6 * sz) { fs = f2; nl = 2; } }
+    if (nl === 1) fs = L / (t.length * kk); }
   fs = Math.max(5.6 * sz, fs);
   const smp = cvUrl ? shSampled(b) : null, cc = smp ? smp.c : c, kx = sty === 'ep' ? '#efd28a' : smp ? smp.k : k;
   let deco = '';
@@ -186,7 +191,7 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   // marca de editora (◆ ○ ▬) saiu: parecia sinal de status; o único sinal no pé é a ✦ de lido
   const pm = false ? `<span class="pm p${(hh >>> 13) % 4}" aria-hidden="true"></span>` : '';
   const bg = photo ? `;background-image:url('${photo}')` : '';
-  const inner = photo ? edge : `${deco}${edge}<span class="tt" style="top:${topR}px;height:${L}px;font-size:${fs.toFixed(1)}px">${esc(t)}</span>${auH}${pm}`;
+  const inner = photo ? edge : `${deco}${edge}<span class="tt${nl > 1 ? ' w2' : ''}" style="top:${topR}px;height:${L}px;font-size:${fs.toFixed(1)}px${nl > 1 ? `;-webkit-line-clamp:${nl}` : ''}">${esc(t)}</span>${auH}${pm}`;
   return `<${tag}${tag === 'button' ? ' type="button"' : ''} class="${cls}"${at} data-bid="${esc(b.id)}"${cvUrl ? ` data-sk="${spnHash(b.img)}"` : ''} aria-label="${esc(lab)}" style="width:${w}px;height:${h}px;--c:${cc};--k:${kx}${bg}${b.lean ? `;margin-left:${Math.ceil(h * 0.125)}px` : ''}">${inner}${mk}</${tag}>`; }
 // objetos (desenho próprio, nos tons do universo do app); s = escala
 const SH_DEC = {

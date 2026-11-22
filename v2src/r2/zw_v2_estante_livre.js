@@ -12,6 +12,8 @@ SH_DEC.aparador = (s) => `<svg width="${20 * s}" height="${76 * s}" viewBox="0 0
 SH_DEC.aparadorD = (s) => `<span style="display:block;transform:scaleX(-1)">${SH_DEC.aparador(s)}</span>`;
 SH_CAT.unshift(['aparador', 'Aparador (esquerda)'], ['aparadorD', 'Aparador (direita)']); SH_DN.aparador = 'Aparador (esquerda)'; SH_DN.aparadorD = 'Aparador (direita)'; SH_DH.aparador = SH_DH.aparadorD = 76; SH_DW.aparador = SH_DW.aparadorD = 20;
 const FLX = { pk: null, sel: null, posG: null, pos: null, open: false, filt: false, ns: null, swap: null, D: null, swallow: 0, dkx: false, md: null };
+let FL_ARRW = null; // folha Arrumar por aberta (volta para a tela depois de cada redesenho da prévia)
+let FL_PV = null; // prévia do Arrumar por: { free, plq } desenhada sem salvar
 let FL_MAIN = 0, FL_SR = null, FL_WB = 0, FL_BUSY = 0;
 const FL_INS = 5, FL_SN = 6;
 const FL_TPL = [['aberta', 'Aberta'], ['n2', '2 nichos'], ['n3', '3 nichos'], ['na', 'Nicho + aberto'], ['c2', 'Cubos 2×2'], ['c3', 'Cubos 3×3'], ['esc', 'Escada']];
@@ -83,11 +85,11 @@ function flAdd(F, o) { const BW = flBW(), w = flW(o);
     const g = gaps.slice(1).concat(gaps.slice(0, 1)).find(([a, z]) => z - a >= w); if (g) { o.n = n; o.x = Math.round(g[0]); row.it.push(o); return; } }
   const row = flNewRow(F); o.n = 0; o.x = 0; row.it.push(o); }
 // estante x Biblioteca: tira o que saiu, põe o que entrou (fora o que está na bandeja)
-function flSync(list) { const C0 = shc(), F = C0.free, ids = new Set(list.map((b) => b.id)), tray = new Set(C0.tray || []), have = new Set(); let ch = 0;
+function flSync(list) { const C0 = shc(), F = FL_PV ? FL_PV.free : C0.free, ids = new Set(list.map((b) => b.id)), tray = new Set(C0.tray || []), have = new Set(); let ch = 0;
   F.rows.forEach((row) => { row.it = row.it.filter((o) => { if (o.t === 'b') { if (!ids.has(o.id) || tray.has(o.id) || have.has(o.id)) { ch = 1; return false; } have.add(o.id); }
     if (o.t === 'p') { const k = o.ids.filter((id) => ids.has(id) && !tray.has(id) && !have.has(id)); if (k.length !== o.ids.length) { ch = 1; o.ids = k; } k.forEach((id) => have.add(id)); return k.length > 0; } return true; }); });
   list.forEach((b) => { if (!have.has(b.id) && !tray.has(b.id)) { flAdd(F, { u: flUid(), t: 'b', id: b.id }); ch = 1; } });
-  while (F.rows.length < 3) flNewRow(F); if (ch) shSave(); }
+  while (F.rows.length < 3) flNewRow(F); if (ch && !FL_PV) shSave(); }
 // 1ª vez: a estante automática (ou a ordem da pessoa) vira posições livres, sem nada pular de lugar
 function flFreeze() { const C0 = shc(), sh = flQ('.bsh:not(.sm)'); if (!sh) return false; const F = { st: 'aberta', rows: [] }, UD = C0.deco || [];
   sh.querySelectorAll('.bay').forEach((bay, r) => { const br = bay.querySelector('.brow'); if (!br) return; const R = br.getBoundingClientRect(), row = { dv: [], nb: [], it: [] }, ud = UD.filter((d) => d.r === r && SH_DEC[d.k]).sort((a, z) => a.p - z.p); let di = 0;
@@ -100,19 +102,42 @@ function flFreeze() { const C0 = shc(), sh = flQ('.bsh:not(.sm)'); if (!sh) retu
   C0.free = F; if (C0.freePend) { const p = C0.freePend; delete C0.freePend; flReflow(F, p.st, p.rows); } else flNormalize(F); return true; }
 
 // ---------- desenho ----------
-function flPileHTML(ids, md) { return `<span class="pile">${ids.map((id, j) => { const x = shById(id); if (!x) return ''; const G = spnGeo(x, false), [c, k] = spnColors(x), ov = shEdOf(x), wv = Math.round(G.h * 0.86) - j * 3, ht = Math.max(13, Math.min(26, Math.round(G.w * 0.8)));
+function flPileHTML(ids, md, o) { return `<span class="pile">${ids.map((id, j) => { const on = o && flPbOn(o, id), num = o ? flSelNum(o, id) : 0; const x = shById(id); if (!x) return ''; const G = spnGeo(x, false), [c, k] = spnColors(x), ov = shEdOf(x), wv = Math.round(G.h * 0.86) - j * 3, ht = Math.max(13, Math.min(26, Math.round(G.w * 0.8)));
   const fe = ov.t === 'bp' || ov.t === 'ep', act = md ? '' : shAct(x, true);
-  return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}, deitado"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (ov.e || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : `<span>${esc(x.t)}</span>`}</span>`; }).join('')}</span>`; }
+  return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}${on ? ' flpbsel' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}, deitado"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (ov.e || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : `<span>${esc(x.t)}</span>`}${num ? `<i class="flnum">${num}</i>` : ''}</span>`; }).join('')}</span>`; }
+// chave de seleção: 'u' (peça inteira) ou 'u|livro' (um livro de dentro da pilha)
+const flKeyOf = (u, bid) => (bid ? u + '|' + bid : u);
+function flPbOn(o, id) { const P = FLX.pk; if (P && P.u === o.u && (!P.pb || P.pb === id)) return true; const S0 = FLX.sel; return !!(S0 && S0.src === 'shelf' && (S0.ids.includes(o.u) || S0.ids.includes(o.u + '|' + id))); }
+function flSelNum(o, id) { const S0 = FLX.sel; if (!S0 || S0.src !== 'shelf') return 0; let n = 0; for (const k of S0.ids) { const [u, b] = k.split('|'); const f = flFind(u); if (!f) continue;
+    if (b) { n++; if (u === o.u && b === id) return n; } else if (f.o.t === 'p') { for (const x of f.o.ids) { n++; if (u === o.u && x === id) return n; } } else { n++; if (u === o.u && (o.t !== 'p')) return n; } } return 0; }
+const flSelCount = () => { const S0 = FLX.sel; if (!S0) return 0; if (S0.src === 'tray') return S0.ids.length; return S0.ids.reduce((a, k) => { const [u, b] = k.split('|'); if (b) return a + 1; const f = flFind(u); return a + (f && f.o.t === 'p' ? f.o.ids.length : 1); }, 0); };
+// tira um livro de dentro da pilha (os de cima descem; se sobrar 1, ele continua deitado) e devolve uma peça nova, deitada, ainda fora da estante
+function flExtract(key) { const [u, bid] = String(key).split('|'), f = flFind(u); if (!f) return null; if (!bid) return f.o;
+  const o = f.o; if (o.t !== 'p' || !o.ids.includes(bid)) return null; o.ids = o.ids.filter((x) => x !== bid); if (!o.ids.length) { const row = shc().free.rows[f.r]; row.it = row.it.filter((x) => x !== o); }
+  return { u: flUid(), t: 'b', id: bid, n: o.n, x: o.x }; } // o livro tirado da pilha fica em pé (o painel de posição deixa deitar de novo)
+// põe um livro dentro de uma pilha, antes de outro (ou no topo)
+function flIntoPile(srcKey, tu, before) { const C0 = shc(), bk = shBk(), [su, sb] = String(srcKey).split('|'); let id = sb;
+  if (!id) { const f = flFind(su); if (!f || f.o.t !== 'b') return toast('Só um livro por vez entra na pilha'); id = f.o.id; const row = C0.free.rows[f.r]; row.it = row.it.filter((x) => x !== f.o); if (C0.pos) delete C0.pos[id]; }
+  else if (su !== tu) { const ex = flExtract(srcKey); if (!ex) return; }
+  const t = flFind(tu); if (!t || t.o.t !== 'p') { shRestore(bk); return; } let ids = t.o.ids.filter((x) => x !== id); let i = before ? ids.indexOf(before) : ids.length; if (i < 0) i = ids.length;
+  // mesma pilha: troca os dois de lugar (tocar no de cima e depois no de baixo põe um no lugar do outro)
+  if (su === tu && sb && before && t.o.ids.includes(sb)) { const a0 = t.o.ids.slice(), ia = a0.indexOf(sb), ib = a0.indexOf(before); if (ia >= 0 && ib >= 0) { [a0[ia], a0[ib]] = [a0[ib], a0[ia]]; ids = a0.filter((x) => x !== id); i = a0.indexOf(id); } }
+  if (ids.length >= 8) { shRestore(bk); return toast('Pilha cheia (8 livros)'); }
+  ids.splice(i, 0, id); t.o.ids = ids; const row = C0.free.rows[t.r], its = row.it.filter((x) => (x.n || 0) === (t.o.n || 0)).sort((a, z) => a.x - z.x).map((x) => ({ o: x, x: x.x, w: flW(x) }));
+  if (!flFit(its, flNW(row, t.o.n || 0, flBW()))) { shRestore(bk); return toast('Assim não cabe nesta prateleira'); } its.forEach((q) => { q.o.x = Math.round(q.x); });
+  C0.manual = 1; C0.arr = null; FLX.pk = null; FLX.sel = null; FLX.pos = null; shSave(); toast(su === tu && sb ? 'Pilha reordenada' : 'Livro deitado na pilha', shUndo(bk)); flRender(); }
 function flItemHTML(o, x, md) { const P = shc().pos || {}; let inner = '';
   if (o.t === 'b') { const b = shById(o.id); if (!b) return '';
     inner = flFace(o.id) ? `<button type="button" class="face" data-bid="${esc(b.id)}"${md ? '' : shAct(b, true)} aria-label="${esc(b.t)}, de frente">${v4cv({ title: b.t, cover: b.img })}</button>` : spnHTML(P[o.id] === 'lean' ? { ...b, lean: 1 } : b, false); }
-  else if (o.t === 'p') inner = flPileHTML(o.ids, md);
+  else if (o.t === 'p') inner = flPileHTML(o.ids, md, o);
   else if (o.t === 'd') { if (!SH_DEC[o.k]) return ''; const d = { k: o.k, ...(o.o || {}) }, lb = !md && o.k === 'leitor' && typeof shLeitorBook === 'function' ? shLeitorBook(d) : null;
     inner = `<span class="dec${lb ? ' lk' : ''}"${lb ? `${shAct(lb, false)} role="button" tabindex="0" aria-label="Leitor digital: ${esc(lb.t)}"` : ''}>${SH_DEC[o.k](1, d)}</span>`; }
-  const sel = FLX.pos === o.u || (FLX.posG && FLX.posG.includes(o.u)) || (FLX.pk && FLX.pk.u === o.u) || (FLX.sel && FLX.sel.src === 'shelf' && FLX.sel.ids.includes(o.u));
+  const sel = o.t === 'p' ? (FLX.pos === o.u || (FLX.posG && FLX.posG.includes(o.u))) : (FLX.pos === o.u || (FLX.posG && FLX.posG.includes(o.u)) || (FLX.pk && FLX.pk.u === o.u) || (FLX.sel && FLX.sel.src === 'shelf' && FLX.sel.ids.includes(o.u)));
+  const num = o.t === 'b' ? flSelNum(o, o.id) : 0;
   const lab = o.t === 'd' && md ? ` role="button" tabindex="${md === 'deco' ? 0 : -1}" aria-label="${esc(SH_DN[o.k] || 'Enfeite')}${md === 'deco' ? ': toque para trocar ou tirar, ou arraste' : ''}"` : '';
-  return `<span class="fli fl-${o.t}${sel ? ' flsel' : ''}" data-u="${o.u}" style="left:${Math.round(x)}px"${lab}>${inner}</span>`; }
-function flPkW() { if (FLX.sel && FLX.sel.ids.length) { const m = flSelMv(); return m ? (m.ids ? m.ids.map((id) => flW({ t: 'b', id })) : m.items.map(flW)).reduce((a, z) => a + z, 0) : 0; } const P = FLX.pk; if (!P) return 0; if (P.from === 'tray') return flW({ t: 'b', id: P.id }); const f = flFind(P.u); return f ? flW(f.o) : 20; }
+  return `<span class="fli fl-${o.t}${sel ? ' flsel' : ''}" data-u="${o.u}" style="left:${Math.round(x)}px"${lab}>${inner}${num ? `<i class="flnum">${num}</i>` : ''}</span>`; }
+function flKeyW(k) { const [u, b] = String(k).split('|'); if (b) return flW({ t: 'b', id: b }); const f = flFind(u); return f ? flW(f.o) : 0; }
+function flPkW() { if (FLX.sel && FLX.sel.ids.length) { const S0 = FLX.sel; return S0.src === 'tray' ? S0.ids.reduce((a, id) => a + flW({ t: 'b', id }), 0) : S0.ids.reduce((a, k) => a + flKeyW(k), 0); } const P = FLX.pk; if (!P) return 0; if (P.pb) return flW({ t: 'b', id: P.pb }); if (P.from === 'tray') return flW({ t: 'b', id: P.id }); const f = flFind(P.u); return f ? flW(f.o) : 20; }
 function flTargets(r, n, its, NW, w) {
   if (!its.length) return NW >= w ? `<button type="button" class="flt wide" data-flt="${r}:${n}:${Math.max(0, Math.round((NW - w) / 2))}" aria-label="Guardar aqui: ${r + 1}ª prateleira${n ? ', parte ' + (n + 1) : ''}">+ guardar aqui</button>` : '';
   const groups = []; its.forEach((q, i) => { if (!i || q.x - (its[i - 1].x + its[i - 1].w) > 2) groups.push([q]); else groups[groups.length - 1].push(q); });
@@ -121,7 +146,7 @@ function flTargets(r, n, its, NW, w) {
     if (gi === 0 && a >= w) spots.push([a - w, a]); if (next - e >= w) spots.push([e, e]); });
   if (!spots.length && NW - used >= w) { const L = its[its.length - 1]; spots.push([L.x + L.w, L.x + L.w]); }
   return spots.map(([x, at]) => `<button type="button" class="flt" data-flt="${r}:${n}:${Math.round(x)}" style="left:${Math.round(at)}px" aria-label="Colocar aqui, ${r + 1}ª prateleira">+</button>`).join(''); }
-function flHTML(list0) { const C0 = shc(), F = C0.free, md = shMode(), BW = flBW(); if (typeof SHX_LTN !== 'undefined') SHX_LTN = 0; flPx(F); flSync(list0);
+function flHTML(list0) { const C0 = shc(), F = FL_PV ? FL_PV.free : C0.free, md = shMode(), BW = flBW(); if (typeof SHX_LTN !== 'undefined') SHX_LTN = 0; flPx(F); flSync(list0);
   const PK = (FLX.pk || (FLX.sel && FLX.sel.ids.length)) && md === 'org', pkW = PK ? flPkW() : 0;
   const rowsH = F.rows.map((row, k) => { const bnd = flBounds(row); let nich = '', dvs = '';
     for (let n = 0; n < bnd.length - 1; n++) { const li = n > 0 ? FL_INS : 0, ri = n < bnd.length - 2 ? FL_INS : 0, NW = flNW(row, n, BW), nb = (row.nb && row.nb[n]) || {};
@@ -130,7 +155,7 @@ function flHTML(list0) { const C0 = shc(), F = C0.free, md = shMode(), BW = flBW
       const sel = md === 'deco' && FLX.ns === k + ':' + n;
       nich += `<div class="nich${nb.bg ? ' bg-' + esc(nb.bg) : ''}${nb.lt ? ' nlt nlt' + esc(String(nb.lt)) : ''}${sel ? ' sel' : ''}" data-r="${k}" data-n="${n}" style="left:calc(${(bnd[n] * 100).toFixed(3)}% + ${li}px);width:calc(${((bnd[n + 1] - bnd[n]) * 100).toFixed(3)}% - ${li + ri}px)">${nb.lt ? '<i class="npk" aria-hidden="true"></i>' : ''}${h}</div>`;
       if (n > 0) dvs += `<span class="ndv" data-r="${k}" data-i="${n - 1}" style="left:calc(${(bnd[n] * 100).toFixed(3)}% - ${FL_INS}px)"${md === 'deco' ? ` role="slider" tabindex="0" aria-label="Divisória da ${k + 1}ª prateleira: arraste ou use as setas" aria-valuenow="${Math.round(bnd[n] * 100)}" aria-valuemin="5" aria-valuemax="95"` : ' aria-hidden="true"'}></span>`; }
-    const pq = (C0.plq || []).map((q, i) => ({ ...q, i })).filter((q) => q.r === k && q.t).map((q) => `<span class="plq s-${esc(q.s || 'mad')}${md === 'deco' ? ' u' : ''}" style="left:${Math.max(4, Math.min(96, (q.p == null ? 0.5 : q.p) * 100)).toFixed(1)}%"${md === 'deco' ? ` data-pq="${q.i}" role="button" tabindex="0"` : ''}>${esc(String(q.t).slice(0, 24))}</span>`).join('');
+    const pq = ((FL_PV ? FL_PV.plq : C0.plq) || []).map((q, i) => ({ ...q, i })).filter((q) => q.r === k && q.t).map((q) => `<span class="plq s-${esc(q.s || 'mad')}${md === 'deco' ? ' u' : ''}" style="left:${Math.max(4, Math.min(96, (q.p == null ? 0.5 : q.p) * 100)).toFixed(1)}%"${md === 'deco' ? ` data-pq="${q.i}" role="button" tabindex="0"` : ''}>${esc(String(q.t).slice(0, 24))}</span>`).join('');
     return `<div class="bay fl" data-r="${k}">${shLtRow(k, false, 'b')}<div class="brow flr">${nich}${dvs}</div></div><div class="bpl"${pq ? '' : ' aria-hidden="true"'} data-r="${k}">${shLtRow(k, false, 'f')}${pq}</div>`; }).join('');
   const hint = md ? '' : `<div class="hint"><span><i class="k1"></i>lendo</span><span><i class="k2">✦</i>lido</span><span class="r">Minha arrumação · toque abre · segure para opções</span></div>`;
   const ltOff = C0.lt && C0.lt.on === 0;
@@ -142,13 +167,13 @@ function flHTML(list0) { const C0 = shc(), F = C0.free, md = shMode(), BW = flBW
 const FL_FILT = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>';
 // capa pequena própria (sem a classe .cv: segurar na bandeja seleciona, não abre o menu do livro)
 const flCv = (b) => { if (b.img) return '<span class="flcv img" style="background-image:' + cssUrl(b.img) + '"></span>'; let c = '#7e63c9'; try { c = colorOf(b.t || ''); } catch {} return '<span class="flcv" style="background:linear-gradient(160deg,' + c + ',#1b1426)">' + esc(b.t || '') + '</span>'; };
-function flDock() { const C0 = shc(), tr = Array.isArray(C0.tray) && C0.tray.length ? C0.tray : null, L = tr ? shTrayList() : [], SL = FLX.sel, ns = SL ? SL.ids.length : 0, gone = !!(FLX.pk || FLX.pos) || (SL && SL.src === 'shelf' && ns > 0);
+function flDock() { const C0 = shc(), tr = Array.isArray(C0.tray) && C0.tray.length ? C0.tray : null, L = tr ? shTrayList() : [], SL = FLX.sel, ns = flSelCount(), gone = !!(FLX.pk || FLX.pos) || (SL && SL.src === 'shelf' && ns > 0);
   const cvs = L.map((b) => { const si = SL && SL.src === 'tray' ? SL.ids.indexOf(b.id) : -1; return `<button type="button" class="flc${(FLX.pk && FLX.pk.id === b.id) || si >= 0 ? ' on' : ''}${SL ? ' sel' : ''}" data-fltr="${esc(b.id)}" aria-pressed="${si >= 0}" aria-label="${esc(b.t)}${SL ? (si >= 0 ? ': selecionado, toque para tirar' : ': toque para selecionar') : ': arraste até a estante, ou toque e escolha o lugar; segure para selecionar vários'}"><span class="tc">${flCv(b)}${si >= 0 ? `<i class="flnum">${si + 1}</i>` : ''}</span>${FLX.open ? `<span class="tl">${esc(b.t)}</span>` : ''}</button>`; }).join('');
-  const pill = SL && ns && SL.src === 'shelf' ? `<div class="flpill" role="status"><b>${ns} selecionado${ns > 1 ? 's' : ''}<small>Toque num + ou num lugar vazio para pôr todos juntos</small></b><button type="button" data-fl="selx">Cancelar</button></div>` : FLX.pk ? (() => { const b = shById(FLX.pk.id) || { t: FLX.pk.id ? '' : 'Enfeite' }; return `<div class="flpill" role="status"><span class="pkc">${b.id ? flCv(b) : ''}</span><b>${esc(b.t || 'Item')}<small>Toque onde ele vai ficar, ou arraste até lá</small></b><button type="button" data-fl="pkx">Cancelar</button></div>`; })() : '';
+  const pill = SL ? `<div class="flpill flsp" role="status"><b>${ns ? ns + ' selecionado' + (ns > 1 ? 's' : '') : 'Toque para selecionar'}</b><button type="button" data-fl="selx">Cancelar</button></div>` : FLX.pk ? (() => { const b = shById(FLX.pk.id) || { t: FLX.pk.id ? '' : 'Enfeite' }; return `<div class="flpill" role="status"><span class="pkc">${b.id ? flCv(b) : ''}</span><b>${esc(b.t || 'Item')}<small>Toque onde ele vai ficar, ou arraste até lá</small></b><button type="button" data-fl="pkx">Cancelar</button></div>`; })() : '';
+  if (!tr || FLX.trayHide) return pill;
   return `<div class="fldock${gone ? ' gone' : ''}${FLX.open ? ' open' : ''}" role="region" aria-label="Organizar a estante"${gone ? ' aria-hidden="true"' : ''}>
     ${tr ? `<button type="button" class="flgrab" data-fl="dock" aria-label="${FLX.open ? 'Recolher' : 'Abrir'} a bandeja" aria-expanded="${FLX.open}"><i></i></button>` : ''}
-    <div class="flbar">${SL ? `<b>${ns ? ns + ' selecionado' + (ns > 1 ? 's' : '') : 'Toque nos livros'}<small>${ns ? 'Toque onde vão ficar, ou arraste um deles' : SL.src === 'shelf' ? 'Toque nos livros da estante para selecionar' : 'Toque nas capas para selecionar'}</small></b><button type="button" class="flsb on" data-fl="selx">Cancelar</button>`
-      : `<b>${tr ? `Livros para guardar · ${tr.length}` : 'Arrume do seu jeito'}<small>${tr ? 'Arraste uma capa até a estante' : 'Arraste um livro · segure para levar o grupo'}</small></b><button type="button" class="flsb" data-fl="sel">Selecionar</button><button type="button" class="flic" data-fl="more" aria-label="Mais opções">${v4ic('dots', 20)}</button><button type="button" class="flok" data-a="shdone">Concluir</button>`}</div>
+    <div class="flbar"><b>Livros para guardar · ${tr.length}</b></div>
     ${tr ? `<div class="flrow"><button type="button" class="flic flf${FLX.filt ? ' on' : ''}" data-fl="filt" aria-label="Filtrar e ordenar a bandeja" aria-expanded="${FLX.filt}">${FL_FILT}</button><div class="fllist">${cvs || '<p class="mut" style="margin:6px 2px">Nenhum livro com esse filtro.</p>'}</div></div>
       ${FLX.filt ? `<div class="flfil">${shChips('shtrayf', SHX_TRF, [['todos', 'Todos'], ['lendo', 'Lendo'], ['quero', 'Quero ler'], ['lido', 'Lidos'], ['outros', 'Outros']])}${shChips('shtrays', SHX_TRS, [['ord', 'Ordem atual'], ['cor', 'Cor'], ['autor', 'Autor'], ['titulo', 'Título']])}</div>` : ''}` : ''}
   </div>${pill}`; }
@@ -170,7 +195,7 @@ function flPlace(r, n, x, mv) { const C0 = shc(), F = C0.free, BW = flBW(), row 
   const blk = mv.ids ? mv.ids.map((id) => ({ u: flUid(), t: 'b', id })) : mv.items ? mv.items : [{ u: flUid(), t: 'b', id: mv.id }];
   let offs; if (seq) { let e = 0; offs = blk.map((o) => { const v = e; e += flW(o); return v; }); } else { const base = mv.items ? Math.min(...blk.map((o) => o.x)) : 0; offs = blk.map((o) => (mv.items ? o.x - base : 0)); }
   const tw = Math.max(...blk.map((o, i) => offs[i] + flW(o)));
-  const others = row.it.filter((o) => (o.n || 0) === n && !uS.has(o.u)).map((o) => ({ u: o.u, x: o.x, w: flW(o), o })), res = flResolve(others, { x, w: tw }, NW); if (!res) return null;
+  const others = row.it.filter((o) => (o.n || 0) === n && !uS.has(o.u)).map((o) => { const w = flW(o); return { u: o.u, x: Math.max(0, Math.min(o.x, NW - w)), w, o }; }), res = flResolve(others, { x, w: tw }, NW); if (!res) return null; // peça que passou da borda (estante desenhada noutra largura) volta para dentro
   const bk = shBk(); if (mv.items) F.rows.forEach((rw) => { rw.it = rw.it.filter((o) => !uS.has(o.u)); });
   res.forEach((q) => { if (q.u === '__m') blk.forEach((o, i) => { o.x = Math.round(q.x + offs[i]); o.n = n; row.it.push(o); }); else q.o.x = Math.round(q.x); });
   const gone = mv.ids ? new Set(mv.ids) : mv.id ? new Set([mv.id]) : null;
@@ -185,8 +210,11 @@ function flAfterPlace(res, mv, r) { try { navigator.vibrate && navigator.vibrate
   const sobra = res.left ? ` · ${res.left} não couberam${mv.ids ? ', ficaram na bandeja' : ''}` : '';
   toast(`${t.length > 34 ? t.slice(0, 33) + '…' : t} na ${r + 1}ª prateleira${sobra}${fromTray && left && !res.left ? ' · faltam ' + left : ''}${fromTray && !left ? ' · todos guardados' : ''}`, shUndo(res.bk)); flRender(); }
 function flSelMv() { const S0 = FLX.sel; if (!S0 || !S0.ids.length) return null; if (S0.src === 'tray') return { ids: S0.ids.slice() }; const its = S0.ids.map((u) => flFind(u)).filter(Boolean).map((f) => f.o); return its.length ? { items: its, seq: 1 } : null; }
-function flTapPlace(r, n, x) { const mvS = flSelMv(); if (mvS) { const res = flPlaceMany(r, n, x, mvS); if (!res) return toast('Não cabe aqui. Escolha outro lugar.'); return flAfterPlace(res, mvS, r); }
-  const P = FLX.pk; if (!P) return; let mv; if (P.from === 'tray') mv = { id: P.id }; else { const f = flFind(P.u); if (!f) return; mv = { items: [f.o] }; }
+function flTapPlace(r, n, x) { const S0 = FLX.sel;
+  if (S0 && S0.ids.length && S0.src === 'shelf') { const bk0 = shBk(), its = S0.ids.map(flExtract).filter(Boolean); if (!its.length) return; const mvS = { items: its, seq: 1 }, res = flPlaceMany(r, n, x, mvS); if (!res) { shRestore(bk0); return toast('Não cabe aqui. Escolha outro lugar.'); } res.bk = bk0; return flAfterPlace(res, mvS, r); }
+  const mvS = flSelMv(); if (mvS) { const res = flPlaceMany(r, n, x, mvS); if (!res) return toast('Não cabe aqui. Escolha outro lugar.'); return flAfterPlace(res, mvS, r); }
+  const P = FLX.pk; if (!P) return; if (P.pb) { const bk0 = shBk(), it = flExtract(flKeyOf(P.u, P.pb)); if (!it) return; const mv1 = { items: [it] }, res = flPlace(r, n, x, mv1); if (!res) { shRestore(bk0); return toast('Não cabe aqui. Escolha outro lugar.'); } res.bk = bk0; return flAfterPlace(res, mv1, r); }
+  let mv; if (P.from === 'tray') mv = { id: P.id }; else { const f = flFind(P.u); if (!f) return; mv = { items: [f.o] }; }
   const res = flPlace(r, n, x, mv); if (!res) return toast('Não cabe aqui. Escolha outro lugar.'); flAfterPlace(res, mv, r); }
 function flPosAct(k) { const f = flFind(FLX.pos); if (!f) return; const o = f.o, C0 = shc(); C0.pos = C0.pos || {};
   if (k === 'ok') { FLX.pos = null; FLX.posG = null; return flRender(); }
@@ -238,7 +266,10 @@ function flAct(k, el) { const C0 = shc();
   if (k === 'dock') { FLX.open = !FLX.open; return flRender(); }
   if (k === 'filt') { FLX.filt = !FLX.filt; return flRender(); }
   if (k === 'pkx') { FLX.pk = null; return flRender(); }
-  if (k === 'sel') { FLX.pk = null; FLX.pos = null; FLX.posG = null; FLX.sel = { src: Array.isArray(C0.tray) && C0.tray.length ? 'tray' : 'shelf', ids: [] }; return flRender(); }
+  if (k === 'tray') { FLX.trayHide = !FLX.trayHide; return flRender(); }
+  if (k === 'arr') return flArrSheet();
+  if (k === 'grip') return;
+  if (k === 'sel') { FLX.pk = null; FLX.pos = null; FLX.posG = null; FLX.sel = { src: Array.isArray(C0.tray) && C0.tray.length && !FLX.trayHide ? 'tray' : 'shelf', ids: [] }; return flRender(); }
   if (k === 'selx') { FLX.sel = null; return flRender(); }
   if (k === 'more') { const tr = Array.isArray(C0.tray) && C0.tray.length; return shX('Organizar', [['Arrumar por (cor, autor, título…)', () => shArrMenu()], tr ? ['Desfazer tudo: a estante volta como estava', () => { FLX.open = false; shTrayUndo(); }] : ['Esvaziar e arrumar um por um', () => flEmpty()], ['Fechar os espaços entre os livros', () => flCloseGaps()], ['Voltar à arrumação automática', () => flAuto()]]); }
   if (k === 'st') return flTpl(el.dataset.k);
@@ -247,6 +278,32 @@ function flAct(k, el) { const C0 = shc();
   if (k === 'nsx') { FLX.ns = null; return flRender(); }
   if (k === 'dkx') { FLX.dkx = !FLX.dkx; return flRender(); }
   if (k === 'dkmore') return shX('Decorar', [['Restaurar a decoração padrão', () => flDkReset()], ['Voltar à estante aberta, sem nichos', () => flTpl('aberta')]]); }
+
+
+// ---------- coluna flutuante (Bia, 22/11): Concluir, Bandeja, Selecionar, Arrumar por, Decorar, ••• — na lateral, sem barra embaixo ----------
+const FL_IC = { ok: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  tray: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13l2.2-7h11.6L20 13v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 13h4.5l1.2 2h4.6l1.2-2H20"/></svg>',
+  sel: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/><path d="M5.8 7.6l1.4 1.4 2.4-2.6"/><path d="M14.8 16.6l1.4 1.4 2.4-2.6"/></svg>',
+  arr: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M4 12h7M4 17h4"/><path d="M17 5v14M14 16l3 3 3-3"/></svg>',
+  org: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="4" height="16" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><path d="M16.5 7.5l3 12"/></svg>' };
+const flColSide = () => { try { return v5P().flCol === 'L' ? 'L' : 'R'; } catch { return 'R'; } };
+let FL_COLT = 0;
+function flColHTML() { const md = SHX_MODE, C0 = shc(), tr = Array.isArray(C0.tray) && C0.tray.length, B = (fl, a, ic, lab, cls) => `<button type="button" class="flcb${cls ? ' ' + cls : ''}" ${fl ? 'data-fl="' + fl + '"' : a} aria-label="${lab}">${ic}<span class="flbl" aria-hidden="true">${lab}</span></button>`;
+  const items = md === 'deco' ? [B('', 'data-a="shdone"', FL_IC.ok, 'Concluir', 'ok'), B('', 'data-a="shmode" data-v="org"', FL_IC.org, 'Organizar'), B('dkmore', '', v4ic('dots', 20), 'Mais opções')]
+    : [B('', 'data-a="shdone"', FL_IC.ok, 'Concluir', 'ok'), tr ? B('tray', '', FL_IC.tray, FLX.trayHide ? 'Mostrar a bandeja' : 'Esconder a bandeja', FLX.trayHide ? '' : 'on') : '', B(FLX.sel ? 'selx' : 'sel', '', FL_IC.sel, FLX.sel ? 'Parar de selecionar' : 'Selecionar vários', FLX.sel ? 'on' : ''), B('arr', '', FL_IC.arr, 'Arrumar por'), B('', 'data-a="shmode" data-v="deco"', v4ic('lua', 20), 'Decorar'), B('more', '', v4ic('dots', 20), 'Mais opções')];
+  return `<div class="flcol ${flColSide()}" role="toolbar" aria-orientation="vertical" aria-label="${md === 'deco' ? 'Decorar' : 'Organizar'}"><button type="button" class="flgrip" data-fl="grip" aria-label="Arraste para mudar a coluna de lado"><i></i></button>${items.join('')}</div>`; }
+function flColMount(R) { R.querySelectorAll(':scope > .flcol').forEach((e) => e.remove()); if (!flActive() || (SHX_MODE !== 'org' && SHX_MODE !== 'deco')) { R.classList.remove('flcolL', 'flcolR'); return; }
+  R.insertAdjacentHTML('beforeend', flColHTML()); const sd = flColSide(); R.classList.toggle('flcolL', sd === 'L'); R.classList.toggle('flcolR', sd === 'R');
+  // rótulos abertos por ~3 s na primeira vez
+  let seen = 1; try { seen = +localStorage.getItem('lv.flcolhint') || 0; if (!seen) { localStorage.setItem('lv.flcolhint', '1'); FL_COLT = Date.now() + 3200; setTimeout(() => { const c2 = flQ('.v5est > .flcol'); if (c2) c2.classList.remove('lbls'); }, 3300); } } catch {} if (Date.now() < FL_COLT) { const c = R.querySelector(':scope > .flcol'); if (c) c.classList.add('lbls'); } }
+// segurar um botão da coluna mostra o rótulo; arrastar a alça muda a coluna de lado
+{ let H = null; window.addEventListener('pointerdown', (ev) => { const T = flTgt(ev); const b = T && T.closest && T.closest('.v5est > .flcol .flcb, .v5est > .flcol .flgrip'); if (!b) return;
+    H = { b, x: ev.clientX, y: ev.clientY, pid: ev.pointerId, grip: b.classList.contains('flgrip'), mv: false, t: setTimeout(() => { if (!H || H.b !== b || H.grip) return; b.classList.add('lb1'); H.long = 1; setTimeout(() => b.classList.remove('lb1'), 1600); }, 480) }; if (H.grip && ev.cancelable) ev.preventDefault(); }, true);
+  window.addEventListener('pointermove', (ev) => { if (!H || ev.pointerId !== H.pid) return; if (Math.hypot(ev.clientX - H.x, ev.clientY - H.y) > 8) { H.mv = true; clearTimeout(H.t); }
+    if (H.grip && H.mv) { ev.preventDefault(); const c = H.b.closest('.flcol'); if (c) { c.style.transition = 'none'; c.style.left = Math.max(4, Math.min(innerWidth - 56, ev.clientX - 26)) + 'px'; c.style.right = 'auto'; } } }, { capture: true, passive: false });
+  const up = (ev) => { if (!H || ev.pointerId !== H.pid) return; const h = H; H = null; clearTimeout(h.t); if (h.long) { FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); }
+    if (h.grip && h.mv) { FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); const P = v5P(), sd = ev.clientX < innerWidth / 2 ? 'L' : 'R'; P.flCol = sd; v5Save(); flRender(); toast(sd === 'L' ? 'Coluna na esquerda' : 'Coluna na direita'); } };
+  window.addEventListener('pointerup', up, true); window.addEventListener('pointercancel', up, true); }
 
 // ---------- Decorar › Estrutura ----------
 function flTplSvg(k) { let h = '<rect x="1" y="1" width="38" height="30" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>'; for (let r = 0; r < 3; r++) { const y = 1 + (r + 1) * 10; if (r < 2) h += `<path d="M1 ${y}h38" stroke="currentColor" stroke-width="1.4"/>`; flTplDv(k, r).forEach((f) => { h += `<path d="M${1 + f * 38} ${1 + r * 10}v10" stroke="currentColor" stroke-width="${/^c/.test(k) ? 2.4 : 1.4}"/>`; }); } return `<svg viewBox="0 0 40 32" aria-hidden="true">${h}</svg>`; }
@@ -261,7 +318,7 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
     if (t === 'est') h = h.replace(/<div class="dbody">[\s\S]*?<\/div><div class="dkfoot">/, `<div class="dbody">${flEstBody()}</div><div class="dkfoot">`);
     if (t === 'enf' && FLX.swap) h = h.replace('<div class="dbody">', '<div class="dbody"><p class="dkh on">Escolha o enfeite que vai entrar no lugar.</p>');
     h = h.replace('class="dkpan"', `class="dkpan flp${FLX.dkx ? ' flbig' : ''}"`).replace('<div class="grab"></div>', `<button type="button" class="grab flgrab2" data-fl="dkx" aria-label="${FLX.dkx ? 'Recolher' : 'Expandir'} a folha" aria-expanded="${!!FLX.dkx}"></button>`)
-      .replace(/<button[^>]*data-a="dkreset"[^>]*>Restaurar padr.o<\/button>/, `<button type="button" class="flic" data-fl="dkmore" aria-label="Mais opções">${v4ic('dots', 20)}</button>`); } catch (err) { console.warn('estante livre: decorar', err); }
+      .replace(/<div class="dkfoot">[\s\S]*?<\/div><\/div>$/, '</div>'); } catch (err) { console.warn('estante livre: decorar', err); }
     return h; }; }
 
 // ---------- arrastar: livros, grupos, enfeites, capas da bandeja, divisórias ----------
@@ -278,7 +335,9 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
     if (D.src === 'tray') { const ids = D.ids || [D.id], bs = ids.map(shById).filter(Boolean); if (!bs.length) { D.on = false; return; } D.items = null; let e = 0, h = 0; const m0 = SHX_MODE; SHX_MODE = 'org';
       try { gin.innerHTML = bs.slice(0, 10).map((b) => { const w = flW({ t: 'b', id: b.id }), hh = spnGeo(b, false).h; h = Math.max(h, hh); const x = e; e += w; return `<span class="fli" style="left:${x}px;bottom:0">${spnHTML(b, false)}</span>`; }).join('') + (bs.length > 1 ? `<i class="flcnt">${bs.length}</i>` : ''); } finally { SHX_MODE = m0; }
       D.w = ids.reduce((a, id) => a + flW({ t: 'b', id }), 0); D.h = h; gin.style.width = e + 'px'; gin.style.height = h + 'px'; D.offX = Math.min(e, flW({ t: 'b', id: ids[0] })) / 2; D.offY = h * 0.55; }
-    else if (D.seqU) { D.items = D.seqU.map(flFind).filter(Boolean).map((f) => f.o); if (!D.items.length) { D.on = false; return; } let e = 0, h = 0, L0 = null;
+    else if (D.pb && !D.grp && !D.seqU) { const pe = sh.querySelector(`.fli[data-u="${D.u}"] .pb[data-bid="${D.pb}"]`); if (!pe) { D.on = false; return; } const R = pe.getBoundingClientRect(); D.items = []; D.w = flW({ t: 'p', ids: [D.pb] }); D.h = R.height;
+      const c = pe.cloneNode(true); c.style.position = 'absolute'; c.style.left = '0'; c.style.bottom = '0'; c.style.margin = '0'; gin.appendChild(c); gin.style.width = R.width + 'px'; gin.style.height = R.height + 'px'; pe.style.visibility = 'hidden'; D.offX = D.x - R.left; D.offY = D.y - R.top; }
+    else if (D.seqU) { D.items = D.seqU.map((k) => flFind(String(k).split('|')[0])).filter(Boolean).map((f) => f.o); if (!D.items.length) { D.on = false; return; } let e = 0, h = 0, L0 = null;
       D.items.forEach((o) => { const el = sh.querySelector(`.fli[data-u="${o.u}"]`); if (!el) return; const R = el.getBoundingClientRect(); if (o.u === D.u) L0 = R; h = Math.max(h, R.height); const c = el.cloneNode(true); c.removeAttribute('data-u'); c.classList.remove('flsel', 'flgrp'); c.style.left = e + 'px'; c.style.top = 'auto'; c.style.bottom = '0'; c.style.transition = 'none'; gin.appendChild(c); el.style.visibility = 'hidden'; e += flW(o); });
       if (D.items.length > 1) gin.insertAdjacentHTML('beforeend', `<i class="flcnt">${D.items.length}</i>`); D.w = e; D.h = h; gin.style.width = e + 'px'; gin.style.height = h + 'px'; D.offX = L0 ? Math.min(e, D.x - L0.left) : e / 2; D.offY = L0 ? D.y - (L0.bottom - h) : h * 0.55; D.seq = 1; }
     else { const f = flFind(D.u); if (!f) { D.on = false; return; } if (!D.grp && f.o.t === 'd' && /^aparador/.test(f.o.k)) { D.grp = true; D.gitems = flGroupOf(f.r, D.u); }
@@ -290,6 +349,8 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
     const sc = shScroller(), docSc = sc === document.scrollingElement || sc === document.documentElement, SR = docSc ? { top: 0, bottom: innerHeight } : sc.getBoundingClientRect(), shR = flQ('.bsh.flx'), BR = shR ? shR.getBoundingClientRect() : null;
     // rolagem automática: só depois que o dedo entra na estante (vindo da bandeja, não rola à toa)
     if (!D.armed && BR && y > Math.max(SR.top + 70, BR.top) && y < Math.min(SR.bottom - 70, BR.bottom)) D.armed = true; D.vy = !D.armed ? 0 : y < SR.top + 70 ? -Math.ceil((SR.top + 70 - y) / 5) : y > SR.bottom - 90 ? Math.ceil((y - SR.bottom + 90) / 5) : 0;
+    if (D.pb || (D.items && D.items.length === 1 && D.items[0].t === 'b' && !D.seq)) { const sr0 = flR(), el = sr0 && sr0.elementFromPoint(x, y), pl = el && el.closest && el.closest('.bsh.flx .fli.fl-p'), pbu = el && el.closest && el.closest('.pb[data-bid]');
+      sr0 && sr0.querySelectorAll('.flpbto').forEach((e) => e.classList.remove('flpbto')); if (pl && pbu) { D.pile = { u: pl.dataset.u, before: pbu.dataset.bid }; pbu.classList.add('flpbto'); if (D.nn) { resetNiche(D.nn); D.nn = null; } D.tgt = null; tip(pl.dataset.u === D.u ? 'Solte para mudar a ordem da pilha' : 'Solte para deitar na pilha', x, y - D.offY - 14); return; } D.pile = null; }
     const nn = nicheAt(x, y); if (D.nn && D.nn !== nn) { resetNiche(D.nn); D.nn = null; }
     if (!nn) { D.tgt = null; D.bad = false; tip(D.src === 'tray' ? 'Solte numa prateleira' : 'Solte numa prateleira (fora daqui cancela)', x, y - D.offY - 14); return; }
     D.nn = nn; const r = +nn.dataset.r, n = +nn.dataset.n, NW = nn.clientWidth, R = nn.getBoundingClientRect(), mv = new Set((D.items || []).map((o) => o.u));
@@ -315,11 +376,12 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
     const tr = md === 'org' && T.closest('.fldock [data-fltr]'), fli = T.closest('.bsh.flx .fli'); if (!tr && !fli) return; if (fli && md === 'deco' && !fli.classList.contains('fl-d')) return; if (fli && md === 'org' && FLX.pk && FLX.pk.u !== fli.dataset.u) return;
     flPx(shc().free);
     if (fli) { ev.stopImmediatePropagation(); if (ev.cancelable && ev.pointerType !== 'mouse') ev.preventDefault(); }
-    const D = FLX.D = { pid: ev.pointerId, x: ev.clientX, y: ev.clientY, on: false, src: tr ? 'tray' : 'shelf', id: tr ? tr.dataset.fltr : null, u: fli ? fli.dataset.u : null, grp: false };
-    const SL = FLX.sel; if (tr && SL && SL.src === 'tray' && SL.ids.includes(D.id)) D.ids = SL.ids.slice(); if (fli && SL && SL.src === 'shelf' && SL.ids.includes(D.u)) D.seqU = SL.ids.slice();
+    const pbE = fli && fli.classList.contains('fl-p') && md === 'org' ? T.closest('.pb[data-bid]') : null;
+    const D = FLX.D = { pid: ev.pointerId, x: ev.clientX, y: ev.clientY, on: false, src: tr ? 'tray' : 'shelf', id: tr ? tr.dataset.fltr : null, u: fli ? fli.dataset.u : null, grp: false, pb: pbE ? pbE.dataset.bid : null };
+    const SL = FLX.sel; if (tr && SL && SL.src === 'tray' && SL.ids.includes(D.id)) D.ids = SL.ids.slice(); if (fli && SL && SL.src === 'shelf' && (SL.ids.includes(D.u) || (D.pb && SL.ids.includes(flKeyOf(D.u, D.pb))))) D.seqU = SL.ids.slice();
     // bandeja: segurar entra na seleção de vários
     if (tr && !SL) D.holdT = setTimeout(() => { if (FLX.D !== D || D.on) return; FLX.D = null; FLX.pk = null; FLX.sel = { src: 'tray', ids: [D.id] }; FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 700); try { navigator.vibrate && navigator.vibrate(16); } catch {} flRender(); }, 480);
-    if (fli && !D.seqU) D.holdT = setTimeout(() => { if (FLX.D !== D || D.on) return; const f = flFind(D.u); if (!f) return; const g = flGroupOf(f.r, D.u); if (g.length < 2) return; D.grp = true; D.gitems = g; FLX.swallow = 1;
+    if (fli && !D.seqU) D.holdT = setTimeout(() => { if (FLX.D !== D || D.on) return; const f = flFind(D.u); if (!f) return; const g = D.pb ? [f.o] : flGroupOf(f.r, D.u); if (g.length < 2 && !D.pb) return; D.pb = null; D.grp = true; D.gitems = g; FLX.swallow = 1;
       g.forEach((o) => { const e = flQ(`.bsh.flx .fli[data-u="${o.u}"]`); if (e) e.classList.add('flgrp'); }); try { navigator.vibrate && navigator.vibrate(16); } catch {} tip('Grupo de ' + g.length + ': arraste', ev.clientX, ev.clientY - 40); }, 480); }, true);
   window.addEventListener('pointermove', (ev) => { const D = FLX.D; if (!D || ev.pointerId !== D.pid) return;
     if (D.kind === 'dv') { ev.preventDefault(); return dvMove(D, ev.clientX); }
@@ -330,8 +392,10 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
     if (D.kind === 'dv') { const d = flQ('.bsh.flx .ndv.on'); if (d) d.classList.remove('on'); FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); if (D.f != null && ev.type === 'pointerup') dvCommit(D.r, D.i, D.f); else flRender(); return; }
     if (!D.on) { if (D.grp) { setTimeout(() => { FLX.swallow = 0; }, 400); flQA('.flgrp').forEach((e) => e.classList.remove('flgrp')); } return; }
     cancelAnimationFrame(raf); if (D.g) D.g.remove(); const R = R5(); if (R) R.classList.remove('fldrag'); FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); SHX_JD = 1; setTimeout(() => { SHX_JD = 0; }, 350);
+    if (D.pile && ev.type === 'pointerup') { const pi = D.pile; flQA('.flpbto').forEach((e) => e.classList.remove('flpbto')); return flIntoPile(D.pb ? flKeyOf(D.u, D.pb) : D.u, pi.u, pi.before); }
     if (!D.tgt || ev.type === 'pointercancel') { if (D.nn) resetNiche(D.nn); flRender(); if (ev.type === 'pointercancel') return; return toast(D.bad ? 'Não coube aí' + (D.src === 'tray' ? ': o livro voltou para a bandeja' : '; nada mudou') : D.src === 'tray' ? 'O livro voltou para a bandeja' : 'Nada mudou de lugar'); }
-    const many = !!(D.ids || D.seq), mv = D.src === 'tray' ? (D.ids ? { ids: D.ids } : { id: D.id }) : D.seq ? { items: D.items, seq: 1 } : { items: D.items }, res = many ? flPlaceMany(D.tgt.r, D.tgt.n, D.tgt.x, mv) : flPlace(D.tgt.r, D.tgt.n, D.tgt.x, mv); if (!res) { flRender(); return toast('Não cabe aqui'); }
+    let bk0 = null; if (D.pb && !D.grp) { bk0 = shBk(); const it = flExtract(flKeyOf(D.u, D.pb)); D.items = it ? [it] : []; } else if (D.seq && D.seqU.some((k) => String(k).includes('|'))) { bk0 = shBk(); D.items = D.seqU.map(flExtract).filter(Boolean); }
+    const many = !!(D.ids || D.seq), mv = D.src === 'tray' ? (D.ids ? { ids: D.ids } : { id: D.id }) : D.seq ? { items: D.items, seq: 1 } : { items: D.items }, res = D.items && !D.items.length && D.src !== 'tray' ? null : many ? flPlaceMany(D.tgt.r, D.tgt.n, D.tgt.x, mv) : flPlace(D.tgt.r, D.tgt.n, D.tgt.x, mv); if (!res) { if (bk0) shRestore(bk0); flRender(); return toast('Não cabe aqui'); } if (bk0) res.bk = bk0;
     if (D.src === 'shelf' && D.items.some((o) => o.t === 'd') && SHX_MODE === 'deco') { FLX.pos = null; toast('Enfeite no novo lugar', shUndo(res.bk)); return flRender(); }
     flAfterPlace(res, mv, D.tgt.r); };
   window.addEventListener('pointerup', end, true); window.addEventListener('pointercancel', end, true);
@@ -347,7 +411,7 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
 function flNicheAt(T, x) { const n = T.closest('.bsh.flx .nich'); if (n) return n; const bay = T.closest('.bsh.flx .bay.fl'); if (!bay) return null; return [...bay.querySelectorAll('.nich')].find((e) => { const R = e.getBoundingClientRect(); return x >= R.left - 2 && x <= R.right + 2; }) || null; }
 window.addEventListener('click', (ev) => { if (!flActive()) return; const md = SHX_MODE, T = flTgt(ev); if (!T || !T.closest) return; if (!T.closest('.v5est') || T.closest('.shx-sx,.shbp,.flarr')) return;
   const st = () => { ev.stopImmediatePropagation(); ev.preventDefault(); };
-  if (FLX.swallow) { FLX.swallow = 0; if (T.closest('.bsh.flx, .fldock, .flpos')) return st(); }
+  if (FLX.swallow) { FLX.swallow = 0; if (T.closest('.bsh.flx, .fldock, .flpos, .flcol')) return st(); }
   const pp = T.closest('.flpos'); if (pp) { st(); const b = T.closest('[data-flp]'); if (b) flPosAct(b.dataset.flp); return; }
   if (FLX.pos) { FLX.pos = null; flQA('.flpos').forEach((e) => e.remove()); if (!T.closest('.bsh.flx .fli, .fldock [data-fltr]')) { st(); return flRender(); } }
   const a = T.closest('[data-fl]'); if (a) { st(); return flAct(a.dataset.fl, a); }
@@ -358,8 +422,12 @@ window.addEventListener('click', (ev) => { if (!flActive()) return; const md = S
       if (FLX.sel || multi) { if (!FLX.sel || FLX.sel.src !== 'tray') FLX.sel = { src: 'tray', ids: FLX.pk && FLX.pk.from === 'tray' && FLX.pk.id !== id ? [FLX.pk.id] : [] }; FLX.pk = null; const L = FLX.sel.ids, i = L.indexOf(id); if (i >= 0) L.splice(i, 1); else L.push(id); try { navigator.vibrate && navigator.vibrate(6); } catch {} return flRender(); }
       FLX.pk = FLX.pk && FLX.pk.id === id ? null : { from: 'tray', id }; try { navigator.vibrate && navigator.vibrate(8); } catch {} return flRender(); }
     const t = T.closest('.flt[data-flt]'); if (t && (FLX.pk || (FLX.sel && FLX.sel.ids.length))) { st(); const [r, n, x] = t.dataset.flt.split(':').map(Number); return flTapPlace(r, n, x); }
-    const fli = T.closest('.bsh.flx .fli'); if (fli) { st(); const u = fli.dataset.u, f = flFind(u); if (!f) return;
+    const fli = T.closest('.bsh.flx .fli'); if (fli) { st(); const u = fli.dataset.u, f = flFind(u); if (!f) return; const pbE = f.o.t === 'p' ? T.closest('.pb[data-bid]') : null, pb = pbE ? pbE.dataset.bid : null;
       if (FLX.sel && FLX.sel.src === 'tray' && FLX.sel.ids.length) return flTapPlace(f.r, f.o.n || 0, f.o.x - flPkW());
+      if (FLX.pk && pb && !(FLX.pk.u === u && FLX.pk.pb === pb) && FLX.pk.from === 'shelf' && (FLX.pk.pb || (flFind(FLX.pk.u) || {}).o?.t === 'b')) return flIntoPile(flKeyOf(FLX.pk.u, FLX.pk.pb), u, pb);
+      if ((FLX.sel || multi) && pb) { if (!FLX.sel || FLX.sel.src !== 'shelf') FLX.sel = { src: 'shelf', ids: [] }; FLX.pk = null; const k = flKeyOf(u, pb), L = FLX.sel.ids, i = L.indexOf(k), iw = L.indexOf(u); if (iw >= 0) { L.splice(iw, 1); f.o.ids.forEach((x) => { if (x !== pb) L.push(flKeyOf(u, x)); }); } else if (i >= 0) L.splice(i, 1); else L.push(k); try { navigator.vibrate && navigator.vibrate(6); } catch {} return flRender(); }
+      if (pb && !FLX.pk) { FLX.pk = { from: 'shelf', u, id: pb, pb }; try { if (!localStorage.getItem('lv.flpiletip')) { localStorage.setItem('lv.flpiletip', '1'); toast('Toque num livro para mover só ele · segure para levar a pilha'); } } catch {} try { navigator.vibrate && navigator.vibrate(8); } catch {} return flRender(); }
+      if (FLX.pk && FLX.pk.u === u && FLX.pk.pb && pb === FLX.pk.pb) { FLX.pk = null; return flRender(); }
       if ((FLX.sel || multi) && f.o.t !== 'd') { if (!FLX.sel || FLX.sel.src !== 'shelf') FLX.sel = { src: 'shelf', ids: FLX.pk && FLX.pk.u && FLX.pk.u !== u ? [FLX.pk.u] : [] }; FLX.pk = null; const L = FLX.sel.ids, i = L.indexOf(u); if (i >= 0) L.splice(i, 1); else L.push(u); try { navigator.vibrate && navigator.vibrate(6); } catch {} return flRender(); }
       if (FLX.pk && FLX.pk.u === u) { FLX.pk = null; return flRender(); }
       if (FLX.pk) return flTapPlace(f.r, f.o.n || 0, f.o.x - flPkW());
@@ -376,12 +444,13 @@ window.addEventListener('click', (ev) => { if (!flActive()) return; const md = S
 // ---------- depois de desenhar: congelar a 1ª vez, bandeja, painel ----------
 { const _sd = shDraw; shDraw = function (box) {
     const host = box && box.querySelector && box.querySelector(':scope > .v5host'), sr = host && host.shadowRoot, sr0 = FL_SR;
-    if (SHX_MODE !== FLX.md) { FLX.pk = null; FLX.pos = null; FLX.open = false; FLX.filt = false; FLX.ns = null; FLX.swap = null; FLX.dkx = false; } FLX.md = SHX_MODE;
+    if (SHX_MODE !== FLX.md) { flPvCancel(true); if (!SHX_MODE) FLX.hintFor = null; FLX.trayHide = false; FLX.pk = null; FLX.pos = null; FLX.open = false; FLX.filt = false; FLX.ns = null; FLX.swap = null; FLX.dkx = false; } FLX.md = SHX_MODE;
     if (sr) sr.querySelectorAll('.flpos,.flghost,.fltip').forEach((e) => e.remove());
     FL_SR = sr || sr0; FL_MAIN = 1; let r;
     try { r = _sd.apply(this, arguments);
       if (!FL_BUSY && flWanted() && !shc().free && flQ('.bsh:not(.sm) .bay')) { FL_BUSY = 1; try { const C0 = shc(); if (!C0.deco) { shDecoInit(); drawEstante(box); } if (flFreeze()) { shSave(); drawEstante(box); } } finally { FL_BUSY = 0; } }
-      const R = flQ('.v5est'); if (R) { R.classList.toggle('flmode', flActive() && !!SHX_MODE);
+      const R = flQ('.v5est'); if (R) { R.classList.toggle('flmode', flActive() && !!SHX_MODE); flColMount(R); if (FL_ARRW && !R.contains(FL_ARRW)) { if (flActive() && SHX_MODE === 'org') R.append(FL_ARRW); else FL_ARRW = null; }
+        if (FLX.hintFor !== SHX_MODE) { FLX.hintFor = SHX_MODE; if (SHX_MODE === 'org' && flActive()) setTimeout(() => { try { toast('Arraste um livro · segure para levar o grupo'); } catch {} }, 350); }
         if (flActive() && SHX_MODE === 'org') { const sp = [...R.querySelectorAll('div[aria-hidden="true"]')].find((d) => /48vh/.test(d.getAttribute('style') || '')); if (sp) sp.style.height = (FLX.open ? 46 : 22) + 'vh'; }
         if (flActive() && SHX_MODE === 'deco') { const sp = [...R.querySelectorAll('div[aria-hidden="true"]')].find((d) => /44vh/.test(d.getAttribute('style') || '')); if (sp) sp.style.height = (FLX.dkx ? 70 : 36) + 'vh'; } }
       if (FLX.pos) requestAnimationFrame(flPosPanel);
@@ -389,7 +458,7 @@ window.addEventListener('click', (ev) => { if (!flActive()) return; const md = S
     finally { FL_MAIN = 0; FL_SR = sr0; }
     return r; }; }
 // sair da tela no meio do arrasto: desfaz só o que estava pela metade (livro na mão, arrasto, painel de posição)
-{ const _x = shExitEdit; shExitEdit = function () { const had = !!(FLX.D || FLX.pk || FLX.pos); try { if (window.flCancelDrag) window.flCancelDrag(); } catch {} FLX.pk = null; FLX.pos = null; FLX.open = false; FLX.filt = false; FLX.ns = null; FLX.swap = null; FLX.dkx = false;
+{ const _x = shExitEdit; shExitEdit = function () { const had = !!(FLX.D || FLX.pk || FLX.pos || FL_PV); flPvCancel(true); FL_ARRW = null; try { const sr = shBibRoot(); if (sr) sr.querySelectorAll('.flarr,.flcol').forEach((e) => e.remove()); } catch {} try { if (window.flCancelDrag) window.flCancelDrag(); } catch {} FLX.pk = null; FLX.pos = null; FLX.open = false; FLX.filt = false; FLX.ns = null; FLX.swap = null; FLX.dkx = false;
     try { const sr = shBibRoot(); if (sr) sr.querySelectorAll('.flpos,.flghost,.fltip,.fldock,.flpill').forEach((e) => e.remove()); } catch {}
     const r = _x.apply(this, arguments); return r || had; }; }
 // o aviso (toast) sobe para o topo também com a bandeja da estante livre aberta
@@ -445,20 +514,26 @@ SHX_BKK.push('plq');
 const FL_ARR = [['autor', 'Autor'], ['titulo', 'Título'], ['sit', 'Situação'], ['data', 'Data de leitura'], ['cor', 'Cor (arco-íris)'], ['altura', 'Altura']];
 let FL_ARK = null;
 function flArrSheet() { const sr = shBibRoot(), R = sr && sr.querySelector('.v5est'); if (!R) return; R.querySelectorAll('.shx-sx').forEach((x) => x.remove()); try { shToastOff(); } catch {}
-  const C0 = shc(), P = v5P(), free = flActive(), opts = FL_ARR.concat(C0.arr && C0.myOrd ? [['mine', 'Minha ordem']] : []); if (!FL_ARK || !opts.some((o) => o[0] === FL_ARK)) FL_ARK = C0.arr || 'autor';
-  const w = document.createElement('div'); w.className = 'shx-sx sxc flarr'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', 'Arrumar por');
-  const paint = () => { const can = free && !['cor', 'altura', 'mine'].includes(FL_ARK), pq = P.shArrPq !== 0;
-    w.innerHTML = `<div><div class="sxh"><b>Arrumar por</b><button type="button" class="sxx" data-k="x" aria-label="Fechar">×</button></div>
-      <div class="arg" role="radiogroup" aria-label="Critério">${opts.map(([k, l]) => `<button type="button" role="radio" aria-checked="${FL_ARK === k}" class="${FL_ARK === k ? 'on' : ''}" data-k="${k}">${C0.arr === k ? '✓ ' : ''}${l}</button>`).join('')}</div>
-      <label class="arsw${can ? '' : ' off'}"><span>Com plaquinhas<small>${!free ? 'Só com Todos os livros' : FL_ARK === 'cor' ? 'Na cor, a transição fala sozinha' : can ? 'Uma plaquinha no começo de cada grupo' : 'Não se aplica a este critério'}</small></span><input type="checkbox" role="switch" ${pq && can ? 'checked' : ''} ${can ? '' : 'disabled'} data-k="pq"></label>
-      <button type="button" class="btn p argo" data-k="go">Arrumar</button></div>`; };
+  const C0 = shc(), P = v5P(), free = flActive(), opts = [['autor', 'Autor'], ['titulo', 'Título'], ['sit', 'Situação'], ['data', 'Data'], ['cor', 'Cor'], ['altura', 'Altura']].concat(C0.arr && C0.myOrd ? [['mine', 'Minha ordem']] : []);
+  let K = null, pq = P.shArrPq !== 0, tok = 0; const w = document.createElement('div'); w.className = 'shx-sx sxc flarr'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-label', 'Arrumar por');
+  const can = () => free && K && !['cor', 'altura', 'mine'].includes(K);
+  const paint = () => { w.innerHTML = `<div><div class="sxh"><b>Arrumar por</b><button type="button" class="sxx" data-k="x" aria-label="Fechar e desfazer a prévia">×</button></div>
+      <div class="arg" role="radiogroup" aria-label="Critério">${opts.map(([k, l]) => `<button type="button" role="radio" aria-checked="${K === k}" class="${K === k ? 'on' : ''}" data-k="${k}">${C0.arr === k ? '✓ ' : ''}${l}</button>`).join('')}</div>
+      <div class="arft"><label class="arsw${can() ? '' : ' off'}"><input type="checkbox" role="switch" ${pq && can() ? 'checked' : ''} ${can() ? '' : 'disabled'} data-k="pq"><span>Plaquinhas</span></label><button type="button" class="btn p argo" data-k="go" ${K ? '' : 'disabled'}>Arrumar</button></div></div>`; };
+  const close = (keep) => { document.removeEventListener('pointerdown', outD, true); document.removeEventListener('pointerup', outU, true); FL_ARRW = null; w.remove(); if (!keep) flPvCancel(); };
+  const preview = async () => { if (!free || !K || K === 'mine') { flPvCancel(); return; } const t = ++tok; if (K === 'cor') await flColorsReady(shAllIds().map(shById).filter(Boolean)); if (t !== tok || !w.isConnected) return;
+    const t0 = performance.now(), pv = flArrBuild(K, pq && can()); pv.k = K; flPvShow(pv); window.__flPvMs = Math.round(performance.now() - t0); };
+  // tocar fora (sem arrastar a estante) fecha e desfaz; rolar a estante por trás não fecha
+  let O = null; const inW = (ev) => { const p = ev.composedPath ? ev.composedPath() : []; return p.includes(w); };
+  const outD = (ev) => { O = inW(ev) ? null : { x: ev.clientX, y: ev.clientY }; }, outU = (ev) => { if (!O) return; const o = O; O = null; if (Math.hypot(ev.clientX - o.x, ev.clientY - o.y) < 10) close(false); };
   paint();
-  w.addEventListener('change', (ev) => { if (ev.target.dataset.k === 'pq') { P.shArrPq = ev.target.checked ? 1 : 0; v5Save(); } });
-  w.addEventListener('click', (ev) => { ev.stopPropagation(); const t = ev.target.closest('[data-k]'); if (ev.target === w || (t && t.dataset.k === 'x')) return w.remove(); if (!t || t.dataset.k === 'pq') return;
-    if (t.dataset.k === 'go') { w.remove(); const k = FL_ARK, withPq = free && P.shArrPq !== 0 && !['cor', 'altura', 'mine'].includes(k); return free ? flArrange(k, withPq) : shArrange(k); }
-    FL_ARK = t.dataset.k; paint(); });
-  w.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); w.remove(); } });
-  R.append(w); const f = w.querySelector('.arg .on'); if (f) f.focus(); }
+  w.addEventListener('change', (ev) => { if (ev.target.dataset.k === 'pq') { pq = ev.target.checked; preview(); } });
+  w.addEventListener('click', (ev) => { ev.stopPropagation(); const t = ev.target.closest('[data-k]'); if (t && t.dataset.k === 'x') return close(false); if (!t || t.dataset.k === 'pq') return;
+    if (t.dataset.k === 'go') { if (!K) return; P.shArrPq = pq ? 1 : 0; const pv = FL_PV && FL_PV.k === K ? FL_PV : null; close(true); return free ? flArrange(K, pq && !['cor', 'altura', 'mine'].includes(K), pv) : shArrange(K); }
+    K = t.dataset.k; paint(); preview(); });
+  w.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); close(false); } });
+  setTimeout(() => { document.addEventListener('pointerdown', outD, true); document.addEventListener('pointerup', outU, true); }, 0);
+  FL_ARRW = w; R.append(w); const keep = setInterval(() => { if (FL_ARRW !== w) return clearInterval(keep); if (!w.isConnected) { const R2 = flQ('.v5est'); if (R2 && flActive() && SHX_MODE === 'org') R2.append(w); else { clearInterval(keep); close(false); } } }, 250); const f = w.querySelector('.arg button'); if (f) f.focus(); }
 shArrMenu = function () { return flArrSheet(); };
 // critérios (os mesmos da arrumação antiga), com a cor nova; devolve a ordem e o rótulo de cada grupo
 function flSortArr(k) { const ids = shAllIds(), B = ids.map((id, i) => ({ ...shById(id), i })).filter((b) => b.id), col = (x, y) => String(x).localeCompare(String(y), 'pt', { sensitivity: 'base' });
@@ -476,18 +551,16 @@ function flSortArr(k) { const ids = shAllIds(), B = ids.map((id, i) => ({ ...shB
     lab = (b) => { const d = dOf(b); if (!d) return 'Sem data'; return ys.size > 1 ? d.slice(0, 4) : (MES[+d.slice(5, 7) - 1] || '') + ' ' + d.slice(0, 4); }; }
   return { S, lab }; }
 // estante livre: arruma em grupos, com um respiro entre eles e, se pedido, uma plaquinha no começo de cada grupo de 2 ou mais
-async function flArrange(k, withPq) { const C0 = shc(), F0 = C0.free; if (!F0) return shArrange(k);
-  if (k === 'mine') { const m = C0.myOrd; if (!m) return; const bk = shBk(); if (m.free) C0.free = JSON.parse(JSON.stringify(m.free)); C0.plq = m.plq || C0.plq; C0.pos = m.pos || C0.pos; C0.arr = null; delete C0.myOrd; shSave(); toast('De volta à minha ordem', shUndo(bk)); return flRender(); }
-  if (k === 'cor') { toast('Lendo as cores das capas…'); await flColorsReady(shAllIds().map(shById).filter(Boolean)); }
-  flPx(F0); const bk = shBk(), srt = flSortArr(k), S = srt.S, lab = srt.lab, BW = flBW(), F = { st: F0.st, rows: flStructOf(F0).rows.map((r) => ({ ...r, it: [] })) }, decos = [];
-  F0.rows.forEach((row, r) => row.it.forEach((o) => { if (o.t === 'd') decos.push({ r, o }); }));
-  if (!C0.arr) C0.myOrd = { free: JSON.parse(JSON.stringify(F0)), plq: JSON.parse(JSON.stringify(C0.plq || [])), pos: JSON.parse(JSON.stringify(C0.pos || {})) };
+function flArrBuild(k, withPq) { const C0 = shc(), F0 = C0.free; flPx(F0); const srt = flSortArr(k), S = srt.S, lab = srt.lab, BW = flBW(), F = { st: F0.st, rows: flStructOf(F0).rows.map((r) => ({ ...r, it: [] })) }, decos = [];
+  F0.rows.forEach((row, r) => row.it.forEach((o) => { if (o.t === 'd') decos.push({ r, o: { ...o } }); }));
   const groups = []; S.forEach((b) => { const L = lab(b), g = groups[groups.length - 1]; if (g && g.l === L) g.bs.push(b); else groups.push({ l: L, bs: [b] }); });
   const GAP = withPq ? 22 : (k === 'cor' || k === 'altura' ? 0 : 8), auto = [], sty = ((C0.plq || []).find((q) => !q.a) || {}).s || 'latao'; let r = 0, n = 0, cur = 0;
   const row = () => F.rows[r] || flNewRow(F), nw = () => flNW(row(), n, BW);
   const next = () => { if (n < flNiches(row()) - 1) n++; else { r++; n = 0; row(); } cur = 0; };
+  // o mesmo livro fica com o mesmo id de peça (a prévia anima cada livro do lugar antigo ao novo)
+  const uOf = {}; F0.rows.forEach((row) => row.it.forEach((o) => { if (o.t === 'b') uOf[o.id] = o.u; }));
   groups.forEach((g) => { if (cur > 0 && GAP) { if (cur + GAP >= nw()) next(); else cur += GAP; } let first = true;
-    g.bs.forEach((b) => { const o = { u: flUid(), t: 'b', id: b.id }, w = flW(o); let guard = 0; while (cur + w > nw() && cur > 0 && guard++ < 50) next();
+    g.bs.forEach((b) => { const o = { u: uOf[b.id] || flUid(), t: 'b', id: b.id }, w = flW(o); let guard = 0; while (cur + w > nw() && cur > 0 && guard++ < 50) next();
       o.n = n; o.x = cur; row().it.push(o);
       if (first && withPq && g.l && g.bs.length >= 2) g.at = { r, n, x0: cur, x1: cur + w }; else if (g.at && g.at.r === r && g.at.n === n) g.at.x1 = cur + w;
       first = false; cur += w; }); });
@@ -497,9 +570,22 @@ async function flArrange(k, withPq) { const C0 = shc(), F0 = C0.free; if (!F0) r
   while (F.rows.length < 3) flNewRow(F);
   // enfeites: voltam para a prateleira em que estavam, no último espaço livre dela (se não couber, vão para outra)
   decos.forEach(({ r: rr, o }) => { const rw = F.rows[rr]; let ok = false; if (rw) for (let nn = flNiches(rw) - 1; nn >= 0 && !ok; nn--) { const NW = flNW(rw, nn, BW), its = rw.it.filter((q) => (q.n || 0) === nn).sort((a, z) => a.x - z.x), e = its.length ? its[its.length - 1].x + flW(its[its.length - 1]) : 0, w = flW(o); if (NW - e >= w) { o.n = nn; o.x = NW - w; rw.it.push(o); ok = true; } } if (!ok) flAdd(F, o); });
-  C0.free = F; C0.plq = (C0.plq || []).filter((q) => !q.a).concat(auto).slice(0, 24); C0.ord = S.map((b) => b.id); C0.lay = {}; C0.manual = 1; C0.arr = k; FLX.pk = null; FLX.pos = null; FLX.sel = null; shSave();
-  const sem = k === 'cor' ? S.filter((b) => flColKey(b)[0] === 99).length : 0;
-  toast('Arrumada por ' + (FL_ARR.find((x) => x[0] === k) || ['', ''])[1].replace(' (arco-íris)', '').toLowerCase() + (auto.length ? ` · ${auto.length} plaquinha${auto.length > 1 ? 's' : ''}` : '') + (sem ? ` · ${sem} sem cor no fim` : ''), shUndo(bk)); flRender(); }
+  return { free: F, plq: (C0.plq || []).filter((q) => !q.a).concat(auto).slice(0, 24), ord: S.map((b) => b.id), auto: auto.length, sem: k === 'cor' ? S.filter((b) => flColKey(b)[0] === 99).length : 0 }; }
+// FLIP: os livros visíveis deslizam do lugar antigo ao novo (~300 ms); sem animação com movimento reduzido
+function flFlipRender(fn) { const sr = shBibRoot(), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, old = new Map();
+  if (sr && !reduce) sr.querySelectorAll('.bsh.flx .fli').forEach((e) => { const R = e.getBoundingClientRect(); if (R.bottom > -40 && R.top < innerHeight + 40) old.set(e.dataset.u, R); });
+  fn(); const s2 = shBibRoot(); if (!s2 || reduce || !old.size) return;
+  s2.querySelectorAll('.bsh.flx .fli').forEach((e) => { const a = old.get(e.dataset.u); if (!a) return; const R = e.getBoundingClientRect(); if (R.bottom < -40 || R.top > innerHeight + 40) return; const dx = a.left - R.left, dy = a.top - R.top; if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    try { e.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.2,.8,.2,1)' }); } catch {} }); }
+const flPvShow = (pv) => flFlipRender(() => { FL_PV = pv; flRender(); });
+function flPvCancel(silent) { if (!FL_PV) return; FL_PV = null; if (!silent) flFlipRender(() => flRender()); }
+async function flArrange(k, withPq, pv) { const C0 = shc(), F0 = C0.free; if (!F0) return shArrange(k);
+  if (k === 'mine') { FL_PV = null; const m = C0.myOrd; if (!m) return; const bk = shBk(); if (m.free) C0.free = JSON.parse(JSON.stringify(m.free)); C0.plq = m.plq || C0.plq; C0.pos = m.pos || C0.pos; C0.arr = null; delete C0.myOrd; shSave(); toast('De volta à minha ordem', shUndo(bk)); return flRender(); }
+  if (k === 'cor' && !pv) await flColorsReady(shAllIds().map(shById).filter(Boolean));
+  const L = pv || flArrBuild(k, withPq); FL_PV = null; const bk = shBk();
+  if (!C0.arr) C0.myOrd = { free: JSON.parse(JSON.stringify(F0)), plq: JSON.parse(JSON.stringify(C0.plq || [])), pos: JSON.parse(JSON.stringify(C0.pos || {})) };
+  C0.free = L.free; C0.plq = L.plq; C0.ord = L.ord; C0.lay = {}; C0.manual = 1; C0.arr = k; FLX.pk = null; FLX.pos = null; FLX.sel = null; shSave();
+  toast('Arrumada por ' + (FL_ARR.find((x) => x[0] === k) || ['', ''])[1].replace(' (arco-íris)', '').toLowerCase() + (L.auto ? ` · ${L.auto} plaquinha${L.auto > 1 ? 's' : ''}` : '') + (L.sem ? ` · ${L.sem} sem cor no fim` : ''), shUndo(bk)); flRender(); }
 // fora da estante livre (com filtro de status), a cor usa a mesma regra nova
 { const _a2 = shArrange; shArrange = function (k) { const r = _a2.apply(this, arguments); try { const C0 = shc(); if (k === 'cor' && !C0.free) { const T = new Set(C0.tray || []), so = flByColor(shAllIds().map(shById).filter(Boolean)).map((b) => b.id); C0.ord = so.filter((x) => !T.has(x)).concat(so.filter((x) => T.has(x))); shSave(); v5Redraw(); } } catch (err) { console.warn('cor', err); } return r; }; }
 
@@ -527,7 +613,7 @@ const SHX_CSSFL = `
 .v4ler .bsh.flx .nich.nlt2 .npk{background:#e3f0ff;box-shadow:0 0 10px 3px rgba(176,214,255,.75)}
 .v4ler .bsh.flx.deco:not(.lbp) .fli.fl-b,.v4ler .bsh.flx.deco:not(.lbp) .fli.fl-p{pointer-events:none}
 .v4ler .bsh.flx.org .fli{touch-action:none;cursor:grab}.v4ler .bsh.flx.deco .fli.fl-d{touch-action:none;cursor:grab}
-.v4ler .bsh.flx.org .fli *,.v4ler .bsh.flx .fli .dec{pointer-events:none}.v4ler .bsh.flx .fli .dec.lk{pointer-events:auto}.v4ler .bsh.flx:not(.org):not(.deco) .fli *{pointer-events:auto}.v4ler .bsh.flx:not(.org):not(.deco) .fli .dec:not(.lk){pointer-events:none}
+.v4ler .bsh.flx.org .fli *,.v4ler .bsh.flx .fli .dec{pointer-events:none}.v4ler .bsh.flx.org .fli .pile,.v4ler .bsh.flx.org .fli .pb{pointer-events:auto}.v4ler .bsh.flx.org .fli .pb *{pointer-events:none}.v4ler .bsh.flx .fli .dec.lk{pointer-events:auto}.v4ler .bsh.flx:not(.org):not(.deco) .fli *{pointer-events:auto}.v4ler .bsh.flx:not(.org):not(.deco) .fli .dec:not(.lk){pointer-events:none}
 .v4ler .bsh.flx.org,.v4ler .bsh.flx.deco,.v4ler .fldock,.v4ler .flpill,.v4ler.fldrag,.v4ler .fldrag{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .v4ler .bsh.flx .fli.flsel{filter:drop-shadow(0 0 5px var(--acc)) drop-shadow(0 0 2px var(--acc))}
 .v4ler .bsh.flx .fli.flgrp{filter:drop-shadow(0 -3px 0 var(--acc)) drop-shadow(0 0 4px var(--acc));transform:translateY(-3px)}
@@ -542,6 +628,8 @@ const SHX_CSSFL = `
 .v4ler .flghost .gin>.fli{position:absolute}
 .v4ler .flghost .flcnt,.v4ler .flc .flnum{position:absolute;top:-8px;right:-8px;min-width:24px;height:24px;border-radius:12px;background:var(--acc);color:var(--on-acc,#fff);font:800 13px/24px system-ui,sans-serif;text-align:center;font-style:normal;box-shadow:0 2px 6px rgba(0,0,0,.35)}
 .v4ler .flc .flnum{top:3px;right:3px;min-width:20px;height:20px;font-size:11px;line-height:20px}
+.v4ler .bsh.flx .pb.flpbsel{filter:drop-shadow(0 0 4px var(--acc)) drop-shadow(0 0 2px var(--acc));transform:translateX(-4px)}.v4ler .bsh.flx .pb{position:relative}.v4ler .bsh.flx .pb .flnum{top:50%;right:-10px;transform:translateY(-50%);min-width:18px;height:18px;font-size:10.5px;line-height:18px}
+.v4ler .bsh.flx .pb.flpbto{box-shadow:0 -3px 0 var(--acc)}.v4ler .bsh.flx .fli>.flnum{position:absolute;top:-10px;left:50%;transform:translateX(-50%);min-width:20px;height:20px;border-radius:10px;background:var(--acc);color:var(--on-acc,#fff);font:800 11px/20px system-ui,sans-serif;text-align:center;font-style:normal;z-index:6}
 .v4ler .flsb{min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit;font-weight:800;font-size:13px;cursor:pointer;flex:none}.v4ler .flsb.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .v4ler .flc.sel:not(.on) .tc{opacity:.78}
 .v4ler .flghost,.v4ler .flghost *{pointer-events:none!important}
@@ -597,12 +685,28 @@ const SHX_CSSFL = `
 .v4ler .shx-sx.sxc .sxx{width:44px;height:44px;border:0;border-radius:12px;background:var(--soft);color:var(--ink);font:700 24px/1 system-ui,sans-serif;cursor:pointer}
 .v4ler .shx-sx.sxc .sxl{display:grid;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
 .v4ler .shx-sx.sxc .sxl button{min-height:46px;border:0;border-top:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px;font-weight:700;text-align:left;padding:0 14px;cursor:pointer}.v4ler .shx-sx.sxc .sxl button:first-child{border-top:0}
-.v4ler .flarr .arg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.v4ler .flarr .arg button{min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;padding:0 8px}
+.v4ler .shx-sx.flarr{inset:auto 0 0 0;background:none;pointer-events:none;z-index:9600}.v4ler .shx-sx.flarr>div{pointer-events:auto;box-shadow:0 -10px 28px rgba(0,0,0,.28);max-height:26vh;gap:8px}
+.v4ler .flarr .arg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:0 4px}.v4ler .flarr .arg::-webkit-scrollbar{display:none}
+.v4ler .flarr .arft{display:flex;align-items:center;gap:10px}.v4ler .flarr .arft .argo{flex:1}
+.v4ler .flarr .arg button{flex:none;white-space:nowrap;min-height:44px;padding:0 14px!important;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;padding:0 8px}
 .v4ler .flarr .arg button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.v4ler .flarr .arsw{display:flex;align-items:center;gap:10px;min-height:52px;padding:4px 4px 4px 2px;cursor:pointer}.v4ler .flarr .arsw span{flex:1;font-weight:800;font-size:14px}.v4ler .flarr .arsw small{display:block;font-weight:600;font-size:12px;color:var(--ink2);margin-top:2px}
+.v4ler .flarr .arsw{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 2px;cursor:pointer;flex:none}.v4ler .flarr .arsw span{font-weight:800;font-size:13.5px}.v4ler .flarr .arsw small{display:block;font-weight:600;font-size:12px;color:var(--ink2);margin-top:2px}
 .v4ler .flarr .arsw.off{opacity:.6;cursor:default}.v4ler .flarr .arsw input{appearance:none;-webkit-appearance:none;flex:none;width:48px;height:28px;border-radius:14px;background:var(--line);position:relative;cursor:pointer;transition:background .15s;margin:0}.v4ler .flarr .arsw input::before{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}.v4ler .flarr .arsw input:checked{background:var(--acc)}.v4ler .flarr .arsw input:checked::before{transform:translateX(20px)}.v4ler .flarr .arsw input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
-.v4ler .flarr .argo{min-height:48px;justify-content:center;width:100%}
+.v4ler .flarr .argo{min-height:48px;justify-content:center}.v4ler .flarr .argo:disabled{opacity:.5}
+.v4ler .flcol{position:fixed;top:50%;transform:translateY(-50%);z-index:9500;display:grid;gap:8px;padding:6px;border-radius:30px;background:color-mix(in srgb,var(--card) 72%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(0,0,0,.22);transition:opacity .15s}
+.v4ler .flcol.R{right:max(6px,env(safe-area-inset-right,0px))}.v4ler .flcol.L{left:max(6px,env(safe-area-inset-left,0px))}
+.v4ler .flcb{position:relative;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.v4ler .flcb.ok{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}.v4ler .flcb.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.v4ler .flcb:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.v4ler .flgrip{width:44px;height:18px;border:0;background:none;padding:0;cursor:grab;touch-action:none;display:grid;place-items:center}.v4ler .flgrip i{display:block;width:20px;height:4px;border-radius:2px;background:var(--ink2);opacity:.55}
+.v4ler .flbl{position:absolute;top:50%;transform:translateY(-50%);white-space:nowrap;padding:6px 10px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:12.5px;font-weight:800;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.v4ler .flcol.R .flbl{right:54px}.v4ler .flcol.L .flbl{left:54px}
+.v4ler .flcol.lbls .flbl,.v4ler .flcb.lb1 .flbl{opacity:1}
+.v4ler.fldrag .flcol,.v4ler .fldrag .flcol,.v5est.fldrag>.flcol{opacity:.25;pointer-events:none}
+.v5est.flcolR .bsh.flx.org,.v5est.flcolR .bsh.flx.deco{padding-right:0}.v5est.flcolL .bsh.flx.org,.v5est.flcolL .bsh.flx.deco{padding-left:0}
+.v5est.flcolR .fldock{right:60px;border-radius:18px 18px 0 18px}.v5est.flcolL .fldock{left:60px;border-radius:18px 18px 18px 0}
+.v4ler .flpill{bottom:auto!important;top:calc(64px + env(safe-area-inset-top,0px))}
+.v4ler .flpill.flsp{left:50%;right:auto;transform:translateX(-50%);width:auto;max-width:calc(100vw - 140px);padding:4px 4px 4px 14px;border-radius:999px;gap:8px}.v4ler .flpill.flsp b{font-size:13.5px}.v4ler .flpill.flsp button{min-height:40px;border-radius:999px}
 .v4ler .flsw{display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:6px;vertical-align:-2px;border:1px solid rgba(0,0,0,.2);background:var(--bk-back,#2a2a3a)}
 .v4ler .flsw.sw-noite{background:#1d2650}.v4ler .flsw.sw-vinho{background:#5e1a2a}.v4ler .flsw.sw-musgo{background:#2f4636}.v4ler .flsw.sw-creme{background:#f0e8d8}.v4ler .flsw.sw-estrelas{background:radial-gradient(1.5px 1.5px at 30% 40%,#fff 60%,transparent),radial-gradient(1.5px 1.5px at 70% 65%,#ffe7a8 60%,transparent),#251c4a}.v4ler .flsw.sw-listras{background:repeating-linear-gradient(90deg,#cfa98a 0 3px,#c39878 3px 6px)}
 `;
