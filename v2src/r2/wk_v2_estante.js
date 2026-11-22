@@ -56,7 +56,8 @@ const SHX_CSS1 = `.v4ler .bsh{--bk-wall:#efe7da;--bk-back:#e4d8c5;--bk-w1:#d6aa7
 .v4ler .bsh .sp.f4 .tt{font-family:var(--f-disp,Georgia,serif);font-variant:small-caps;letter-spacing:.06em;font-weight:500}
 .v4ler .bsh .sp .rb{position:absolute;top:-13px;left:22%;width:max(6px,46%);max-width:12px;height:20px;background:linear-gradient(180deg,#fbf3e2,#efe2c6);border-radius:1px 1px 0 0;box-shadow:0 0 0 .5px rgba(0,0,0,.25);z-index:-1}
 .v4ler .bsh .sp .rb::after{content:'';position:absolute;left:50%;top:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--acc)}
-.v4ler .bsh .sp .sr{position:absolute;top:5px;left:50%;transform:translateX(-50%);z-index:2;font-size:8px;line-height:1;color:#f3cf6b;text-shadow:0 0 2px rgba(0,0,0,.6)}
+.v4ler .bsh .sp .cs{position:absolute;inset:0;background-size:auto 100%;background-position:0 0;background-repeat:no-repeat;opacity:.55;filter:saturate(.9) brightness(.8);z-index:0;pointer-events:none}
+.v4ler .bsh .sp .sr{position:absolute;left:50%;transform:translateX(-50%);z-index:2;font-size:8px;line-height:1;color:#f3cf6b;text-shadow:0 0 2px rgba(0,0,0,.6)}
 .v4ler .bsh .pile{flex:none;position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;margin:0 5px 0 4px}
 .v4ler .bsh .pb{position:relative;display:flex;align-items:center;box-sizing:border-box;padding:0 7px;border-radius:1.5px;font-size:7px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;cursor:pointer;background:var(--c);color:var(--k);box-shadow:0 0 0 .5px rgba(0,0,0,.25)}
 .v4ler .bsh .pb::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 30%,rgba(0,0,0,0) 65%,rgba(0,0,0,.3))}
@@ -137,6 +138,7 @@ const shDark = () => document.documentElement.getAttribute('data-theme') === 'da
 const shB = (e) => ({ id: String(e.id), t: e.title || '', a: e.author || '', st: SHX_ST[e.status] || 'quero', tot: Number(e.totalPages) || 0, img: e.cover || null });
 function shById(id) { if (SHX_VB) { const x = SHX_VB[id]; return x ? { id, ...x } : null; } const e = v5Book(id); return e ? shB(e) : null; }
 function shEdOf(b) { const e = b && shc().ed && shc().ed[b.id]; return e ? { t: e.t, e: e.e } : { t: 'auto' }; }
+let SH_SPN_TEX = 'cor'; // textura da lombada da capa: 'cor' (cor amostrada) ou 'fatia' (borda esquerda da capa)
 const spnHash = (s) => { let h = 2166136261; for (const ch of String(s)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h; };
 // cores tiradas de lombadas reais (fundo, letra): creme, preto, marinho, vinho, verde-floresta, mostarda, rosa antigo, petróleo, terracota...
 const SH_PAL = [['#efe6d6', '#2a2420'], ['#1d1d1f', '#e9dcc3'], ['#1f2f4a', '#e8d7a8'], ['#6e1f2a', '#f2e2c4'], ['#2f4a3a', '#e9e0c8'], ['#c58b3a', '#2a1d10'], ['#d8a9a1', '#3b2228'], ['#2c5f63', '#f0e7d4'], ['#b3532f', '#fbeee0'], ['#9fae8f', '#26301f'], ['#a89bc4', '#2a2240'], ['#e46f5a', '#2b1410'], ['#f4f1ea', '#7a2230'], ['#3a3f47', '#d8c27a'], ['#6b5a8c', '#f1e9ff'], ['#e9c46a', '#3a2a0c'], ['#4b2e2b', '#e8c99a'], ['#5b7f9e', '#f3f0e8'], ['#d9cfc0', '#4b3a2a'], ['#20364a', '#f2a07e'], ['#8c2f39', '#f6d58e'], ['#f2d7c9', '#5a2d3a'], ['#284139', '#e7c17a'], ['#141a2e', '#c8b6ff']];
@@ -163,8 +165,9 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   const cls = `sp ${sty} f${fi}${b.lean ? ' lean' : ''}${cvUrl ? ' cvs' : ''}${photo ? ' ph' : ''}`;
   // título de cima para baixo; ocupa o meio da lombada; autor no terço de baixo; marca da editora no pé
   const t = String(b.t), au = String(b.a || '').split(' ').slice(-1)[0], sz = sm ? 0.6 : 1;
-  const hasAu = !sm && w >= 15 && !!au, auH0 = hasAu ? Math.round(h * 0.22) : 0, foot = sm ? 5 : (w >= 13 ? 15 : 7);
-  const bandH = cvUrl ? Math.round(h * (sm ? 0.12 : 0.14)) : 0, topR0 = cvUrl ? bandH + Math.round(h * 0.05) : Math.round(h * (sty === 'dt' ? 0.21 : 0.07)), topR = b.st === 'lido' && !cvUrl ? Math.max(topR0, sm ? 11 : 16) : topR0, botR = foot + auH0 + (hasAu ? 5 : 0), L = h - topR - botR;
+  const hasAu = !sm && w >= 15 && !!au, auH0 = hasAu ? Math.round(h * 0.22) : 0, foot = sm ? (b.st === 'lido' ? 9 : 5) : (w >= 13 || b.st === 'lido' ? 15 : 7);
+  // 22/11 (Bia): sem a faixa de capa no topo; a lombada leva a cor da capa (modo fatia: borda esquerda da capa, escurecida)
+  const topR0 = Math.round(h * (sty === 'dt' ? 0.21 : 0.07)), topR = topR0, botR = foot + auH0 + (hasAu ? 5 : 0), L = h - topR - botR;
   const kk = fi === 2 ? 0.86 : fi === 3 ? 0.5 : 0.56; let fs = Math.min(w * 0.6, 13.5 * sz);
   if (t.length * fs * kk > L) fs = L / (t.length * kk);
   fs = Math.max(5.6 * sz, fs);
@@ -175,12 +178,13 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   if (sty === 'ep') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px"></span><span class="orn" style="top:${Math.max(12, topR - 9)}px"></span><span class="orn" style="bottom:${Math.max(9, botR - 7)}px"></span><span class="fb" style="bottom:8px"></span><span class="fb" style="bottom:5px"></span>`;
   if (sty === 'cl') deco += `<span class="lb" style="top:${topR - 3}px;height:${L + 6}px"></span><span class="fb" style="top:4px;opacity:.6"></span><span class="fb" style="bottom:4px;opacity:.6"></span>`;
   const edge = ov.t === 'bp' ? `<span class="eg" style="--eg:${ov.e || '#b3283f'}"></span>` : sty === 'ep' ? '<span class="eg" style="--eg:linear-gradient(90deg,#8a6a22,#f4dd8e 45%,#8a6a22)"></span>' : '';
-  if (cvUrl) deco += `<span class="cb" style="height:${bandH}px;background-image:${cvUrl}"></span>`;
-  const mk = b.st === 'lendo' ? '<span class="rb" aria-hidden="true"></span>' : b.st === 'lido' ? '<span class="sr" aria-hidden="true">✦</span>' : '';
+  if (cvUrl && SH_SPN_TEX === 'fatia') deco += `<span class="cs" style="background-image:${cvUrl}"></span>`;
+  const mk = b.st === 'lendo' ? '<span class="rb" aria-hidden="true"></span>' : b.st === 'lido' ? `<span class="sr" aria-hidden="true" style="bottom:${sm ? 2 : 4}px">✦</span>` : '';
   const lab = `${t}${b.a ? ', ' + b.a : ''}${b.st === 'lendo' ? ', lendo' : b.st === 'lido' ? ', lido' : b.st === 'quero' ? ', quero ler' : b.st === 'pausado' ? ', pausado' : b.st === 'abandonado' ? ', abandonado' : ''}`;
   const tag = sm ? 'span' : 'button', at = sm || shMode() ? '' : shAct(b, true);
   const auH = hasAu ? `<span class="au" style="bottom:${foot}px;height:${auH0}px;font-size:${Math.min(6.8, w * 0.36).toFixed(1)}px">${esc(au)}</span>` : '';
-  const pm = (!sm && w >= 13) ? `<span class="pm p${(hh >>> 13) % 4}" aria-hidden="true"></span>` : '';
+  // marca de editora (◆ ○ ▬) saiu: parecia sinal de status; o único sinal no pé é a ✦ de lido
+  const pm = false ? `<span class="pm p${(hh >>> 13) % 4}" aria-hidden="true"></span>` : '';
   const bg = photo ? `;background-image:url('${photo}')` : '';
   const inner = photo ? edge : `${deco}${edge}<span class="tt" style="top:${topR}px;height:${L}px;font-size:${fs.toFixed(1)}px">${esc(t)}</span>${auH}${pm}`;
   return `<${tag}${tag === 'button' ? ' type="button"' : ''} class="${cls}"${at} data-bid="${esc(b.id)}"${cvUrl ? ` data-sk="${spnHash(b.img)}"` : ''} aria-label="${esc(lab)}" style="width:${w}px;height:${h}px;--c:${cc};--k:${kx}${bg}${b.lean ? `;margin-left:${Math.ceil(h * 0.125)}px` : ''}">${inner}${mk}</${tag}>`; }
