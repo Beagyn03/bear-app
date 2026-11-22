@@ -10004,6 +10004,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 00_v2_capa_canvas.js ---
 // Capa para canvas (Bia, 22/11): o Google Livros não manda CORS, então o canvas não pode ler os pixels dessas capas
@@ -10089,24 +10090,30 @@ const rrUndo = (recs) => { for (let i = recs.length - 1; i >= 0; i--) { const m 
     const aj = S.tab === 'perfil' && TR.querySelector('#aj-back'); if (aj) return aj.click();
     if (S.tab && S.tab !== 'inicio') return goTab('inicio');
   };
-  let pushed = 0, skip = 0, t = 0;
+  let pushed = 0, t = 0;
   const sync = () => {
     t = 0; const n = layers();
     if (n > pushed) { while (pushed < n) { history.pushState({ bear: ++pushed }, ''); } }
-    else if (n < pushed) { const d = pushed - n; pushed = n; skip += d; history.go(-d); }
+    else if (n < pushed) { const d = pushed - n; pushed = n; history.go(-d); }
   };
   const later = () => { if (!t) t = setTimeout(sync, 60); };
   window.bearVoltarSync = later; // camadas fora do TR (sessão de leitura) avisam quando abrem/fecham
-  addEventListener('popstate', () => {
-    if (skip > 0) { skip--; return; }
-    pushed = Math.max(0, pushed - 1);
+  addEventListener('popstate', (ev) => {
+    // nível pelo estado da entrada (22/11): history.go(-d) gera UM popstate só; contar skip por d engolia voltas reais depois de várias ações seguidas
+    const lvl = (ev && ev.state && ev.state.bear) || 0;
+    if (lvl === pushed) return; // chegou onde o próprio sync mandou ir
+    if (lvl > pushed) { pushed = lvl; return; } // avançar não abre nada
+    pushed = lvl;
     try { closeTop(); } catch (err) { console.error('voltar', err); }
     later();
   });
-  const mo = new MutationObserver(later);
+  const mo = new MutationObserver(() => sync()); // sem atraso (22/11): o voltar logo depois de abrir uma camada saía do app porque a entrada ainda não existia
   mo.observe(TR, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
   mo.observe(document.body, { childList: true });
   later();
+  // Esc sem camada que trate o próprio Esc = voltar (22/11: a página de uma estante não fechava com Esc)
+  let escN = -1; window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') escN = layers(); }, true);
+  window.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape' || ev.defaultPrevented) return; if (layers() < escN) return; /* outra camada já fechou com este Esc */ const a = ev.composedPath ? ev.composedPath()[0] : ev.target; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName || '') && a.value) return; sync(); const base = S.tab && S.tab !== 'inicio' ? 1 : 0; if (pushed > base) { ev.preventDefault(); history.back(); } /* só fecha página/camada; Esc não troca de aba */ });
 })();
 // --- 02_meta.js ---
 // Página da meta (rodada 2): ano numa lista (só anos com leitura), "•••" com as ações, sem botão grande,
@@ -22883,6 +22890,10 @@ function v8BjPut() { const v = $('#shelflist');
   const chk = () => { const o = TR.querySelector('.fp-load:not(.v7off)'); if (!o) return; const v = TR.querySelector('#shelflist'); if (v && !v.hidden && v.querySelector('.sl-body .v3pf, .sl-body .yo-top')) o.classList.add('v7off'); };
   new MutationObserver(chk).observe(TR, { childList: true, subtree: true }); }
 // --- q0_v2_metricas_livro.js ---
+// idioma da edição: código ISO (pt, por, fre, ger…) vira nome; código desconhecido não aparece cru (Bia 22/11: 'fre' em Dom Casmurro)
+const V2_LANG3 = { pt: 'Português', 'pt-br': 'Português', 'pt-pt': 'Português', por: 'Português', en: 'Inglês', eng: 'Inglês', es: 'Espanhol', spa: 'Espanhol', fr: 'Francês', fre: 'Francês', fra: 'Francês', it: 'Italiano', ita: 'Italiano', de: 'Alemão', ger: 'Alemão', deu: 'Alemão', ja: 'Japonês', jpn: 'Japonês', ru: 'Russo', rus: 'Russo', zh: 'Chinês', chi: 'Chinês', zho: 'Chinês', ko: 'Coreano', kor: 'Coreano', nl: 'Holandês', dut: 'Holandês', nld: 'Holandês', la: 'Latim', lat: 'Latim', ca: 'Catalão', cat: 'Catalão', pl: 'Polonês', pol: 'Polonês', sv: 'Sueco', swe: 'Sueco' };
+function v2LangName(c) { const k = String(c || '').trim(); if (!k) return ''; const n = V2_LANG3[k.toLowerCase()]; if (n) return n; return /^[a-z]{2,3}(-[a-z]{2})?$/i.test(k) ? '' : k; }
+try { window.v2LangName = v2LangName; if (typeof LANGS !== 'undefined') for (const k in V2_LANG3) if (!LANGS[k]) LANGS[k] = V2_LANG3[k]; } catch {}
 // Números do livro (Bia, 20/11; API 035): a estante vai para o servidor (PUT /v1/me/books, só quando muda) e a aba Sobre
 // da página do livro mostra os números logo abaixo do topo (duas fileiras como a faixa do perfil): lendo, leram, querem ler, abandonaram, avaliações (★ média),
 // comentários e ressaca (deu / curou). Só totais, nunca quem; números zerados não aparecem.
@@ -22948,7 +22959,7 @@ var v8Bust = () => {};
   const chips = (hero, title) => {
     const box = hero.querySelector('.bp-chips'); if (!box) return; let e = null; try { e = lib().find((x) => normT(x.title) === normT(title)); } catch {} if (!e) return;
     const m = e.meta || {}; let pg = 0; try { pg = readingInfo(e).total || e.totalPages || 0; } catch { pg = e.totalPages || 0; }
-    const lang = m.lang ? ((typeof LANGS !== 'undefined' && LANGS[m.lang]) || m.lang) : '', gen = e.genre || m.cat || '';
+    const lang = m.lang ? v2LangName(m.lang) : '', gen = e.genre || m.cat || '';
     const gold = box.querySelector('.bp-chip.gold');
     const L = [m.pub, pg ? pg + ' pág.' : '', lang, gen].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean);
     const sig = L.join('|') + '|' + (gold ? gold.textContent : ''); if (box.dataset.v8 === sig) return;
@@ -23784,7 +23795,7 @@ addEventListener('click', (ev) => {
     const dl = body.querySelector('.bp-dl'); if (dl) { const o = {}; dl.querySelectorAll('dt').forEach((dt) => { const dd = dt.nextElementSibling; if (dd) o[dt.textContent.trim()] = dd.textContent.trim(); }); if (Object.keys(o).length) ficha.set(normT(title), o); }
     const box = hero.querySelector('.bp-chips');
     if (box && !box.dataset.v8 && !mine) { const o = ficha.get(normT(title)) || {}, pgs = o['Páginas'] || ((box.textContent.match(/(\d+)\s*pág/) || [])[1]);
-      const L = [o['Publicação'], pgs ? String(pgs).replace(/\D/g, '') + ' pág.' : '', o['Idioma'], o['Gênero']].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean);
+      const L = [o['Publicação'], pgs ? String(pgs).replace(/\D/g, '') + ' pág.' : '', (window.v2LangName ? window.v2LangName(o['Idioma']) : o['Idioma']), o['Gênero']].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean);
       const sig = L.join('|'); if (L.length && box.dataset.v9 !== sig) { box.innerHTML = L.map((x) => '<span class="bp-chip">' + esc(x) + '</span>').join(''); box.dataset.v9 = sig; } }
     body.classList.toggle('v9prev', !mine);
     let row = body.querySelector(':scope > .v9acts');
@@ -30670,6 +30681,7 @@ function jnHTML() {
 }
 // abrir um atalho: os mesmos caminhos do antigo "Minha leitura"; o Voltar dessas telas devolve à Jornada
 function jnGo(k, el) {
+  try { const L0 = TR.querySelector('#lista'); S.jnY = L0 ? L0.scrollTop : 0; } catch {}
   S.jnRet = true;
   if (k === 'orbita' && typeof window.__orbCal === 'function') { try { return window.__orbCal(); } catch {} }
   if (k === 'retro') { const y = (el && el.dataset.y) || todayISO().slice(0, 4); if (typeof window.v2RtOpen === 'function' && window.v2RtOpen('ano', y) !== false) return; return goTab('progresso'); }
@@ -30686,10 +30698,11 @@ function jnGo(k, el) {
 { const _gt = goTab; goTab = function (tab, fromBar) {
   if (fromBar || tab === 'jornada') S.jnRet = false;
   // Voltar de uma tela aberta pela Jornada (Estatísticas e afins voltam para a "última aba"): volta para a Jornada
-  else if (S.jnRet && ['inicio', 'estante', 'comunidade', 'eu'].includes(tab)) { S.jnRet = false; tab = 'jornada'; }
+  else if (S.jnRet && ['inicio', 'estante', 'comunidade', 'eu'].includes(tab)) { S.jnRet = false; tab = 'jornada'; S.jnBackY = S.jnY || 0; }
   const L = $('#lista'), was = S.tab; if (L) delete L.dataset.jnsig;
   const r = _gt.call(this, tab, fromBar);
-  if (tab === 'jornada' && was !== 'jornada' && L) L.scrollTop = 0; // a Jornada sempre abre no topo
+  // a Jornada abre no topo pela barra; voltando de uma tela que ela abriu, volta onde estava (22/11)
+  if (tab === 'jornada' && was !== 'jornada' && L) { const y = S.jnBackY || 0; S.jnBackY = 0; L.scrollTop = y; if (y) requestAnimationFrame(() => { L.scrollTop = y; setTimeout(() => { L.scrollTop = y; }, 120); }); }
   return r;
 }; }
 
@@ -30738,7 +30751,7 @@ const JN_PLANET = (sz, id) => `<svg class="plsv" viewBox="0 0 64 64" width="${sz
 #v5pill[hidden]{display:none!important}
 #v5pill.snap{transition:transform .28s cubic-bezier(.2,.9,.3,1.15)}#v5pill.drag{cursor:grabbing;box-shadow:0 12px 28px rgba(20,10,30,.4)}
 #v5pill .clk{font-variant-numeric:tabular-nums}#v5pill .pt{font-weight:700;font-size:13px;opacity:.8;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#lista.v5pad.v5pad{padding-bottom:calc(var(--inst-h,0px) + 164px + env(safe-area-inset-bottom,0px))!important}#shelflist.v5pad.v5pad .sl-body{padding-bottom:calc(var(--inst-h,0px) + 164px + env(safe-area-inset-bottom,0px))!important}
+#lista.v5pad.v5pad{padding-bottom:calc(var(--inst-h,0px) + 184px + env(safe-area-inset-bottom,0px))!important}#shelflist.v5pad.v5pad .sl-body{padding-bottom:calc(var(--inst-h,0px) + 184px + env(safe-area-inset-bottom,0px))!important}
 @media (prefers-reduced-motion:reduce){#v5ler .pl::before,#v5ler .bands,#v5ler.pulse::after{animation:none}#v5ler,#v5ler .lb{transition:none}#v5pill.snap{transition:none}}
 .jn{display:grid;gap:12px;padding:4px 0 8px}
 .jn .eb{font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
@@ -30782,11 +30795,8 @@ const jnHits = (r, dy) => { const xs = [0.12, 0.35, 0.65, 0.88], ys = [0.12, 0.5
   for (const fx of xs) for (const fy of ys) if (jnHitAt(r.left + (r.right - r.left) * fx, r.top + dy + (r.bottom - r.top) * fy)) return true; return false; };
 let jnW = 108;
 const jnBase = (mini, left) => { const b = parseFloat(jnPl_.style.bottom) || 88, w = mini ? 60 : jnW, R = left ? 16 + w : window.innerWidth - 16, bot = window.innerHeight - b; return { left: R - w, right: R, top: bot - 60, bottom: bot }; };
-function jnDodge() { if (jnPl_.hidden) return; if (!jnPl_.classList.contains('mini') && jnPl_.offsetWidth > 70) jnW = jnPl_.offsetWidth;
-  const find = (mini, left) => { const r = jnBase(mini, left); for (let d = 0; d <= 260; d += 8) if (!jnHits(r, -d)) return -d; return null; };
-  // primeiro à direita com o rótulo; depois só o planeta; por fim o canto esquerdo
-  let mini = false, left = false, dy = find(false, false); if (dy === null) { mini = true; dy = find(true, false); } if (dy === null) { left = true; dy = find(true, true); } if (dy === null) { left = false; dy = 0; }
-  jnPl_.classList.toggle('mini', mini); jnPl_.classList.toggle('lft', left); jnPl_.dataset.dy = dy; jnPl_.style.transform = dy ? `translateY(${dy}px)` : ''; }
+// posição FIXA (Bia 22/11): canto inferior direito, 16 px acima da barra; ao parar só volta a mostrar 'Ler'. As listas reservam espaço no fim.
+function jnDodge() { if (jnPl_.hidden) return; jnPl_.classList.remove('mini', 'lft'); jnPl_.dataset.dy = 0; jnPl_.style.transform = ''; }
 const jnPulseOnce = () => { try { if (localStorage.getItem('lv.lerPulso')) return; localStorage.setItem('lv.lerPulso', '1'); } catch { return; } if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; jnPl_.classList.add('pulse'); setTimeout(() => jnPl_.classList.remove('pulse'), 2400); };
 jnPl_.addEventListener('click', () => { try { v2Ler(); } catch (err) { console.error('ler', err); } });
 const jnPill = document.createElement('button'); jnPill.type = 'button'; jnPill.id = 'v5pill'; jnPill.hidden = true;
