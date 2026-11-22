@@ -71,17 +71,30 @@ function grlPaint() { try { const sr = shBibRoot(); if (!sr) return; try { sr.ho
     sr.querySelectorAll('.bsh').forEach((sh) => { const bays = [...sh.querySelectorAll(':scope .bay')]; bays.forEach((bay, i) => { const r = bay.dataset.r != null ? bay.dataset.r : String(i), k = G[r];
       let el = bay.querySelector(':scope > .grl'); if (!k || !EIA_GRL[k]) { if (el) el.remove(); return; }
       if (!el || el.dataset.k !== k) { if (el) el.remove(); el = document.createElement('span'); el.className = 'grl'; el.dataset.k = k; el.innerHTML = `<img alt="" decoding="async" src="${eiaSrc(EIA_GRL[k][1], 'guirlanda')}">`; bay.prepend(el); }
-      const ed = md === 'deco'; el.classList.toggle('ed', ed); let bt = el.querySelector('.grb');
-      if (ed && !bt) { bt = document.createElement('span'); bt.className = 'grb'; bt.innerHTML = `<button type="button" data-grl="up" data-r="${r}" aria-label="Subir a guirlanda">↑</button><button type="button" data-grl="dn" data-r="${r}" aria-label="Descer a guirlanda">↓</button><button type="button" data-grl="rm" data-r="${r}" aria-label="Tirar a guirlanda">✕</button>`; el.append(bt); }
-      else if (!ed && bt) bt.remove(); }); }); } catch (e) { console.warn('guirlanda', e); } }
+      const ed = md === 'deco'; el.classList.toggle('ed', ed); el.classList.toggle('sel', ed && GRL_SEL === r); el.dataset.r = r;
+      }); }); grlPanel(sr); } catch (e) { console.warn('guirlanda', e); } }
 function grlRows() { try { const sr = shBibRoot(), sh = sr && sr.querySelector('.bsh'); return sh ? [...sh.querySelectorAll('.bay')].map((b, i) => (b.dataset.r != null ? b.dataset.r : String(i))) : []; } catch { return []; } }
 function grlAdd(k) { const G = grlMap(), rows = grlRows(); let r = rows.find((x) => !G[x]); if (r == null) r = rows[0] || '0';
   try { const sr = shBibRoot(); const vis = [...sr.querySelectorAll('.bsh .bay')].find((b) => { const R = b.getBoundingClientRect(); return R.bottom > 80 && R.top < innerHeight - 120 && !G[b.dataset.r != null ? b.dataset.r : '']; }); if (vis && vis.dataset.r != null) r = vis.dataset.r; } catch {}
   const bk = JSON.parse(JSON.stringify(G)); G[r] = k; shSave(); grlPaint(); toast(EIA_GRL[k][0] + ' na estante', { label: 'Desfazer', fn: () => { shc().grl = bk; shSave(); grlPaint(); } }); }
-document.addEventListener('click', (ev) => { const p = ev.composedPath ? ev.composedPath() : [], b = p.find((n) => n && n.dataset && n.dataset.grl); if (!b) return; ev.stopImmediatePropagation(); ev.preventDefault();
-  const G = grlMap(), r = b.dataset.r, rows = grlRows(), i = rows.indexOf(r), bk = JSON.parse(JSON.stringify(G)), a = b.dataset.grl;
-  if (a === 'rm') { delete G[r]; } else { const j = i + (a === 'up' ? -1 : 1); if (j < 0 || j >= rows.length) return; const k = G[r]; delete G[r]; const o = G[rows[j]]; G[rows[j]] = k; if (o) G[r] = o; }
-  shSave(); grlPaint(); if (a === 'rm') toast('Guirlanda tirada', { label: 'Desfazer', fn: () => { shc().grl = bk; shSave(); grlPaint(); } }); }, true);
+let GRL_SEL = null;
+// painel da guirlanda selecionada (mesmo padrão do painel dos enfeites): Subir · Descer · Trocar · Remover
+function grlPanel(sr) { try { sr.querySelectorAll('.grlpan').forEach((e) => e.remove()); if (GRL_SEL == null || SHX_MODE !== 'deco') return; const el = sr.querySelector(`.bsh .grl[data-r="${GRL_SEL}"]`); if (!el) { GRL_SEL = null; return; }
+  const E = el.getBoundingClientRect(), p = document.createElement('div'); p.className = 'grlpan'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Guirlanda');
+  const B = (a, ic, l, c) => `<button type="button" class="fpb${c ? ' ' + c : ''}" data-grl="${a}" data-r="${GRL_SEL}">${ic}<span>${l}</span></button>`, I = (d) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  p.innerHTML = `<div class="fph2"><span class="fpn">${esc((EIA_GRL[(shc().grl || {})[GRL_SEL]] || ['Guirlanda'])[0])}</span><button type="button" class="fpok" data-grl="ok" aria-label="Pronto">${I('<path d="m5 12 5 5 9-10"/>')}</button></div><div class="fpg">${B('up', I('<path d="M12 19V5M6 11l6-6 6 6"/>'), 'Subir')}${B('dn', I('<path d="M12 5v14M6 13l6 6 6-6"/>'), 'Descer')}${B('tc', I('<path d="M4 7h13l-3-3M20 17H7l3 3"/>'), 'Trocar')}${B('rm', I('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'), 'Remover', 'red')}</div>`;
+  const R = sr.querySelector('.v5est') || sr; R.appendChild(p); const ph = p.offsetHeight, pw = p.offsetWidth; let top = E.bottom + 10; if (top + ph > innerHeight - 90) top = Math.max(64, E.top - ph - 10);
+  const left = Math.max(8, Math.min(innerWidth - pw - 70, E.left + E.width / 2 - pw / 2)); p.style.top = top + 'px'; p.style.left = left + 'px'; } catch (e) { console.warn('painel guirlanda', e); } }
+// o toque na faixa da guirlanda é dela, não do livro de baixo
+{ const _n = flNicheAt; flNicheAt = function (T) { try { if (T && T.closest && (T.closest('.grl') || T.closest('.grlpan'))) return null; } catch {} return _n.apply(this, arguments); }; }
+{ const _h = flHitFli; flHitFli = function (T) { try { if (SHX_MODE === 'deco' && T && T.closest && (T.closest('.grl') || T.closest('.grlpan'))) return null; } catch {} return _h.apply(this, arguments); }; }
+window.addEventListener('click', (ev) => { try { if (typeof SHX_MODE === 'undefined' || SHX_MODE !== 'deco') return; const p = ev.composedPath ? ev.composedPath() : [], b = p.find((n) => n && n.dataset && n.dataset.grl), g = p.find((n) => n && n.classList && n.classList.contains && n.classList.contains('grl'));
+  if (!b && g) { ev.stopImmediatePropagation(); ev.preventDefault(); GRL_SEL = GRL_SEL === g.dataset.r ? null : g.dataset.r; try { navigator.vibrate && navigator.vibrate(8); } catch {} return grlPaint(); }
+  if (!b) { if (GRL_SEL != null && !p.find((n) => n && n.classList && n.classList.contains && n.classList.contains('grlpan'))) { GRL_SEL = null; grlPaint(); } return; }
+  ev.stopImmediatePropagation(); ev.preventDefault(); const a = b.dataset.grl; if (a === 'ok') { GRL_SEL = null; return grlPaint(); }
+  const G = grlMap(), r = b.dataset.r, rows = grlRows(), i = rows.indexOf(r), bk = JSON.parse(JSON.stringify(G));
+  if (a === 'rm') { delete G[r]; GRL_SEL = null; } else if (a === 'tc') { G[r] = G[r] === 'natal' ? 'encantado' : 'natal'; } else { const j = i + (a === 'up' ? -1 : 1); if (j < 0 || j >= rows.length) return toast(a === 'up' ? 'Já está na prateleira de cima' : 'Já está na prateleira de baixo'); const k = G[r]; delete G[r]; const o = G[rows[j]]; G[rows[j]] = k; if (o) G[r] = o; GRL_SEL = rows[j]; }
+  shSave(); grlPaint(); if (a === 'rm') toast('Guirlanda tirada', { label: 'Desfazer', fn: () => { shc().grl = bk; shSave(); grlPaint(); } }); } catch (e) { console.warn('guirlanda', e); } }, true);
 // botões de guirlanda no carrossel de Temas e de Luzinhas
 const grlBtns = () => Object.entries(EIA_GRL).map(([k, [l, t]]) => `<button type="button" class="tzi grlbtn" data-grlk="${k}" aria-label="Pôr ${l}"><span class="tzv th"><span class="eia" style="width:56px;height:18px"><img alt="" loading="lazy" src="${eiaSrc(t, 'guirlanda')}"></span></span><small>${l}</small></button>`).join('');
 { const _dp = dkPanel; dkPanel = function () { let h = _dp.apply(this, arguments); try { if (typeof FLX !== 'undefined' && FLX && (FLX.car === 'temas' || FLX.car === 'luz') && h && h.includes('class="dbody')) h = h.replace(/(<div class="dbody[^"]*"[^>]*>)/, `$1${grlBtns()}`); } catch {} return h; }; }
@@ -95,7 +108,7 @@ const EIA_CSS = `.eia{display:block;position:relative;line-height:0}.eia>img{wid
 .erdi .escr{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;background:#d9d6cf;pointer-events:none}.erdi .escr>img,.erdi .escr .gen{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.erdi .escr .gen.hd{opacity:0}
 .erdi .escr{filter:grayscale(.3) contrast(.92) brightness(1.02) sepia(.1)}.erdi.gr .escr{filter:grayscale(1) contrast(.95)}
 .bay{position:relative}.grl{position:absolute;left:0;right:0;top:0;z-index:4;pointer-events:none;display:block;line-height:0}.grl>img{width:100%;max-height:58px;object-fit:cover;object-position:center top;display:block;filter:brightness(.92) drop-shadow(0 3px 3px rgba(0,0,0,.35))}
-.grl.ed{pointer-events:auto;outline:1.5px dashed rgba(255,255,255,.55);outline-offset:-2px}.grl .grb{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:4px}.grl .grb button{width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font:700 15px/1 system-ui;cursor:pointer}
+.grl.ed{pointer-events:auto;cursor:pointer}.grl.sel{outline:2px solid var(--acc,#e0ad3a);outline-offset:-2px;z-index:6}.grlpan{position:fixed;z-index:10003;padding:6px;border-radius:16px;background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 14px 34px rgba(0,0,0,.38)}.grlpan .fph2{display:flex;align-items:center;gap:6px;margin:0 2px 4px}.grlpan .fpn{flex:1;font-size:11.5px;font-weight:700;color:var(--ink2)}.grlpan .fpok{width:32px;height:32px;border-radius:50%;border:0;background:var(--acc);color:var(--on-acc,#fff);display:grid;place-items:center}.grlpan .fpg{display:grid;grid-template-columns:repeat(4,64px);gap:4px}.grlpan .fpb{height:46px;border-radius:10px;border:1px solid var(--line);background:var(--soft,rgba(127,127,127,.12));color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;font:inherit;font-size:10.5px;font-weight:700;cursor:pointer}.grlpan .fpb.red{color:#e5675a}.grl .grb{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:4px}.grl .grb button{width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font:700 15px/1 system-ui;cursor:pointer}
 .grlbtn .eia{height:20px!important}`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-eia]')) { const st = document.createElement('style'); st.dataset.eia = 1; st.textContent = EIA_CSS; sr.append(st); } } catch {} }; }
 // enfeite que vai para a frente dos livros não cai em cima de outro da frente: procura o lugar mais livre nas prateleiras à vista
@@ -106,3 +119,27 @@ const EIA_CSS = `.eia{display:block;position:relative;line-height:0}.eia>img{wid
         for (let x = 0; x <= NW - w; x += 6) { const ov = oth.reduce((a, [l, rr]) => a + Math.max(0, Math.min(rr, x + w) - Math.max(l, x)), 0), cost = ov * 10 + (ri - row0) * 40 + Math.abs(x + w / 2 - NW / 2) * 0.05; if (!best || cost < best.c) best = { c: cost, ri, x }; } }
       if (best) { if (best.ri !== row0) { F.rows[row0].it = F.rows[row0].it.filter((q) => q !== o); F.rows[best.ri].it.push(o); } o.x = best.x; o.n = 0; shSave(); flRender(); } } } catch (e) { console.warn('enfeite frente', e); }
   return r; }; }
+// ---------- faixas da coluna nascem ao lado do botão tocado (Bia, 22/11) ----------
+// Categorias do Decorar, "Arrumar por" e "•••": a faixa fica alinhada ao centro do botão, vai até a borda oposta e tem uma setinha para ele.
+let FLA_LAST = '';
+function flcAnchorPos() { try { const sr = shBibRoot(); if (!sr) return; const col = sr.querySelector('.flcol'); if (!col) return; const vw = innerWidth, vh = innerHeight;
+  const place = (panel, btn) => { if (!panel || !btn) return; const B = btn.getBoundingClientRect(); if (!B.width) return; const side = B.left > vw / 2 ? 'R' : 'L';
+    const h = panel.offsetHeight || 110, top = Math.max(70, Math.min(vh - h - 12 - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sab')) || 0), B.top + B.height / 2 - h / 2));
+    const st = panel.style; st.setProperty('top', top + 'px', 'important'); st.setProperty('bottom', 'auto', 'important'); st.setProperty('max-width', 'none', 'important');
+    if (side === 'R') { st.setProperty('right', (vw - B.left + 10) + 'px', 'important'); st.setProperty('left', '16px', 'important'); } else { st.setProperty('left', (B.right + 10) + 'px', 'important'); st.setProperty('right', '16px', 'important'); }
+    st.setProperty('width', 'auto', 'important'); st.setProperty('--ay', Math.max(14, Math.min(h - 14, B.top + B.height / 2 - top)) + 'px'); st.setProperty('transform-origin', (side === 'R' ? '100% ' : '0 ') + (B.top + B.height / 2 - top) + 'px');
+    panel.classList.toggle('flaR', side === 'R'); panel.classList.toggle('flaL', side === 'L'); panel.classList.add('flanc'); const key = (btn.dataset.k || btn.dataset.fl || '') + side; if (panel.classList.contains('dkpan') && FLA_LAST !== key) { panel.classList.add('flanew'); } FLA_LAST = key; };
+  if (!sr.querySelector('.dkpan.flcar')) FLA_LAST = '';
+  place(sr.querySelector('.dkpan.flcar'), col.querySelector('.flcat.on, [data-fl="car"][aria-pressed="true"]'));
+  place(sr.querySelector('.shx-sx.flarr.flcar2'), col.querySelector('[data-fl="arr"]'));
+  sr.querySelectorAll('.flpop').forEach((p) => place(p, col.querySelector('[data-fl="more"]'))); } catch (e) { console.warn('faixa ao lado', e); } }
+{ const _sd = shDraw; shDraw = function () { const r = _sd.apply(this, arguments); try { flcAnchorPos(); requestAnimationFrame(flcAnchorPos); } catch {} return r; }; }
+{ const _fr = flRender; flRender = function () { const r = _fr.apply(this, arguments); try { flcAnchorPos(); requestAnimationFrame(flcAnchorPos); } catch {} return r; }; }
+{ const _ar = flArrSheet; flArrSheet = function () { const r = _ar.apply(this, arguments); try { flcAnchorPos(); requestAnimationFrame(flcAnchorPos); setTimeout(flcAnchorPos, 60); } catch {} return r; }; }
+{ const _p = flPop; flPop = function () { const r = _p.apply(this, arguments); try { requestAnimationFrame(flcAnchorPos); } catch {} return r; }; }
+addEventListener('resize', () => { try { flcAnchorPos(); } catch {} });
+const FLA_CSS = `.v4ler .flanc{overflow:visible!important}.v4ler .flanc::after{content:"";position:absolute;top:calc(var(--ay,50%) - 8px);width:0;height:0;border:8px solid transparent;pointer-events:none}
+.v4ler .flanc.flaR::after{right:-15px;border-left-color:var(--card,#2a2235)}.v4ler .flanc.flaL::after{left:-15px;border-right-color:var(--card,#2a2235)}
+.v4ler .flanc .dbody,.v4ler .flanc>div{overflow-x:auto}
+@media (prefers-reduced-motion:no-preference){.v4ler .flarr.flanc,.v4ler .flpop.flanc{animation:flanin .16s ease-out}.v4ler .dkpan.flanc.flanew{animation:flanin .16s ease-out}@keyframes flanin{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}}`;
+{ const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-fla]')) { const st = document.createElement('style'); st.dataset.fla = 1; st.textContent = FLA_CSS; sr.append(st); } } catch {} }; }
