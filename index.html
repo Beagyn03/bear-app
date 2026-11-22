@@ -30869,6 +30869,162 @@ const SHX_CSSFL = `
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-shxfl]')) { const st = document.createElement('style'); st.dataset.shxfl = 1; st.textContent = SHX_CSSFL; sr.append(st); } } catch {} }; }
 try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-shxfl]')) { const st = document.createElement('style'); st.dataset.shxfl = 1; st.textContent = SHX_CSSFL; sr.append(st); } }); } catch {}
 // ===================== fim Estante livre =====================
+// --- zwz_v2_estante_c.js ---
+// ---------- v2: prateleira parte C (Bia, 22/11) ----------
+// 1) Decorar: as 7 abas em 2 linhas compactas (nenhuma escondida fora da tela).
+// 2) Modo normal da Biblioteca › Livros: os botões do topo (grade, organizar, decorar, adicionar, legenda) saem do topo
+//    e vão para uma coluna lateral flutuante RECOLHIDA num botão. Fica do lado escolhido no Organizar, acima do botão Ler.
+//    O "Todos ▾ · N livros" fica como linha fina (filtro + contagem). Não aparece na estante do perfil.
+const FLN_CSS = `
+.v4ler .dkpan.flp .dtabs,.v4ler .dkpan.flp .dtabs.six{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:4px;overflow:visible;margin-bottom:6px}
+.v4ler .dkpan.flp .dtabs button{padding:0 4px!important;min-height:36px!important;font-size:12.5px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v5est .shtop.fln .shic{display:none}
+.v5est .shtop.fln{min-height:0;padding-block:2px}
+.flncol{position:fixed;top:40%;transform:translateY(-50%);z-index:9400;display:grid;gap:8px;padding:6px;border-radius:30px;background:color-mix(in srgb,var(--card) 72%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(0,0,0,.22)}
+.flncol.R{right:max(6px,env(safe-area-inset-right,0px))}.flncol.L{left:max(6px,env(safe-area-inset-left,0px))}
+.flncol:not(.open){padding:4px;background:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.flncol:not(.open) .fni{display:none}
+.flncol button{position:relative;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.15);font:inherit;font-weight:900;font-size:17px}
+.flncol button.tg{box-shadow:0 3px 10px rgba(0,0,0,.28)}.flncol.open button.tg{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.flncol button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.flncol .flbl{position:absolute;top:50%;transform:translateY(-50%);white-space:nowrap;padding:6px 10px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:12.5px;font-weight:800;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.flncol.R .flbl{right:54px}.flncol.L .flbl{left:54px}
+.flncol.lbls .flbl,.flncol button.lb1 .flbl{opacity:1}
+@media (prefers-reduced-motion:reduce){.flncol .flbl{transition:none}}`;
+let FLN_OPEN = false;
+function flnCss(sr) { if (!sr || sr.__flnCss) return; sr.__flnCss = 1; const st = document.createElement('style'); st.textContent = FLN_CSS; sr.appendChild(st); }
+function flnHTML() { const side = (() => { try { return v5P().flCol === 'L' ? 'L' : 'R'; } catch { return 'R'; } })();
+  const I = (a, ic, lab) => `<button type="button" class="fni" ${a} aria-label="${lab}">${ic}<span class="flbl" aria-hidden="true">${lab}</span></button>`;
+  const tg = `<button type="button" class="tg" data-fn="tg" aria-expanded="${FLN_OPEN}" aria-label="${FLN_OPEN ? 'Fechar opções da estante' : 'Opções da estante'}">${FLN_OPEN ? '×' : v4ic('dots', 20)}<span class="flbl" aria-hidden="true">${FLN_OPEN ? 'Fechar' : 'Opções'}</span></button>`;
+  const items = [I('data-a="shxview" data-v="grade"', v4ic('grid', 19), 'Ver em grade'), I('data-a="shmode" data-v="org"', v4ic('sort', 19), 'Organizar'), I('data-a="shmode" data-v="deco"', v4ic('lua', 19), 'Decorar'),
+    I('data-a="sheet" data-s="v5add"', v4ic('plus', 19), 'Adicionar livro'), I('data-a="shxsheet" data-s="shxleg"', '?', 'Ajuda')];
+  return `<div class="flncol ${side}${FLN_OPEN ? ' open' : ''}" role="toolbar" aria-orientation="vertical" aria-label="Opções da estante">${tg}${items.join('')}</div>`; }
+function flnMount() { try { const sr = shBibRoot(); if (!sr) return; flnCss(sr); const R = sr.querySelector('.v5est'); if (!R) return;
+  R.querySelectorAll(':scope > .flncol').forEach((e) => e.remove());
+  const top = R.querySelector('.shtop'); const S5 = v5S();
+  if (SHX_MODE) FLN_OPEN = false;
+  if (SHX_MODE || !top || S5.tab !== 'livros' || S5.sub || shView() !== 'prat') { if (top) top.classList.remove('fln'); return; }
+  top.classList.add('fln'); R.insertAdjacentHTML('beforeend', flnHTML());
+  if (FLN_OPEN) { let seen = 1; try { seen = +localStorage.getItem('lv.flnhint') || 0; if (!seen) localStorage.setItem('lv.flnhint', '1'); } catch {}
+    if (!seen) { const c = R.querySelector(':scope > .flncol'); c.classList.add('lbls'); setTimeout(() => c.classList.remove('lbls'), 3200); } }
+} catch (err) { console.warn('coluna normal', err); } }
+{ const _sd = shDraw; shDraw = function () { const r = _sd.apply(this, arguments); flnMount(); return r; }; }
+function flnSet(o) { FLN_OPEN = !!o; flnMount(); if (o) { const sr = shBibRoot(), b = sr && sr.querySelector('.flncol .fni'); if (b && document.activeElement && document.activeElement.closest && document.activeElement.closest('.flncol')) b.focus(); } }
+// toque: abre/fecha; tocar fora recolhe; toque longo mostra o rótulo
+{ let LP = null, ate = 0;
+  window.addEventListener('pointerdown', (ev) => { const sr = shBibRoot(); if (!sr) return; const T = ev.composedPath()[0]; const col = T && T.closest && T.closest('.flncol');
+    if (!col) { if (FLN_OPEN) flnSet(false); return; }
+    const b = T.closest('button'); if (!b) return; LP = { b, t: setTimeout(() => { b.classList.add('lb1'); ate = Date.now() + 600; }, 450) }; }, true);
+  const end = () => { if (LP) { clearTimeout(LP.t); const b = LP.b; setTimeout(() => b.classList.remove('lb1'), 900); LP = null; } };
+  window.addEventListener('pointerup', end, true); window.addEventListener('pointercancel', end, true);
+  window.addEventListener('click', (ev) => { const T = ev.composedPath()[0]; const b = T && T.closest && T.closest('.flncol button'); if (!b) return;
+    if (Date.now() < ate) { ev.stopPropagation(); ev.preventDefault(); return; }
+    if (b.dataset.fn === 'tg') { ev.stopPropagation(); ev.preventDefault(); flnSet(!FLN_OPEN); return; }
+    FLN_OPEN = false; setTimeout(flnMount, 0); }, true);
+  window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && FLN_OPEN) { flnSet(false); ev.stopPropagation(); } }, true); }
+// 3) Lombada "Capa desfocada" (variante D aprovada): a capa vira o fundo da lombada, borrada e escurecida conforme a
+//    luminância, com o título por cima. O borrão é feito uma vez por capa num canvas minúsculo (8×24), que o navegador
+//    amplia suavizando; nada de CSS filter ao vivo. Sem capa (ou capa que não pôde ser lida), fica a cor da lombada.
+const DSF = new Map(), DSFq = new Set();
+const DSF_CSS = `.bsh .sp.dsf .dsfb{position:absolute;inset:0;border-radius:inherit;background-size:100% 100%;background-repeat:no-repeat;z-index:0;pointer-events:none;box-shadow:inset 3px 0 4px rgba(0,0,0,.38),inset -2px 0 3px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.12)}
+.bsh .sp.dsf .tt,.bsh .sp.dsf .au,.bsh .sp.dsf .sr,.bsh .sp.dsf .rb,.bsh .sp.dsf .fb,.bsh .sp.dsf .orn{z-index:1}
+.bsh .sp.dsf .tt{text-shadow:0 1px 2px rgba(0,0,0,.35)}.bsh .sp.dsf.dk .tt{text-shadow:0 1px 1px rgba(255,255,255,.35)}
+.bsh .sp.dsf .cs,.bsh .sp.dsf .tb,.bsh .sp.dsf .lb{display:none}`;
+{ const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-dsf]')) { const st = document.createElement('style'); st.dataset.dsf = 1; st.textContent = DSF_CSS; sr.append(st); } } catch {} }; }
+function dsfMake(u, key) { if (DSFq.has(key)) return; DSFq.add(key); const im = new Image(); if (!/^data:/.test(u)) im.crossOrigin = 'anonymous';
+  im.onerror = () => DSF.set(key, 0);
+  im.onload = () => { try { const W = 8, H = 24, cn = document.createElement('canvas'); cn.width = W; cn.height = H; const x = cn.getContext('2d');
+    const iw = im.naturalWidth, ih = im.naturalHeight, sw = Math.min(iw, ih * (W / H) * 2.2), sx = (iw - sw) / 2; x.drawImage(im, sx, 0, sw, ih, 0, 0, W, H);
+    const d = x.getImageData(0, 0, W, H).data; let s = 0; for (let i = 0; i < d.length; i += 4) s += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; const lum = s / (d.length / 4) / 255;
+    // escurecimento adaptativo: capa muito clara ganha véu claro e texto escuro (não fica cinza); o resto escurece até ~0,3
+    let dark; if (lum > 0.72) { x.fillStyle = 'rgba(255,250,240,.18)'; x.fillRect(0, 0, W, H); dark = true; } else { const a = Math.max(0.12, Math.min(0.6, (lum - 0.28) / Math.max(0.01, lum))); x.fillStyle = `rgba(10,8,14,${a.toFixed(2)})`; x.fillRect(0, 0, W, H); dark = false; }
+    const v = { url: cn.toDataURL('image/png'), dark }; DSF.set(key, v);
+    SHX_ROOTS.forEach((R) => { try { R.querySelectorAll(`.bsh .sp.dsf[data-dsk="${key}"]`).forEach((el) => dsfApply(el, v)); } catch {} }); } catch { DSF.set(key, 0); } };
+  im.src = typeof coverCanvasUrl === 'function' ? coverCanvasUrl(u) : u; }
+function dsfApply(el, v) { if (!v) return; let s = el.querySelector(':scope > .dsfb'); if (!s) { s = document.createElement('span'); s.className = 'dsfb'; s.setAttribute('aria-hidden', 'true'); el.prepend(s); }
+  s.style.backgroundImage = `url("${v.url}")`; el.classList.toggle('dk', v.dark); el.style.setProperty('--k', v.dark ? '#1f150d' : '#f7efe2'); }
+{ const _sp = spnHTML; spnHTML = function (b, sm) { const h = _sp.apply(this, arguments); try { const C0 = shc(), photo = C0.sp && C0.sp[b.id], spM = (C0.spb && C0.spb[b.id]) || C0.spMode;
+    if (spM !== 'desfoque' || photo || !b.img) return h; const key = spnHash(b.img), v = DSF.get(key); if (v === undefined) setTimeout(() => dsfMake(b.img, key), 0);
+    let out = h.replace(/class="sp /, 'class="sp dsf' + (v && v.dark ? ' dk' : '') + ' ').replace(/ data-bid=/, ` data-dsk="${key}" data-bid=`);
+    if (v) out = out.replace(/--k:[^;"]*/, '--k:' + (v.dark ? '#1f150d' : '#f7efe2')).replace(/(<(?:button|span)[^>]*class="sp [^>]*>)/, `$1<span class="dsfb" aria-hidden="true" style="background-image:url(&quot;${v.url}&quot;)"></span>`);
+    return out; } catch { return h; } }; }
+{ const _dp = dkPanel; dkPanel = function () { let h = _dp.apply(this, arguments); try { if ((SHX_DKT || 'enf') === 'lomb') { const sp = shc().spMode || 'capa';
+    h = h.replace('grid-template-columns:1fr 1fr" role="radiogroup" aria-label="Lombadas">', `grid-template-columns:1fr 1fr 1fr" role="radiogroup" aria-label="Lombadas">`).replace(/(aria-label="Lombadas">[\s\S]*?)(<\/div>)/, `$1<button type="button" role="radio" aria-checked="${sp === 'desfoque'}" class="${sp === 'desfoque' ? 'on' : ''}" data-a="dksp" data-k="desfoque" style="text-align:center"><b>Capa desfocada</b><small style="font-weight:600;color:var(--ink2);font-size:11px">a capa no fundo</small></button>$2`); } } catch {} return h; }; }
+// --- zwzt_v2_temas.js ---
+// ---------- v2: enfeites temáticos (Bia, 22/11) ----------
+// Pacotes Natal · Terror · Romance · Fantasia · Mistério · Aconchego. Cada peça é um enfeite normal (posição livre,
+// ocupa espaço, editável, apagável). "Ver o tema na estante" põe as peças e sugere luz e parede; a pessoa confirma com
+// "Manter" ou volta com "Desfazer" (prévia ao vivo). Em dezembro, o Natal é sugerido uma vez.
+const TZ = (w, h, body) => (s) => `<svg width="${w * s}" height="${h * s}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${body}</svg>`;
+const TZD = {
+  arvore: [44, 78, '<defs><linearGradient id="tza1" x1="0" x2="1"><stop offset="0" stop-color="#1f5a36"/><stop offset=".55" stop-color="#3f8a52"/><stop offset="1" stop-color="#1c4f30"/></linearGradient></defs><rect x="18" y="64" width="8" height="8" fill="#6b4423"/><path d="M8 72h28l-3 6H11z" fill="#9c2f3a"/><path d="M22 4L6 30h8L3 48h9L1 66h42L32 48h9L30 30h8z" fill="url(#tza1)"/><path d="M22 0l1.6 3.6 3.9.3-3 2.5.9 3.8L22 8.2l-3.4 2 .9-3.8-3-2.5 3.9-.3z" fill="#f2c85b"/><g fill="#e8463f"><circle cx="15" cy="40" r="2"/><circle cx="29" cy="54" r="2"/><circle cx="12" cy="58" r="1.8"/></g><g fill="#f4d77a"><circle cx="27" cy="34" r="1.8"/><circle cx="20" cy="50" r="1.8"/><circle cx="33" cy="61" r="1.6"/></g>'],
+  guirlanda: [52, 52, '<circle cx="26" cy="26" r="19" fill="none" stroke="#1d4a2b" stroke-width="9"/><circle cx="26" cy="26" r="19" fill="none" stroke="#2d6b3f" stroke-width="6" stroke-dasharray="3 2"/><g fill="#3f8a52"><ellipse cx="26" cy="7" rx="5" ry="2.4"/><ellipse cx="45" cy="22" rx="2.4" ry="5"/><ellipse cx="8" cy="32" rx="2.4" ry="5"/><ellipse cx="34" cy="44" rx="5" ry="2.4"/></g><g fill="#d6343a"><circle cx="12" cy="14" r="2.2"/><circle cx="41" cy="38" r="2.2"/><circle cx="20" cy="44" r="2"/><circle cx="38" cy="10" r="2"/></g><path d="M20 46l6-4 6 4-3 6-3-3-3 3z" fill="#c42a33"/><circle cx="26" cy="43" r="2.6" fill="#e04a50"/>'],
+  presentes: [56, 46, '<rect x="2" y="16" width="30" height="28" rx="2" fill="#2f6e8f"/><rect x="15" y="16" width="4" height="28" fill="#f2c85b"/><rect x="2" y="12" width="30" height="7" rx="1.5" fill="#3b84a8"/><path d="M17 12c-6-8-12-4-8 0zm0 0c6-8 12-4 8 0z" fill="none" stroke="#f2c85b" stroke-width="2"/><rect x="30" y="26" width="24" height="18" rx="2" fill="#b8323d"/><rect x="40" y="26" width="4" height="18" fill="#f6efe0"/><rect x="30" y="23" width="24" height="5" rx="1.2" fill="#cf3f4a"/><path d="M42 23c-4-6-9-3-6 0zm0 0c4-6 9-3 6 0z" fill="none" stroke="#f6efe0" stroke-width="1.6"/>'],
+  bengala: [22, 60, '<defs><pattern id="tza3" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="8" height="8" fill="#fbf4ea"/><rect width="4" height="8" fill="#d33b44"/></pattern></defs><path d="M16 58V18a7 7 0 0 0-14 0" fill="none" stroke="url(#tza3)" stroke-width="6" stroke-linecap="round"/>'],
+  abobora: [52, 46, '<defs><radialGradient id="tzb1" cx="40%" cy="35%"><stop offset="0" stop-color="#ffab45"/><stop offset="1" stop-color="#c25a12"/></radialGradient></defs><path d="M26 10c2-5 6-7 9-7" stroke="#4d6b2a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="15" cy="28" rx="13" ry="16" fill="url(#tzb1)"/><ellipse cx="37" cy="28" rx="13" ry="16" fill="url(#tzb1)"/><ellipse cx="26" cy="28" rx="12" ry="17" fill="url(#tzb1)"/><path d="M14 26l5-4 3 5zM30 27l3-5 5 4z" fill="#3a1a05"/><path d="M15 35q11 8 22 0l-3 3-3-2-3 3-3-3-3 2-3-3z" fill="#3a1a05"/>'],
+  caveira: [40, 44, '<defs><radialGradient id="tzb2" cx="40%" cy="30%"><stop offset="0" stop-color="#fbf6ea"/><stop offset="1" stop-color="#cfc4ac"/></radialGradient></defs><path d="M20 2C9 2 3 10 3 19c0 6 3 10 7 12v7h20v-7c4-2 7-6 7-12C37 10 31 2 20 2z" fill="url(#tzb2)"/><ellipse cx="13" cy="20" rx="5" ry="5.5" fill="#2b2420"/><ellipse cx="27" cy="20" rx="5" ry="5.5" fill="#2b2420"/><path d="M20 26l-2.5 5h5z" fill="#2b2420"/><path d="M14 38v4M18 38v5M22 38v5M26 38v4" stroke="#9c917c" stroke-width="1.3"/>'],
+  velaD: [30, 62, '<defs><radialGradient id="tzb3" cx="50%" cy="28%" r="55%"><stop offset="0" stop-color="#ffcf7a" stop-opacity=".85"/><stop offset="1" stop-color="#ff9e3a" stop-opacity="0"/></radialGradient></defs><circle cx="15" cy="16" r="15" fill="url(#tzb3)"/><path d="M6 24h18v34H6z" fill="#e9e1d0"/><path d="M6 24h18c0 4-2 3-2 8s3 4 2 9c-1-3-4-3-4-6s-3 2-3 6c-1-4-2-6-2-9s-4-2-5-5c-1 3-2 1-4-3z" fill="#f6f0e3"/><path d="M15 24v-4" stroke="#2a1d12"/><path d="M15 9c3 3 3 7 0 10-3-3-3-7 0-10z" fill="#ff9b3a"/><path d="M15 13c1.2 1.4 1.2 3 0 4.4-1.2-1.4-1.2-3 0-4.4z" fill="#fff0bf"/><rect x="2" y="56" width="26" height="6" rx="2" fill="#3a2e28"/>'],
+  corvo: [46, 50, '<path d="M8 46h34" stroke="#5b3f1c" stroke-width="3" stroke-linecap="round"/><path d="M30 12c-6 0-9 4-10 9-5 1-12 6-14 14l8-2c2 4 7 7 14 6 7-1 10-7 9-14l6-3-6-1c0-5-3-9-7-9z" fill="#1c1a24"/><path d="M33 14l9-1-8 4z" fill="#3b3646"/><circle cx="31" cy="15.5" r="1.4" fill="#e8c35a"/><path d="M22 40l-2 6M28 40l1 6" stroke="#1c1a24" stroke-width="1.6"/><path d="M14 28c5-1 9 0 12 3" stroke="#3b3646" stroke-width="1.2" fill="none"/>'],
+  rosas: [40, 70, '<g stroke="#3f7a45" stroke-width="1.6" fill="none"><path d="M20 46C18 34 12 24 9 16"/><path d="M20 46c1-12 4-22 10-30"/><path d="M20 46V12"/></g><g fill="#c92f4a"><circle cx="9" cy="15" r="6"/><circle cx="30" cy="15" r="6"/><circle cx="20" cy="10" r="6.5"/></g><g fill="none" stroke="#8c1830" stroke-width=".9"><path d="M6 15a3 3 0 1 1 6 0M27 15a3 3 0 1 1 6 0M17 10a3 3 0 1 1 6 0"/></g><path d="M10 42h20l-2 26H12z" fill="rgba(214,232,244,.6)" stroke="rgba(255,255,255,.7)"/><path d="M11 50h18" stroke="rgba(255,255,255,.5)"/>'],
+  coracao: [40, 40, '<defs><linearGradient id="tzc2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7d9c"/><stop offset="1" stop-color="#c0264e"/></linearGradient></defs><path d="M20 34C6 24 2 16 2 10 2 4 7 0 12 0c4 0 7 2 8 5 1-3 4-5 8-5 5 0 10 4 10 10 0 6-4 14-18 24z" fill="url(#tzc2)"/><path d="M9 7c2-2 5-2 7 0" stroke="rgba(255,255,255,.6)" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="12" y="35" width="16" height="5" rx="1.5" fill="#6e4a2a"/>'],
+  cartas: [48, 30, '<rect x="2" y="6" width="38" height="22" rx="2" fill="#f1e3c6" transform="rotate(-6 21 17)"/><rect x="8" y="4" width="38" height="22" rx="2" fill="#f8efdc"/><path d="M8 5l19 12 19-12" fill="none" stroke="#d8c6a2" stroke-width="1.2"/><path d="M27 4v22M8 15h38" stroke="#c0264e" stroke-width="2.4"/><path d="M27 15c-5-6-10-3-6 0zm0 0c5-6 10-3 6 0z" fill="none" stroke="#c0264e" stroke-width="1.8"/><circle cx="27" cy="15" r="2" fill="#a51d42"/>'],
+  dragao: [56, 52, '<defs><linearGradient id="tzd1" x1="0" x2="1"><stop offset="0" stop-color="#2f7a5a"/><stop offset="1" stop-color="#1b4f3a"/></linearGradient></defs><path d="M10 50h40" stroke="#5b3f1c" stroke-width="3" stroke-linecap="round"/><path d="M14 48c-6-4-6-12 0-16 6-4 14-2 18 4l6-8c2-4 8-6 10-2l-4 2 5 3-6 1-5 9c-2 6-8 9-14 9z" fill="url(#tzd1)"/><path d="M22 32c-2-10 4-18 14-22-4 6-4 12 0 16-6-2-10 0-14 6z" fill="#3e9a70" opacity=".9"/><circle cx="45" cy="27" r="1.2" fill="#f6d66b"/><g fill="#f2c85b"><path d="M27 38l2-3 2 3zM33 36l2-3 2 3z"/></g>'],
+  pocao: [34, 50, '<defs><linearGradient id="tzd2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9a3ff"/><stop offset="1" stop-color="#5b3fbf"/></linearGradient></defs><rect x="12" y="2" width="10" height="6" rx="1.5" fill="#8a6326"/><path d="M13 8h8v8l9 10a12 12 0 1 1-26 0l9-10z" fill="rgba(235,240,255,.35)" stroke="rgba(255,255,255,.55)"/><path d="M5 30a12 12 0 0 0 24 0c0-2-.4-3-1.2-4H6.2C5.4 27 5 28 5 30z" fill="url(#tzd2)"/><circle cx="12" cy="32" r="1.4" fill="#fff" opacity=".7"/><circle cx="20" cy="36" r="1" fill="#fff" opacity=".6"/>'],
+  espada: [22, 84, '<defs><linearGradient id="tzd3" x1="0" x2="1"><stop offset="0" stop-color="#9aa3ae"/><stop offset=".5" stop-color="#f1f4f7"/><stop offset="1" stop-color="#8b939e"/></linearGradient></defs><path d="M11 2l4 8v50h-8V10z" fill="url(#tzd3)"/><path d="M11 6v52" stroke="#a7afba" stroke-width=".8"/><rect x="1" y="60" width="20" height="4" rx="2" fill="#b8893a"/><rect x="8.5" y="64" width="5" height="14" rx="1.5" fill="#5a3a22"/><circle cx="11" cy="80" r="3.4" fill="#c9a24a"/>'],
+  mapa: [50, 34, '<path d="M2 6l14-4 16 4 16-4v26l-16 4-16-4-14 4z" fill="#ecd9ad"/><path d="M16 2v26M32 6v26" stroke="#c9b07c"/><path d="M6 22c6-2 8-10 14-8s8 10 14 6 8-8 12-6" fill="none" stroke="#9b3b2c" stroke-width="1.3" stroke-dasharray="2 2"/><path d="M41 12l3 3m0-3l-3 3" stroke="#9b3b2c" stroke-width="1.6"/><circle cx="9" cy="10" r="3" fill="none" stroke="#5c7a8c"/>'],
+  lupa: [44, 34, '<circle cx="15" cy="15" r="11" fill="rgba(210,230,245,.35)" stroke="#b8893a" stroke-width="3.5"/><path d="M10 10a7 7 0 0 1 7-3" stroke="#fff" stroke-opacity=".7" stroke-width="1.6" fill="none"/><path d="M24 23l16 9" stroke="#4a2f1c" stroke-width="5" stroke-linecap="round"/>'],
+  lamparina: [36, 64, '<defs><radialGradient id="tze1" cx="50%" cy="55%" r="55%"><stop offset="0" stop-color="#ffd27e" stop-opacity=".9"/><stop offset="1" stop-color="#ffb34a" stop-opacity="0"/></radialGradient></defs><circle cx="18" cy="36" r="18" fill="url(#tze1)"/><path d="M14 6c0-4 8-4 8 0" stroke="#3a2e28" stroke-width="2" fill="none"/><rect x="9" y="8" width="18" height="5" rx="1.5" fill="#3a2e28"/><path d="M10 13h16l-2 32H12z" fill="rgba(255,236,190,.55)" stroke="#3a2e28" stroke-width="1.6"/><path d="M18 34c2.4 2 2.4 5 0 7-2.4-2-2.4-5 0-7z" fill="#ff9b3a"/><rect x="7" y="45" width="22" height="6" rx="1.5" fill="#3a2e28"/><rect x="10" y="51" width="16" height="12" rx="2" fill="#4a3a30"/>'],
+  chave: [52, 24, '<defs><linearGradient id="tze2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e8c46a"/><stop offset="1" stop-color="#9a6f2c"/></linearGradient></defs><circle cx="10" cy="12" r="8" fill="none" stroke="url(#tze2)" stroke-width="3.4"/><circle cx="10" cy="12" r="3" fill="none" stroke="url(#tze2)" stroke-width="1.4"/><path d="M18 12h30" stroke="url(#tze2)" stroke-width="3.6"/><path d="M42 12v7M47 12v5M37 12v4" stroke="url(#tze2)" stroke-width="3"/>'],
+  envelope: [46, 30, '<rect x="2" y="2" width="42" height="26" rx="2" fill="#efe2c2"/><path d="M2 3l21 15 21-15" fill="none" stroke="#c9b285" stroke-width="1.4"/><path d="M2 28l15-12M44 28L29 16" stroke="#d8c6a2"/><circle cx="23" cy="17" r="5.5" fill="#9b2335"/><circle cx="23" cy="17" r="3" fill="none" stroke="#c84a5b"/>'],
+  gato: [58, 42, '<path d="M8 40h46" stroke="rgba(0,0,0,.18)" stroke-width="3" stroke-linecap="round"/><path d="M10 38c-6-2-8-10-2-16 6-6 18-8 30-6 8 1 14 6 14 12 0 6-6 10-16 10H18" fill="#d88a43"/><path d="M40 16l2-8 5 7zM48 18l4-7 2 8z" fill="#c4763a"/><path d="M38 17c6-3 14-1 16 6 1 5-3 8-8 8s-10-3-10-8" fill="#e09a55"/><path d="M41 24q2 1 4 0M47 24q2 1 4 0" stroke="#5a3418" stroke-width="1.2" fill="none"/><path d="M14 30c4-3 9-4 14-3M18 24c4-2 8-2 12-1" stroke="#b86a30" stroke-width="1.4" fill="none"/>'],
+  manta: [56, 30, '<defs><pattern id="tzf1" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#c9604a"/><rect width="10" height="3" fill="#e8c9a0"/><rect width="3" height="10" fill="#b34f3c" opacity=".6"/></pattern></defs><rect x="2" y="16" width="52" height="13" rx="4" fill="url(#tzf1)"/><rect x="4" y="6" width="48" height="12" rx="4" fill="url(#tzf1)"/><path d="M4 12h48" stroke="rgba(0,0,0,.12)"/>'],
+  pendente: [44, 76, '<path d="M8 22h28l-3 18H11z" fill="#d9d2c5"/><path d="M8 22h28l-.4 4H8.4z" fill="#efe9de"/><g fill="none" stroke="#3f6b45" stroke-width="1.3" stroke-linecap="round"><path d="M12 38c-4 10-6 22-4 34"/><path d="M22 40c0 10 2 20 0 30"/><path d="M32 38c4 8 5 18 4 26"/></g><g fill="#5a9a62"><ellipse cx="9" cy="48" rx="4" ry="2.6" transform="rotate(-30 9 48)"/><ellipse cx="8" cy="62" rx="4" ry="2.6" transform="rotate(25 8 62)"/><ellipse cx="22" cy="54" rx="4" ry="2.6"/><ellipse cx="23" cy="68" rx="3.6" ry="2.4"/><ellipse cx="35" cy="50" rx="4" ry="2.6" transform="rotate(30 35 50)"/><ellipse cx="36" cy="62" rx="3.6" ry="2.4"/></g><path d="M22 22V2M14 22L22 2l8 20" stroke="#8a7a66" stroke-width=".8" fill="none"/>']
+};
+const TZN = { arvore: 'Árvore de Natal', guirlanda: 'Guirlanda', presentes: 'Presentes', bengala: 'Bengala doce', abobora: 'Abóbora', caveira: 'Caveira', velaD: 'Vela derretendo', corvo: 'Corvo', rosas: 'Rosas', coracao: 'Coração', cartas: 'Cartas com laço', dragao: 'Dragãozinho', pocao: 'Poção', espada: 'Espada', mapa: 'Mapa', lupa: 'Lupa', lamparina: 'Lamparina', chave: 'Chave antiga', envelope: 'Envelope lacrado', gato: 'Gato dormindo', manta: 'Manta', pendente: 'Planta pendente' };
+Object.entries(TZD).forEach(([k, [w, h, b]]) => { const key = 'tz_' + k; SH_DEC[key] = TZ(w, h, b); SH_DW[key] = w; SH_DH[key] = h; SH_DN[key] = TZN[k]; });
+const TZ_PACKS = [['natal', 'Natal', ['arvore', 'guirlanda', 'presentes', 'bengala'], 'cor', 'madeira'], ['terror', 'Terror', ['abobora', 'caveira', 'velaD', 'corvo'], 'ambar', 'ceu'], ['romance', 'Romance', ['rosas', 'coracao', 'cartas', '=vela'], 'rosa', 'linho'],
+  ['fantasia', 'Fantasia', ['dragao', 'pocao', 'espada', 'mapa', '=cristal'], 'fria', 'ceu'], ['misterio', 'Mistério', ['lupa', 'lamparina', 'chave', 'envelope'], 'ambar', 'madeira'], ['aconchego', 'Aconchego', ['gato', 'manta', '=xicara', 'pendente'], 'quente', 'madeira']];
+const tzKey = (x) => x[0] === '=' ? x.slice(1) : 'tz_' + x;
+let TZ_OPEN = null, TZ_PV = null; // pacote aberto; prévia aplicada { pack, bk, added }
+function tzBk() { const C0 = shc(); return JSON.parse(JSON.stringify({ free: C0.free, lights: C0.lights, lt: C0.lt, wall: C0.wall })); }
+function tzRestore(bk) { const C0 = shc(); ['free', 'lights', 'lt', 'wall'].forEach((k) => { if (bk[k] === undefined) delete C0[k]; else C0[k] = bk[k]; }); shSave(); try { flRender(); } catch {} try { v5Redraw(); } catch {} }
+const tzCount = () => ((shc().free && shc().free.rows) || []).reduce((a, r) => a + r.it.filter((o) => o.t === 'd').length, 0);
+function tzApply(id) { const P = TZ_PACKS.find((x) => x[0] === id); if (!P) return; if (TZ_PV) tzRestore(TZ_PV.bk); const bk = tzBk(); TZ_PV = { pack: id, bk, added: 0 };
+  const n0 = tzCount(), q = P[2].map(tzKey); let sw = 0;
+  // primeiro troca os enfeites que já estão na estante (estante cheia não perde o tema); depois tenta lugares livres
+  try { const F = shc().free; (F && F.rows || []).forEach((row) => row.it.forEach((o) => { if (q.length && o.t === 'd' && !/^tz_/.test(o.k) && !['leitor', 'aparador', 'aparadorD'].includes(o.k)) { o.k = q.shift(); delete o.o; sw++; } })); if (sw) { flNormalize(F); shSave(); } } catch (e) { console.warn('tema troca', e); }
+  q.forEach((k) => { try { flDecoAdd(k); } catch (e) { console.warn('tema', e); } }); TZ_PV.added = sw + tzCount() - n0;
+  shc().wall = P[4]; shLtSave((Ls) => { if (!Ls.length) Ls.push({ m: 'bol', c: P[3], w: 'f', r: 'alt', b: 1 }); else Ls.forEach((L) => { L.c = P[3]; }); });
+  try { flRender(); } catch {} setTimeout(tzRepaint, 60); }
+function tzKeep() { if (!TZ_PV) return; const bk = TZ_PV.bk, nm = (TZ_PACKS.find((x) => x[0] === TZ_PV.pack) || [])[1]; TZ_PV = null; tzRepaint(); toast('Tema ' + nm + ' na estante', { label: 'Desfazer', fn: () => tzRestore(bk) }); }
+function tzCancel() { if (!TZ_PV) return; const bk = TZ_PV.bk; TZ_PV = null; tzRestore(bk); setTimeout(tzRepaint, 60); }
+function tzRepaint() { try { const sr = shBibRoot(), p = sr && sr.querySelector('.dkpan .tzsec'); if (p) p.outerHTML = tzHTML(); } catch {} }
+function tzHTML() { const P = TZ_OPEN && TZ_PACKS.find((x) => x[0] === TZ_OPEN);
+  const chips = TZ_PACKS.map(([k, l]) => `<button type="button" class="tzc${TZ_OPEN === k ? ' on' : ''}" data-tz="open" data-k="${k}" aria-pressed="${TZ_OPEN === k}">${l}</button>`).join('');
+  let body = '';
+  if (P) { const pv = TZ_PV && TZ_PV.pack === P[0];
+    body = `<div class="tzits">${P[2].map((x) => { const k = tzKey(x); return SH_DEC[k] ? `<button type="button" class="tzi" data-a="dkadd" data-k="${k}" aria-label="Pôr ${esc(SH_DN[k] || k)}"><span class="tzv">${SH_DEC[k](Math.min(1, 44 / (SH_DH[k] || 50)))}</span><small>${esc(SH_DN[k] || k)}</small></button>` : ''; }).join('')}</div>
+      <div class="tzact">${pv ? `<span class="tzmsg">Prévia na estante${TZ_PV.added < P[2].length ? ` · ${TZ_PV.added} de ${P[2].length} enfeites couberam` : ''}</span><button type="button" class="btn s" data-tz="cancel">Desfazer</button><button type="button" class="btn p" data-tz="keep">Manter</button>` : `<button type="button" class="btn p" data-tz="apply" data-k="${P[0]}">Ver o tema na estante</button>`}</div>`; }
+  return `<div class="tzsec"><div class="dsec">Temas</div><div class="tzchips" role="group" aria-label="Temas">${chips}</div>${body}</div>`; }
+const TZ_CSS = `.tzsec{margin-top:10px}.tzchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.tzchips::-webkit-scrollbar{display:none}
+.tzc{flex:none;min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-weight:800;font-size:13px;cursor:pointer}.tzc.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tzits{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-top:8px}.tzits::-webkit-scrollbar{display:none}
+.tzi{flex:none;width:84px;min-height:84px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;justify-items:center;align-content:center;gap:4px;padding:6px 4px;cursor:pointer;font:inherit;color:var(--ink)}
+.tzi .tzv{height:48px;display:grid;place-items:end center}.tzi small{font-size:11px;font-weight:700;line-height:1.15;text-align:center;color:var(--ink2)}
+.tzact{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}.tzact .btn{min-height:42px}.tzmsg{flex:1 1 100%;font-size:12.5px;font-weight:700;color:var(--ink2)}
+.tzhint{margin:0 0 8px;padding:8px 10px;border-radius:12px;background:var(--soft);font-size:12.5px;font-weight:700;color:var(--ink);display:flex;gap:8px;align-items:center}.tzhint button{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;cursor:pointer;min-height:36px;min-width:36px}.tzhint button:first-of-type{margin-left:auto}`;
+{ const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-tz]')) { const st = document.createElement('style'); st.dataset.tz = 1; st.textContent = TZ_CSS; sr.append(st); } } catch {} }; }
+{ const _dp = dkPanel; dkPanel = function () { let h = _dp.apply(this, arguments); try { if ((SHX_DKT || 'enf') === 'enf') {
+    let hint = ''; let seen = 1; try { seen = +localStorage.getItem('lv.tznatal') || 0; } catch {}
+    if (new Date().getMonth() === 11 && !seen && !TZ_OPEN) hint = `<div class="tzhint" role="status">Dezembro chegou: que tal o tema Natal?<button type="button" data-tz="open" data-k="natal">Ver</button><button type="button" data-tz="nohint" aria-label="Dispensar">×</button></div>`;
+    h = h.replace(/(<div class="dbody">)/, `$1${hint}`); h = /<div class="dkfoot">/.test(h) ? h.replace(/(<\/div><div class="dkfoot">)/, `${tzHTML()}$1`) : h.replace(/<\/div><\/div>$/, `${tzHTML()}</div></div>`); } } catch {} return h; }; }
+window.addEventListener('click', (ev) => { const T = ev.composedPath()[0], b = T && T.closest && T.closest('[data-tz]'); if (!b) return; ev.stopPropagation(); ev.preventDefault(); const k = b.dataset.tz;
+  if (k === 'open') { try { localStorage.setItem('lv.tznatal', '1'); } catch {} TZ_OPEN = TZ_OPEN === b.dataset.k && !TZ_PV ? null : b.dataset.k; const sr = shBibRoot(), h = sr && sr.querySelector('.dkpan .tzhint'); if (h) h.remove(); return tzRepaint(); }
+  if (k === 'nohint') { try { localStorage.setItem('lv.tznatal', '1'); } catch {} const h = b.closest('.tzhint'); if (h) h.remove(); return; }
+  if (k === 'apply') return tzApply(b.dataset.k); if (k === 'keep') return tzKeep(); if (k === 'cancel') return tzCancel(); }, true);
+// sair do Decorar com prévia pendente desfaz a prévia (nada fica sem "Manter")
+{ const _x = shExitEdit; shExitEdit = function () { if (TZ_PV) { const bk = TZ_PV.bk; TZ_PV = null; tzRestore(bk); } TZ_OPEN = null; return _x.apply(this, arguments); }; }
+window.addEventListener('click', (ev) => { if (!TZ_PV) return; const T = ev.composedPath()[0], b = T && T.closest && T.closest('[data-a="shdone"]'); if (b) tzKeep(); }, true);
 // --- zx_v2_lombada_toque.js ---
 // Toque na lombada (Bia, 22/11): fora do Organizar/Decorar, o 1º toque levanta o livro uns 30% e mostra a capa no lugar,
 // no tamanho do próprio livro (como o livro que sobe na faixa "Por mês"); 2º toque abre a página do livro.
