@@ -27,6 +27,7 @@
     window.setTimeout = function (fn, ms, ...a) { const id = fid--; held.push({ id, k: 't', fn, ms, a }); fmap.set(id, null); return id; };
     window.requestAnimationFrame = function (fn) { const id = fid--; held.push({ id, k: 'r', fn }); fmap.set(id, null); return id; }; };
   const release = (run) => { const h = held || []; held = null; window.setTimeout = prevST || realST; window.requestAnimationFrame = prevRAF || realRAF;
+    for (const x of h) { if (!fmap.has(x.id)) continue; if (!run) { fmap.delete(x.id); continue; } const r = x.k === 't' ? window.setTimeout(x.fn, x.ms, ...x.a) : window.requestAnimationFrame(x.fn); fmap.set(x.id, r); } };
   // montagem por trás do Hoje: os enfeites dele chegam em etapas com espera (250 ms, 500 ms, 1 s...). Enquanto a cópia invisível
   // monta, essas esperas encadeadas a partir do redesenho rodam já (0 ms), para a troca acontecer em poucos quadros.
   let BUILD = 0; const taint = (fn) => (typeof fn !== 'function' ? fn : function () { BUILD++; try { return fn.apply(this, arguments); } finally { BUILD--; } });
@@ -34,7 +35,6 @@
     const raf0 = window.requestAnimationFrame; window.requestAnimationFrame = function (fn) { if (BUILD > 0 && P && !held) return raf0(taint(fn)); if (RR_TX.build > 0 && RR_TX.fast > 0) return raf0(rrTx(fn)); return raf0.call(this, fn); }; }
   const releaseFast = () => { const h = held || []; held = null; window.setTimeout = prevST || realST; window.requestAnimationFrame = prevRAF || realRAF;
     for (const x of h) { if (!fmap.has(x.id)) continue; const r = x.k === 't' ? window.setTimeout(taint(x.fn), 0, ...x.a) : window.requestAnimationFrame(taint(x.fn)); fmap.set(x.id, r); } };
-    for (const x of h) { if (!fmap.has(x.id)) continue; if (!run) { fmap.delete(x.id); continue; } const r = x.k === 't' ? window.setTimeout(x.fn, x.ms, ...x.a) : window.requestAnimationFrame(x.fn); fmap.set(x.id, r); } };
   const editing = (box) => { const a = (TR.activeElement || document.activeElement); return !!(a && box.contains(a) && (a.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]), textarea, [contenteditable=true], [contenteditable=""]'))); };
   const scrollers = (box) => { const out = []; const walk = (p) => { for (const c of p.children) { if (c.scrollTop || c.scrollLeft) out.push([c, c.scrollTop, c.scrollLeft]); if (c.children.length) walk(c); } }; walk(box); return out; };
   let pend = false, P = null; // P: tela nova montando por trás (invisível) até assentar
@@ -91,8 +91,8 @@
       const p = { old, tmp, sig, last: performance.now(), t0: performance.now(), v6keep, v6new }; P = p;
       p.mo = new MutationObserver(() => { p.last = performance.now(); }); p.mo.observe(tmp, { childList: true, subtree: true, attributes: true, characterData: true });
       BUILD++; try { releaseFast(); } finally { BUILD--; }
-      const tick = () => { if (P !== p) return; const now = performance.now(); if (now - p.t0 >= 60 && now - p.last >= 90) return swap(p); p.hard = realST(tick, 16); };
-      p.hard = realST(tick, 30); realST(() => { if (P === p) swap(p); }, 1500);
+      const tick = () => { if (P !== p) return; const now = performance.now(); if (now - p.t0 >= 600 && now - p.last >= 350) return swap(p); p.hard = realST(tick, 16); };
+      p.hard = realST(tick, 30); realST(() => { if (P === p) swap(p); }, 2200);
     } catch (err) { console.warn('render estável (aplicar)', err); try { tmp.remove(); } catch {} P = null; release(true); }
     return r;
   };
