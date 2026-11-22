@@ -207,3 +207,28 @@ let avInert = function (on) { try { const root = V4 && V4.getRootNode(); if (!ro
 { let mo = null; const watch = () => { try { const host = V4 && V4.parentNode; if (!host || mo) return; mo = new MutationObserver(() => { let open = false; try { open = !!(V4 && V4.isConnected && v4State().view === 'fim'); } catch {} if (!open) { const root = host.getRootNode(); [...root.querySelectorAll('.v4ler[data-av-in]'), ...TR.querySelectorAll('.v5host[data-av-in]')].forEach((x) => { x.inert = false; x.style.visibility = ''; delete x.dataset.avIn; }); } }); mo.observe(host, { childList: true }); } catch {} };
   const _i = avInert; avInert = function (on) { if (on) watch(); return _i(on); };
   const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments); try { if (v4State().view !== 'fim') avInert(false); } catch {} return r; }; }
+// (Bia, 22/11) avaliações e comentários começam visíveis para toda a comunidade; a pessoa pode trocar.
+// Avaliação nova: "Toda a comunidade"; a que já existe mantém o que tem. Comentário do Atualizar: publicar ligado.
+{ const _fo = v4FimOpen; v4FimOpen = function (e) { try { const r = (e && e.review) || {}; S.avNew = !(r.paws || r.texto); } catch {} const out = _fo.apply(this, arguments);
+    try { const F = v4State().F; if (F && S.avNew && !v4State().fimDemo) { F.share = true; v4Draw(); } } catch {} return out; }; }
+{ const _ui = v4UpdInit; v4UpdInit = function () { const r = _ui.apply(this, arguments); try { const U = v4State().upd; if (U) U.pub = true; } catch {} return r; }; }
+// convite "Adicionar lembranças" na página do livro: uma vez, depois de salvar a avaliação sem lembranças
+{ const _fs = v4FimSave; v4FimSave = function () { let e = null, F = null; try { const st = v4State(); F = st.F; e = F && !st.fimDemo && lib().find((x) => x.id === st.fim); } catch {}
+    const r = _fs.apply(this, arguments);
+    try { if (e && e.status === 'LIDO' && !avLbN(F) && !e.lbInv) { e.lbInv = 1; save(); } } catch {} return r; };
+  const st2 = document.createElement('style'); st2.textContent = `.av-inv{display:flex;align-items:center;gap:10px;margin:10px 0;padding:11px 12px;border:1.5px dashed var(--acc);border-radius:14px;background:color-mix(in srgb,var(--acc) 8%,var(--panel))}
+.av-inv div{flex:1;min-width:0}.av-inv b{display:block;font-size:.9rem;color:var(--ink)}.av-inv small{display:block;font-size:.76rem;color:var(--ink-2);font-weight:700}
+.av-inv .av-go{border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:99px;padding:.45rem .8rem;font:inherit;font-weight:800;font-size:.8rem;min-height:40px;cursor:pointer}
+.av-inv .av-x{border:0;background:none;color:var(--ink-2);font-size:1.2rem;width:40px;height:40px;cursor:pointer}`; try { TR.append(st2); } catch {}
+  let gone = false, cur = null;
+  const put = (e) => { if (gone) return true; const v = $('#shelflist'); const body = v && !v.hidden && v.querySelector('.sl-body'); if (!body || body.querySelector('.av-inv')) return !!(body && body.querySelector('.av-inv'));
+    const c = document.createElement('div'); c.className = 'av-inv'; c.innerHTML = '<div><b>Adicionar lembranças</b><small>como o livro te deixou, personagens e trecho favorito</small></div><button type="button" class="av-go">Adicionar</button><button type="button" class="av-x" aria-label="Fechar">×</button>';
+    body.prepend(c); e.lbInv = 2; save();
+    c.querySelector('.av-x').addEventListener('click', () => { gone = true; c.remove(); });
+    c.querySelector('.av-go').addEventListener('click', () => { gone = true; c.remove(); try { v4FimOpen(e); const F = v4State().F; if (F) { F.tab = 'lb'; v4Draw(); } } catch (err) { console.warn('lembranças', err); } });
+    return true; };
+  const _ob = openBookPage; openBookPage = function (e) { const r = _ob.apply(this, arguments);
+    try { if (e && e.lbInv === 1 && e.status === 'LIDO') { gone = false; cur = e; const v = $('#shelflist'); const t0 = Date.now();
+        // a página pode ser redesenhada logo depois de abrir: o convite volta para o lugar enquanto ela estiver aberta (até 8 s)
+        const mo = new MutationObserver(() => { if (gone || Date.now() - t0 > 8000 || !v || v.hidden) return mo.disconnect(); put(cur); }); if (v) mo.observe(v, { childList: true, subtree: true });
+        let n = 0; const tick = () => { if (put(e) || ++n > 15) return; setTimeout(tick, 200); }; setTimeout(tick, 150); } } catch {} return r; }; }

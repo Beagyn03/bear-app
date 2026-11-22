@@ -327,7 +327,6 @@ async function v4UpdSave(k) {
   e.updU = U.u; U.cap = U.u === 'cap' && uv ? String(uv) : '';
   const pg = noTot ? now : U.pg;
   if (inSes && pg < s.pg0 && !confirm(`A página ${pg} é antes de onde você começou (${s.pg0}). Salvar mesmo assim?`)) return;
-  try { localStorage.setItem('lv.upVis', U.vis); } catch {}
   let hits = [], secs = 0, min = 0;
   if (inSes) { secs = v4Clock(s).secs; min = Math.max(1, Math.round(secs / 60));
     if (secs >= 60) { db.focus = [...(db.focus || []), { id: uid(), date: todayISO(), start: new Date(s.start).toISOString(), minutes: min, libId: e.id, fromPage: now, pages: Math.max(0, pg - now), via: 'ler', ...(U.cap ? { chapter: U.cap } : {}), ...(U.fe.length ? { feel: [...U.fe] } : {}) }]; save(); }
@@ -573,7 +572,7 @@ function v4Click(ev) {
   if (a === 'upf') { const k = d.e, i = U.fe.indexOf(k); if (i >= 0) U.fe.splice(i, 1); else if (U.fe.length < 3) U.fe.push(k); else return toast('Escolha até 3'); b.classList.toggle('on', U.fe.includes(k)); return; }
   if (a === 'upmic') return v4Dictate((t) => { U.text = (U.text ? U.text + ' ' : '') + t; const ta = V4.querySelector('#v4upc'); if (ta) ta.value = U.text; }, (on) => { U.rec = on; const bx = V4.querySelector('.cbox'); if (bx) bx.classList.toggle('rec', on); const m = V4.querySelector('.cbox .mic2'); if (m) m.innerHTML = on ? '<i></i><i></i><i></i>' : v4ic('mic', 18); });
   if (a === 'uppub') { U.pub = b.checked; const x = V4.querySelector('#v4pubx'); if (x) x.hidden = !U.pub; const sm = V4.querySelector('#v4pubs'); if (sm) sm.textContent = U.pub ? (U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê') : 'fica só no seu diário'; return; }
-  if (a === 'upvis') { U.vis = d.k; V4.querySelectorAll('#v4pubx .seg button').forEach((x) => x.classList.toggle('on', x === b)); const sm = V4.querySelector('#v4pubs'); if (sm) sm.textContent = U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê'; return; }
+  if (a === 'upvis') { U.vis = d.k; try { localStorage.setItem('lv.upVis', U.vis); } catch {} V4.querySelectorAll('#v4pubx .seg button').forEach((x) => x.classList.toggle('on', x === b)); const sm = V4.querySelector('#v4pubs'); if (sm) sm.textContent = U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê'; return; }
   if (a === 'upsp') { U.sp = b.checked; return v4UpdSync(e); }
   if (a === 'savepg') { if (v4SpAsk(U)) return v4SpModal(U); return v4UpdSave(st.sheet); }
   if (a === 'spv') return v4SpView(V4.querySelector('.spmod'), d.k);
