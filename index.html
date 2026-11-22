@@ -9998,6 +9998,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 00_v2_debate.js ---
 // Debate semanal (Bia, 22/11): a Pergunta do dia e o Desafio da semana viraram UMA pergunta por semana (API /v1/qday, de segunda a
@@ -30364,16 +30365,19 @@ const JN_PLANET = (sz, id) => `<svg class="plsv" viewBox="0 0 64 64" width="${sz
 #tabbar.v5bar{grid-template-columns:repeat(5,minmax(0,1fr))!important;align-items:center}
 #tabbar.v5bar button{min-width:0}#tabbar.v5bar button small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .v3hubw{display:none!important}
-#v5ler{position:fixed;z-index:40;right:max(12px,env(safe-area-inset-right,0px));width:68px;height:68px;border:0;padding:0;background:none;border-radius:50%;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-#v5ler[hidden]{display:none!important}
-#v5ler::before{content:"";position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle,rgba(227,149,74,.55) 0,transparent 70%);filter:blur(7px);animation:jnglow 4.5s ease-in-out infinite}
 #v5ler .plsv,#v5pill .plsv{position:relative;overflow:visible}
-#v5ler .plsv{filter:drop-shadow(0 6px 10px rgba(120,60,20,.32));transition:transform .15s}#v5ler:active .plsv{transform:scale(.93)}
+#v5ler{position:fixed;z-index:40;right:max(16px,env(safe-area-inset-right,0px));height:60px;min-width:60px;padding:0 20px 0 2px;border:0;border-radius:999px;display:flex;align-items:center;gap:4px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:900;font-size:1.05rem;letter-spacing:.01em;box-shadow:0 8px 22px color-mix(in srgb,var(--acc) 45%,rgba(0,0,0,.35)),0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:padding .22s ease,transform .25s cubic-bezier(.2,.9,.3,1.1),box-shadow .2s}
+#v5ler[hidden]{display:none!important}
+#v5ler .pl{position:relative;width:56px;height:56px;flex:none;display:grid;place-items:center}
+#v5ler .pl::before{content:"";position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle,rgba(255,236,200,.55) 0,transparent 70%);filter:blur(6px);animation:jnglow 4.5s ease-in-out infinite}
+#v5ler .plsv{filter:drop-shadow(0 3px 5px rgba(60,20,0,.35))}#v5ler:active{transform:scale(.95)}
+#v5ler .lb{white-space:nowrap;overflow:hidden;max-width:4em;transition:max-width .22s ease,opacity .18s}
+#v5ler.mini{padding:0 2px}#v5ler.lft{right:auto;left:max(16px,env(safe-area-inset-left,0px))}#v5ler.mini .lb{max-width:0;opacity:0}
+#v5ler.pulse::after{content:"";position:absolute;inset:-4px;border-radius:inherit;border:3px solid var(--acc);animation:jnpulse 1.1s ease-out 2;pointer-events:none}
+@keyframes jnpulse{from{transform:scale(1);opacity:.9}to{transform:scale(1.35);opacity:0}}
 #v5ler .rg,#v5pill .rg{fill:none;stroke:#c9b6ff;stroke-width:3;opacity:.55}#v5ler .rg.f,#v5pill .rg.f{opacity:.95}
 #v5ler .bands rect,#v5pill .bands rect{fill:#fff;opacity:.16}#v5ler .bands{animation:jnband 10s linear infinite}
 #v5ler .sh,#v5pill .sh{fill:none;stroke:rgba(80,30,0,.18);stroke-width:5}
-#v5ler .bk{position:absolute;inset:0;display:grid;place-items:center;color:#fff;pointer-events:none}
-#v5ler .bk svg{width:19px;height:19px;filter:drop-shadow(0 1px 1px rgba(80,30,0,.35))}
 @keyframes jnglow{0%,100%{opacity:.55;transform:scale(.94)}50%{opacity:1;transform:scale(1.1)}}
 @keyframes jnband{to{transform:translateX(-24px)}}
 #v5pill{position:fixed;z-index:41;left:0;top:0;height:46px;border-radius:99px;padding:0 16px 0 6px;display:flex;align-items:center;gap:8px;border:0;background:var(--ink);color:var(--bg);font:inherit;font-weight:900;font-size:15px;box-shadow:0 6px 18px rgba(20,10,30,.32);max-width:min(240px,calc(100vw - 24px));cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;will-change:transform}
@@ -30381,7 +30385,7 @@ const JN_PLANET = (sz, id) => `<svg class="plsv" viewBox="0 0 64 64" width="${sz
 #v5pill.snap{transition:transform .28s cubic-bezier(.2,.9,.3,1.15)}#v5pill.drag{cursor:grabbing;box-shadow:0 12px 28px rgba(20,10,30,.4)}
 #v5pill .clk{font-variant-numeric:tabular-nums}#v5pill .pt{font-weight:700;font-size:13px;opacity:.8;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #lista.v5pad.v5pad{padding-bottom:calc(var(--inst-h,0px) + 164px + env(safe-area-inset-bottom,0px))!important}#shelflist.v5pad.v5pad .sl-body{padding-bottom:calc(var(--inst-h,0px) + 164px + env(safe-area-inset-bottom,0px))!important}
-@media (prefers-reduced-motion:reduce){#v5ler::before,#v5ler .bands{animation:none}#v5pill.snap{transition:none}}
+@media (prefers-reduced-motion:reduce){#v5ler .pl::before,#v5ler .bands,#v5ler.pulse::after{animation:none}#v5ler,#v5ler .lb{transition:none}#v5pill.snap{transition:none}}
 .jn{display:grid;gap:12px;padding:4px 0 8px}
 .jn .eb{font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
 .jnhero{border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:16px}
@@ -30404,7 +30408,32 @@ const JN_PLANET = (sz, id) => `<svg class="plsv" viewBox="0 0 64 64" width="${sz
 .jnrt .eb{color:#f3c56b}.jnrt b{font-family:var(--f-disp,Georgia,serif);font-size:1.5rem}.jnrt small{font-size:.84rem;opacity:.85}.jnrt .go{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:7px 12px;border-radius:99px;background:#f3c56b;color:#1b1426;font-weight:900;font-size:.82rem}
 `; TR.append(st); }
 const jnPl_ = document.createElement('button'); jnPl_.type = 'button'; jnPl_.id = 'v5ler'; jnPl_.hidden = true; jnPl_.setAttribute('aria-label', 'Ler: abrir a sessão de leitura');
-jnPl_.innerHTML = JN_PLANET(64, 'p') + `<span class="bk">${V2SVG('ler', 19)}</span>`; TR.append(jnPl_);
+jnPl_.innerHTML = `<span class="pl">${JN_PLANET(56, 'p')}</span><span class="lb">Ler</span>`; TR.append(jnPl_);
+// extended FAB: rolar para baixo encolhe para só o planeta; parar ou subir volta a mostrar "Ler"
+{ let last = {}, tm = 0; TR.addEventListener('scroll', (e) => { const el = e.target; if (!el || !el.id || !/^(lista|shelflist)$/.test(el.id)) return; const y = el.scrollTop, p = last[el.id] || 0; last[el.id] = y;
+    if (y > p + 4) jnPl_.classList.add('mini'); else if (y < p - 4) jnPl_.classList.remove('mini');
+    S.jnScr = 1; clearTimeout(tm); tm = setTimeout(() => { S.jnScr = 0; jnDodge(); }, 700); }, true); }
+// nunca parado em cima de algo tocável ou de um título de seção: sobe até achar um espaço livre (até 220 px)
+// o que está embaixo de um ponto: o planeta só pode ficar parado sobre fundo vazio (de cartão ou da página),
+// nunca sobre texto, capa, ícone ou algo tocável pequeno (um cartão largo coberto só na ponta continua tocável)
+const jnTxt = (el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+const jnHitAt = (x, y) => { let L = []; try { L = TR.elementsFromPoint(x, y); } catch { return false; }
+  for (const el of L) { if (el === jnPl_ || jnPl_.contains(el) || el === jnPill || jnPill.contains(el)) continue; if (el.id === 'tabbar' || el.closest('#tabbar, .gtop')) return true;
+    if (el.matches('#lista, #shelflist, .sl-body, html, body') || el === document.documentElement) return false;
+    if (/^(IMG|SVG|INPUT|TEXTAREA|SELECT|CANVAS|VIDEO)$/i.test(el.tagName) || el.closest('svg') || el.matches('.cv, [class*="cover"]') || jnTxt(el)) return true;
+    const t = el.closest('button, a, [role=button], label'); if (t) { const b = t.getBoundingClientRect(); if (b.width < 200 || b.height < 44) return true; }
+    if (getComputedStyle(el).backgroundImage !== 'none' && el.offsetWidth < 200) return true;
+    return false; } return false; };
+const jnHits = (r, dy) => { const xs = [0.12, 0.35, 0.65, 0.88], ys = [0.12, 0.5, 0.88];
+  for (const fx of xs) for (const fy of ys) if (jnHitAt(r.left + (r.right - r.left) * fx, r.top + dy + (r.bottom - r.top) * fy)) return true; return false; };
+let jnW = 108;
+const jnBase = (mini, left) => { const b = parseFloat(jnPl_.style.bottom) || 88, w = mini ? 60 : jnW, R = left ? 16 + w : window.innerWidth - 16, bot = window.innerHeight - b; return { left: R - w, right: R, top: bot - 60, bottom: bot }; };
+function jnDodge() { if (jnPl_.hidden) return; if (!jnPl_.classList.contains('mini') && jnPl_.offsetWidth > 70) jnW = jnPl_.offsetWidth;
+  const find = (mini, left) => { const r = jnBase(mini, left); for (let d = 0; d <= 260; d += 8) if (!jnHits(r, -d)) return -d; return null; };
+  // primeiro à direita com o rótulo; depois só o planeta; por fim o canto esquerdo
+  let mini = false, left = false, dy = find(false, false); if (dy === null) { mini = true; dy = find(true, false); } if (dy === null) { left = true; dy = find(true, true); } if (dy === null) { left = false; dy = 0; }
+  jnPl_.classList.toggle('mini', mini); jnPl_.classList.toggle('lft', left); jnPl_.dataset.dy = dy; jnPl_.style.transform = dy ? `translateY(${dy}px)` : ''; }
+const jnPulseOnce = () => { try { if (localStorage.getItem('lv.lerPulso')) return; localStorage.setItem('lv.lerPulso', '1'); } catch { return; } if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; jnPl_.classList.add('pulse'); setTimeout(() => jnPl_.classList.remove('pulse'), 2400); };
 jnPl_.addEventListener('click', () => { try { v2Ler(); } catch (err) { console.error('ler', err); } });
 const jnPill = document.createElement('button'); jnPill.type = 'button'; jnPill.id = 'v5pill'; jnPill.hidden = true;
 jnPill.innerHTML = JN_PLANET(30, 'q') + '<span class="clk"></span><span class="pt"></span>'; TR.append(jnPill);
@@ -30456,8 +30485,8 @@ let jnLast = ''; const jnTick = () => {
   const padL = S.tab === 'inicio' || S.tab === 'estante' || (pill && !open), padV = (S.tab === 'estante' && open) || (pill && open);
   if (L && L.classList.contains('v5pad') !== !!padL) L.classList.toggle('v5pad', !!padL);
   if (v && v.classList.contains('v5pad') !== !!padV) v.classList.toggle('v5pad', !!padV);
-  if (jnPl_.hidden === planet) jnPl_.hidden = !planet;
-  if (planet) { const tb = $('#tabbar'), b = tb && tb.getClientRects().length ? window.innerHeight - tb.getBoundingClientRect().top : 72; const bb = Math.round(b + 12) + 'px'; if (jnPl_.style.bottom !== bb) jnPl_.style.bottom = bb; }
+  if (jnPl_.hidden === planet) { jnPl_.hidden = !planet; if (planet) { jnPulseOnce(); setTimeout(jnDodge, 60); } } else if (planet && !S.jnScr) jnDodge();
+  if (planet) { const tb = $('#tabbar'), b = tb && tb.getClientRects().length ? window.innerHeight - tb.getBoundingClientRect().top : 72; const bb = Math.round(b + 16) + 'px'; if (jnPl_.style.bottom !== bb) jnPl_.style.bottom = bb; }
   if (pill) { const e = lib().find((x) => x.id === ses.libId); let c = ''; try { c = ses.pz ? 'pausada' : v4Clock(ses).t; } catch {}
     const ck = jnPill.querySelector('.clk'), pt = jnPill.querySelector('.pt'), ttl = (e && e.title) || '';
     if (ck.textContent !== c) ck.textContent = c; if (pt.textContent !== ttl) pt.textContent = ttl;
