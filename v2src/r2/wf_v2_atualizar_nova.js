@@ -51,6 +51,7 @@ function v6Css(R) { const root = R && R.getRootNode && R.getRootNode(); if (!roo
       const H = R.querySelector('#v6hist'); if (H) v6HistPaint(H, e);
     } catch (err) { console.warn('atualizar nova', err); }
     return r; }; }
+{ const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments); try { window.bearVoltarSync && window.bearVoltarSync(); } catch {} return r; }; } // voltar do celular enxerga a página cheia
 function v6HistPaint(H, e) {
   const IC = { ler: 'pag', lock: 'lock', quote: 'quote', com: 'com', cal: 'cal', ok: 'ok', heart: 'heart', orb: 'orb' };
   const paint = () => { H.innerHTML = typeof tlHTML2 === 'function' ? tlHTML2(e, !!v4State().histAll) : ''; const tl = H.firstElementChild;
@@ -64,10 +65,14 @@ function v6HistPaint(H, e) {
 { let cur = null; const _ob = openBookPage; openBookPage = function (e) { cur = e; return _ob.apply(this, arguments); };
   let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try {
     const on = TR.querySelector('#shelflist:not([hidden]) .bp-tabs button[data-t=minha].on'); if (!on || !cur || cur._preview) return;
-    const nav = on.closest('.bp-tabs'), body = nav && nav.nextElementSibling; if (!body || body.querySelector('.v6histlink')) return;
+    // (Bia, 21/11) um link só, como cartão próprio logo abaixo das abas: antes entrava DENTRO do 1º cartão (linha do Meu exemplar)
+    // e voltava a ser inserido em redesenhos. Agora procura no painel inteiro, remove extras e nunca entra num cartão.
+    const nav = on.closest('.bp-tabs'), host = nav && nav.parentElement; if (!host) return;
+    const all = [...host.querySelectorAll('.v6histlink')];
+    if (all.length) { all.slice(1).forEach((x) => x.remove()); return; } // a posição final fica com wm_v2_minha_leitura.js
     const has = (cur.readLog || []).length || (cur.diary || []).length || (cur.notes || []).length || (cur.quotes || []).length || cur.startedTs;
     if (!has) return;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'v6histlink'; b.innerHTML = '<span>Ver histórico da leitura<br><small>atualizações, comentários, trechos e anotações</small></span><span aria-hidden="true">›</span>';
-    const e = cur; b.addEventListener('click', () => { const s = v4State(); s.view = null; v4Sheet('upd', e); s.upd.full = true; s.upd.tab = 'hist'; v4Draw(); });
-    body.prepend(b);
+    const e = cur; b.addEventListener('click', () => { const had = !!(V4 && V4.isConnected); const s = v4State(); s.view = null; v4Sheet('upd', e); s.upd.full = true; s.upd.tab = 'hist'; s.upd.fromLink = had ? 'ja' : 'novo'; v4Draw(); });
+    nav.after(b);
   } catch {} }, 60); }).observe(TR, { childList: true, subtree: true }); }

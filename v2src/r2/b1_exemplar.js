@@ -92,7 +92,7 @@ function exSheet(e, view) {
     const x = exOf(e), late = x.loan && exLate(x.loan.due), want = (x.own || '') + '|' + exSum(e) + '|' + late; let b = v.querySelector('.bp-ex');
     if (b && b.dataset.k === want) return; if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'bp-ex'; b.addEventListener('click', () => exSheet(byId(S.exBookId))); }
     b.dataset.k = want; b.innerHTML = '<i style="font-style:normal">' + (x.loan ? '<i class=v3e data-i=swap></i>' : x.own === 'pegou' ? '<i class=v3e data-i=friends></i>' : x.own === 'quero' ? '<i class=v3e data-i=heart></i>' : '<i class=v3e data-i=estante></i>') + '</i><span><b>Meu exemplar</b><small>' + esc(exSum(e)) + '</small></span><em>›</em>';
-    if (b.previousElementSibling !== hero) hero.after(b); };
+    if (!b.isConnected || (!v.classList.contains('v5bp-minha') && b.previousElementSibling !== hero)) hero.after(b); }; // em Minha leitura a ordem é do wm_v2_minha_leitura
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 // Início: devoluções que chegaram (ou passaram) da data
 { let tm = 0; const put = () => {

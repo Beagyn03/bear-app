@@ -505,7 +505,7 @@ bookMenu = function (e) { if (e && lib().includes(e)) return v5Menu(e); };
     v.classList.add('v5bp'); const on = v.querySelector('.bp-tabs [data-t].on, .bp-tabs [data-t][aria-selected="true"]'); const t = on ? on.dataset.t : 'sobre';
     if (t === 'enredo') { const s = v.querySelector('.bp-tabs [data-t=sobre]'); if (s) return s.click(); }
     v.classList.toggle('v5bp-minha', t === 'minha');
-    if (t === 'minha') { const tabs = v.querySelector('.bp-tabs'), ex = v.querySelector('.bp-ex'), buy = v.querySelector('.bp-buy'); if (tabs && ex && tabs.nextElementSibling !== ex) { tabs.after(ex); if (buy) ex.after(buy); } }
+    // Minha leitura: a ordem dos cartões (inclusive Meu exemplar e Onde comprar) é do wm_v2_minha_leitura.js (Bia, 21/11)
     // lendo: sem "Atualizar página" na página do livro (Bia, 20/11); atualizar fica no Hoje e no Ler. Fica só o •••
     // lendo: o ••• vai para o canto do card do livro (a linha de ações fica vazia sem o Atualizar)
     let hd = hero.querySelector(':scope > .v5hdots');

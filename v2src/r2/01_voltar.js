@@ -2,6 +2,8 @@
 // Só sai do app quando já está no Hoje sem nada aberto. Cada camada aberta ganha uma entrada no histórico do navegador.
 (() => {
   const vis = (n) => n && !n.hidden && n.offsetParent !== null;
+  // a página cheia de Atualizar fica na sessão de leitura (outra raiz): conta como camada própria
+  const v4Full = () => { try { const r = typeof V4 !== 'undefined' && V4 && V4.isConnected ? V4 : null; return r && r.querySelector('.sheet.upfullpg .upfh [data-a=upfull]'); } catch { return null; } };
   const layers = () => {
     let n = 0;
     if (S.tab && S.tab !== 'inicio') n++;
@@ -12,12 +14,14 @@
     if (TR.querySelector('#sx-back') || ((S.tab === 'perfil') && TR.querySelector('#aj-back'))) n++;
     if (TR.querySelector('.drw')) n++;
     if (TR.querySelector('.pop')) n++;
+    if (v4Full()) n++;
     if (document.querySelector('body > .sheet')) n++;
     if (TR.querySelector('.bd-page:not([hidden]), .gp-page:not([hidden])')) n++;
     return n;
   };
   const closeTop = () => {
     if (TR.querySelector('.pop')) return closePop();
+    { const f = v4Full(); if (f) return f.click(); } // página cheia de Atualizar/Histórico: a seta dela sabe para onde voltar
     const sh = [...document.querySelectorAll('body > .sheet')].pop(); if (sh) return sh.remove();
     if (TR.querySelector('.bkm')) return bqClose();
     const ed = $('#editor'); if (ed && !ed.hidden) { const nb = ed.querySelector('#nt-back'); return nb ? nb.click() : closeEd(); }
@@ -37,6 +41,7 @@
     else if (n < pushed) { const d = pushed - n; pushed = n; skip += d; history.go(-d); }
   };
   const later = () => { if (!t) t = setTimeout(sync, 60); };
+  window.bearVoltarSync = later; // camadas fora do TR (sessão de leitura) avisam quando abrem/fecham
   addEventListener('popstate', () => {
     if (skip > 0) { skip--; return; }
     pushed = Math.max(0, pushed - 1);

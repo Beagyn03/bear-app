@@ -9984,6 +9984,8 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 // Só sai do app quando já está no Hoje sem nada aberto. Cada camada aberta ganha uma entrada no histórico do navegador.
 (() => {
   const vis = (n) => n && !n.hidden && n.offsetParent !== null;
+  // a página cheia de Atualizar fica na sessão de leitura (outra raiz): conta como camada própria
+  const v4Full = () => { try { const r = typeof V4 !== 'undefined' && V4 && V4.isConnected ? V4 : null; return r && r.querySelector('.sheet.upfullpg .upfh [data-a=upfull]'); } catch { return null; } };
   const layers = () => {
     let n = 0;
     if (S.tab && S.tab !== 'inicio') n++;
@@ -9994,12 +9996,14 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
     if (TR.querySelector('#sx-back') || ((S.tab === 'perfil') && TR.querySelector('#aj-back'))) n++;
     if (TR.querySelector('.drw')) n++;
     if (TR.querySelector('.pop')) n++;
+    if (v4Full()) n++;
     if (document.querySelector('body > .sheet')) n++;
     if (TR.querySelector('.bd-page:not([hidden]), .gp-page:not([hidden])')) n++;
     return n;
   };
   const closeTop = () => {
     if (TR.querySelector('.pop')) return closePop();
+    { const f = v4Full(); if (f) return f.click(); } // página cheia de Atualizar/Histórico: a seta dela sabe para onde voltar
     const sh = [...document.querySelectorAll('body > .sheet')].pop(); if (sh) return sh.remove();
     if (TR.querySelector('.bkm')) return bqClose();
     const ed = $('#editor'); if (ed && !ed.hidden) { const nb = ed.querySelector('#nt-back'); return nb ? nb.click() : closeEd(); }
@@ -10019,6 +10023,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
     else if (n < pushed) { const d = pushed - n; pushed = n; skip += d; history.go(-d); }
   };
   const later = () => { if (!t) t = setTimeout(sync, 60); };
+  window.bearVoltarSync = later; // camadas fora do TR (sessão de leitura) avisam quando abrem/fecham
   addEventListener('popstate', () => {
     if (skip > 0) { skip--; return; }
     pushed = Math.max(0, pushed - 1);
@@ -16925,7 +16930,7 @@ function exSheet(e, view) {
     const x = exOf(e), late = x.loan && exLate(x.loan.due), want = (x.own || '') + '|' + exSum(e) + '|' + late; let b = v.querySelector('.bp-ex');
     if (b && b.dataset.k === want) return; if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'bp-ex'; b.addEventListener('click', () => exSheet(byId(S.exBookId))); }
     b.dataset.k = want; b.innerHTML = '<i style="font-style:normal">' + (x.loan ? '<i class=v3e data-i=swap></i>' : x.own === 'pegou' ? '<i class=v3e data-i=friends></i>' : x.own === 'quero' ? '<i class=v3e data-i=heart></i>' : '<i class=v3e data-i=estante></i>') + '</i><span><b>Meu exemplar</b><small>' + esc(exSum(e)) + '</small></span><em>›</em>';
-    if (b.previousElementSibling !== hero) hero.after(b); };
+    if (!b.isConnected || (!v.classList.contains('v5bp-minha') && b.previousElementSibling !== hero)) hero.after(b); }; // em Minha leitura a ordem é do wm_v2_minha_leitura
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 // Início: devoluções que chegaram (ou passaram) da data
 { let tm = 0; const put = () => {
@@ -20432,6 +20437,8 @@ function v4Click(ev) {
   if (a === 'updu') { U.u = d.u; U.raw = U.u === 'pos' ? (e.pos || '') : U.u === 'cap' ? (e.cap || '') : ''; return redraw(); }
   if (a === 'v6totok') { const n = parseInt((V4.querySelector('#v6tot') || {}).value, 10); if (!(n > 0)) return toast(U.u === 'pos' ? 'Digite o total de posições' : 'Digite quantos capítulos tem'); if (U.u === 'pos') e.posTotal = n; else e.capTotal = n; save(); return redraw(); }
   if (a === 'v6toted') { if (d.k === 'pos') delete e.posTotal; else delete e.capTotal; save(); return redraw(); }
+  // aberto pelo "Ver histórico" da página do livro (Bia, 21/11): voltar fecha tudo e devolve a página do livro onde estava, sem passar pela folha de Atualizar
+  if (a === 'upfull' && U.full && U.fromLink) { st.sheet = null; st.upd = null; if (U.fromLink === 'novo') v4Close(); else redraw(); try { window.bearVoltarSync && window.bearVoltarSync(); } catch {} return; }
   if (a === 'upfull') { U.full = !U.full; if (!U.full) { U.tab = 'upd'; U.pane = ''; } return redraw(); }
   if (a === 'v6tab') { U.tab = d.k; return redraw(); }
   if (a === 'v6pane') { U.pane = U.pane === d.k ? '' : d.k; return redraw(); }
@@ -21039,7 +21046,7 @@ bookMenu = function (e) { if (e && lib().includes(e)) return v5Menu(e); };
     v.classList.add('v5bp'); const on = v.querySelector('.bp-tabs [data-t].on, .bp-tabs [data-t][aria-selected="true"]'); const t = on ? on.dataset.t : 'sobre';
     if (t === 'enredo') { const s = v.querySelector('.bp-tabs [data-t=sobre]'); if (s) return s.click(); }
     v.classList.toggle('v5bp-minha', t === 'minha');
-    if (t === 'minha') { const tabs = v.querySelector('.bp-tabs'), ex = v.querySelector('.bp-ex'), buy = v.querySelector('.bp-buy'); if (tabs && ex && tabs.nextElementSibling !== ex) { tabs.after(ex); if (buy) ex.after(buy); } }
+    // Minha leitura: a ordem dos cartões (inclusive Meu exemplar e Onde comprar) é do wm_v2_minha_leitura.js (Bia, 21/11)
     // lendo: sem "Atualizar página" na página do livro (Bia, 20/11); atualizar fica no Hoje e no Ler. Fica só o •••
     // lendo: o ••• vai para o canto do card do livro (a linha de ações fica vazia sem o Atualizar)
     let hd = hero.querySelector(':scope > .v5hdots');
@@ -25356,6 +25363,7 @@ function v6Css(R) { const root = R && R.getRootNode && R.getRootNode(); if (!roo
       const H = R.querySelector('#v6hist'); if (H) v6HistPaint(H, e);
     } catch (err) { console.warn('atualizar nova', err); }
     return r; }; }
+{ const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments); try { window.bearVoltarSync && window.bearVoltarSync(); } catch {} return r; }; } // voltar do celular enxerga a página cheia
 function v6HistPaint(H, e) {
   const IC = { ler: 'pag', lock: 'lock', quote: 'quote', com: 'com', cal: 'cal', ok: 'ok', heart: 'heart', orb: 'orb' };
   const paint = () => { H.innerHTML = typeof tlHTML2 === 'function' ? tlHTML2(e, !!v4State().histAll) : ''; const tl = H.firstElementChild;
@@ -25369,12 +25377,16 @@ function v6HistPaint(H, e) {
 { let cur = null; const _ob = openBookPage; openBookPage = function (e) { cur = e; return _ob.apply(this, arguments); };
   let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try {
     const on = TR.querySelector('#shelflist:not([hidden]) .bp-tabs button[data-t=minha].on'); if (!on || !cur || cur._preview) return;
-    const nav = on.closest('.bp-tabs'), body = nav && nav.nextElementSibling; if (!body || body.querySelector('.v6histlink')) return;
+    // (Bia, 21/11) um link só, como cartão próprio logo abaixo das abas: antes entrava DENTRO do 1º cartão (linha do Meu exemplar)
+    // e voltava a ser inserido em redesenhos. Agora procura no painel inteiro, remove extras e nunca entra num cartão.
+    const nav = on.closest('.bp-tabs'), host = nav && nav.parentElement; if (!host) return;
+    const all = [...host.querySelectorAll('.v6histlink')];
+    if (all.length) { all.slice(1).forEach((x) => x.remove()); return; } // a posição final fica com wm_v2_minha_leitura.js
     const has = (cur.readLog || []).length || (cur.diary || []).length || (cur.notes || []).length || (cur.quotes || []).length || cur.startedTs;
     if (!has) return;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'v6histlink'; b.innerHTML = '<span>Ver histórico da leitura<br><small>atualizações, comentários, trechos e anotações</small></span><span aria-hidden="true">›</span>';
-    const e = cur; b.addEventListener('click', () => { const s = v4State(); s.view = null; v4Sheet('upd', e); s.upd.full = true; s.upd.tab = 'hist'; v4Draw(); });
-    body.prepend(b);
+    const e = cur; b.addEventListener('click', () => { const had = !!(V4 && V4.isConnected); const s = v4State(); s.view = null; v4Sheet('upd', e); s.upd.full = true; s.upd.tab = 'hist'; s.upd.fromLink = had ? 'ja' : 'novo'; v4Draw(); });
+    nav.after(b);
   } catch {} }, 60); }).observe(TR, { childList: true, subtree: true }); }
 // --- wf_v2_lembrete_servidor.js ---
 // Lembrete do prazo confere o servidor (Bia, 21/11: salvou "Me lembrar todo dia" e no dia seguinte estava desligado).
@@ -26811,6 +26823,68 @@ function shDragArm(sr) {
   const mo = new MutationObserver(() => { if (!raf && has()) raf = requestAnimationFrame(check); });
   mo.observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class', 'style'] });
   mo.observe(document.body, { childList: true }); }
+// --- wm_v2_minha_leitura.js ---
+// Minha leitura (Bia, 21/11): uma ordem que faz sentido de leitora e nada duplicado.
+// progresso/situação → Ver histórico → Minha avaliação → Trechos → Anotação → Páginas por dia → Meu exemplar (+ formato e páginas) → Meus ecos
+// (os ecos ficam no fim porque o bloco t0 mantém essa seção como última; não brigar com ele).
+// Sai o cartão "Ajustes do livro" (Edição e Remover já estão no ••• do livro; Formato e Total de páginas vão para junto do Meu exemplar).
+// Trechos e Anotação ganham título próprio; sem conteúdo, só uma linha discreta (nada de cartão vazio nem botão amarelo gigante).
+{ const st = document.createElement('style'); st.textContent = `
+#shelflist .v7h{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;margin:0 0 .45rem}
+#shelflist .v7h b{font-size:.95rem;font-weight:900}#shelflist .v7h small{font-size:.74rem;color:var(--ink-2);font-weight:700}
+#shelflist .v7add{border:0;background:none;padding:.4rem .1rem;min-height:40px;font:inherit;font-weight:800;font-size:.86rem;color:var(--acc);cursor:pointer;text-align:left}
+#shelflist .v7tq .bq:last-of-type{margin-bottom:0}
+#shelflist .v7exg{display:grid;gap:.1rem;margin:-.2rem 0 .85rem}
+#shelflist .v7exg .bp-adj{min-height:44px}
+`; TR.append(st); }
+{ const vSel = '#shelflist:not([hidden])'; let cur = null; const _ob = openBookPage; openBookPage = function (e) { cur = e; return _ob.apply(this, arguments); };
+  const mk = (h) => { const t = document.createElement('div'); t.innerHTML = h.trim(); return t.firstElementChild; };
+  const run = () => {
+    const v = TR.querySelector(vSel); if (!v) return; const on = v.querySelector('.bp-tabs button[data-t=minha].on'); if (!on) return;
+    const nav = on.closest('.bp-tabs'), body = nav && nav.parentElement; if (!body) return;
+    const kids = () => [...body.children];
+    // 1. Ajustes do livro → Formato e Total de páginas ficam; Edição e Remover saem (estão no •••)
+    const adj = kids().find((c) => c.matches('section.bp-card') && c.querySelector('[data-a=fmt]'));
+    if (adj) {
+      const g = mk('<section class="v7exg" aria-label="Detalhes do meu exemplar"></section>');
+      adj.querySelectorAll('[data-a=fmt],[data-a=pages]').forEach((b) => g.append(b));
+      adj.replaceWith(g);
+    }
+    // 2. Trechos: título próprio + contador; sem trechos, linha discreta
+    const oldQ = kids().find((c) => c.matches('section.bp-card') && !c.classList.contains('v7tq') && c.querySelector('[data-a=quote]'));
+    if (oldQ) {
+      const items = [...oldQ.querySelectorAll('.bq')];
+      const btn = oldQ.querySelector('[data-a=quote]'); btn.className = 'v7add'; btn.textContent = items.length ? '+ Trecho' : '+ Salvar um trecho';
+      const s = mk(`<section class="bp-card v7tq"><div class="v7h"><b>Trechos${items.length ? ' · ' + items.length : ''}</b></div></section>`);
+      items.forEach((q) => s.append(q));
+      if (items.length) s.firstElementChild.append(btn); else s.append(btn);
+      oldQ.replaceWith(s);
+    }
+    kids().filter((c) => c.matches('.bp-row') && /Meus trechos/.test(c.textContent)).forEach((c) => c.remove());
+    // 3. Anotação: título próprio, "só você vê"; sem anotação, linha discreta
+    let note = kids().find((c) => c.classList.contains('v7note'));
+    if (!note) {
+      const had = kids().find((c) => c.matches('section.bp-card') && c.querySelector('.bq-note'));
+      if (had) { had.classList.add('v7note'); const r = had.querySelector('.bp-row span'); if (r && !r.querySelector('small')) r.insertAdjacentHTML('beforeend', ' <small style="font-weight:700;color:var(--ink-2);font-size:.74rem">· só você vê</small>'); note = had; }
+      else { note = mk('<section class="bp-card v7note"><div class="v7h"><b>Anotação</b><small>só você vê</small></div><button type="button" class="v7add" data-a="note">+ Escrever anotação</button></section>'); body.append(note);
+        note.querySelector('button').addEventListener('click', () => { const e = cur && byId(cur.id); if (e) editNote(e); }); }
+    }
+    // 4. ordem
+    const pick = (f) => kids().find(f);
+    const seq = [
+      pick((c) => c.matches('section.bp-card') && c.querySelector('.bp-st')),
+      pick((c) => c.classList.contains('v6histlink')),
+      pick((c) => c.matches('section.bp-card') && c.querySelector('[data-a=rate]')),
+      pick((c) => c.classList.contains('v7tq')),
+      note,
+      pick((c) => c.matches('section.bp-card') && /Páginas por dia/.test((c.querySelector('.bp-row') || {}).textContent || '')),
+      pick((c) => c.classList.contains('bp-ex')),
+      pick((c) => c.classList.contains('bp-buy')),
+      pick((c) => c.classList.contains('v7exg')),
+    ].filter(Boolean);
+    let a = nav; for (const el of seq) { if (a.nextElementSibling !== el) a.after(el); a = el; }
+  };
+  let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { run(); } catch (err) { console.warn('minha leitura', err); } }, 90); }).observe(TR, { childList: true, subtree: true }); }
 // --- x0_v2_vocabulario.js ---
 // Vocabulário único (Bia, 20/11; glossário aprovado): os textos dos blocos v2 já foram trocados na fonte.
 // Aqui ficam só as frases que ainda moram no código antigo (fora de v2src/r2) e aparecem em telas que a v2 abre.

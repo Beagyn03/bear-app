@@ -561,6 +561,8 @@ function v4Click(ev) {
   if (a === 'updu') { U.u = d.u; U.raw = U.u === 'pos' ? (e.pos || '') : U.u === 'cap' ? (e.cap || '') : ''; return redraw(); }
   if (a === 'v6totok') { const n = parseInt((V4.querySelector('#v6tot') || {}).value, 10); if (!(n > 0)) return toast(U.u === 'pos' ? 'Digite o total de posições' : 'Digite quantos capítulos tem'); if (U.u === 'pos') e.posTotal = n; else e.capTotal = n; save(); return redraw(); }
   if (a === 'v6toted') { if (d.k === 'pos') delete e.posTotal; else delete e.capTotal; save(); return redraw(); }
+  // aberto pelo "Ver histórico" da página do livro (Bia, 21/11): voltar fecha tudo e devolve a página do livro onde estava, sem passar pela folha de Atualizar
+  if (a === 'upfull' && U.full && U.fromLink) { st.sheet = null; st.upd = null; if (U.fromLink === 'novo') v4Close(); else redraw(); try { window.bearVoltarSync && window.bearVoltarSync(); } catch {} return; }
   if (a === 'upfull') { U.full = !U.full; if (!U.full) { U.tab = 'upd'; U.pane = ''; } return redraw(); }
   if (a === 'v6tab') { U.tab = d.k; return redraw(); }
   if (a === 'v6pane') { U.pane = U.pane === d.k ? '' : d.k; return redraw(); }
