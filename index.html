@@ -10002,7 +10002,27 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
+// --- 00_v2_capa_canvas.js ---
+// Capa para canvas (Bia, 22/11): o Google Livros não manda CORS, então o canvas não pode ler os pixels dessas capas
+// (imagem de compartilhar da retrospectiva/resumo e cor predominante da prateleira). Onde o canvas lê pixels, a capa
+// passa pelo proxy da bear-api (/v1/cover-img), que só busca em hosts de capa conhecidos. Na exibição normal das capas
+// nada muda: continua a URL direta, para não passar todo o tráfego pela API.
+// Versão do cache de cores: subir aqui invalida as cores que tinham caído no fallback (lombada) ou ficado sem cor.
+const LV_CORS_OK = /^(data:|blob:)|^https?:\/\/(covers\.openlibrary\.org|[^/]*\.archive\.org|archive\.org)\//i;
+function coverCanvasUrl(u) {
+  u = String(u || '').trim(); if (!u) return '';
+  if (LV_CORS_OK.test(u) || !/^https?:\/\//i.test(u)) return u;
+  let api = ''; try { api = String((typeof apiCfg !== 'undefined' && apiCfg && apiCfg.api) || (typeof DEFAULT_API !== 'undefined' ? DEFAULT_API : '')).trim().replace(/\/+$/, ''); } catch {}
+  return api ? api + '/v1/cover-img?url=' + encodeURIComponent(u.replace(/^http:\/\//i, 'https://')) : u;
+}
+window.coverCanvasUrl = coverCanvasUrl;
+// cores que caíram no fallback antes do proxy: apaga uma vez para recalcular pela capa real
+try { if (localStorage.getItem('lv.ccv') !== '2') {
+  const sc = JSON.parse(localStorage.getItem('lv.shsc') || '{}') || {}; Object.keys(sc).forEach((k) => { if (sc[k] === 1) delete sc[k]; }); localStorage.setItem('lv.shsc', JSON.stringify(sc));
+  const cc = JSON.parse(localStorage.getItem('lv.cvcol') || '{}') || {}; Object.keys(cc).forEach((k) => { if (cc[k] === 0) delete cc[k]; }); localStorage.setItem('lv.cvcol', JSON.stringify(cc));
+  localStorage.setItem('lv.ccv', '2'); } } catch {}
 // --- 00_v2_debate.js ---
 // Debate semanal (Bia, 22/11): a Pergunta do dia e o Desafio da semana viraram UMA pergunta por semana (API /v1/qday, de segunda a
 // domingo). O nome mora só aqui: rótulo da aba da Comunidade, nome completo e o prefixo dos posts que respondem à pergunta.
@@ -26680,7 +26700,7 @@ function shSample(u, key) { if (!u) return; const im = new Image(); if (!/^data:
     r = Math.round(r / n); g = Math.round(g / n); bb = Math.round(bb / n); const lum = (0.299 * r + 0.587 * g + 0.114 * bb) / 255;
     const v = [`rgb(${r},${g},${bb})`, lum > 0.56 ? '#1f150d' : '#f7efe2']; SH_SC[key] = v; shScSave();
     SHX_ROOTS.forEach((R) => { if (!R.isConnected && !(R.host && R.host.isConnected)) { SHX_ROOTS.delete(R); return; } R.querySelectorAll(`.bsh .sp.cvs[data-sk="${key}"]`).forEach((el) => { el.style.setProperty('--c', v[0]); if (!el.classList.contains('ep')) el.style.setProperty('--k', v[1]); }); }); } catch (e) { SH_SC[key] = 1; shScSave(); } };
-  im.src = u; }
+  im.src = coverCanvasUrl(u); }
 function shWoodVars(w) { if (w === 'tema') return '--bk-w1:color-mix(in srgb,var(--acc) 58%,#6b4a2a);--bk-w2:color-mix(in srgb,var(--acc) 44%,#3e2716);--bk-w3:color-mix(in srgb,var(--acc) 26%,#1f130a);--bk-top:color-mix(in srgb,var(--acc) 50%,#f3d7a8)';
   const p = SH_WOOD[w]; return p ? `--bk-w1:${p[0]};--bk-w2:${p[1]};--bk-w3:${p[2]};--bk-top:${p[3]}` : ''; }
 const SH_WOOD = { clara: ['#d6aa76', '#b98551', '#8e5f36', '#e8c597'], escura: ['#6b4a32', '#4d3322', '#2f1f15', '#7d5a3e'], branca: ['#f2eee7', '#ddd6ca', '#bcb3a5', '#fcfaf6'] };
@@ -30294,7 +30314,7 @@ function flSampleCover(u, key) { const im = new Image(); if (!/^data:/.test(u)) 
       const o = bins.get(k) || { n: 0, r: 0, g: 0, b: 0 }; o.n++; o.r += r; o.g += g; o.b += b; bins.set(k, o); }
     let best = null; bins.forEach((o) => { if (!best || o.n > best.n) best = o; }); if (!best) return done(0);
     done([Math.round(best.r / best.n), Math.round(best.g / best.n), Math.round(best.b / best.n)]); } catch (e) { done(0); } }; // canvas bloqueado (CORS): 0
-  im.src = u; }
+  im.src = coverCanvasUrl(u); }
 // cor de um livro: capa (amostrada) > lombada já calculada > capa gerada (sem imagem); null = sem cor (vai para o fim)
 function flBookRgb(b, ask) { if (!b) return null; if (!b.img) { try { return flHex2rgb(colorOf(b.t || '')); } catch { return null; } }
   const key = spnHash(b.img), v = FLCC[key]; if (Array.isArray(v)) return v;
@@ -31544,7 +31564,7 @@ app.addEventListener('click', (ev) => { const el = ev.target.closest && ev.targe
   function preload(D) { const ids = new Set([...(D.livros || []), ...(D.top5 || []).map((t) => t[0]), ...((D.autor && D.autor.ids) || []), D.jornada && D.jornada.longo[0], D.jornada && D.jornada.rapido && D.jornada.rapido[0], D.livro && D.livro.id, D.trecho && D.trecho.b, D.twist && D.twist.b].filter(Boolean));
     ids.forEach((id) => { const b = RTB.get(id); if (!b || !b.img || b.ok || b.tried) return; b.tried = 1; const im = new Image(); im.crossOrigin = 'anonymous'; im.decoding = 'async';
       im.onload = () => { if (im.naturalWidth < 16) return; try { const c = document.createElement('canvas'); c.width = c.height = 2; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 2, 2); x.getImageData(0, 0, 1, 1); b.ok = im; const cv0 = app.querySelector('#rtcv'); if (cv0 && S.rt) rtDraw(cv0, rtD(), rtShareSpec(rtD())); } catch {} };
-      im.src = b.img; }); }
+      im.src = coverCanvasUrl(b.img); }); }
   function openWith(D) { if (!D) return false; RT_CUR = D; preload(D); rtOpen(D.kind); return true; }
   // fontes do tema: carregadas só ao abrir e esperadas (até 1,5 s) antes da 1ª tela, para o texto não trocar de fonte no meio
   const FONTS = { fan: ['700 40px Cinzel', '400 40px Cinzel'], rom: ['700 40px "Playfair Display"', 'italic 700 40px "Playfair Display"'], sus: ['400 40px "Bebas Neue"'] };
