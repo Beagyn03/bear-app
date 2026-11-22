@@ -61,7 +61,7 @@
       view.innerHTML = (rv.paws ? '<div class="rv-paws">' + esc(pawTxt(rv.paws)) + '</div>' : '')
         + '<div class="rv-dates"><div><small>Comecei em</small><b>' + (ds ? fmt(ds) : '—') + '</b></div><div><small>Terminei em</small><b>' + (de ? fmt(de) : '—') + '</b></div></div>'
         + (rv.texto ? '<p class="rv-txt">' + esc(rv.texto) + '</p>' : rv.frase ? '<p class="rv-txt">' + esc(rv.frase) + '</p>' : '')
-        + '<div class="rv-tags">' + [rv.spoiler ? 'Tem spoiler' : '', rv.share === false ? 'Privada (só você vê)' : 'Visível para os outros', rv.ressaca === 'curou' ? 'Curou minha ressaca' : rv.ressaca ? 'Me deu ressaca' : ''].filter(Boolean).map((t) => '<span>' + t + '</span>').join('') + '</div>';
+        + '<div class="rv-tags">' + [rv.spoiler ? 'Tem spoiler' : '', rv.share === false ? 'Só você vê' : rv.vis === 'friends' ? 'Só amizades veem' : 'Toda a comunidade vê', rv.ressaca === 'curou' ? 'Curou minha ressaca' : rv.ressaca ? 'Me deu ressaca' : ''].filter(Boolean).map((t) => '<span>' + t + '</span>').join('') + '</div>';
       hd.after(view);
       // embaixo da avaliação: trechos (e anotação) do livro e os comentários que a avaliação recebeu
       const qs = libE ? [...(libE.quotes || [])].sort((a, z) => (a.p || 99999) - (z.p || 99999)) : [];

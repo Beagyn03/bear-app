@@ -73,12 +73,15 @@ const avDM = (d) => (d ? d.slice(8, 10) + '/' + d.slice(5, 7) : '');
 .v4fim.avz .v6hist .cs-retro{margin-top:8px;border:1.5px solid var(--acc);background:none;color:var(--acc);border-radius:99px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
 .v4fim.avz .stars5,.v4fim.avz .stars5 button,.v4fim.avz .avdots button{touch-action:manipulation}`;
   try { TR.append(st); } catch {} }
+// Quem vê (migração 042, Bia 22/11): Toda a comunidade (padrão), Só amizades ou Só você
+function avQvK(F) { return !F.share ? 'eu' : F.vis === 'friends' ? 'fr' : 'pub'; }
+function avQvTxt(F) { const k = avQvK(F); return k === 'eu' ? 'Só você · fica no seu diário' : k === 'fr' ? 'Só amizades · feed delas e página do livro' : 'Toda a comunidade · feed e página do livro'; }
 // estado extra das abas (junto do F que o v4 já usa)
 { const _fo = v4FimOpen; v4FimOpen = function (e) {
     const r = _fo.apply(this, arguments);
     try { const st = v4State(), F = st.F; if (!F || !e) return r; const fin = e.fin || {};
       F.tab = 'av'; F.fe = [...new Set(((fin.fe) || []).map(avKey).filter(Boolean))].slice(0, 3); F.feMore = false; F.nvAll = false; F.qv = false;
-      F.pf = fin.fav || ''; F.ph = fin.hate || ''; F.q = fin.q ? { ...fin.q } : null; F.qNew = false; F.nd = !!e.noDate; F.txt = (e.review || {}).texto || '';
+      F.pf = fin.fav || ''; F.ph = fin.hate || ''; F.q = fin.q ? { ...fin.q } : null; F.qNew = false; F.nd = !!e.noDate; F.txt = (e.review || {}).texto || ''; F.vis = (e.review || {}).vis === 'friends' ? 'friends' : 'public';
       v4Draw(); } catch (err) { console.warn('avaliação abas', err); }
     return r; }; }
 function avLbN(F) { return (F.fe.length ? 1 : 0) + (F.pf || F.ph ? 1 : 0) + (F.q ? 1 : 0) + (F.ress ? 1 : 0); }
@@ -107,8 +110,8 @@ function avLbN(F) { return (F.fe.length ? 1 : 0) + (F.pf || F.ph ? 1 : 0) + (F.q
       <section class="avnv" id="avnv"><h4>Níveis do enredo <span class="avhint">· opcional</span></h4><p><span>Quanto disso o livro tem?</span><span>pouco ← → muito</span></p>
         ${rowsN.map((k) => { const l = (niv.find((x) => x[0] === k) || [, k])[1]; return `<div class="avrow"><span>${esc(l)}</span><span class="avdots">${[1, 2, 3, 4, 5].map((i) => `<button type="button" data-av="nv" data-k="${k}" data-v="${i}" class="${(F.niv[k] || 0) >= i ? 'on' : ''}" aria-label="${esc(l)} ${i} de 5"><i></i></button>`).join('')}</span></div>`; }).join('')}
         ${F.nvAll ? '' : `<button type="button" class="avlink" data-av="nvall">Ver todos (${niv.length})</button>`}</section>
-      ${com ? `<button type="button" class="avline" data-av="qv"><span><b>Quem vê</b><small>${F.share ? 'Toda a comunidade · feed e página do livro' : 'Só você · fica no seu diário'}</small></span><em>›</em></button>
-      <div class="avqv" data-avqv${F.qv ? '' : ' hidden'}><button type="button" class="chip${F.share ? ' on' : ''}" data-av="share" data-k="1">Toda a comunidade</button><button type="button" class="chip${F.share ? '' : ' on'}" data-av="share" data-k="0">Só você</button></div>` : ''}
+      ${com ? `<button type="button" class="avline" data-av="qv"><span><b>Quem vê</b><small>${avQvTxt(F)}</small></span><em>›</em></button>
+      <div class="avqv" data-avqv${F.qv ? '' : ' hidden'}>${[['pub', 'Toda a comunidade'], ['fr', 'Só amizades'], ['eu', 'Só você']].map(([k, t]) => `<button type="button" class="chip${avQvK(F) === k ? ' on' : ''}" data-av="share" data-k="${k}">${t}</button>`).join('')}</div>` : ''}
       <button type="button" class="avline" data-av="tab" data-t="lb"><span><b>Conte como o livro te deixou</b><small>emoções, personagens, trecho · opcional</small></span><em>${lbN ? lbN + ' de 4' : '›'}</em></button></div>`;
     const pLb = `<div class="avp" data-p="lb"${F.tab === 'lb' ? '' : ' hidden'}>
       <section class="avfs"><div class="avh3"><span>Como o livro te deixou</span><small>até 3 · ${F.fe.length}/3</small></div>
@@ -168,7 +171,7 @@ function avClick(ev) {
     const niv = NIVEIS.filter(([kk]) => F.niv[kk] > 0); const S2 = R.querySelector('#avnvs'); if (S2) S2.innerHTML = niv.map(([kk, l]) => `<span>${esc(l)} ${F.niv[kk]}</span>`).join(''); const g = R.querySelector('[data-av=gonv]'); if (g) g.textContent = niv.length ? 'Níveis do enredo ›' : '+ Níveis do enredo'; return; }
   if (a === 'nvall' || a === 'femore') { F.txt = (R.querySelector('#v4fimt') || {}).value || F.txt; if (a === 'nvall') F.nvAll = true; else F.feMore = true; const sc = R.querySelector('.scr'), y = sc ? sc.scrollTop : 0; v4Draw(); try { V4.querySelector('.scr').scrollTop = y; } catch {} return; }
   if (a === 'qv') { F.qv = !F.qv; const q = R.querySelector('[data-avqv]'); if (q) q.hidden = !F.qv; return; }
-  if (a === 'share') { F.share = b.dataset.k === '1'; R.querySelectorAll('[data-av=share]').forEach((x) => x.classList.toggle('on', x === b)); const sm = R.querySelector('[data-av=qv] small'); if (sm) sm.textContent = F.share ? 'Toda a comunidade · feed e página do livro' : 'Só você · fica no seu diário'; F.qv = false; const q = R.querySelector('[data-avqv]'); if (q) q.hidden = true; avOk(F); return; }
+  if (a === 'share') { const k = b.dataset.k; F.share = k !== 'eu'; F.vis = k === 'fr' ? 'friends' : 'public'; R.querySelectorAll('[data-av=share]').forEach((x) => x.classList.toggle('on', x === b)); const sm = R.querySelector('[data-av=qv] small'); if (sm) sm.textContent = avQvTxt(F); F.qv = false; const q = R.querySelector('[data-avqv]'); if (q) q.hidden = true; avOk(F); return; }
   if (a === 'fe') { const k = b.dataset.k; if (F.fe.includes(k)) F.fe = F.fe.filter((x) => x !== k); else if (!avAddFe(F, k)) return; b.classList.toggle('on', F.fe.includes(k)); avPaintTabs(F); return; }
   if (a === 'q') { const x = (e.quotes || [])[Number(b.dataset.i)]; if (!x) return; const on = !(F.q && F.q.t === x.t); F.q = on ? { t: x.t, p: x.p } : null; R.querySelectorAll('[data-av=q]').forEach((y) => y.classList.toggle('on', y === b && on)); avPaintTabs(F); return; }
   if (a === 'qnew') { F.qNew = !F.qNew; const n = R.querySelector('[data-avqn]'); if (n) { n.hidden = !F.qNew; if (F.qNew) n.querySelector('textarea').focus(); } return; }

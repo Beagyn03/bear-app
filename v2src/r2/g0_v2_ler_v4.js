@@ -403,7 +403,7 @@ function v4FimSave() {
   const niv = {}; Object.entries(F.niv).forEach(([k, v]) => { if (v > 0) niv[k] = v; }); if (Object.keys(niv).length) rv.niveis = niv; else delete rv.niveis;
   if (texto) rv.texto = texto; else delete rv.texto;
   rv.spoiler = !!F.sp; if (F.sp) { rv.spoilerKind = F.spk; if (F.spk === 'page' && spAt > 0) rv.spoilerAt = spAt; else delete rv.spoilerAt; } else { delete rv.spoilerKind; delete rv.spoilerAt; }
-  rv.share = !!F.share; if (F.fav) rv.favVida = true; else delete rv.favVida;
+  rv.share = !!F.share; if (F.share && F.vis === 'friends') rv.vis = 'friends'; else delete rv.vis; if (F.fav) rv.favVida = true; else delete rv.favVida;
   if (!rv.mel) rv.mel = [];
   const fin = { ...(e.fin || {}) }; if (F.fe.length) fin.fe = [...F.fe]; else delete fin.fe; if (Object.keys(fin).length) e.fin = fin; else delete e.fin;
   e.review = rv;
