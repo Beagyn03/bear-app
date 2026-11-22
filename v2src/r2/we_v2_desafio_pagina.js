@@ -46,7 +46,8 @@ const wdesItems = () => { const q = wdesQ(), pre = ('Desafio da semana: ' + q).t
 // cliques do desafio: capturados antes do v6Click (no shadowRoot da Comunidade)
 { const hook = () => { const host = $('#lista > .v6host'); const sr = host && host.shadowRoot; if (!sr || sr.__wdes) return; sr.__wdes = true;
     sr.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a;
-      if (a === 'v6des') { ev.stopImmediatePropagation(); ev.preventDefault(); S.v6des = true; v6Paint(); try { (host.closest('.wrap') || window).scrollTo && window.scrollTo(0, 0); } catch {} return; }
+      // (Bia, 22/11) o desafio virou aba da Comunidade: o atalho antigo leva à aba (a página própria não abre mais)
+      if (a === 'v6des') { ev.stopImmediatePropagation(); ev.preventDefault(); S.v6des = false; v6S().f = 'desafio'; v6Paint(); try { window.scrollTo(0, 0); } catch {} return; }
       if (a === 'wdesback') { ev.stopImmediatePropagation(); ev.preventDefault(); S.v6des = false; v6Paint(); return; }
       if (a === 'wdesgo') { ev.stopImmediatePropagation(); ev.preventDefault(); openRdComposer({ kind: 'comment', desafio: wdesQ() }); return; }
     }, true); };

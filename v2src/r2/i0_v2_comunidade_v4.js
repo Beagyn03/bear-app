@@ -1,7 +1,8 @@
 // v4 Comunidade e Pergunta do dia (Bia, 20/11; etapa 6 do alinhamento com o protótipo v3 https://claude.ai/artifact/FZDpofzVvP8EJjSrugBoJc).
 // Regra: o que foi revisado no protótipo fica igual no app dev. Raiz própria na aba Comunidade com o CSS do protótipo (V4CSS),
 // como a Estante v4. Dados e ações reaproveitam a Rede (rdLoad/rdMenu/openRdThread/openRdComposer/rdToggleSave/rdShareMenu).
-// - Topo: "Escreva sobre sua leitura…" + Desafio da semana; abas fixas Amizades (padrão) · Todos · Avaliações · Comentários · Salvos + engrenagem.
+// - Topo: "Escreva sobre sua leitura…"; abas Amizades (padrão) · Todos · Desafio · Ler junto · Salvos (22/11; filtros Tudo · Avaliações · Comentários
+//   e a engrenagem dentro de Amizades e Todos; telas do Desafio e do Ler junto no bloco i1).
 // - Post: capa primeiro, pílula de atividade, texto (véu de spoiler com "Eu quero ver mesmo assim" e "esconder de novo"),
 //   emoções da lista única, Curtir · Responder · N · Salvar · Enviar. Nome/foto abre o perfil (o seu vai para Você).
 // - Meu post: Editar, Quem vê (Todos/Só amizades), Marcar spoiler, Excluir com confirmação (API PATCH/DELETE /v1/posts/:id).
@@ -54,7 +55,9 @@ function v6List() {
   const f = v6S().f;
   if (f === 'salvos') { try { return rdSavedList().map((x) => x.it); } catch { return []; } }
   const L = (() => { try { return rdVisible(v6Feed(v6Sc(f)).items); } catch { return v6Feed(v6Sc(f)).items; } })();
-  return f === 'aval' ? L.filter((x) => x.type === 'review') : f === 'coment' ? L.filter((x) => x.type === 'post') : L;
+  // (Bia, 22/11) Avaliações e Comentários viraram filtro dentro de Amizades e Todos (enquete conta como comentário)
+  const sf = v6Fil(f);
+  return sf === 'aval' ? L.filter((x) => x.type === 'review') : sf === 'coment' ? L.filter((x) => x.type === 'post') : L;
 }
 
 // ---------- raiz própria na aba ----------
@@ -111,10 +114,10 @@ function v6PostHTML(it, i) {
 }
 function v6Paint() {
   const host = $('#lista > .v6host'); if (!host || S.tab !== 'comunidade') return; const R = host.shadowRoot.querySelector('.v6com'), S6 = v6S();
-  const F = [['amigos', 'Amizades'], ['todos', 'Todos'], ['aval', 'Avaliações'], ['coment', 'Comentários'], ['salvos', 'Salvos']];
   if (!connected() || !socialProfile) { R.innerHTML = `<div class="msg">Entre na sua conta para ver e postar na Comunidade.</div>`; return; }
+  // (Bia, 22/11) abas Amizades · Todos · Desafio · Ler junto · Salvos; Desafio e Ler junto têm tela própria (bloco i1)
+  v6FixTab(); if (S6.f === 'desafio' || S6.f === 'junto') return v6PaintTab(R);
   const me = socialProfile, list = v6List(), Fd = v6Feed(v6Sc(S6.f)); S6.list = list;
-  let q = ''; try { q = v2WkQ(); } catch {}
   let last = '', posts = '';
   list.forEach((it, i) => { let d = ''; try { d = rdDayLbl(it.createdAt); } catch {} if (d && d !== last && S6.f !== 'salvos') { posts += `<div class="day">${esc(d)}</div>`; last = d; } posts += v6PostHTML(it, i); });
   const empty = S6.f === 'salvos' ? '<b>Nada salvo ainda</b><br>Toque no marcador de um post para guardar aqui.'
@@ -123,10 +126,10 @@ function v6Paint() {
     : 'Nada por aqui ainda. Que tal começar a conversa?';
   // estado vazio com o que fazer ali (Bia, 20/11: acabamento)
   const emptyActs = S6.f !== 'salvos' && !(Fd.busy || !Fd.at) && !Fd.err ? `<div class="macts"><button class="btn p" data-a="v6new">Escrever um post</button><button class="btn s" data-a="v6find">Encontrar leitores</button></div>` : '';
-  R.innerHTML = `<div class="cbar"><span class="av" data-avh="${esc(me.handle)}" style="background-color:${friendColor(me.handle)}">${esc(initial(me.displayName || me.handle))}</span><button class="cin" data-a="v6new">Escreva sobre sua leitura…</button></div>
-  ${q ? `<button class="cdes" data-a="v6des"><span class="eb acc">Desafio da semana</span><span>${esc(q)}</span>${v4ic('chev', 14)}</button>` : ''}
-  <div class="ctabs" role="tablist">${F.map(([k, l]) => `<button role="tab" aria-selected="${S6.f === k}" class="${S6.f === k ? 'on' : ''}" data-a="v6tab" data-k="${k}">${l}</button>`).join('')}<button class="cg" data-a="v6cfg" aria-label="Preferências da Comunidade">${v4ic('gear', 17)}</button></div>
-  ${list.length ? posts : `<div class="msg">${empty}${emptyActs}</div>`}
+  const fil = S6.f !== 'salvos' && v6Fil(S6.f) !== 'tudo';
+  R.innerHTML = `${S6.f === 'salvos' ? '' : `<div class="cbar"><span class="av" data-avh="${esc(me.handle)}" style="background-color:${friendColor(me.handle)}">${esc(initial(me.displayName || me.handle))}</span><button class="cin" data-a="v6new">Escreva sobre sua leitura…</button></div>`}
+  ${v6TabsHTML()}${S6.f === 'salvos' ? '' : v6FilHTML()}
+  ${list.length ? posts : fil && Fd.at && !Fd.busy && !Fd.err ? `<div class="msg"><b>Nada por aqui com esse filtro</b><br>Toque em <b>Tudo</b> para ver todos os posts${S6.f === 'amigos' ? ' das suas amizades' : ''}.</div>` : `<div class="msg">${empty}${emptyActs}</div>`}
   ${Fd.more && S6.f !== 'salvos' && list.length ? `<button class="more2" data-a="v6moreload">${Fd.busy ? 'Carregando…' : 'Ver mais'}</button>` : ''}`;
   try { paintCv(R); } catch {} try { rdLoadImages(R); } catch {}
   R.querySelectorAll('[data-avh]').forEach((n) => { try { const d = avatarOf(n.dataset.avh); if (d) { n.style.backgroundImage = `url("${d}")`; n.textContent = ''; } } catch {} });
@@ -135,10 +138,11 @@ function v6Click(ev) {
   const b = ev.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a; if (!a.startsWith('v6')) return;
   ev.stopPropagation(); ev.preventDefault();
   const S6 = v6S(), it = b.dataset.i != null ? S6.list[+b.dataset.i] : null;
-  if (a === 'v6tab') { S6.f = b.dataset.k; const F = v6Feed(v6Sc(S6.f)); v6Paint(); if (S6.f !== 'salvos' && !F.busy && Date.now() - F.at > 20000) v6Load(v6Sc(S6.f)); return; }
+  if (a === 'v6tab') { S6.f = b.dataset.k; S6.desBk = null; S6.desWk = 0; v6FixTab(); const F = v6Feed(v6Sc(S6.f)); v6Paint(); if (S6.f !== 'salvos' && S6.f !== 'junto' && !F.busy && Date.now() - F.at > 20000) v6Load(v6Sc(S6.f)); return; }
+  if (a === 'v6fil') { v6FilSet(S6.f, b.dataset.k); return v6Paint(); }
   if (a === 'v6new') return openRdComposer();
   if (a === 'v6find') { try { return addFriendSheet(); } catch { return; } }
-  if (a === 'v6des') { let q = ''; try { q = v2WkQ(); } catch {} return openRdComposer({ kind: 'comment', text: `Desafio da semana: ${q}\n` }); }
+  if (a === 'v6des') { S6.f = 'desafio'; return v6Paint(); }
   if (a === 'v6cfg') return rdFiltersSheet();
   if (a === 'v6moreload') return v6Load(v6Sc(S6.f), true);
   if (!it) return;

@@ -10,7 +10,7 @@
 //   resposta e encerrada do mesmo livro abrem; livro fora da Biblioteca oferece pôr de volta; "•••" com Abrir, Cancelar convite,
 //   Encerrar (quem criou), Sair e Remover da lista (encerradas); convite que ficou só no aparelho: Enviar de novo / Descartar.
 const LJ2 = { items: null, last: {}, at: 0, busy: false };
-{ const st = document.createElement('style'); st.textContent = `
+{ const st = document.createElement('style'); st.textContent = LJ2.css = `
 .v3hub .v3hub-lj{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto;justify-items:start;align-items:center;column-gap:.7rem;padding:.7rem .9rem;text-align:left}
 .v3hub .v3hub-lj .v3pi{grid-row:span 2}.v3hub .v3hub-lj em{grid-row:span 2;font-style:normal;color:var(--ink-2);font-size:1.1rem}
 .lj2-tabs{display:flex;gap:.4rem;margin:.2rem 0 .8rem;border-bottom:1px solid var(--line)}
@@ -204,12 +204,13 @@ async function ljLoad(force) {
     }));
   } catch {} finally { LJ2.busy = false; }
   ljPaintSummary(); if (S.listRedraw === ljDraw) ljDraw();
+  try { if (S.tab === 'comunidade' && $('#lista > .v6host')) v6Paint(); } catch {}
 }
 
 // minha página atual no livro (para cobrir mensagem de página à frente)
 const ljMyPage = (x) => { const e = bjEntry(x); if (!e) return 0; if (e.status === 'LIDO') return 1e9; try { return readingInfo(e).now || 0; } catch { return e.currentPage || 0; } };
 
-function ljCard(x) {
+function ljCard(x, noLast) {
   const end = !!x.closedAt, M = (x.members || []).slice().sort((a, b) => ljPctOf(b) - ljPctOf(a));
   const others = M.filter((m) => !m.me && m.status === 'ACCEPTED').map((m) => ljFirst(m.displayName || m.handle));
   const fin = M.filter((m) => m.finished).length, nw = end ? 0 : ljNew(x);
@@ -225,7 +226,7 @@ function ljCard(x) {
   if (!end) {
     html += '<span class="lj2-ppl">' + M.filter((m) => m.status === 'ACCEPTED').map((m) => { const nm = m.me ? 'Você' : ljFirst(m.displayName || m.handle), p = ljPctOf(m);
       return '<span class="lj2-p' + (m.me ? ' eu' : '') + '"><span class="av' + (m.me && ljMyPh() ? ' lj2-ph' : '') + '"' + (m.handle && !(m.me && ljMyPh()) ? ' data-avh="' + esc(m.handle) + '"' : '') + ' style="background-color:' + (m.me ? 'var(--ink)' : friendColor(m.handle || nm)) + ';' + (m.me ? 'color:var(--bg,#fff);' : '') + (m.me && ljMyPh() ? 'background-image:url(&quot;' + esc(ljMyPh()) + '&quot;)' : '') + '">' + esc(initial(nm)) + '</span><span class="nm">' + esc(nm) + (m.finished ? ' ✓' : '') + '</span><span class="lj2-bar"><i style="width:' + p + '%"></i></span><em>' + p + '%</em></span>'; }).join('') + '</span>';
-    const c = LJ2.last[x.id], l = c && c.last;
+    const c = LJ2.last[x.id], l = !noLast && c && c.last;
     if (l) { const who = l.mine ? 'Você' : ljFirst((l.user && l.user.displayName) || 'Alguém'), lock = c.lock && !l.mine && l.page && ljMyPage(x) < l.page;
       const when = (() => { try { const d = (Date.now() - Date.parse(l.createdAt)) / 36e5; return d < 1 ? 'agora' : d < 24 ? 'há ' + Math.round(d) + ' h' : d < 48 ? 'ontem' : ljDate(l.createdAt); } catch { return ''; } })();
       html += '<span class="lj2-last"><b>' + esc(who) + ':</b> ' + (lock ? '<i>mensagem de uma parte que você ainda não leu</i>' : esc(l.text || (l.poll ? 'fez uma enquete' : ''))) + ' <span>· ' + esc(when) + '</span></span>'; }
@@ -239,25 +240,37 @@ function ljLocalCard(l) {
     + '<button type="button" data-ljld="' + esc(l.eid) + '">Descartar</button><button type="button" class="p" data-ljls="' + esc(l.eid) + '">Enviar de novo</button></div>';
 }
 
-function ljDraw() {
-  const v = $('#shelflist'), L = ljItems(), t = S.ljTab || 'on', on = ljOn(L), inv = ljInv(L), end = ljEnd(L).sort((a, b) => String(b.closedAt).localeCompare(String(a.closedAt))), loc = ljLocal();
-  const tabs = '<div class="lj2-tabs" role="tablist">' + [['on', 'Em andamento · ' + (on.length + loc.length)],['fim', 'Encerradas · ' + end.length]].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (t === k) + '" class="' + (t === k ? 'on' : '') + '" data-ljt="' + k + '">' + n + '</button>').join('') + '</div>';
-  let body = '';
-  if (!LJ2.items && !L.length) body = '<div class="lj2-empty">Carregando…</div>';
-  else if (t === 'fim') body = end.length ? '<div class="lj2-list">' + end.map(ljCard).join('') + '</div>' : '<div class="lj2-empty">Nenhuma leitura conjunta encerrada no último ano.</div>';
-  else {
-    if (inv.length) body += '<div class="lj2-h">Convites <small>' + inv.length + '</small></div>' + inv.map((x) => { const from = (x.members || []).find((m) => !m.me && m.status === 'ACCEPTED');
-      return '<div class="lj2-inv">' + ljCv(x) + '<span><b>' + esc(ljFirst(from ? from.displayName || from.handle : 'Alguém')) + '</b> chamou para ler <b>' + esc(x.title) + '</b><small>começa quando você aceitar</small></span><button type="button" data-ljno="' + esc(x.id) + '">Agora não</button><button type="button" class="p" data-ljok="' + esc(x.id) + '">Aceitar</button></div>'; }).join('');
-    body += loc.map(ljLocalCard).join('');
-    body += on.length ? '<div class="lj2-list">' + on.map(ljCard).join('') + '</div>' : (inv.length || loc.length ? '' : '<div class="lj2-empty lj2-empty-on"><b>Nenhuma leitura conjunta em andamento</b><span>Escolha um livro que você está lendo ou quer ler e convide amizades.</span><button type="button" class="lj2-big" data-ljadd>+ Ler junto</button></div>');
+// corpo da lista: 'page' = a página com abas Em andamento | Encerradas; 'com' = a aba Ler junto da Comunidade (22/11):
+// Convites, Mensagens novas, Em andamento e Encerradas recolhidas
+function ljBodyHTML(mode) {
+  const L = ljItems(), t = S.ljTab || 'on', on = ljOn(L), inv = ljInv(L), end = ljEnd(L).sort((a, b) => String(b.closedAt).localeCompare(String(a.closedAt))), loc = ljLocal();
+  if (!LJ2.items && !L.length) return '<div class="lj2-empty">Carregando…</div>';
+  const invH = inv.map((x) => { const from = (x.members || []).find((m) => !m.me && m.status === 'ACCEPTED');
+    return '<div class="lj2-inv">' + ljCv(x) + '<span><b>' + esc(ljFirst(from ? from.displayName || from.handle : 'Alguém')) + '</b> chamou para ler <b>' + esc(x.title) + '</b><small>começa quando você aceitar</small></span><button type="button" data-ljno="' + esc(x.id) + '">Agora não</button><button type="button" class="p" data-ljok="' + esc(x.id) + '">Aceitar</button></div>'; }).join('');
+  const emptyOn = '<div class="lj2-empty lj2-empty-on"><b>Nenhuma leitura conjunta em andamento</b><span>Escolha um livro que você está lendo ou quer ler e convide amizades.</span><button type="button" class="lj2-big" data-ljadd>+ Ler junto</button></div>';
+  if (mode === 'com') {
+    const N = on.filter((x) => ljNew(x) > 0 && LJ2.last[x.id] && LJ2.last[x.id].last);
+    const news = N.map((x) => { const c = LJ2.last[x.id], l = c.last, who = l.mine ? 'Você' : ljFirst((l.user && l.user.displayName) || 'Alguém'), lock = c.lock && !l.mine && l.page && ljMyPage(x) < l.page;
+      return '<button type="button" class="lj2-msg" data-lj="' + esc(x.id) + '">' + ljCv(x) + '<span class="t"><b>' + esc(who) + '</b> <small>em ' + esc(x.title) + ' · ' + esc(ljAgo(l.createdAt)) + '</small><span>' + (lock ? '<i>mensagem de uma parte que você ainda não leu</i>' : esc(l.text || (l.poll ? 'fez uma enquete' : ''))) + '</span></span><span class="lj2-new" aria-label="' + ljNew(x) + ' mensagens novas">' + ljNew(x) + '</span></button>'; }).join('');
+    let b = '';
+    if (inv.length) b += '<div class="lj2-h">Convites <small>' + inv.length + '</small></div>' + invH;
+    b += loc.map(ljLocalCard).join('');
+    if (N.length) b += '<div class="lj2-h">Mensagens novas <small>' + N.reduce((s, x) => s + ljNew(x), 0) + '</small></div><div class="lj2-list">' + news + '</div>';
+    b += on.length ? '<div class="lj2-h">Em andamento <small>' + on.length + '</small></div><div class="lj2-list">' + on.map((x) => ljCard(x, true)).join('') + '</div>' : (inv.length || loc.length ? '' : emptyOn);
+    if (end.length) b += '<details class="lj2-fim"' + (S.ljFimOpen ? ' open' : '') + '><summary>Encerradas · ' + end.length + '</summary><div class="lj2-list">' + end.map((x) => ljCard(x)).join('') + '</div></details>';
+    return b;
   }
-  // topo com "+ Ler junto": nunca fica vazio, então não é recolhido (sem pulo entre desenhos)
-  const tc = 'sl-top';
-  v.querySelector('.sl-body').innerHTML = '<div class="' + tc + '"><button type="button" class="sl-back">‹ Voltar</button><b>Ler junto</b><button type="button" class="lj2-add" data-ljadd>+ Ler junto</button></div>' + tabs + body;
-  try { paintCv(v); } catch {}
-  v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+  if (t === 'fim') return end.length ? '<div class="lj2-list">' + end.map((x) => ljCard(x)).join('') + '</div>' : '<div class="lj2-empty">Nenhuma leitura conjunta encerrada no último ano.</div>';
+  let body = '';
+  if (inv.length) body += '<div class="lj2-h">Convites <small>' + inv.length + '</small></div>' + invH;
+  body += loc.map(ljLocalCard).join('');
+  body += on.length ? '<div class="lj2-list">' + on.map((x) => ljCard(x)).join('') + '</div>' : (inv.length || loc.length ? '' : emptyOn);
+  return body;
+}
+// ações dos cartões (as mesmas na página e na aba da Comunidade); redraw = quem desenha de novo
+function ljWire(v, redraw) {
+  const L = ljItems();
   v.querySelectorAll('[data-ljadd]').forEach((b) => b.addEventListener('click', ljPick));
-  v.querySelectorAll('[data-ljt]').forEach((b) => b.addEventListener('click', () => { S.ljTab = b.dataset.ljt; ljDraw(); }));
   v.querySelectorAll('[data-lj]').forEach((b) => b.addEventListener('click', () => { const x = L.find((y) => y.id === b.dataset.lj); if (x) lj2Open(x); else ljLoad(true); }));
   v.querySelectorAll('[data-ljm]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); const x = L.find((y) => y.id === b.dataset.ljm); if (x) ljMenu(x); }));
   v.querySelectorAll('[data-ljok]').forEach((b) => b.addEventListener('click', async () => {
@@ -275,10 +288,22 @@ function ljDraw() {
     if (ljLocal().some((l) => l.eid === id)) { b.disabled = false; toast('Ainda não deu para enviar', { label: 'Repetir', fn: () => b.click() }); } else toast('Convite enviado');
   }));
   v.querySelectorAll('[data-ljld]').forEach((b) => b.addEventListener('click', () => {
-    const id = b.dataset.ljld, B = T().buddy || {}, keep = B[id]; if (!keep) return ljDraw();
-    delete B[id]; T().buddy = B; save(); ljDraw();
-    toast('Convite descartado', { label: 'Desfazer', fn: () => { const C = T().buddy || {}; C[id] = keep; T().buddy = C; save(); ljDraw(); } });
+    const id = b.dataset.ljld, B = T().buddy || {}, keep = B[id]; if (!keep) return redraw();
+    delete B[id]; T().buddy = B; save(); redraw();
+    toast('Convite descartado', { label: 'Desfazer', fn: () => { const C = T().buddy || {}; C[id] = keep; T().buddy = C; save(); redraw(); } });
   }));
+  v.querySelectorAll('details.lj2-fim').forEach((d) => d.addEventListener('toggle', () => { S.ljFimOpen = d.open; }));
+}
+function ljDraw() {
+  const v = $('#shelflist'), L = ljItems(), t = S.ljTab || 'on', on = ljOn(L), end = ljEnd(L), loc = ljLocal();
+  const tabs = '<div class="lj2-tabs" role="tablist">' + [['on', 'Em andamento · ' + (on.length + loc.length)],['fim', 'Encerradas · ' + end.length]].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (t === k) + '" class="' + (t === k ? 'on' : '') + '" data-ljt="' + k + '">' + n + '</button>').join('') + '</div>';
+  // topo com "+ Ler junto": nunca fica vazio, então não é recolhido (sem pulo entre desenhos)
+  const tc = 'sl-top';
+  v.querySelector('.sl-body').innerHTML = '<div class="' + tc + '"><button type="button" class="sl-back">‹ Voltar</button><b>Ler junto</b><button type="button" class="lj2-add" data-ljadd>+ Ler junto</button></div>' + tabs + ljBodyHTML('page');
+  try { paintCv(v); } catch {}
+  v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
+  v.querySelectorAll('[data-ljt]').forEach((b) => b.addEventListener('click', () => { S.ljTab = b.dataset.ljt; ljDraw(); }));
+  ljWire(v, ljDraw);
 }
 // "+ Ler junto": escolhe um livro de Lendo ou Quero ler e abre o convite que já existe (inviteBuddy)
 // fechar a folha volta uma página no histórico; o voltar (bloco z4) fecharia a folha que abrisse nesse meio-tempo.
