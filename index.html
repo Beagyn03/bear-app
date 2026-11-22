@@ -9982,6 +9982,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
@@ -15680,17 +15681,17 @@ function paintAmigos() {
 .orb-pg .orb-tx{font-size:.8rem;line-height:1.4;color:var(--ink-2);margin:.2rem 0 .8rem}
 .orb-cal{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:.75rem}
 .orb-mn{display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem}.orb-mn b{font-size:.95rem}
-.orb-mn button{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:900}.orb-mn button:disabled{opacity:.3}
+.orb-mn button{width:44px;height:44px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--ink) 55%,var(--panel));background:var(--panel);color:var(--ink);font:inherit;font-size:1.3rem;font-weight:900;line-height:1;display:grid;place-items:center;cursor:pointer}.orb-mn button:disabled{opacity:.35;cursor:default}
 .orb-sum{font-size:.76rem;font-weight:800;color:var(--acc);margin:0 0 .5rem}
 .orb-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .orb-g .h{font-size:.6rem;font-weight:900;color:var(--ink-2);text-align:center;text-transform:uppercase}
 .orb-g .d{position:relative;aspect-ratio:3/4;border-radius:8px;background:color-mix(in srgb,var(--ink) 5%,transparent);overflow:hidden;font-size:.62rem;font-weight:800;color:var(--ink-2)}
 .orb-g .d > i{position:absolute;top:3px;left:4px;font-style:normal;z-index:2}
-.orb-g .d.rd > i{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+.orb-g .d.rd > i{top:2px;left:2px;min-width:16px;padding:1px 4px;border-radius:99px;background:rgba(18,12,8,.78);color:#fff;text-align:center;line-height:1.25;text-shadow:none}
 .orb-g .d .cv{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;border-radius:0!important;background-size:cover!important;background-position:center!important;font-size:.36rem!important}
-.orb-g .d.hj{outline:2px solid var(--acc);outline-offset:-2px}.orb-g .d.fut{opacity:.45}.orb-g .d.empty{background:none}
-.orb-g .d u{position:absolute;right:3px;bottom:2px;z-index:2;text-decoration:none;font-size:.7rem;color:#ffe08a;text-shadow:0 0 4px rgba(255,200,80,.95)}
-.orb-leg{display:flex;gap:.8rem;margin-top:.6rem;font-size:.7rem;color:var(--ink-2);font-weight:700}
+.orb-g .d.hj::after{content:'';position:absolute;inset:0;z-index:3;border:2.5px solid var(--acc);border-radius:inherit;pointer-events:none}.orb-g .d.hj:not(.rd) > i{color:var(--acc);font-weight:900}.orb-g .d.fut{background:none;border:1.5px dashed color-mix(in srgb,var(--ink) 14%,transparent)}.orb-g .d.fut > i{color:var(--ink-2)}.orb-g .d.empty{background:none}
+.orb-g .d u{position:absolute;right:2px;bottom:2px;z-index:4;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;text-decoration:none;font-size:.62rem;line-height:1;background:rgba(18,12,8,.78);color:#ffd257}
+.orb-leg{display:flex;align-items:center;gap:.8rem;margin-top:.6rem;font-size:.72rem;color:var(--ink-2);font-weight:700}.orb-leg .lk{display:inline-flex;align-items:center;gap:.3rem}.orb-leg .lk-hj{width:14px;height:18px;border-radius:4px;border:2.5px solid var(--acc);box-sizing:border-box}.orb-leg .lk-st{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:.62rem;background:rgba(18,12,8,.78);color:#ffd257}
 `; TR.append(st); }
 const ORB_IMG = 'img/orbita.webp';
 // ícone de traço no lugar do planeta colorido (Bia, 20/11: acabamento); mesmo desenho do cartão do topo do Hoje
@@ -15743,6 +15744,8 @@ function orbCardHTML(compact) {
 // página
 function openOrbita(ym) {
   const v = $('#shelflist'); if (!v) return; const t = todayISO();
+  // aba de origem para a barra de baixo (a página tira a classe mine-page do perfil)
+  const from = (() => { try { return v2OnTab(); } catch { return ''; } })();
   S.orbYM = ym || S.orbYM || t.slice(0, 7);
   const draw = () => {
     const s = orbStats(), [Y, M] = S.orbYM.split('-').map(Number), first = new Date(Y, M - 1, 1), nDays = new Date(Y, M, 0).getDate(), lead = (first.getDay() + 6) % 7;
@@ -15750,24 +15753,26 @@ function openOrbita(ym) {
     // meta do prazo batida por dia (mesma conta do histórico do diário)
     const ok = new Set(); lib().forEach((e) => { if (!e.dueAt || !e.dueSince) return; try { tlEvents(e).forEach((x) => { if (x.ok) ok.add(x.d); }); } catch {} });
     let cells = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map((d) => '<span class="h">' + d + '</span>').join('') + '<span class="d empty"></span>'.repeat(lead);
-    let nRead = 0, pages = 0;
+    let nRead = 0, pages = 0, nStar = 0;
     for (let d = 1; d <= nDays; d++) {
       const iso = Y + '-' + String(M).padStart(2, '0') + '-' + String(d).padStart(2, '0'), x = s.days.get(iso);
       let cv = ''; if (x) { nRead++; pages += x.pages; const top = [...x.books.entries()].sort((a, b) => b[1] - a[1])[0]; const e = top && byId(top[0]); if (e) cv = cvh(e.title, e.cover, ''); }
-      cells += '<span class="d' + (x ? ' rd' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + '"><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u>★</u>' : '') + '</span>';
+      if (ok.has(iso)) nStar++;
+      cells += '<span class="d' + (x ? ' rd' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + '"' + (iso === t ? ' aria-current="date"' : '') + '><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u aria-label="meta do prazo batida">★</u>' : '') + '</span>';
     }
     const minYM = ([...s.days.keys()].sort()[0] || t).slice(0, 7);
-    v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Sua órbita de leitura</b><span></span></div>'
+    v.querySelector('.sl-body').innerHTML = '<div class="sl-top"' + (from ? ' data-v4from="' + esc(from) + '"' : '') + '><button type="button" class="sl-back">‹ Voltar</button><b>Órbita</b><span></span></div>'
       + '<div class="orb-pg"><div class="orb-big"><span class="orb-ic' + (s.today ? '' : ' off') + '">' + ORB_SVG + '</span><div><b>' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small>' + (s.cur ? 'em órbita' + (s.since ? ' · sem parar desde ' + s.since.slice(8, 10) + '/' + s.since.slice(5, 7) : '') : 'fora de órbita') + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div>'
       + '<p class="orb-tx">Cada dia em que você atualiza a página de um livro conta. Um dia sem leitura e a órbita recomeça. Dias de folga de um prazo não quebram a órbita.</p>'
-      + '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (S.orbYM <= minYM ? ' disabled' : '') + '>‹</button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (S.orbYM >= t.slice(0, 7) ? ' disabled' : '') + '>›</button></div>'
+      + '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (S.orbYM <= minYM ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (S.orbYM >= t.slice(0, 7) ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>'
       + '<p class="orb-sum">' + (nRead ? nRead + (nRead === 1 ? ' dia lido' : ' dias lidos') + ' · ' + pages.toLocaleString('pt-BR') + ' páginas' : 'Nenhuma leitura registrada neste mês') + '</p><div class="orb-g">' + cells + '</div>'
-      + '<div class="orb-leg"><span>★ meta do prazo batida</span><span style="outline:2px solid var(--acc);border-radius:4px;padding:0 4px">hoje</span></div></div></div>';
+      + '<div class="orb-leg">' + (S.orbYM === t.slice(0, 7) ? '<span class="lk"><i class="lk-hj"></i>hoje</span>' : '') + (nStar ? '<span class="lk"><i class="lk-st">★</i>meta do prazo batida</span>' : '') + '</div></div></div>';
     try { paintCv(v); } catch {}
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
     v.querySelectorAll('.orb-mn [data-m]').forEach((b) => b.addEventListener('click', () => { const [y, m] = S.orbYM.split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.m), 1); S.orbYM = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); draw(); }));
   };
-  v.hidden = false; v.classList.remove('mine-page'); draw(); try { v.scrollTop = 0; } catch {}
+  // redesenho vindo de fora (sincronização, salvar) redesenha o calendário, não a tela anterior (Metas aparecia por cima, 22/11)
+  v.hidden = false; v.classList.remove('mine-page'); draw(); S.listRedraw = () => { const sc = v.scrollTop; draw(); v.scrollTop = sc; }; try { v.scrollTop = 0; } catch {}
 }
 // Topo sem o círculo de fundo nos ícones (Bia, 17/11): planeta, mensagens e notificações só com o desenho.
 { const st = document.createElement('style'); st.textContent = '.gtop .g-b,.gtop .g-orb{background:none!important;border:0!important;box-shadow:none!important}.gtop .g-b svg{width:28px!important;height:28px!important}.gtop .g-orb{padding:0 .3rem!important;gap:.15rem}.gtop .g-orb img{width:30px;height:30px}'; TR.append(st); }
@@ -21488,6 +21493,17 @@ Object.assign(V3EMO, { x: '<path d="M6 6l12 12M18 6 6 18"/>', sino: '<path d="M6
 { const st = document.createElement('style'); st.textContent = `
 .v4pg-intro{font-size:.82rem;color:var(--ink-2);line-height:1.45;margin:.1rem 0 .8rem}
 .v4pg-foot{font-size:.74rem;color:var(--ink-2);margin:.7rem .1rem 0;line-height:1.4}
+.v4ln-h{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin:.2rem .1rem .6rem;font-size:.8rem;font-weight:800;color:var(--ink-2)}
+.v4hadd{flex:none;min-height:44px;padding:0 1rem;border-radius:999px;border:1.5px solid color-mix(in srgb,var(--acc) 55%,var(--line));background:none;color:var(--acc);font:inherit;font-size:.86rem;font-weight:900;cursor:pointer}
+.v4ln-empty{display:grid;gap:.6rem;justify-items:center;text-align:center;border:1px dashed var(--line);border-radius:16px;padding:1.1rem 1rem}
+.v4ln-empty p{margin:0;font-size:.86rem;color:var(--ink-2)}.v4ln-empty small{font-size:.74rem;color:var(--ink-2)}.v4ln-empty .v4btn-w{margin:0;width:100%}
+.v4lnpk .box{max-height:86vh;display:flex;flex-direction:column}
+.v4lnpk .pk-q{margin:0 0 .5rem}.v4lnpk .pk-list{overflow-y:auto;min-height:0;flex:1;margin:0 -.2rem;padding:0 .2rem}
+.v4lnpk h4{margin:.7rem 0 .3rem;font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.v4lnpk .pk-note{margin:0 0 .3rem;font-size:.74rem;color:var(--ink-2)}.v4lnpk .pk-empty{font-size:.86rem;color:var(--ink-2);text-align:center;margin:1rem 0}
+.v4lnpk .pk{display:flex;align-items:center;gap:.7rem;width:100%;min-height:56px;padding:.4rem .3rem;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.v4lnpk .pk .cv{width:34px!important;height:50px!important;flex:none;border-radius:3px 5px 5px 3px!important;font-size:.36rem!important}
+.v4lnpk .pk span{display:grid;min-width:0}.v4lnpk .pk b{font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.v4lnpk .pk small{font-size:.76rem;color:var(--ink-2)}
 .v4seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:14px;background:var(--panel);border:1px solid var(--line);margin:.2rem 0 .8rem}
 .v4seg button{border:0;background:none;border-radius:10px;padding:.5rem .2rem;font:inherit;font-size:.78rem;font-weight:800;color:var(--ink-2);line-height:1.15;cursor:pointer}
 .v4seg button small{display:inline;margin-left:.15rem;font-size:.72rem;font-weight:800;opacity:.85}
@@ -21512,13 +21528,56 @@ Object.assign(V3EMO, { x: '<path d="M6 6l12 12M18 6 6 18"/>', sino: '<path d="M6
 #lista.v4inner-l > .v3-top{display:none!important}
 #shelflist.v4inner .sl-body > .sl-top.v4empty{height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
 `; TR.append(st); }
-const v4Page = (title, html, reopen) => { if (reopen) { reopen.key = 'v4|' + title; try { navEnter(reopen); } catch {} } const v = $('#shelflist'); try { closeEd(); } catch {} v.classList.remove('feedview', 'tabroot', 'mine-page', 'v2des', 'v2pf');
-  v.querySelector('.sl-body').innerHTML = '<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>' + esc(title) + '</b><span></span></div>' + html;
+const v4Page = (title, html, reopen) => { const from = (() => { try { return v2OnTab(); } catch { return ''; } })(); if (reopen) { reopen.key = 'v4|' + title; try { navEnter(reopen); } catch {} } const v = $('#shelflist'); try { closeEd(); } catch {} v.classList.remove('feedview', 'tabroot', 'mine-page', 'v2des', 'v2pf');
+  v.querySelector('.sl-body').innerHTML = '<div class="sl-top"' + (from ? ' data-v4from="' + esc(from) + '"' : '') + '><button type="button" class="sl-back">‹ Voltar</button><b>' + esc(title) + '</b><span></span></div>' + html;
   v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; try { syncTopTitle(); } catch {} });
-  try { paintCv(v); } catch {} v.hidden = false; v.scrollTop = 0; try { syncTopTitle(); } catch {} return v; };
+  try { paintCv(v); } catch {} v.hidden = false; v.scrollTop = 0; try { syncTopTitle(); } catch {} try { drawTabbar(); } catch {} return v; };
+// barra de baixo: a página aberta por cima continua marcando a aba de onde veio (Bia, 22/11: Empréstimos aberto pelo Você marcava Hoje,
+// porque a página tira a classe mine-page do perfil e a barra caía na aba de baixo)
+{ const _ot = v2OnTab; v2OnTab = function () { const v = $('#shelflist'), top = v && !v.hidden && v.querySelector('.sl-body > .sl-top[data-v4from]'); return top ? top.dataset.v4from : _ot.apply(this, arguments); }; }
 const v4Mod = (k) => { const m = v2Mods(); if (k === 'presentes') return m.presentes === undefined ? m.emprest !== false : m.presentes !== false; return m[k] !== false; };
 
 // ---------- Empréstimos: página com Emprestei · Peguei ----------
+// "+ Emprestar": escolhe um livro da Biblioteca (regra do Emprestar do menu: fora de Lendo; quem tem o exemplar vem primeiro)
+// e segue a folha de Emprestar que já existe (exSheet, modo loan)
+function v4LoanPick() {
+  TR.querySelector('.esn-sheet.v4lnpk')?.remove();
+  const ok = (e) => e.status !== 'LENDO' && !exOf(e).loan && exOf(e).own !== 'pegou' && exOf(e).own !== 'quero';
+  const all = (() => { try { return sortList(lib().filter(ok), 'titulo'); } catch { return lib().filter(ok); } })();
+  const sh = document.createElement('div'); sh.className = 'esn-sheet v4lnpk'; let q = '';
+  const close = () => sh.remove();
+  const row = (e) => '<button type="button" class="pk" data-id="' + esc(String(e.id)) + '">' + cvh(e.title, e.cover, '') + '<span><b>' + esc(e.title) + '</b><small>' + esc(String(e.author || '').split(',')[0]) + '</small></span></button>';
+  const list = () => { const nq = normT(q), L = all.filter((e) => !nq || normT(e.title + ' ' + (e.author || '')).includes(nq)), tem = L.filter((e) => exOf(e).own === 'tenho'), out = L.filter((e) => exOf(e).own !== 'tenho');
+    if (!L.length) return '<p class="pk-empty">' + (all.length ? 'Nenhum livro seu com esse nome.' : 'Nenhum livro para emprestar agora. Livros em Lendo não entram.') + '</p>';
+    return (tem.length ? '<h4>Seus exemplares</h4>' + tem.slice(0, 120).map(row).join('') : '') + (out.length ? '<h4>' + (tem.length ? 'Outros da Biblioteca' : 'Da sua Biblioteca') + '</h4><p class="pk-note">Ao emprestar, o livro fica marcado como seu exemplar.</p>' + out.slice(0, 120).map(row).join('') : ''); };
+  const paint = () => { const box = sh.querySelector('.pk-list'); box.innerHTML = list(); try { paintCv(box); } catch {}
+    box.querySelectorAll('.pk').forEach((b) => b.addEventListener('click', () => { const e = lib().find((x) => String(x.id) === b.dataset.id); close(); if (e) exSheet(e, 'loan'); })); };
+  sh.innerHTML = '<div class="box"><h3>Emprestar qual livro?</h3><input type="search" class="pk-q" placeholder="Buscar na sua Biblioteca" aria-label="Buscar na sua Biblioteca" autocomplete="off" enterkeyhint="search"><div class="pk-list"></div><div class="acts" style="grid-template-columns:1fr"><button type="button" data-a="cancel">Cancelar</button></div></div>';
+  sh.querySelector('.pk-q').addEventListener('input', (ev) => { q = ev.target.value; paint(); });
+  sh.querySelector('[data-a=cancel]').addEventListener('click', close);
+  sh.addEventListener('click', (ev) => { if (ev.target === sh) close(); });
+  TR.append(sh); paint();
+}
+// "+ Peguei emprestado": busca no catálogo (o livro pode não estar na Biblioteca), depois a folha "De quem e até quando" (exSheet,
+// modo borrow). Só entra na Biblioteca (Quero ler) se o empréstimo for salvo.
+function v4BorrowPick() {
+  searchSheet({ title: 'Peguei emprestado', onPick: (item) => {
+    if (!item || !item.title) return;
+    const k = normT(item.title), a = normT(String(item.author || '').split(',')[0]);
+    let e = lib().find((x) => normT(x.title) === k && (!a || !x.author || normT(String(x.author).split(',')[0]) === a)), novo = false;
+    if (e && exOf(e).own === 'pegou' && exOf(e).borrow) return toast('Esse livro já está em Peguei');
+    if (!e) { try { e = addToLibrary(item, null, 'QUERO', { quiet: true }); } catch {} if (!e) e = lib().find((x) => normT(x.title) === k); novo = !!e; }
+    if (!e) return toast('Não deu para adicionar esse livro. Tente de novo.');
+    exSheet(e, 'borrow');
+    const sh = TR.querySelector('.esn-sheet.ex-sh'); if (!sh) return;
+    const mo = new MutationObserver(() => { if (sh.isConnected) return; mo.disconnect();
+      const x = e.ex || {};
+      if (novo && !x.own && !x.borrow) { const i = db.library.indexOf(e); if (i >= 0) db.library.splice(i, 1); try { save(); } catch {} }
+      else if (novo) { try { save(); renderHome(todayISO()); } catch {} toast('“' + e.title + '” entrou em Quero ler e em Peguei'); }
+      try { if (S.listRedraw) S.listRedraw(); } catch {} });
+    mo.observe(TR, { childList: true });
+  } });
+}
 function openLoans() {
   const tab = () => S.v4lnTab || 'out';
   const save2 = (e) => { if (e.ex && !e.ex.own && !e.ex.loan && !(e.ex.log || []).length) delete e.ex; save(); try { publishSnapshot(); } catch {} try { exApiLoan(e); } catch {} };
@@ -21535,10 +21594,15 @@ function openLoans() {
       return '<div class="v2gc" data-id="' + esc(String(e.id)) + '">' + cvh(e.title, e.cover, '') + '<div><b>' + esc(e.title) + '</b><small>de ' + esc(exName(p.from) || 'alguém') + (p.at ? ' · desde ' + exD(p.at) : '') + ' · ' + (p.due ? 'devolver até ' + exD(p.due) : 'sem data') + '</small>'
         + (late ? '<span class="late">passou ' + plural(late, 'dia', 'dias') + '</span>' : '')
         + '<div class="act"><button type="button" class="p" data-a="gave"><i class=v3e data-i=ok></i>Já devolvi</button>' + (friend ? '<button type="button" data-a="more"><i class=v3e data-i=cal></i>Pedir mais prazo</button>' : '<button type="button" data-a="bdate"><i class=v3e data-i=cal></i>Data</button>') + '</div></div></div>'; };
+    // registrar empréstimo pela própria página (Bia, 22/11): ação no cabeçalho da aba; lista vazia ganha o botão grande no lugar
+    const addLbl = t === 'out' ? 'Emprestar' : 'Peguei emprestado';
     const empty = t === 'out' ? 'Nenhum livro emprestado agora.' : 'Você não está com livro de ninguém agora.';
-    const v = v4Page('Empréstimos', tabs + (L.length ? L.map(card).join('') : '<p class="v2wempty">' + empty + '</p>')
-      + '<p class="v4pg-foot">Para emprestar: segure a capa do livro e toque em Emprestar. Perto da data, o lembrete aparece no Hoje.</p>', () => openLoans());
+    const body = L.length
+      ? '<div class="v4ln-h"><span>' + plural(L.length, 'livro', 'livros') + '</span><button type="button" class="v4hadd" data-ln="add">+ ' + addLbl + '</button></div>' + L.map(card).join('')
+      : '<div class="v4ln-empty"><p>' + empty + '</p><button type="button" class="v4btn-w" data-ln="add"><i class=v3e data-i=plus></i>' + addLbl + '</button><small>Perto da data, o lembrete aparece no Hoje.</small></div>';
+    const v = v4Page('Empréstimos', tabs + body, () => openLoans());
     v.querySelectorAll('.v2pr-tabs [data-t]').forEach((b) => b.addEventListener('click', () => { S.v4lnTab = b.dataset.t; draw(); }));
+    v.querySelectorAll('[data-ln=add]').forEach((b) => b.addEventListener('click', () => (t === 'out' ? v4LoanPick() : v4BorrowPick())));
     v.querySelectorAll('.v2gc [data-a]').forEach((b) => b.addEventListener('click', () => {
       const e = lib().find((y) => String(y.id) === b.closest('.v2gc').dataset.id); if (!e) return; const x = e.ex = e.ex || {}, a = b.dataset.a;
       if (a === 'back') { exLog(e, { t: 'devolveram', to: x.loan && x.loan.to, at: x.loan && x.loan.at }); delete x.loan; save2(e); toast('Voltou para a sua estante'); return draw(); }
@@ -26153,6 +26217,8 @@ const offAllRemaining = (e, off, due) => { if (!due || !off || !off.length) retu
 .mtn .mrow .pbar{height:5px;border-radius:5px;background:color-mix(in srgb,var(--line) 80%,transparent);overflow:hidden;margin-top:4px}.mtn .mrow .pbar i{display:block;height:100%;background:var(--acc)}
 .mtn .mrow.done>svg{color:#3f9a64}.mtn .mempty{margin:0 4px 8px;color:var(--ink-2);font-size:13.5px}
 .mtn .madd{display:block;margin:2px 4px 0;border:0;background:none;color:var(--acc);font:inherit;font-weight:800;min-height:40px;padding:0;cursor:pointer}
+.mtn .msec-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.mtn .mhadd{flex:none;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid color-mix(in srgb,var(--acc) 55%,var(--line));background:none;color:var(--acc);font:inherit;font-size:14px;font-weight:900;letter-spacing:0;text-transform:none;cursor:pointer}
 @media (prefers-reduced-motion: reduce){.mtn .mring .fgc{transition:none}}
 `; TR.append(st); }
 const MTN_MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -26216,18 +26282,17 @@ function mtnBaixo() {
   let h = `<div class="msec">Lembrete</div><button type="button" class="mrow" data-mt="lem">${v4ic('sino', 20)}<span class="t"><b>Lembrete para ler</b><small>${esc(lem)}</small></span>${v4ic('chev', 16)}</button>`;
   // prazos dos livros
   const t = todayISO(), comPrazo = lib().filter((e) => e.status === 'LENDO' && e.dueAt && e.dueAt >= t);
-  h += '<div class="msec">Prazos dos livros</div>';
+  // adicionar fica no cabeçalho da seção (Bia, 22/11: a lista pode ser enorme e o botão no fim obrigava a rolar)
+  h += '<div class="msec msec-h"><span>Prazos dos livros</span><button type="button" class="mhadd" data-mt="novo" aria-label="Novo prazo ou meta com prazo">+ Novo</button></div>';
   if (comPrazo.length) h += comPrazo.map((e) => { const tot = Number(e.totalPages) || 0, pg = Number(libProgress(e)) || 0, left = Math.max(0, tot - pg), dias = Math.max(1, Math.round((new Date(e.dueAt + 'T12:00:00') - new Date(t + 'T12:00:00')) / 86400000) + 1), pct = tot ? Math.round(pg / tot * 100) : 0;
     const dt = new Date(e.dueAt + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     return `<button type="button" class="mrow" data-mt="prazo" data-id="${esc(e.id)}">${mtnCv(e)}<span class="t"><b>${esc(e.title)}</b><small>até ${dt}${tot ? ` · faltam ${left} pág. · ${Math.ceil(left / dias)} por dia` : ''}</small><span class="pbar"><i style="width:${pct}%"></i></span></span>${v4ic('chev', 16)}</button>`; }).join('');
   else h += '<p class="mempty">Nenhum livro com prazo agora.</p>';
-  if (lib().some((e) => e.status === 'LENDO')) h += '<button type="button" class="madd" data-mt="novoprazo">+ Prazo para um livro</button>';
   // metas com prazo antigas (listas de livros com data): continuam aqui, nada se perde
   const gs = (db.goals || []).filter((g) => g && g.targetDate), ativas = [], feitas = [];
   for (const g of gs) { const tot = g.books.reduce((a, b) => a + (b.totalPages || 0), 0); let dn = 0; try { dn = g.books.reduce((a, b) => a + pagesOf(g, b), 0); } catch {}
     const pct = tot ? Math.round(dn / tot * 100) : 0; (pct >= 100 ? feitas : ativas).push({ g, pct, tot, dn }); }
   if (ativas.length) h += ativas.map(({ g, pct, tot, dn }) => `<button type="button" class="mrow" data-mt="goal" data-g="${esc(g.id)}">${v4ic('meta', 20)}<span class="t"><b>${esc(g.name)}</b><small>${plural(g.books.length, 'livro', 'livros')} · ${dn} de ${tot} pág.${g.targetDate ? ' · até ' + new Date(g.targetDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : ''}</small><span class="pbar"><i style="width:${pct}%"></i></span></span>${v4ic('chev', 16)}</button>`).join('');
-  h += '<button type="button" class="madd" id="gl-new">+ Meta com prazo para vários livros</button>';
   // metas concluídas
   const done = [], cy = todayISO().slice(0, 4);
   for (const [y, n] of Object.entries(db.yearGoals || {})) { if (y >= cy || !(Number(n) > 0)) continue; const c = lib().filter((e) => e.status === 'LIDO' && String(e.finishedAt || '').startsWith(y)).length; if (c >= Number(n)) done.push([`Meta de ${y}`, `${c} de ${n} livros`, '']); }
@@ -26249,6 +26314,8 @@ function mtnDraw(first) {
   else { const body = v.querySelector('.sl-body'); const box = body && body.querySelector('.mtn'); if (box) box.outerHTML = mtnHTML(); else v4Page('Metas', mtnHTML()); try { paintCv(v); } catch {} v.scrollTop = sc; }
   S.listRedraw = () => mtnDraw(false); S.navView = { t: 'metas', a: [S.mtnTab] };
 }
+function mtnNovoPrazo() { const L = lib().filter((e) => e.status === 'LENDO'); if (!L.length) return; if (L.length === 1) { try { dueSheet(L[0]); } catch {} return; }
+  try { sheet('Prazo para qual livro?', L.map((e) => [e.title, () => dueSheet(e)])); } catch {} }
 function openMetasV2(tab) { S.mtnTab = tab || S.mtnTab || 'ano'; S.mtnEd = null; mtnDraw(true); }
 openGoalsV4 = function () { openMetasV2('ano'); };
 { const _orbCal = openOrbita; window.__orbCal = _orbCal; openOrbita = function () { openMetasV2('dia'); }; }
@@ -26275,8 +26342,10 @@ TR.addEventListener('click', (ev) => {
   if (a === 'conta') { try { yearShelfSheet(todayISO().slice(0, 4)); } catch {} return; }
   if (a === 'lem') { try { openLembretes(); } catch {} return; }
   if (a === 'prazo') { const e = lib().find((x) => x.id === b.dataset.id); if (e) try { dueSheet(e); } catch {} return; }
-  if (a === 'novoprazo') { const L = lib().filter((e) => e.status === 'LENDO'); if (L.length === 1) { try { dueSheet(L[0]); } catch {} return; }
-    try { sheet('Prazo para qual livro?', L.map((e) => [e.title, () => dueSheet(e)])); } catch {} return; }
+  if (a === 'novo') { const temLendo = lib().some((e) => e.status === 'LENDO'), nova = () => { try { openGoalNew(); } catch {} };
+    if (!temLendo) return nova();
+    try { sheet('Adicionar', [['Prazo para um livro', () => mtnNovoPrazo()], ['Meta para vários livros', nova]]); } catch {} return; }
+  if (a === 'novoprazo') return mtnNovoPrazo();
   if (a === 'goal') { const g = (db.goals || []).find((x) => x.id === b.dataset.g); const v = $('#shelflist'); if (v) v.hidden = true; try { screen('desafios'); if (g) setTimeout(() => open(g), 60); } catch {} return; }
 }, true);
 // --- wk_v2_estante.js ---
@@ -28883,6 +28952,21 @@ searchSheet = function (opts) {
     const away = Date.now() - hidAt; if (!hidAt || away < 1500 || Date.now() - extAt < 120e3) { snap.at = 0; return; }
     snap.at = Date.now(); reset('fundo'); });
 }
+// --- z5_v2_adicionar_topo.js ---
+// Adicionar nunca só no fim da lista (Bia, 22/11: "a lista pode ser enorme e a pessoa tem que rolar muito para adicionar").
+// Padrão: a ação fica no cabeçalho da seção, à direita ("+ Novo", "+ Livro", "+ Emprestar"); lista vazia pode ter o botão grande.
+// Metas (Prazos dos livros) e Empréstimos já montam o cabeçalho no próprio bloco; aqui: a lista de livros de uma meta com prazo
+// (página da meta, aba Livros), que tinha "+ Adicionar livro à meta" embaixo da lista.
+{ const st = document.createElement('style'); st.textContent = `
+.v5addh{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin:0 0 .5rem}
+.v5addh > h2{margin:0!important}
+/* título do topo em 360px: "Empréstimos" cortava (22/11) */
+@media (max-width:380px){#g-t:not(.g-brand){font-size:1.08rem!important;letter-spacing:-.01em}}
+.v5addh > #go-add-book{flex:none;min-height:44px;margin:0!important;padding:0 1rem!important;border-radius:999px!important;border:1.5px solid color-mix(in srgb,var(--acc,var(--caramel-deep)) 55%,var(--line))!important;background:none!important;color:var(--acc,var(--caramel-deep))!important;font:inherit;font-size:.86rem!important;font-weight:900!important;text-decoration:none!important;cursor:pointer}
+`; TR.append(st); document.head.append(st.cloneNode(true)); }
+// a página da meta mora no documento (fora do TR); procura nos dois
+{ const b = TR.querySelector('#go-add-book') || document.querySelector('#go-add-book'), panel = b && b.closest('.panel'), h = panel && panel.querySelector(':scope > h2');
+  if (b && h) { const row = document.createElement('div'); row.className = 'v5addh'; h.before(row); row.append(h, b); b.textContent = '+ Livro'; b.setAttribute('aria-label', 'Adicionar livro à meta'); } }
 // --- z5_v2_perfil_ajustes.js ---
 // Perfil (Bia, 21/11): no atalho "Ler junto" de Minha leitura o "›" caía para a linha de baixo. O cartão é uma grade de 3 colunas
 // e o resumo ("2 em andamento") ocupava a 3ª coluna da 1ª linha, empurrando o "›" para a 2ª. Agora cada parte tem lugar fixo:
