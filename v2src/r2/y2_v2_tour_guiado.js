@@ -180,7 +180,7 @@ const PP_PAGINA = [
 const PP_HOJE = [
   { go: () => ppTab('inicio'), sel: () => ppFindAny('#lista:not(.lista-snap) .v3ring'), t: 'Seu progresso', x: 'O anel mostra quanto você já leu. Toque nele para abrir o livro.', adv: 'btn' },
   { sel: () => { const b = ppFindAny('#lista:not(.lista-snap) .v3qa.p'); return b ? b.parentElement : null; }, t: 'Atalhos do livro', x: 'Atualizar: diga em que página você está. Ao lado: Terminei, Trecho, Ler junto e Mais.', adv: 'btn' },
-  { sel: '#tabbar [data-tab=ler]', t: 'Ler', x: 'Abre a sessão de leitura: conta o tempo e silencia o resto. No caminho, ecos de quem já passou.', adv: 'btn',
+  { sel: '#v5ler', t: 'Ler', x: 'Toque no planeta para abrir a sessão de leitura: conta o tempo e silencia o resto. No caminho, ecos de quem já passou.', adv: 'btn',
     // tocar no próprio Ler também segue para a sessão guiada (como "Experimentar agora")
     tapGo: () => { ppG.sn = 0; ppG.steps.push(...PP_SESSAO); ppNext(); },
     btns: [['Depois', () => ppFinish()], ['Experimentar agora', () => { ppG.sn = 0; ppG.steps.push(...PP_SESSAO); ppNext(); }]] },
@@ -190,11 +190,11 @@ const PP_UPD = [
   { keep: 1, sel: () => ppFindAny('.v4ler .upseg') || ppFindAny('[data-a=ust]'), t: 'Mude a página e salve', x: 'Conte por página, %, posição ou capítulo. Deslize a régua ou digite.', adv: 'btn', until: () => !ppFindAny('[data-a=savepg]') },
   { keep: 1, opt: 1, sel: () => ppFindAny('.v4ler .updet'), t: 'Adicionar detalhes', x: 'Emoções, comentário, trecho e anotação, se quiser. Tudo opcional.', adv: 'btn', until: () => !ppFindAny('[data-a=savepg]') },
   { keep: 1, sel: () => ppFindAny('[data-a=savepg]'), t: 'Salve', x: 'Toque em Salvar para registrar a página.', until: () => !ppFindAny('[data-a=savepg]') },
-  { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, wait: 6000, sel: '#tabbar [data-tab=ler]', t: 'Pronto', x: 'A sessão de leitura fica para quando quiser: toque em Ler.', adv: 'btn', btn: 'Concluir' },
+  { go: () => { try { if (S.v4 && typeof v4Close === 'function') v4Close(); } catch {} ppTab('inicio'); }, wait: 6000, sel: '#v5ler', t: 'Pronto', x: 'A sessão de leitura fica para quando quiser: toque no planeta.', adv: 'btn', btn: 'Concluir' },
 ];
 const PP_ALT_UPD = [{ when: () => !!ppFindAny('[data-a=savepg]') && !ppFindAny('[data-a=start]') && !(typeof v4Ses === 'function' && v4Ses()), steps: PP_UPD }];
 const PP_SESSAO0 = [
-  { go: () => { if (!ppFind('[data-a=lerfoco]') && !ppFind('[data-a=start]')) { const t = ppFind('#tabbar [data-tab=ler]'); if (t) t.click(); } }, sel: '[data-a=lerfoco]', opt: 1, alt: PP_ALT_UPD, t: 'Entrar no silêncio', x: 'Abre a sessão de leitura.' },
+  { go: () => { if (!ppFind('[data-a=lerfoco]') && !ppFind('[data-a=start]')) { const t = ppFind('#v5ler'); if (t) t.click(); else try { v2Ler(); } catch {} } }, sel: '[data-a=lerfoco]', opt: 1, alt: PP_ALT_UPD, t: 'Entrar no silêncio', x: 'Abre a sessão de leitura.' },
   { sel: '[data-a=start]', also: '[data-a=sheet][data-s=upd].just', alt: PP_ALT_UPD, t: 'Começar a ler', x: 'Conta o tempo e silencia o resto. No fim, você diz a página.' },
   { sel: '[data-a=ecoed]', t: 'Ecos', x: 'Frases de quem já passou por esta página aparecem aqui. Em Deixar um eco, você deixa o seu.', adv: 'btn' },
   { sel: '.v6luzb', opt: 1, t: 'Luz', x: 'Esmaece a tela para ler no escuro.', adv: 'btn' },
