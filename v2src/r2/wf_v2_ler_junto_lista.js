@@ -292,7 +292,7 @@ function ljWire(v, redraw) {
     delete B[id]; T().buddy = B; save(); redraw();
     toast('Convite descartado', { label: 'Desfazer', fn: () => { const C = T().buddy || {}; C[id] = keep; T().buddy = C; save(); redraw(); } });
   }));
-  v.querySelectorAll('details.lj2-fim').forEach((d) => d.addEventListener('toggle', () => { S.ljFimOpen = d.open; }));
+  v.querySelectorAll('details.lj2-fim').forEach((d) => { d.querySelector('summary').addEventListener('click', () => { S.ljFimOpen = !d.open; }); d.addEventListener('toggle', () => { S.ljFimOpen = d.open; }); });
 }
 function ljDraw() {
   const v = $('#shelflist'), L = ljItems(), t = S.ljTab || 'on', on = ljOn(L), end = ljEnd(L), loc = ljLocal();

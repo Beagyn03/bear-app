@@ -97,15 +97,15 @@ function v6PaintTab(R) {
   const prevLine = prevRank[0] ? `<button type="button" class="des-prev" data-a="v6dwk" data-k="1">${v6Cv(prevRank[0].title, prevRank[0].cover)}<span><small>${V6DEB.passada}</small><b>${esc(prevRank[0].title)} venceu</b></span>${v4ic('chev', 14)}</button>` : '';
   const card = back ? res(rank, back) : `<div class="card des-c"><div class="eb acc">${V6DEB.nome}</div><h3>${esc(q)}</h3><span class="mut">${esc(v6DesLeft())} · ${items.length} ${items.length === 1 ? 'resposta' : 'respostas'}</span></div>`;
   const H = [1, 2, 3, 4].map((b) => { const its = v6DesItems(v6WkQ(b)), w = v6Rank(its)[0];
-    return `<button type="button" class="des-hi" data-a="v6dwk" data-k="${b}">${w ? v6Cv(w.title, w.cover) : `<span class="des-hn">${v4ic('ach', 16)}</span>`}<span class="t"><b>${esc(v6WkQ(b))}</b><small>até ${v6WkEnd(b)} · ${its.length} ${its.length === 1 ? 'resposta' : 'respostas'}${w ? ' · venceu ' + esc(w.title) : ''}</small></span>${v4ic('chev', 14)}</button>`; }).join('');
+    return `<button type="button" class="des-hi${b === back ? ' on' : ''}" data-a="v6dwk" data-k="${b}"${b === back ? ' aria-current="true"' : ''}>${w ? v6Cv(w.title, w.cover) : `<span class="des-hn">${v4ic('ach', 16)}</span>`}<span class="t"><b>${esc(v6WkQ(b))}</b><small>até ${v6WkEnd(b)} · ${its.length} ${its.length === 1 ? 'resposta' : 'respostas'}${w ? ' · venceu ' + esc(w.title) : ''}</small></span>${v4ic('chev', 14)}</button>`; }).join('');
   const empty = !F.at ? '<div class="msg">Carregando as respostas…</div>'
     : back ? '<div class="msg">Nenhuma resposta desta semana no que está carregado.</div>'
     : `<div class="msg"><b>${V6DEB.vazio}</b><br>${V6DEB.vazioTx}<div class="macts"><button class="btn p" type="button" data-a="v6dgo">${V6DEB.responder}</button></div></div>`;
   R.innerHTML = `${bar}${v6TabsHTML()}${back ? `<button type="button" class="des-back" data-a="v6dwk" data-k="0">${v4ic('back', 16)}${V6DEB.desta}</button>` : prevLine}
     ${card}${pod}${flt}
     <div class="dh">${back ? 'Respostas' : 'Respostas'}${list.length ? ` <small>${list.length}</small>` : ''}</div>${posts || empty}
-    ${back ? '' : `<details class="des-h"${S6.desHOpen ? ' open' : ''}><summary>${V6DEB.anteriores} · 4</summary>${H}</details>`}`;
-  R.querySelectorAll('details.des-h').forEach((d) => d.addEventListener('toggle', () => { S6.desHOpen = d.open; }));
+    <div class="des-h${S6.desHOpen || back ? ' open' : ''}"><button type="button" class="des-hs" data-a="v6dhs" aria-expanded="${!!(S6.desHOpen || back)}">${V6DEB.anteriores} · 4</button>${S6.desHOpen || back ? H : ''}</div>`;
+  // guarda aberto/fechado já no toque (o evento toggle chega depois; uma repintura no meio fechava a lista)
   return v6Fin(R);
 }
 function v6Fin(R) {
@@ -117,7 +117,9 @@ function v6Fin(R) {
     const b = ev.target.closest && ev.target.closest('[data-a]'), a = b && b.dataset.a, S6 = v6S();
     if (a === 'v6dgo') { ev.stopPropagation(); ev.preventDefault(); return openRdComposer({ kind: 'comment', desafio: v6WkQ(0) }); }
     if (a === 'v6dbk') { ev.stopPropagation(); ev.preventDefault(); S6.desBk = S6.desBk === b.dataset.k ? null : b.dataset.k; return v6Paint(); }
-    if (a === 'v6dwk') { ev.stopPropagation(); ev.preventDefault(); S6.desWk = +b.dataset.k || 0; S6.desBk = null; v6Paint(); try { const h = $('#lista > .v6host'); h && h.scrollIntoView({ block: 'start' }); } catch {} return; }
+    // lista recolhível dos debates anteriores (sem <details>: fechada, os itens nem existem na tela)
+    if (a === 'v6dhs') { ev.stopPropagation(); ev.preventDefault(); if (S6.desWk) { S6.desWk = 0; S6.desHOpen = false; } else S6.desHOpen = !S6.desHOpen; return v6Paint(); }
+    if (a === 'v6dwk') { ev.stopPropagation(); ev.preventDefault(); const k = +b.dataset.k || 0; S6.desWk = k && k === S6.desWk ? 0 : k; S6.desBk = null; if (b.classList.contains('des-hi')) S6.desHOpen = true; /* tocar de novo no debate aberto volta ao desta semana */ v6Paint(); try { const h = $('#lista > .v6host'); h && h.scrollIntoView({ block: 'start' }); } catch {} return; }
     return _vc.apply(this, arguments);
   }; }
 // publicar no feed recarrega as duas abas do feed: a resposta ao desafio aparece e o ponto some
@@ -163,10 +165,10 @@ const V6C5CSS = `
 .v6com .des-prev .cv{width:28px;height:42px;flex:none;border-radius:2px 4px 4px 2px}.v6com .des-prev span{flex:1;min-width:0;display:grid}.v6com .des-prev small{color:var(--acc);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
 .v6com .des-back{border:0;background:none;padding:4px 2px;font-weight:800;color:var(--ink2);min-height:44px}
 .v6com .des-h{margin-top:16px;border:1px solid var(--line);border-radius:16px;background:var(--card);padding:0 12px}
-.v6com .des-h summary{cursor:pointer;padding:13px 2px;font-weight:800;font-size:14px;color:var(--ink2);list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px;box-sizing:border-box}
-.v6com .des-h summary::-webkit-details-marker{display:none}.v6com .des-h summary::after{content:'▾';color:var(--ink3)}.v6com .des-h[open] summary::after{content:'▴'}.v6com .des-h[open]{padding-bottom:6px}
+.v6com .des-hs{width:100%;border:0;background:none;font:inherit;cursor:pointer;padding:13px 2px;font-weight:800;font-size:14px;color:var(--ink2);display:flex;justify-content:space-between;align-items:center;min-height:44px;box-sizing:border-box;text-align:left}
+.v6com .des-hs::after{content:'▾';color:var(--ink3)}.v6com .des-h.open .des-hs::after{content:'▴'}.v6com .des-h.open{padding-bottom:6px}
 .v6com .des-hi{display:flex;width:100%;align-items:center;gap:10px;text-align:left;border:0;border-top:1px solid var(--line);background:none;font:inherit;color:var(--ink);padding:10px 2px;min-height:52px;cursor:pointer}
-.v6com .des-hi .cv{width:28px;height:42px;flex:none;border-radius:2px 4px 4px 2px}.v6com .des-hn{width:28px;height:42px;display:grid;place-items:center;color:var(--ink3);flex:none}
+.v6com .des-hi.on b{color:var(--acc)}.v6com .des-hi.on{background:var(--soft);border-radius:10px}.v6com .des-hi .cv{width:28px;height:42px;flex:none;border-radius:2px 4px 4px 2px}.v6com .des-hn{width:28px;height:42px;display:grid;place-items:center;color:var(--ink3);flex:none}
 .v6com .des-hi .t{flex:1;min-width:0;display:grid;gap:2px}.v6com .des-hi b{font-size:14px}.v6com .des-hi small{color:var(--ink3);font-size:12px;font-weight:700}
 .v6com .v6lj{margin-top:12px}.v6com .lj2-more{top:.35rem;right:.35rem;width:40px;height:40px;border-radius:50%;background:color-mix(in srgb,var(--ink) 6%,transparent);color:var(--ink2)}.v6com .lj2-h{margin-top:14px}
 .v6com .lj2-msg{display:flex;width:100%;gap:10px;align-items:flex-start;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:10px 12px;font:inherit;color:var(--ink);cursor:pointer}
