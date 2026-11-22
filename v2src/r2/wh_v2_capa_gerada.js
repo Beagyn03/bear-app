@@ -8,7 +8,10 @@
 .cv.cv-gen.img{text-shadow:none!important}
 .cv.cv-gen{flex-wrap:wrap;align-content:flex-end}
 .cv .cva{display:block;flex-basis:100%;width:100%;margin-top:.35em;font-family:inherit;font-style:normal;font-weight:700;font-size:.62em;letter-spacing:.02em;opacity:.92;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.cv.img .cva{visibility:hidden}`;
+.cv.img .cva{visibility:hidden}
+.cv.cv-gen > .cvtt{display:block!important;-webkit-line-clamp:unset!important;max-width:100%;min-width:0;font-style:normal;line-height:1.08;text-align:center;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important;overflow:visible}
+.cv.cv-gen > .cvtt.cl{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:5!important;overflow:hidden;overflow-wrap:break-word!important;hyphens:auto!important;-webkit-hyphens:auto!important}
+.cv.img > .cvtt,.cv.cv-gen > .cvtt.cl0{visibility:hidden}`;
   const styled = new WeakSet(), watched = new WeakSet();
   const addCss = (root) => { if (styled.has(root)) return; styled.add(root); const st = document.createElement('style'); st.textContent = CSS; root.append(st); };
   const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
@@ -97,6 +100,43 @@
     n.style.backgroundImage = coverSvg(t, a); n.classList.add('cv-gen');
     if (a && !n.querySelector('.cva') && (n.offsetWidth || 0) >= 72) { const s = document.createElement('span'); s.className = 'cvt cva'; s.textContent = a; n.append(s); }
   }
+  // (Bia, 22/11) título da capa gerada cabe na capa em qualquer tamanho: mede e reduz a fonte até o título inteiro caber,
+  // quebrando só entre palavras; reticências (5 linhas) só se nem no tamanho mínimo legível couber. Resultado guardado por tamanho+título.
+  const FIT = new Map(), MIN_PX = 6.5;
+  const titleEl = (n) => {
+    let sp = n.querySelector(':scope > .cvtt'); if (sp) return sp;
+    sp = [...n.children].find((c) => c.classList.contains('cvt') && !c.classList.contains('cva'));
+    if (sp) { sp.classList.add('cvtt'); return sp; }
+    const tx = [...n.childNodes].filter((c) => c.nodeType === 3 && c.textContent.trim()); if (!tx.length) return null;
+    sp = document.createElement('i'); sp.className = 'cvt cvtt'; sp.textContent = tx.map((c) => c.textContent).join(' ').replace(/\s+/g, ' ').trim();
+    tx.forEach((c) => c.remove()); n.prepend(sp); return sp;
+  };
+  const inside = (a, b) => a.left >= b.left - 0.5 && a.right <= b.right + 0.5 && a.top >= b.top - 0.5 && a.bottom <= b.bottom + 0.5;
+  function fit(n) {
+    if (!n.isConnected || n.classList.contains('img') || !n.classList.contains('cv-gen')) return;
+    const w = n.clientWidth, h = n.clientHeight; if (!w || !h) return;
+    const sp = titleEl(n); if (!sp) return;
+    const key = w + 'x' + h + '|' + sp.textContent + '|' + (n.querySelector('.cva') ? 1 : 0);
+    if (n.dataset.fk === key) return; n.dataset.fk = key;
+    const known = FIT.get(key);
+    if (known) { n.style.setProperty('font-size', known.px + 'px', 'important'); sp.classList.toggle('cl', known.cl); sp.classList.toggle('cl0', !!known.tiny); return; }
+    sp.classList.remove('cl', 'cl0'); n.style.removeProperty('font-size');
+    const cs = getComputedStyle(n), box = () => { const r = n.getBoundingClientRect(); return { left: r.left + parseFloat(cs.paddingLeft), right: r.right - parseFloat(cs.paddingRight), top: r.top + parseFloat(cs.paddingTop), bottom: r.bottom - parseFloat(cs.paddingBottom) }; };
+    const cva = n.querySelector(':scope > .cva');
+    const ok = (px) => { n.style.setProperty('font-size', px + 'px', 'important'); const b = box();
+      return sp.scrollWidth <= sp.clientWidth + 0.5 && inside(sp.getBoundingClientRect(), b) && (!cva || inside(cva.getBoundingClientRect(), b)); };
+    let hi = Math.max(MIN_PX, Math.min(parseFloat(cs.fontSize) || 16, w * 0.24, 26)), px;
+    if (ok(hi)) px = hi;
+    else { let lo = MIN_PX; if (!ok(lo)) px = null; else { for (let i = 0; i < 7; i++) { const mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid; } px = Math.floor(lo * 4) / 4; } }
+    const cl = px == null; if (cl) px = MIN_PX;
+    // capa minúscula (calendário): nem no mínimo o título cabe sem picar as palavras; fica só a arte
+    const tiny = cl && w < 30;
+    n.style.setProperty('font-size', px + 'px', 'important'); sp.classList.toggle('cl', cl); sp.classList.toggle('cl0', tiny);
+    if (FIT.size > 2000) FIT.clear(); FIT.set(key, { px, cl, tiny });
+  }
+  const RO = typeof ResizeObserver === 'function' ? new ResizeObserver((es) => { for (const e of es) fit(e.target); }) : null;
+  const roSeen = new WeakSet();
+  const fitWatch = (n) => { fit(n); if (RO && !roSeen.has(n)) { roSeen.add(n); RO.observe(n); } };
   // capa com link quebrado (telas v5/v4 pintam o fundo direto, sem o tratamento de falha do paintCv): testa uma vez por link
   const urlOk = new Map();
   function checkImg(n) {
@@ -106,7 +146,7 @@
     urlOk.set(u, 'wait'); const im = new Image(); im.onload = () => urlOk.set(u, im.naturalWidth > 2); im.onerror = () => { urlOk.set(u, false); fallback(); }; im.src = u;
     setTimeout(() => { if (im.naturalWidth <= 2 && urlOk.get(u) !== true) { urlOk.set(u, false); fallback(); } }, 8000); }
   let q = 0; const pending = new Set();
-  const run = () => { q = 0; for (const root of pending) { try { root.querySelectorAll('.cv:not(.img)').forEach(paint); root.querySelectorAll('.cv.img').forEach(checkImg); } catch {} } pending.clear(); };
+  const run = () => { q = 0; for (const root of pending) { try { root.querySelectorAll('.cv:not(.img)').forEach(paint); root.querySelectorAll('.cv.cv-gen:not(.img)').forEach(fitWatch); root.querySelectorAll('.cv.img').forEach(checkImg); } catch {} } pending.clear(); };
   const schedule = (root) => { pending.add(root); if (!q) q = requestAnimationFrame(run); };
   function watch(root) { if (!root || watched.has(root)) return; watched.add(root); addCss(root); schedule(root);
     new MutationObserver((ms) => { for (const m of ms) { if (m.type === 'childList' && m.addedNodes.length) { schedule(root); for (const n of m.addedNodes) if (n.shadowRoot) watch(n.shadowRoot); }
