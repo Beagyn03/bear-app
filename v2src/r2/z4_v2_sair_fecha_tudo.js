@@ -21,11 +21,11 @@
     return [(h && h.textContent || '').trim().slice(0, 60), bk].join('|'); };
   const keyOf = (ta) => ctxOf(ta) + '|' + (ta.id || ta.name || ta.className || '') + '|' + (ta.getAttribute('placeholder') || '').slice(0, 40);
   const saveDrafts = (roots) => { const o = dGet(); let n = 0;
-    roots.forEach((r) => r && r.querySelectorAll && r.querySelectorAll('textarea').forEach((ta) => { const v = ta.value || ''; if (!v.trim() || v === ta.defaultValue) return; o[keyOf(ta)] = { v, at: Date.now() }; n++; }));
+    roots.forEach((r) => r && r.querySelectorAll && r.querySelectorAll('textarea').forEach((ta) => { const v = ta.value || ''; if (!v.trim() || v === ta.defaultValue || (window.lvSentText && window.lvSentText(v))) return; o[keyOf(ta)] = { v, at: Date.now() }; n++; }));
     if (n) dSet(o); return n; };
   let rtm = 0; const restore = () => { rtm = 0; const o = dGet(), ks = Object.keys(o); if (!ks.length) return; let used = 0;
     const scan = (r) => r.querySelectorAll('textarea').forEach((ta) => { if (ta.value || !ta.getClientRects().length) return; const k = keyOf(ta), d = o[k]; if (!d) return;
-      if (Date.now() - d.at > 864e5) { delete o[k]; return; } ta.value = d.v; ta.dispatchEvent(new Event('input', { bubbles: true })); delete o[k]; used++; });
+      if (Date.now() - d.at > 864e5 || (window.lvSentText && window.lvSentText(d.v))) { delete o[k]; return; } ta.value = d.v; ta.dispatchEvent(new Event('input', { bubbles: true })); delete o[k]; used++; });
     try { top().forEach(scan); scan(TR); if (typeof V4 !== 'undefined' && V4 && V4.isConnected) scan(V4); } catch {}
     dSet(o); if (used) try { toast('Rascunho recuperado'); } catch {} };
   const arm = () => { if (!rtm) rtm = setTimeout(restore, 120); };
