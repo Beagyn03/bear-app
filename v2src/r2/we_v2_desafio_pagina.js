@@ -33,11 +33,12 @@ const wdesItems = () => { const q = wdesQ(), pre = ('Desafio da semana: ' + q).t
       const host = $('#lista > .v6host'); if (!host) return r; const R = host.shadowRoot.querySelector('.v6com'), S6 = v6S(); if (!R) return r; wdesArm(host.shadowRoot);
       const q = wdesQ(), list = wdesItems(), F = v6Feed('rede'); S6.list = list;
       if (!F.at && !F.busy) setTimeout(() => { try { v6Load('rede'); } catch {} }, 0);
+      // "Carregando…" só na primeira vez: ao recarregar o feed, a página mantinha a lista vazia/respostas trocando com "Carregando…" (tremor, 22/11)
       const posts = list.map((it, i) => v6PostHTML(it, i)).join('');
       R.innerHTML = `<div class="wdes"><div class="wdes-top"><button data-a="wdesback" aria-label="Voltar">${v4ic('back', 20)}</button><b>Desafio da semana</b></div>
         <div class="wdes-card"><span class="eb">Tema desta semana</span><h2>${esc(q)}</h2><small>${esc(wdesLeft())}</small><button class="wdes-go btn p" data-a="wdesgo">Participar</button></div>
         <div class="wdes-h">Respostas${list.length ? ' · ' + list.length : ''}</div>
-        ${posts || (F.busy || !F.at ? '<div class="wdes-empty">Carregando…</div>' : '<div class="wdes-empty"><b>Ninguém respondeu ainda</b><span>Conte qual livro você escolheria para este tema.</span><button class="btn s" data-a="wdesgo">Responder ao desafio</button></div>')}</div>`;
+        ${posts || (!F.at ? '<div class="wdes-empty">Carregando…</div>' : '<div class="wdes-empty"><b>Ninguém respondeu ainda</b><span>Conte qual livro você escolheria para este tema.</span><button class="btn s" data-a="wdesgo">Responder ao desafio</button></div>')}</div>`;
       R.querySelectorAll('[data-avh]').forEach((n) => { try { const d = avatarOf(n.dataset.avh); if (d) { n.style.backgroundImage = `url("${d}")`; n.textContent = ''; } } catch {} });
     } catch (err) { console.warn('desafio', err); }
     return r;
