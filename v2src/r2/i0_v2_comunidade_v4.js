@@ -89,15 +89,14 @@ function v6Act(it) {
     return `<span class="pact av2">${ic('quote')}Avaliou${p ? ` <i class="st">${'★'.repeat(Math.round(p))}<u>${'★'.repeat(5 - Math.round(p))}</u></i>` : ''}</span>`;
   }
   const t = String(it.text || '');
-  if (/^Desafio da semana:/i.test(t)) return `<span class="pact de">${ic('ach')}Respondeu ao debate</span>`;
-  if (/^Pergunta do dia:/i.test(t)) return `<span class="pact de">${ic('quote')}Pergunta do dia</span>`;
+  if (DEB_RE.test(t)) return `<span class="pact de">${ic('ach')}${DEB.resp}</span>`;
   if (it.kind === 'rec') return `<span class="pact in">${ic('heart')}Indicou</span>`;
   if (it.kind === 'question') return `<span class="pact qu">${ic('reply')}Perguntou</span>`;
   if (it.kind === 'quote') return `<span class="pact le">${ic('quote')}Trecho${v2PctTxt(it.readerPct, it.page, (it.book || {}).title, ' · ')}</span>`;
   if (it.readerPct === 100) return `<span class="pact te">${ic('ok')}Terminou</span>`;
   return `<span class="pact le">${ic('ler')}Lendo${it.readerPct != null ? ' · ' + Math.round(it.readerPct) + '%' : ''}</span>`;
 }
-const v6Body = (t) => String(t || '').replace(/^(Desafio da semana|Pergunta do dia):[^\n]*\n?/i, (m) => m).trim();
+const v6Body = (t) => String(t || '').replace(/^(Debate semanal|Desafio da semana|Pergunta do dia):[^\n]*\n?/i, (m) => m).trim();
 function v6PostHTML(it, i) {
   const u = it.user || {}, mine = it.mine || (u.handle && u.handle === v6Me()), S6 = v6S(), key = it.type + it.id;
   const sp = (() => { try { return rdSpoil(it); } catch { return it.spoiler ? 'spoiler' : null; } })(), open = !!S6.open[key] || mine;
@@ -194,7 +193,7 @@ function v6V4Click(ev) {
   if (!it) return v6SheetClose();
   if (a === 'v6edit') { if (it.type !== 'post') { v6SheetClose(); const le = lib().find((x) => x.id === it.libId) || lib().find((x) => it.book && normT(x.title) === normT(it.book.title)); try { if (le) return v4FimOpen(le); } catch {} return toast('Abra o livro para editar a avaliação'); } c.t = null; st.sheet = 'v6edit'; return v4Draw(); }
   if (a === 'v6editok') { const t = (st.v6.t != null ? st.v6.t : v6Body(it.text)).trim(); if (!t && !it.quote && !it.book2 && !it.hasImage) return toast('Escreva alguma coisa');
-    const pre = String(it.text || '').match(/^(Desafio da semana|Pergunta do dia):[^\n]*\n?/i); return v6Patch(it, { text: ((pre ? pre[0] : '') + t).slice(0, 280) }).then((ok) => { if (ok) { toast('Post editado'); v6SheetClose(); v6Paint(); } }); }
+    const pre = String(it.text || '').match(/^(Debate semanal|Desafio da semana|Pergunta do dia):[^\n]*\n?/i); return v6Patch(it, { text: ((pre ? pre[0] : '') + t).slice(0, 280) }).then((ok) => { if (ok) { toast('Post editado'); v6SheetClose(); v6Paint(); } }); }
   if (a === 'v6vis') { const k = b.dataset.k; if (k === it.visibility) return; return v6Patch(it, { visibility: k }).then((ok) => { if (ok) { toast(k === 'friends' ? 'Agora só suas amizades veem' : 'Agora todo mundo vê'); v4Draw(); v6Paint(); } }); }
   if (a === 'v6spk') return v6Patch(it, { spoiler: it.spoiler ? null : { kind: 'yes' } }).then((ok) => { if (ok) { toast(it.spoiler ? 'Marcado como spoiler' : 'Marca de spoiler tirada'); v6SheetClose(); v6Paint(); } });
   if (a === 'v6delok') { (async () => {
@@ -208,7 +207,7 @@ function v6V4Input(ev) { const t = ev.target; if (t && t.id === 'v6ta') { const 
 // a pergunta e o seu voto do dia ficam guardados no aparelho: o Hoje já abre com eles (reteste G4: abria com outra pergunta,
 // sem voto e capas vazias, e trocava sozinho segundos depois). Sem nada guardado, o cartão espera a resposta em vez de chutar.
 const V6QDK = 'lv.qday';
-let V6QD = (() => { try { const c = JSON.parse(localStorage.getItem(V6QDK) || 'null'); return c && c.d === todayISO() && c.q && c.q.question ? c.q : null; } catch { return null; } })(), V6QDAt = 0, V6QDBusy = false;
+let V6QD = (() => { try { const c = JSON.parse(localStorage.getItem(V6QDK) || 'null'); return c && c.q && c.q.question && (c.q.weekEnd ? todayISO() <= c.q.weekEnd : c.d === todayISO()) ? c.q : null; } catch { return null; } })(), V6QDAt = 0, V6QDBusy = false;
 const v6QdKeep = () => { try { if (V6QD && V6QD.question) localStorage.setItem(V6QDK, JSON.stringify({ d: todayISO(), q: V6QD })); } catch {} };
 async function v6QdLoad(force) {
   if (!connected() || !socialProfile || V6QDBusy || (!force && Date.now() - V6QDAt < 10 * 60000)) return; V6QDBusy = true;
@@ -227,15 +226,15 @@ v2QdayHTML = function () {
   let q0 = '', from = 'lidos'; try { [q0, from] = v2QOfDay(); } catch {}
   let Q = V6QD;
   // ainda sem resposta do servidor (nem guardada): reserva o lugar do cartão, sem mostrar uma pergunta que vai trocar
-  try { if (!Q && connected() && socialProfile !== null) { if (!v2QdayHTML.t) v2QdayHTML.t = setTimeout(() => { v2QdayHTML.t = 0; v6QdLoad(); if (!V6QD && !V6QDBusy) { V6QD = { failed: true }; v6QdRefresh(); } }, 6000); return `<section class="v2-qd v6qd-wait" data-v2qd="1" aria-busy="true"><div class="k">Pergunta do dia</div><div class="q">&nbsp;</div><div class="qpicks" style="min-height:96px"></div><div class="qft"><span>&nbsp;</span></div></section>`; } } catch {}
+  try { if (!Q && connected() && socialProfile !== null) { if (!v2QdayHTML.t) v2QdayHTML.t = setTimeout(() => { v2QdayHTML.t = 0; v6QdLoad(); if (!V6QD && !V6QDBusy) { V6QD = { failed: true }; v6QdRefresh(); } }, 6000); return `<section class="v2-qd v6qd-wait" data-v2qd="1" aria-busy="true"><div class="k">${DEB.nome}</div><div class="q">&nbsp;</div><div class="qpicks" style="min-height:96px"></div><div class="qft"><span>&nbsp;</span></div></section>`; } } catch {}
   if (Q && Q.failed) Q = null;
   const q = (Q && Q.question) || q0;
-  if (Q && Q.mine) return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div><div class="v6ql">${(Q.top || []).map((x, i) => v6QdRow(x, Q.total, i, Q.mine)).join('')}</div>
-    <div class="qft"><span>${Q.total} ${Q.total === 1 ? 'voto' : 'votos'} · você votou em <b>${esc(Q.mine.title)}</b></span><button type="button" data-q6go="1">Mais votados ›</button></div></section>`;
+  if (Q && Q.mine) return `<section class="v2-qd" data-v2qd="1"><div class="k">${DEB.nome}</div><div class="q">${esc(q)}</div><div class="v6ql">${(Q.top || []).map((x, i) => v6QdRow(x, Q.total, i, Q.mine)).join('')}</div>
+    <div class="qft"><span>${Q.total} ${Q.total === 1 ? 'voto' : 'votos'} · você votou em <b>${esc(Q.mine.title)}</b></span><button type="button" data-q6go="1">Ver o debate ›</button></div></section>`;
   const bks = (() => { try { return v2QBooks(from); } catch { return []; } })();
-  return `<section class="v2-qd" data-v2qd="1"><div class="k">Pergunta do dia</div><div class="q">${esc(q)}</div>
+  return `<section class="v2-qd" data-v2qd="1"><div class="k">${DEB.nome}</div><div class="q">${esc(q)}</div>
     <div class="qpicks">${bks.map((e) => `<button type="button" data-qb="${esc(e.id)}">${cvh(e.title, e.cover, 'qcv')}<span>${esc(e.title)}</span></button>`).join('')}<button type="button" class="o" data-qb=""><span class="qcv qo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span><span>Outro livro</span></button></div>
-    <div class="qft"><span>${Q && Q.total ? Q.total + (Q.total === 1 ? ' voto até agora' : ' votos até agora') : 'Vote e veja o resultado'}</span><button type="button" data-q6go="1">Mais votados ›</button></div></section>`;
+    <div class="qft"><span>${Q && Q.total ? Q.total + (Q.total === 1 ? ' voto até agora' : ' votos até agora') : 'Vote e veja o resultado'}</span><button type="button" data-q6go="1">Ver o debate ›</button></div></section>`;
 };
 async function v6Vote(book) {
   if (!connected() || !socialProfile) return toast('Entre na sua conta para votar');
@@ -272,8 +271,8 @@ v4Draw = function () {
   let q0 = '', from = 'lidos'; try { [q0, from] = v2QOfDay(); } catch {}
   const bks = (() => { try { return v2QBooks(from); } catch { return []; } })();
   const sh = st.sheet ? `<div class="veil" data-a="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${v4SheetHTML(st.sheet)}</div>` : '';
-  R.innerHTML = `<section class="page v6q"><header class="top"><button class="ib" data-a="v6qx" aria-label="Voltar">${v4ic('back')}</button><h1 style="font-size:20px">Pergunta do dia</h1></header><div class="scr">
-    <div class="card qhead"><div class="eb acc">Pergunta de hoje</div><h3>${esc(Q.question || q0)}</h3><span class="mut">${T.total || 0} ${(T.total || 0) === 1 ? 'voto' : 'votos'} · fecha à meia-noite</span></div>
+  R.innerHTML = `<section class="page v6q"><header class="top"><button class="ib" data-a="v6qx" aria-label="Voltar">${v4ic('back')}</button><h1 style="font-size:20px">${DEB.nome}</h1></header><div class="scr">
+    <div class="card qhead"><div class="eb acc">Pergunta da semana</div><h3>${esc(Q.question || q0)}</h3><span class="mut">${T.total || 0} ${(T.total || 0) === 1 ? 'voto' : 'votos'} · fecha domingo</span></div>
     ${voted ? '' : `<div class="card ph" style="margin-top:10px"><b>Vote para ver o resultado</b><div class="qpk">${bks.map((e) => `<button data-a="v6qv" data-id="${esc(e.id)}">${cvh(e.title, e.cover)}<span>${esc(e.title)}</span></button>`).join('')}<button class="o" data-a="v6qv" data-id=""><span class="cv">${v4ic('busca', 22)}</span><span>Outro livro</span></button></div></div>`}
     <div class="h2">Mais votados</div>
     <div class="card qlist">${!T.items.length ? '<p class="mut" style="margin:0">Ninguém votou ainda. Seja a primeira pessoa.</p>' : voted ? T.items.map((x, i) => v6QdRow(x, T.total, i, Q.mine)).join('') : T.items.slice(0, 3).map((x, i) => `<div class="qr"><span class="n">${i + 1}</span>${cvh(x.title, x.cover, '', 'width:30px;height:45px;font-size:6px;filter:blur(3px)')}<span class="t"><b class="mut">resultado depois do seu voto</b></span></div>`).join('')}</div>
@@ -288,6 +287,6 @@ v4Draw = function () {
     if (a === 'v6qv') { ev.stopPropagation(); const id = b.dataset.id; if (id) { const e = lib().find((x) => String(x.id) === String(id)); if (e) return v6Vote({ title: e.title, author: e.author, cover: e.cover }).then(() => v6QdayOpen()); }
       try { return findBook('Votar em qual livro?', (x) => v6Vote({ title: x.title, author: x.author, cover: x.cover }).then(() => v6QdayOpen())); } catch { return; } }
     if (a === 'v6qall') { ev.stopPropagation(); const st = v4State(); st.view = null; v4Close(); try { v6S().f = 'todos'; } catch {} return goTab('comunidade'); }
-    if (a === 'v6qc') { ev.stopPropagation(); const q = (V6QD && V6QD.question) || ''; const st = v4State(); st.view = null; v4Close(); return openRdComposer({ kind: 'comment', text: `Pergunta do dia: ${q}\n` }); }
+    if (a === 'v6qc') { ev.stopPropagation(); const q = (V6QD && V6QD.question) || ''; const st = v4State(); st.view = null; v4Close(); return openRdComposer({ kind: 'comment', text: `${DEB.nome}: ${q}\n` }); }
     return prev.apply(this, arguments);
   }; }

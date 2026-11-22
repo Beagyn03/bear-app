@@ -4,7 +4,7 @@
 // Próxima conquista, Meta do ano e Na fila (estão na Linha do dia e em A seguir). Sem duplicar Funções do app: item de função
 // desligada fica cinza ("desligado em Funções do app") e o toque leva para lá. Guardado em db.prefs.home2; as escolhas
 // antigas (db.prefs.home.off) migram uma vez: Indicações → Para você, Na fila → A seguir, Pergunta do dia → Destaque.
-var V6H = [['dia', 'Linha do dia', 'Órbita e Meta, logo abaixo do livro'], ['dest', 'Destaque do dia', 'Pergunta do dia, lembretes e Resumo do mês'], ['seguir', 'A seguir', 'o próximo da fila e "Qual leio agora?"'], ['pv', 'Para você', 'indicações de livros e Seus gostos']];
+var V6H = [['dia', 'Linha do dia', 'Órbita e Meta, logo abaixo do livro'], ['dest', 'Destaque do dia', DEB.nome + ', lembretes e Resumo do mês'], ['seguir', 'A seguir', 'o próximo da fila e "Qual leio agora?"'], ['pv', 'Para você', 'indicações de livros e Seus gostos']];
 { const P = () => { db.prefs = db.prefs || {}; if (!db.prefs.home2) { const old = (db.prefs.home && db.prefs.home.off) || [], off = [];
       if (old.includes('recs')) off.push('pv'); if (old.includes('fila')) off.push('seguir'); if (old.includes('qday')) off.push('dest');
       db.prefs.home2 = { order: V6H.map((x) => x[0]), off }; } const h = db.prefs.home2; V6H.forEach(([k]) => { if (!h.order.includes(k)) h.order.push(k); }); return h; };

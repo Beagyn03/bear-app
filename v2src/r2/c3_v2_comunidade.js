@@ -31,6 +31,6 @@ TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.
   b.classList.remove('v2pop'); void b.offsetWidth; b.classList.add('v2pop'); }, true);
 // Desafio da semana mora no próprio cartão do post novo (19/11): antes eram dois cartões seguidos pedindo para postar.
 { let tm = 0; const put = () => { const nw = TR.querySelector('#lista > .cm-new'); if (!nw || nw.dataset.wk) return; const q = v2WkQ(); nw.dataset.wk = '1'; nw.classList.add('v2wk-new');
-    const sp = nw.querySelector('span'); if (sp) sp.innerHTML = `<em>Desafio da semana</em><b>${esc(q)}</b><small>Responda ou escreva o que quiser</small>`;
-    nw.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); openRdComposer({ kind: 'comment', text: `Desafio da semana: ${q}\n` }); }, true); };
+    const sp = nw.querySelector('span'); if (sp) sp.innerHTML = `<em>${DEB.nome}</em><b>${esc(q)}</b><small>Responda ou escreva o que quiser</small>`;
+    nw.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); openRdComposer({ kind: 'comment', text: `${DEB.nome}: ${q}\n` }); }, true); };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 60); }).observe(TR, { childList: true, subtree: true }); setInterval(put, 600); }

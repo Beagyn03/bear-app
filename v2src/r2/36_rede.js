@@ -455,7 +455,7 @@ function openRdComposer(pre = {}) {
         ${bkLine(R.book, 1, R.kind === 'quote' || R.kind === 'rec' || R.paws || R.feelings.length ? 'Escolher o livro' : 'Escolher livro (opcional)')}
         ${R.kind === 'rec' ? `<div class="rdc2-rec"><span>Se você gostou deste, leia:</span>${bkLine(R.book2, 2, 'Escolher o livro indicado')}</div>` : ''}
         ${R.kind === 'quote' ? `<div class="rdc2-q"><textarea id="rdc-q" rows="3" maxlength="600" placeholder="Copie aqui a frase do livro">${esc(R.quote)}</textarea><label>pág. <input type="number" id="rdc-pg" min="1" inputmode="numeric" value="${esc(R.page)}"></label></div>` : ''}
-        ${R.desafio ? `<div class="rdc2-tags rdc-des"><span>${typeof V6DEB !== "undefined" ? V6DEB.nome : "Debate semanal"} · ${esc(R.desafio)}<button type="button" id="rdc-desx" aria-label="Tirar a marca do debate">×</button></span></div>` : ''}
+        ${R.desafio ? `<div class="rdc2-tags rdc-des"><span>${DEB.nome} · ${esc(R.desafio)}<button type="button" id="rdc-desx" aria-label="Tirar a marca do debate">×</button></span></div>` : ''}
         <div class="rdc2-tx"><textarea id="rdc-t" rows="4" maxlength="320" placeholder="${esc(rdPlaceholder(R.kind, R.book))}">${esc(R.text)}</textarea><div class="rdc-cnt" id="rdc-c"></div></div>
         ${fNames.length && !OPEN.fe ? `<div class="rdc2-tags">${fNames.map((n) => `<span>${esc(n)}</span>`).join('')}</div>` : ''}
         ${R.paws && !OPEN.pw ? `<div class="rdc2-tags"><span>★ nota ${R.paws}</span></div>` : ''}
@@ -510,7 +510,7 @@ function openRdComposer(pre = {}) {
     // spoiler = um interruptor (Bia, 21/11): desligado e com livro, confirma antes de publicar
     if (!skipCheck && !AS.on && R.book) return sheet('Seu post não conta nada do enredo?', [['Não tem spoiler, publicar', () => publish(true)], ['Marcar como spoiler', () => { R.sp = true; publish(true); }]]);
     const AS2 = rdAutoSp(R); const spoiler = AS2.on ? AS2.spoiler : null;
-    const desPre = R.desafio ? `Desafio da semana: ${R.desafio}\n` : '';
+    const desPre = R.desafio ? `${DEB.nome}: ${R.desafio}\n` : '';
     if ((desPre + R.text).length > 280) return toast(`Use até ${280 - desPre.length} letras`);
     const body = { kind: R.kind, text: desPre + R.text, visibility: R.vis, feelings: R.feelings, ...(R.book ? { book: R.book } : {}), ...(R.kind === 'rec' ? { book2: R.book2 } : {}),
       ...(R.kind === 'quote' ? { quote: R.quote.slice(0, 600), ...(Number(R.page) > 0 ? { page: Math.round(Number(R.page)) } : {}) } : {}), ...(R.paws ? { paws: R.paws } : {}), ...(spoiler ? { spoiler } : {}), ...(R.image ? { image: R.image } : {}), ...(R.book && readerPctOf(R.book.title) != null ? { readerPct: readerPctOf(R.book.title) } : {}) };

@@ -57,7 +57,7 @@ function v8DiaMsg() {
     if (L.length) { const e = L[0], a = Number(t.slice(0, 4)) - Number(String(e.finishedAt).slice(0, 4)), r = reviewOfLib(e) || {};
       return ['memoria', 'heart', a === 1 ? 'Há 1 ano' : `Há ${a} anos`, `Você terminou ${e.title}`, r.paws ? `deu ★${String(r.paws).replace('.', ',')}` : 'toque para rever o livro', 'Ver o livro', e.id]; } } catch {}
   // 6. Pergunta do dia (ainda sem o seu voto)
-  if (on('qday') && !sk('qday')) { try { const Q = typeof V6QD !== 'undefined' ? V6QD : null; if (Q && Q.question && !Q.mine && Q.total > 0) return ['qday', 'reply', 'Pergunta do dia', `${Q.total} ${Q.total === 1 ? 'pessoa já votou' : 'pessoas já votaram'}`, 'falta o seu voto', 'Votar']; } catch {} }
+  if (on('qday') && !sk('qday')) { try { const Q = typeof V6QD !== 'undefined' ? V6QD : null; if (Q && Q.question && !Q.mine && Q.total > 0) return ['qday', 'reply', DEB.nome, `${Q.total} ${Q.total === 1 ? 'pessoa já votou' : 'pessoas já votaram'}`, 'falta o seu voto', 'Votar']; } catch {} }
   // 7. trecho salvo (um por dia, sempre o mesmo no dia)
   if (!sk('trecho')) try { const Qs = []; for (const e of lib()) for (const q of e.quotes || []) if (q && q.t && String(q.t).length <= 160) Qs.push([e, q]);
     if (Qs.length) { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) | 0; const [e, q] = Qs[Math.abs(h) % Qs.length];

@@ -7,7 +7,7 @@
 var V6SUB = { junto: 'comunidade', qday: 'comunidade' };
 function vFn(k) { try { const m = v2Mods(); if (V6SUB[k] && m[V6SUB[k]] === false) return false; if (k === 'presentes') return v4Mod('presentes'); return m[k] !== false; } catch { return true; } }
 { const add = (after, item) => { const i = V2MODS.findIndex((x) => x[0] === after); if (V2MODS.some((x) => x[0] === item[0])) return; V2MODS.splice(i < 0 ? V2MODS.length : i + 1, 0, item); };
-  add('comunidade', ['qday', 'Pergunta do dia', 'cartão do Hoje e Mais votados']);
+  add('comunidade', ['qday', DEB.nome, 'cartão do Hoje e o ranking da semana']);
   add('comunidade', ['junto', 'Ler junto', 'convites e leitura com amizades']);
   add('qday', ['ecos', 'Ecos', 'frases que leitores deixam nas páginas']);
   add('metas', ['prazos', 'Prazos', 'data para terminar um livro, plano do dia e lembrete']);

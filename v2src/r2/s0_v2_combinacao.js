@@ -187,7 +187,7 @@ function v9Data(d, M) {
   M = M || {}; const E = M.ecos || {};
   D.ecos = { me: Number(E.me) || 0, el: Number(E.them) || 0, livro: E.livro || null };
   D.coinc = [...(M.abandonaram || []).slice(0, 1).map((t) => ['stop', 'As duas abandonaram ' + t]), ...(M.ressaca || []).slice(0, 1).map((t) => ['wave', t + ' deu ressaca nas duas']),
-    ...(M.qday || []).slice(0, 1).map((q) => ['vote', 'Votaram em ' + q.title + ' na Pergunta do dia de ' + String(q.day).slice(8, 10) + '/' + String(q.day).slice(5, 7)])];
+    ...(M.qday || []).slice(0, 1).map((q) => ['vote', 'Votaram em ' + q.title + ' no ' + DEB.nome + ' da semana de ' + String(q.day).slice(8, 10) + '/' + String(q.day).slice(5, 7)])];
   D.since = M.since || null;
   // foco (migração 037): só quando as duas mandaram o resumo do mesmo ano; janela de 2 h a partir da hora mais comum
   const FO = M.focus;

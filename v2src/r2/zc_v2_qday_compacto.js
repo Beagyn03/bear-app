@@ -16,13 +16,13 @@ const v6QdSetOff = (on) => { try { if (on) localStorage.setItem(V6QDX, JSON.stri
     if (v6QdOff()) return '<section class="v6qd-off" data-v2qd="1" style="display:none" aria-hidden="true"></section>';
     if (v6QdOpenDay === v6QdDay()) return html.replace('<section class="v2-qd"', '<section class="v2-qd v6qd-open"').replace(/<\/section>\s*$/, '<button type="button" class="v6qd-rc" data-q6x="close">Recolher</button></section>');
     const mine = (Q.top || []).find((x) => normT(x.title) === normT(Q.mine.title)), pc = mine && Q.total ? Math.round(mine.votes / Q.total * 100) : 0;
-    return `<section class="v2-qd v6qd-mini" data-v2qd="1"><button type="button" class="m" data-q6x="open" aria-label="Pergunta do dia: ver resultado"><span class="k">Pergunta do dia${pc ? ` · ${pc}%` : ''}</span><span class="t">seu voto: <b>${esc(Q.mine.title)}</b></span><em>Resultado ›</em>${pc ? `<span class="bar"><i style="width:${pc}%"></i></span>` : ''}</button><button type="button" class="x" data-q6x="off" aria-label="Dispensar até a próxima pergunta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></section>`;
+    return `<section class="v2-qd v6qd-mini" data-v2qd="1"><button type="button" class="m" data-q6x="open" aria-label="${DEB.nome}: ver resultado"><span class="k">${DEB.nome}${pc ? ` · ${pc}%` : ''}</span><span class="t">seu voto: <b>${esc(Q.mine.title)}</b></span><em>Resultado ›</em>${pc ? `<span class="bar"><i style="width:${pc}%"></i></span>` : ''}</button><button type="button" class="x" data-q6x="off" aria-label="Dispensar até a próxima pergunta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></section>`;
   };
 }
 const v6QdRe = () => { try { v2HojeEnsure(); } catch {} };
 function v6QdDismiss() {
   v6QdSetOff(true); v6QdOpenDay = ''; v6QdRe();
-  try { toast('Pergunta do dia escondida até amanhã', { label: 'Desfazer', fn: () => { v6QdSetOff(false); v6QdRe(); } }); } catch {}
+  try { toast(DEB.nome + ' escondido até a próxima semana', { label: 'Desfazer', fn: () => { v6QdSetOff(false); v6QdRe(); } }); } catch {}
 }
 // votar pelo próprio cartão: abre o resultado nesta visita
 TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('[data-v2qd] [data-qb]'); if (b) v6QdOpenDay = v6QdDay(); }, true);

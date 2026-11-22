@@ -7,7 +7,7 @@
 // sem "Biblioteca", "Amigos" ou o menu antigo. A busca é a lupa do topo.
 TOUR.splice(0, TOUR.length,
   [null, 'Boas-vindas ao Livroverso', 'Um passeio rápido pelo app. Leva menos de um minuto.'],
-  ['#tabbar [data-tab=inicio]', 'Hoje', 'O livro que você está lendo, seu prazo, a órbita, a meta e a Pergunta do dia. Use Atualizar no cartão do livro para marcar a página.'],
+  ['#tabbar [data-tab=inicio]', 'Hoje', 'O livro que você está lendo, seu prazo, a órbita, a meta e o Debate semanal. Use Atualizar no cartão do livro para marcar a página.'],
   ['#tabbar [data-tab=estante]', 'Biblioteca', 'Todos os seus livros em Livros, suas estantes em Estantes e o que você guardou em Trechos. Toque na capa para abrir; segure para o menu.'],
   ['#v5ler', 'Ler', 'Toque no planeta para começar uma sessão de leitura com cronômetro, luz e ecos de quem leu a mesma página.'],
   ['#tabbar [data-tab=jornada]', 'Jornada', 'Suas metas, órbita, estatísticas, resumos do mês e a Retrospectiva, num lugar só.'],

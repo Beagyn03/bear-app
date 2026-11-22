@@ -269,7 +269,7 @@ function lvEyes(root) {
 
 // ---------- textos e detalhes do primeiro acesso ----------
 // tour: explica órbita e eco e não manda usar um cartão que a conta nova ainda não tem (itens 32)
-try { for (const t of TOUR) { if (t[1] === 'Hoje') t[2] = 'Seu dia de leitura: o livro que você está lendo, o prazo, a órbita (os dias seguidos em que você leu), a meta e a Pergunta do dia. Quando começar um livro, marque a página pelo cartão dele.';
+try { for (const t of TOUR) { if (t[1] === 'Hoje') t[2] = 'Seu dia de leitura: o livro que você está lendo, o prazo, a órbita (os dias seguidos em que você leu), a meta e o Debate semanal. Quando começar um livro, marque a página pelo cartão dele.';
   if (t[1] === 'Ler') t[2] = 'Comece uma sessão de leitura com cronômetro e luz. Os ecos são recados de quem leu a mesma página, e só aparecem quando você chega nela.'; } } catch {}
 // "Catálogo B.E.A.R" (nome interno) na lista de resultados vira "Livroverso" (item 14)
 { const fix = (root) => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); for (let n; (n = w.nextNode());) if (n.nodeValue.includes('Catálogo B.E.A.R')) n.nodeValue = n.nodeValue.split('Catálogo B.E.A.R').join('Livroverso'); };

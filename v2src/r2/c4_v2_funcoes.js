@@ -3,7 +3,7 @@
 // Guardado em db.prefs.mods (padrão: tudo ligado).
 const V2MODS = [
   ['metas', 'Metas e prazos', 'meta do ano, prazo para terminar e a semana do prazo'],
-  ['comunidade', 'Comunidade', 'aba Comunidade, amizades, Pergunta do dia e Desafio da semana'],
+  ['comunidade', 'Comunidade', 'aba Comunidade, amizades e o ' + DEB.nome],
   ['trechos', 'Trechos e diário', 'trechos, anotações e o diário da leitura'],
   ['emprest', 'Empréstimos e presentes', 'meu exemplar, emprestei, peguei emprestado e presentes'],
   ['orbita', 'Órbita', 'os dias seguidos de leitura'],

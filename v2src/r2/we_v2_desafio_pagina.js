@@ -23,8 +23,8 @@ const WDES_CSS = `
 const wdesArm = (sr) => { if (sr && !sr.querySelector('style[data-wdes]')) { const st = document.createElement('style'); st.dataset.wdes = 1; st.textContent = WDES_CSS; sr.append(st); } };
 const wdesQ = () => { try { return v2WkQ(); } catch { return ''; } };
 const wdesLeft = () => { const d = new Date().getDay(); const n = d === 0 ? 0 : 7 - d; return n === 0 ? 'termina hoje (domingo)' : n === 1 ? 'termina amanhã (domingo)' : `termina domingo · faltam ${n} dias`; };
-const wdesItems = () => { const q = wdesQ(), pre = ('Desafio da semana: ' + q).toLowerCase(), seen = new Set(), out = [];
-  ['rede', 'amigos'].forEach((sc) => { try { v6Feed(sc).items.forEach((x) => { const k = x.type + x.id; if (seen.has(k)) return; if (String(x.text || '').toLowerCase().startsWith(pre)) { seen.add(k); out.push(x); } }); } catch {} });
+const wdesItems = () => { const q = wdesQ(), qq = q.toLowerCase().trim(), seen = new Set(), out = [];
+  ['rede', 'amigos'].forEach((sc) => { try { v6Feed(sc).items.forEach((x) => { const k = x.type + x.id; if (seen.has(k)) return; const l1 = String(x.text || '').split('\n')[0].toLowerCase().trim(); if (qq && DEB_RE.test(l1) && l1.endsWith(qq)) { seen.add(k); out.push(x); } }); } catch {} });
   try { return rdVisible(out); } catch { return out; } };
 { const _p = v6Paint; v6Paint = function () {
     const r = _p.apply(this, arguments);
@@ -35,8 +35,8 @@ const wdesItems = () => { const q = wdesQ(), pre = ('Desafio da semana: ' + q).t
       if (!F.at && !F.busy) setTimeout(() => { try { v6Load('rede'); } catch {} }, 0);
       // "Carregando…" só na primeira vez: ao recarregar o feed, a página mantinha a lista vazia/respostas trocando com "Carregando…" (tremor, 22/11)
       const posts = list.map((it, i) => v6PostHTML(it, i)).join('');
-      R.innerHTML = `<div class="wdes"><div class="wdes-top"><button data-a="wdesback" aria-label="Voltar">${v4ic('back', 20)}</button><b>Desafio da semana</b></div>
-        <div class="wdes-card"><span class="eb">Tema desta semana</span><h2>${esc(q)}</h2><small>${esc(wdesLeft())}</small><button class="wdes-go btn p" data-a="wdesgo">Participar</button></div>
+      R.innerHTML = `<div class="wdes"><div class="wdes-top"><button data-a="wdesback" aria-label="Voltar">${v4ic('back', 20)}</button><b>${DEB.nome}</b></div>
+        <div class="wdes-card"><span class="eb">Pergunta da semana</span><h2>${esc(q)}</h2><small>${esc(wdesLeft())}</small><button class="wdes-go btn p" data-a="wdesgo">Participar</button></div>
         <div class="wdes-h">Respostas${list.length ? ' · ' + list.length : ''}</div>
         ${posts || (!F.at ? '<div class="wdes-empty">Carregando…</div>' : '<div class="wdes-empty"><b>Ninguém respondeu ainda</b><span>Conte qual livro você escolheria para este tema.</span><button class="btn s" data-a="wdesgo">Responder ao desafio</button></div>')}</div>`;
       R.querySelectorAll('[data-avh]').forEach((n) => { try { const d = avatarOf(n.dataset.avh); if (d) { n.style.backgroundImage = `url("${d}")`; n.textContent = ''; } } catch {} });
