@@ -98,3 +98,11 @@ const EIA_CSS = `.eia{display:block;position:relative;line-height:0}.eia>img{wid
 .grl.ed{pointer-events:auto;outline:1.5px dashed rgba(255,255,255,.55);outline-offset:-2px}.grl .grb{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:4px}.grl .grb button{width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font:700 15px/1 system-ui;cursor:pointer}
 .grlbtn .eia{height:20px!important}`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-eia]')) { const st = document.createElement('style'); st.dataset.eia = 1; st.textContent = EIA_CSS; sr.append(st); } } catch {} }; }
+// enfeite que vai para a frente dos livros não cai em cima de outro da frente: procura o lugar mais livre nas prateleiras à vista
+{ const _da = flDecoAdd; flDecoAdd = function () { const before = new Set(); try { shc().free.rows.forEach((rw) => rw.it.forEach((o) => before.add(o.u))); } catch {} const r = _da.apply(this, arguments);
+  try { const F = shc().free, BW = flBW(); let row0 = -1, o = null; F.rows.forEach((rw, i) => rw.it.forEach((q) => { if (!before.has(q.u)) { o = q; row0 = i; } }));
+    if (o && o.z) { const w = flW(o), cand = [row0, row0 + 1, row0 + 2].filter((i) => i < F.rows.length); let best = null;
+      for (const ri of cand) { const row = F.rows[ri], NW = flNW(row, 0, BW), oth = row.it.filter((q) => q !== o && q.z).map((q) => [q.x, q.x + flW(q)]);
+        for (let x = 0; x <= NW - w; x += 6) { const ov = oth.reduce((a, [l, rr]) => a + Math.max(0, Math.min(rr, x + w) - Math.max(l, x)), 0), cost = ov * 10 + (ri - row0) * 40 + Math.abs(x + w / 2 - NW / 2) * 0.05; if (!best || cost < best.c) best = { c: cost, ri, x }; } }
+      if (best) { if (best.ri !== row0) { F.rows[row0].it = F.rows[row0].it.filter((q) => q !== o); F.rows[best.ri].it.push(o); } o.x = best.x; o.n = 0; shSave(); flRender(); } } } catch (e) { console.warn('enfeite frente', e); }
+  return r; }; }
