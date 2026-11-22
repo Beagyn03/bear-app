@@ -28,7 +28,7 @@ const LVP_CSS = `
 .lvpl-ed .sug{display:flex;flex-wrap:wrap;gap:.35rem}.lvpl-ed .sug button{min-height:36px;padding:0 .7rem;border:1px dashed var(--line);border-radius:99px;background:none;color:var(--ink-2);font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}
 .lvpl-modal{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.5);display:grid;align-items:end}
 .lvpl-modal>div{background:var(--bg,var(--panel));color:var(--ink);border-radius:20px 20px 0 0;padding:1rem max(16px,env(safe-area-inset-right,0px)) calc(1rem + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));max-height:88vh;overflow:auto;max-width:560px;width:100%;margin:0 auto}
-.lvpl-modal h3{margin:.1rem 0 .3rem;font-size:1.15rem}.lvpl-modal .go{width:100%;min-height:48px;border:0;border-radius:14px;background:var(--acc);color:#fff;font:inherit;font-weight:900;margin-top:.6rem;cursor:pointer}
+.lvpl-modal h3{margin:.1rem 0 .3rem;font-size:1.15rem}.lvpl-modal .go{width:100%;min-height:48px;border:0;border-radius:14px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:900;margin-top:.6rem;cursor:pointer}
 .lvpl-modal .cx{width:100%;min-height:44px;border:0;background:none;color:var(--ink-2);font:inherit;font-weight:800;cursor:pointer}
 .bj-poll{margin:.4rem 0 .2rem;min-height:40px;padding:0 .9rem;border:1px solid var(--acc);border-radius:99px;background:none;color:var(--acc);font:inherit;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem}
 @media (prefers-reduced-motion: reduce){.lvpl-o .bar{transition:none}}

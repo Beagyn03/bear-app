@@ -16,7 +16,7 @@
 .in-go button{display:grid;gap:.15rem;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:.7rem;font:inherit;color:var(--ink);min-height:74px}
 .in-go button b{font-size:.88rem}.in-go button small{font-size:.74rem;color:var(--ink-2);font-weight:600;line-height:1.25}
 .in-meta-cta{display:flex;justify-content:space-between;align-items:center;gap:.6rem}.in-meta-cta p{margin:0;font-size:.84rem;color:var(--ink-2);font-weight:600}
-.in-meta-cta button{border:0;background:var(--acc);color:#fff;border-radius:999px;min-height:38px;padding:0 .9rem;font:inherit;font-weight:800;font-size:.82rem;flex:none}
+.in-meta-cta button{border:0;background:var(--acc);color:var(--on-acc,#fff);border-radius:999px;min-height:38px;padding:0 .9rem;font:inherit;font-weight:800;font-size:.82rem;flex:none}
 .in-rd .rd-card{margin:0 0 .55rem;cursor:pointer}
 .in-rd .rd-card .rd-more{display:none}
 .in-rd .rd-body p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
@@ -34,7 +34,7 @@
 .tour .tip .tb{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
 .tour .tip .tb small{font-size:.76rem;color:var(--ink-2);font-weight:800}
 .tour .tip .tb button{border:0;border-radius:999px;min-height:40px;padding:0 1rem;font:inherit;font-weight:800}
-.tour .tip .tb .sk{background:none;color:var(--ink-2)}.tour .tip .tb .nx{background:var(--acc);color:#fff}
+.tour .tip .tb .sk{background:none;color:var(--ink-2)}.tour .tip .tb .nx{background:var(--acc);color:var(--on-acc,#fff)}
 `; TR.append(st); }
 HOME_SECS.push(['comece', 'Comece por aqui'], ['semana', 'Sua semana'], ['rede', 'Na Comunidade'], ['alta', 'Em alta']);
 if (!(db.prefs && db.prefs.home)) db.prefs = { ...(db.prefs || {}), home: { order: ['comece', 'semana', 'meta', 'recs', 'tambem', 'fila', 'rede', 'alta', 'ano', 'conq'], off: [] } };

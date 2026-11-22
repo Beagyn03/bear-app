@@ -32,7 +32,7 @@ function syncAllGoalShelves() { let ch = false; for (const g of db.goals || []) 
 .mt-y p{margin:0;font-size:.82rem;color:var(--ink-2)}
 .mt-btns{display:flex;gap:.4rem;flex-wrap:wrap}
 .mt-btns button{border:1px solid var(--line);background:none;border-radius:999px;min-height:36px;padding:0 .8rem;font:inherit;font-weight:800;font-size:.8rem;color:var(--ink)}
-.mt-btns button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.mt-btns button.pri{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
 .mt-h{font-weight:900;font-size:1rem;margin:.4rem 0 .5rem}
 .gl-it .gl-sh{font-size:.72rem;font-weight:800;color:var(--acc)}
 .nm-sh{display:grid;gap:.45rem;border:1px solid var(--line);border-radius:12px;padding:.65rem;background:var(--panel)}

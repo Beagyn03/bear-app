@@ -8,7 +8,7 @@ const W9CSS = `
 .v4xfull{position:fixed;inset:0;z-index:9600;display:flex;flex-direction:column;gap:.6rem;padding:calc(12px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));background:var(--bg,#111);color:var(--ink)}
 .v4xfull header{display:flex;align-items:center;justify-content:space-between;gap:.6rem}.v4xfull header b{font-size:1.05rem}
 .v4xfull textarea{flex:1;width:100%;box-sizing:border-box;padding:.9rem;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-size:1.05rem;line-height:1.5;resize:none}
-.v4xfull .ok{min-height:44px;padding:0 1.2rem;border:0;border-radius:99px;background:var(--acc);color:#fff;font:inherit;font-weight:900;cursor:pointer}
+.v4xfull .ok{min-height:44px;padding:0 1.2rem;border:0;border-radius:99px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:900;cursor:pointer}
 
 .v4caprow{display:grid;grid-template-columns:auto 84px;align-items:center;gap:4px 10px;margin:10px 0 2px}.v4caprow label{font-weight:800;font-size:.9rem}.v4caprow label small{font-weight:600;opacity:.7}
 .v4caprow input{min-width:0;text-align:center;min-height:40px}.v4caprow > small{grid-column:1/-1;font-size:.78rem}

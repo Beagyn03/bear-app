@@ -10,7 +10,7 @@
 .cv .cva{display:block;flex-basis:100%;width:100%;margin-top:.35em;font-family:inherit;font-style:normal;font-weight:700;font-size:.62em;letter-spacing:.02em;opacity:.92;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .cv.img .cva{visibility:hidden}
 .cv.cv-gen > .cvtt{display:block!important;-webkit-line-clamp:unset!important;max-width:100%;min-width:0;font-style:normal;line-height:1.08;text-align:center;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important;overflow:visible}
-.cv.cv-gen > .cvtt.cl{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:5!important;overflow:hidden;overflow-wrap:break-word!important;hyphens:auto!important;-webkit-hyphens:auto!important}
+.cv.cv-gen > .cvtt.cl{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:5!important;overflow:hidden;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important;-webkit-hyphens:none!important}
 .cv.img > .cvtt,.cv.cv-gen > .cvtt.cl0{visibility:hidden}`;
   const styled = new WeakSet(), watched = new WeakSet();
   const addCss = (root) => { if (styled.has(root)) return; styled.add(root); const st = document.createElement('style'); st.textContent = CSS; root.append(st); };
@@ -128,9 +128,15 @@
     let hi = Math.max(MIN_PX, Math.min(parseFloat(cs.fontSize) || 16, w * 0.24, 26)), px;
     if (ok(hi)) px = hi;
     else { let lo = MIN_PX; if (!ok(lo)) px = null; else { for (let i = 0; i < 7; i++) { const mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid; } px = Math.floor(lo * 4) / 4; } }
-    const cl = px == null; if (cl) px = MIN_PX;
-    // capa minúscula (calendário): nem no mínimo o título cabe sem picar as palavras; fica só a arte
-    const tiny = cl && w < 30;
+    // (QA 22/11) palavra nunca é picada ("Pachink / o"): sem caber no mínimo, tenta um pouco menor; se o título só não cabe na
+    // altura, corta com reticências entre palavras (5 linhas); se nem uma palavra cabe na largura, a capa fica só com a arte
+    const wordsFit = (z) => { n.style.setProperty('font-size', z + 'px', 'important'); return sp.scrollWidth <= sp.clientWidth + 0.5; };
+    let cl = false, tiny = false;
+    if (px == null) { const LOW = 5.5;
+      if (wordsFit(MIN_PX)) { px = MIN_PX; cl = true; }
+      else if (ok(LOW)) px = LOW;
+      else if (wordsFit(LOW)) { px = LOW; cl = true; }
+      else { px = MIN_PX; cl = true; tiny = true; } }
     n.style.setProperty('font-size', px + 'px', 'important'); sp.classList.toggle('cl', cl); sp.classList.toggle('cl0', tiny);
     if (FIT.size > 2000) FIT.clear(); FIT.set(key, { px, cl, tiny });
   }

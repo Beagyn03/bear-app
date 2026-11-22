@@ -17,7 +17,7 @@ const SHX_CSS3 = `
 /* toque para pegar */
 .v4ler .bsh.org [data-bid].pk{outline:3px solid var(--acc)!important;outline-offset:2px;transform:translateY(-8px);box-shadow:0 10px 16px rgba(0,0,0,.3)}
 .v4ler .bsh .ins{flex:none;position:relative;width:0;align-self:stretch;z-index:6}
-.v4ler .bsh .ins button{position:absolute;left:-13px;bottom:var(--ib,26px);width:26px;height:40px;border-radius:10px;border:2px solid #fff;background:var(--acc);color:#fff;font:900 20px/1 system-ui,sans-serif;box-shadow:0 3px 10px rgba(0,0,0,.35);cursor:pointer;padding:0}
+.v4ler .bsh .ins button{position:absolute;left:-13px;bottom:var(--ib,26px);width:26px;height:40px;border-radius:10px;border:2px solid #fff;background:var(--acc);color:var(--on-acc,#fff);font:900 20px/1 system-ui,sans-serif;box-shadow:0 3px 10px rgba(0,0,0,.35);cursor:pointer;padding:0}
 .v4ler .bsh .ins.hi{--ib:84px}
 .v4ler .bsh .ins.wide{width:auto;flex:1;display:flex;align-items:flex-end;justify-content:center}
 .v4ler .bsh .ins.wide button{position:static;width:auto;padding:0 18px;margin-bottom:34px;font-size:14px}
@@ -28,7 +28,7 @@ const SHX_CSS3 = `
 .v4ler .shorg button b{color:var(--acc)}
 .v4ler .shnote{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:9px 12px;border-radius:14px;background:color-mix(in srgb,var(--acc) 12%,var(--card));font-size:13px;font-weight:700}
 .v4ler .shnote span{flex:1}
-.v4ler .shnote button,.v4ler .shpk .pkx,.v4ler .shtr .trh button{min-height:38px;padding:0 14px;border:0;border-radius:10px;background:var(--acc);color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.v4ler .shnote button,.v4ler .shpk .pkx,.v4ler .shtr .trh button{min-height:38px;padding:0 14px;border:0;border-radius:10px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;cursor:pointer}
 .v4ler .shpk,.v4ler .shtr{position:fixed;left:0;right:0;bottom:var(--shx-tab,0px);z-index:9400;max-width:560px;margin:0 auto;box-sizing:border-box;background:var(--card);color:var(--ink);border-radius:20px 20px 0 0;box-shadow:0 -12px 32px rgba(0,0,0,.28);padding:10px max(14px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px));max-height:46%;overflow-y:auto}
 .v4ler .shpk .pkh,.v4ler .shtr .trh{display:flex;align-items:center;gap:10px}
 .v4ler .shpk .pkh b,.v4ler .shtr .trh b{flex:1;font-size:14.5px;line-height:1.2}
@@ -497,7 +497,7 @@ try { TR.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.
 .ys .ys-h{align-items:center!important;gap:8px!important}
 .ys .ys-h>b{font-family:var(--f-disp,Georgia,serif);font-size:1.08rem!important;font-weight:700;letter-spacing:-.01em;line-height:1.15}
 .ys .ys-y{display:inline-flex!important;align-items:center!important;gap:4px!important;flex:none;height:32px}
-.ys .ys-y button{display:inline-grid!important;place-items:center;width:32px!important;height:32px!important;border-radius:99px!important;border:1px solid var(--line)!important;background:var(--card,var(--panel))!important;color:var(--ink)!important;font:800 16px/1 system-ui,sans-serif!important;padding:0 0 2px!important}
+.ys .ys-y button{display:inline-grid!important;place-items:center;width:32px!important;height:32px!important;border-radius:99px!important;border:1px solid var(--line)!important;background:var(--card,var(--panel))!important;color:var(--ink)!important;font:800 16px/1 'Nunito',system-ui,sans-serif!important;padding:0 0 2px!important}
 .ys .ys-y button:disabled{opacity:.35}
 .ys .ys-y b{min-width:3.1em!important;text-align:center;font-size:1rem!important;line-height:32px!important;font-variant-numeric:tabular-nums;font-weight:800}
 .ys .ys-x{width:32px!important;height:32px!important}

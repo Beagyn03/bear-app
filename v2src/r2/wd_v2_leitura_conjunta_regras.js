@@ -15,7 +15,7 @@ const BJ = { info: {}, closed: {}, cur: null, notes: [] };
 .bj-people span.fin{border-color:color-mix(in srgb,var(--acc) 55%,var(--line));color:var(--ink)}
 .bj-sug{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .6rem;margin:.3rem 0 .4rem;font-size:.82rem;font-weight:700;color:var(--ink-2)}
 .lvpl-nx{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem .6rem;font-size:.84rem;font-weight:800}
-.lvpl-nx button{min-height:40px;padding:0 .9rem;border:0;border-radius:99px;background:var(--acc);color:#fff;font:inherit;font-weight:900;cursor:pointer}
+.lvpl-nx button{min-height:40px;padding:0 .9rem;border:0;border-radius:99px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:900;cursor:pointer}
 .lvpl-nx button.sec{background:none;border:1px solid var(--acc);color:var(--acc)}
 .bjnt{display:flex;gap:.7rem;align-items:flex-start;width:100%;text-align:left;padding:.75rem .8rem;margin:0 0 .5rem;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);font:inherit;cursor:pointer}
 .bjnt .ic{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc)}

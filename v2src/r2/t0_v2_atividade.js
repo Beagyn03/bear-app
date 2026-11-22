@@ -13,14 +13,14 @@
 .v8mp small{display:block;font-size:.72rem;color:var(--ink-2);font-weight:700}
 .v8mp .mo{flex:none;border:0;background:none;color:var(--ink-2);font:inherit;font-weight:900;font-size:1rem;width:30px;height:30px;cursor:pointer}
 .v8pa{display:inline-flex;align-items:center;gap:.3rem;font-size:.74rem;font-weight:900;padding:.18rem .55rem;border-radius:99px}
-.v8pa.le{background:color-mix(in srgb,#8b6fd6 18%,transparent);color:#b9a8f0}
+.v8pa.le{background:color-mix(in srgb,#8b6fd6 18%,transparent);color:var(--tx-le,#b9a8f0)}
 .v8pa.av2{background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acc)}.v8pa .st{letter-spacing:1px}.v8pa .st u{text-decoration:none;opacity:.3}
-.v8pa.te{background:color-mix(in srgb,#5fb88a 16%,transparent);color:#5fb88a}
-.v8pa.co{background:color-mix(in srgb,#4fa3c7 16%,transparent);color:#7cc0de}
-.v8pa.in{background:color-mix(in srgb,#d98bc0 18%,transparent);color:#e7a3d0}
-.v8pa.ab{background:color-mix(in srgb,#e2766b 16%,transparent);color:#e2766b}
-.v8pa.pa{background:color-mix(in srgb,#8fa6c9 16%,transparent);color:#a9bddb}
-.v8pa.eco{background:color-mix(in srgb,#ffd68c 14%,transparent);color:#f0c46a}.v8pa .mst2{display:inline-block;width:9px;height:9px;border-radius:50%;background:#ffe2a8;box-shadow:0 0 7px 2px rgba(255,214,140,.6)}
+.v8pa.te{background:color-mix(in srgb,#5fb88a 16%,transparent);color:var(--tx-te,#5fb88a)}
+.v8pa.co{background:color-mix(in srgb,#4fa3c7 16%,transparent);color:var(--tx-co,#7cc0de)}
+.v8pa.in{background:color-mix(in srgb,#d98bc0 18%,transparent);color:var(--tx-in,#e7a3d0)}
+.v8pa.ab{background:color-mix(in srgb,#e2766b 16%,transparent);color:var(--tx-ab,#e2766b)}
+.v8pa.pa{background:color-mix(in srgb,#8fa6c9 16%,transparent);color:var(--tx-pa,#a9bddb)}
+.v8pa.eco{background:color-mix(in srgb,#ffd68c 14%,transparent);color:var(--tx-eco,#f0c46a)}.v8pa .mst2{display:inline-block;width:9px;height:9px;border-radius:50%;background:#ffe2a8;box-shadow:0 0 7px 2px rgba(255,214,140,.6)}
 `; TR.append(st); }
 { const _prev = v3Ativ;
   // ecos só se leem na sessão, na página certa (Bia, 21/11): no modo "Vendo como as amizades veem" não há filtro nem card de eco

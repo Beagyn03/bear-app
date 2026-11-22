@@ -37,7 +37,7 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .gs-h{font-weight:800;font-size:.95rem;margin:.6rem 0 .4rem}
 .gs-chips{display:flex;flex-wrap:wrap;gap:.4rem}
 .gs-ch{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:700;font-size:.86rem;border-radius:99px;min-height:38px;padding:0 .85rem}
-.gs-ch.on{border-color:var(--acc);background:var(--acc);color:#fff}
+.gs-ch.on{border-color:var(--acc);background:var(--acc);color:var(--on-acc,#fff)}
 .gs-bks{display:grid;gap:.4rem}
 .gs-bk{display:grid;grid-template-columns:38px 1fr auto;gap:.6rem;align-items:center;border:1px solid var(--line);border-radius:12px;padding:.4rem .5rem;background:var(--panel)}
 .gs-bk .cv{width:38px;height:56px;border-radius:5px;font-size:.5rem}
@@ -49,7 +49,7 @@ function afterRegister(name, email) { // chamado pelo cadastro, depois do login
 .gs-add{width:100%;height:42px;border-radius:12px;border:1.5px dashed var(--line);background:none;color:var(--ink);font:inherit;font-weight:800}
 .gs-hist{display:grid;gap:.35rem;border:1px solid var(--line);border-radius:14px;padding:.75rem;background:var(--panel);margin-top:.9rem}.gs-hist b{font-size:.92rem}.gs-hist small{font-size:.8rem;color:var(--ink-2)}
 .gs-btns{position:sticky;bottom:0;display:grid;gap:.3rem;padding:.8rem 0 .4rem;background:linear-gradient(transparent,var(--bg) 30%)}
-.gs-ok{height:46px;border-radius:12px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:800;font-size:1rem}
+.gs-ok{height:46px;border-radius:12px;border:0;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;font-size:1rem}
 .gs-ok:disabled{opacity:.5}
 .gs-hi{display:grid;grid-template-columns:84px 1fr;gap:.7rem;align-items:center;margin:.2rem 0 1rem}.gs-hi img{width:84px;height:84px;object-fit:contain;animation:gsHop .6s cubic-bezier(.2,1.4,.4,1) both}
 .gs-bub{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:.7rem .85rem;display:grid;gap:.2rem;font-size:.9rem;color:var(--ink-2);font-weight:600;animation:gsPop .45s .15s ease-out both}.gs-bub b{color:var(--ink);font-size:1.05rem;font-weight:900}

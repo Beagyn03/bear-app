@@ -4,7 +4,7 @@
 // a pele das folhas do protótipo (cantos, alça, títulos em serifa, linhas e botões iguais).
 // Também: "Contar na meta" do Ler de novo (e.rereadNoGoal) passa a valer na meta do ano, e usar uma estante preenche s.touchedAt.
 const V7CSS = `.v4ler .v7l .li{width:100%}.v4ler .v7chk{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;flex:none;color:transparent}
-.v4ler .v7chk.on{background:var(--acc);border-color:var(--acc);color:#fff}.v4ler .v7chk svg{width:14px;height:14px}
+.v4ler .v7chk.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}.v4ler .v7chk svg{width:14px;height:14px}
 .v4ler .v7av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:900;flex:none;background-size:cover;background-position:center}
 .v4ler .v7q{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:14px;border:1.5px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;margin:4px 0 8px}
 .v4ler .v7scr{max-height:46vh;overflow:auto;margin:0 -4px;padding:0 4px}

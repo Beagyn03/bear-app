@@ -32,6 +32,7 @@ const v10All = (sel) => v10Roots().flatMap((r) => [...r.querySelectorAll(sel)]);
   window.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape' || ev.defaultPrevented) return;
     if (v10All('.v10dlg').length) return; // a folha de confirmação cuida do próprio Esc
     try {
+      { const rt = [...TR.children].find((n) => n.classList && n.classList.contains('rt')); if (rt) { rt.remove(); ev.preventDefault(); return; } } // retrospectiva do livro, por cima de tudo
       if (v10All('.pop').length) { closePop(); ev.preventDefault(); return; }
       const veil = v10All('.veil[data-a=close]').pop(); if (veil) { veil.click(); ev.preventDefault(); return; }
       const bs = [...document.body.querySelectorAll(':scope > .sheet')].pop(); if (bs) { bs.remove(); ev.preventDefault(); return; }

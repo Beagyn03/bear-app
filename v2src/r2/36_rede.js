@@ -4,12 +4,12 @@
 { const st = document.createElement('style'); st.textContent = `
 .rd-seg{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:.2rem;margin:.1rem 0 .8rem}
 .rd-seg button{border:0;background:none;border-radius:999px;height:36px;font:inherit;font-weight:800;font-size:.88rem;color:var(--ink-2)}
-.rd-seg button.on{background:var(--acc);color:#fff}
+.rd-seg button.on{background:var(--acc);color:var(--on-acc,#fff)}
 #lista.rd-on > *:not(.rd-seg):not(#rd-host):not(.gtop-sp):not(.cm-new):not(.cm-row){display:none!important}
 #rd-host{display:grid;gap:.7rem}
 .rd-new{display:grid;grid-template-columns:auto 1fr;gap:.6rem;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:.75rem .85rem;color:var(--ink);font:inherit}
 .rd-new b{display:block;font-size:.95rem}.rd-new small{font-size:.8rem;color:var(--ink-2)}
-.rd-new i{width:38px;height:38px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-style:normal;font-size:1.3rem;font-weight:800}
+.rd-new i{width:38px;height:38px;border-radius:50%;background:var(--acc);color:var(--on-acc,#fff);display:grid;place-items:center;font-style:normal;font-size:1.3rem;font-weight:800}
 .rd-opts{display:flex;gap:.4rem;flex-wrap:wrap}
 .rd-opt{border:1px dashed var(--line);background:none;color:var(--ink-2);border-radius:999px;min-height:32px;padding:0 .7rem;font:inherit;font-weight:700;font-size:.76rem}
 .rd-opt.on{border-style:solid;border-color:var(--acc);color:var(--acc);background:var(--panel)}
@@ -52,7 +52,7 @@
 .rd-form{position:sticky;bottom:0;display:grid;gap:.4rem;background:var(--bg);padding:.6rem 0 .3rem;border-top:1px solid var(--line)}
 .rd-form textarea,.rdc textarea,.rdc input[type=number],.rdc input[type=text]{font:inherit;font-size:.95rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:.6rem .7rem;width:100%;min-width:0;resize:vertical}
 .rd-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.8rem;color:var(--ink-2)}
-.rd-send{height:42px;border-radius:12px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:800;padding:0 1.1rem}
+.rd-send{height:42px;border-radius:12px;border:0;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;padding:0 1.1rem}
 .rd-send:disabled{opacity:.5}
 .rdc{display:grid;gap:.75rem;padding-bottom:1rem}
 .rdc-k{display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem}
@@ -68,13 +68,13 @@
 .rdc-chips{display:flex;flex-wrap:wrap;gap:.35rem}
 .rdc-chips button{border:1.5px solid var(--line);background:var(--panel);border-radius:999px;min-height:36px;padding:0 .75rem;font:inherit;font-weight:700;font-size:.8rem;color:var(--ink);display:inline-flex;align-items:center;gap:.25rem}
 .rdc-chips button img{width:18px;height:18px}
-.rdc-chips button.on{border-color:var(--acc);background:var(--acc);color:#fff}
+.rdc-chips button.on{border-color:var(--acc);background:var(--acc);color:var(--on-acc,#fff)}
 .rdc-sp{display:grid;gap:.45rem;border:1px solid var(--line);border-radius:12px;padding:.65rem;background:var(--panel)}
 .rdc-sp label{display:flex;align-items:center;gap:.5rem;font-size:.86rem;font-weight:700}
 .rdc-sp input[type=radio],.rdc-sp input[type=checkbox]{width:18px;height:18px;flex:none}
 .rdc-sp input[type=number]{width:90px;height:38px;padding:0 .5rem}
 .rdc-ph img{display:block;max-width:100%;max-height:220px;border-radius:12px}
-.rdc-go{height:48px;border-radius:12px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:800;font-size:1rem}
+.rdc-go{height:48px;border-radius:12px;border:0;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;font-size:1rem}
 .rdc-go:disabled{opacity:.5}
 .rdm-it{border:1px solid var(--line);border-radius:14px;padding:.6rem;display:grid;gap:.4rem;background:var(--panel)}
 .rdm-it .rd-row button{border:1px solid var(--line);background:none;border-radius:999px;min-height:36px;padding:0 .8rem;font:inherit;font-weight:800}

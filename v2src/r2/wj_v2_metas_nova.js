@@ -19,10 +19,10 @@
 .mtn .medit{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;margin:8px 0 2px}
 .mtn .medit .ib{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-size:20px;font-weight:800;cursor:pointer}
 .mtn .medit b{min-width:72px;text-align:center;font-size:18px;color:var(--ink)}
-.mtn .medit .ok{min-height:40px;padding:0 16px;border:0;border-radius:999px;background:var(--acc);color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.mtn .medit .ok{min-height:40px;padding:0 16px;border:0;border-radius:999px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;cursor:pointer}
 .mtn .mchips{display:flex;justify-content:center;gap:6px;margin:6px 0 0}
 .mtn .mchips button{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-weight:800;cursor:pointer}
-.mtn .mchips button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.mtn .mchips button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
 .mtn .mlink{display:block;margin:6px auto 0;border:0;background:none;color:var(--acc);font:inherit;font-weight:800;min-height:40px;cursor:pointer}
 .mtn .orbs{margin-top:14px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--panel)}
 .mtn .orbs .hd{display:flex;align-items:center;gap:8px;color:var(--ink)}.mtn .orbs .hd svg{color:color-mix(in srgb,var(--acc) 55%,#7e63c9)}

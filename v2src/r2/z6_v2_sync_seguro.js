@@ -10,7 +10,7 @@
     { k: 'conf', re: /^Outro aparelho salvou mudanças/ },
     { k: 'first', re: /^Já existem dados na nuvem/ },
   ];
-  const ans = {}; let asking = null, snoozed = false;
+  const ans = {}; let asking = null, snoozed = false, ownWait = false;
   // cópia de segurança local (30 dias)
   const DB_NAME = 'lv-backup', DAYS = 30;
   const idb = () => new Promise((res, rej) => { const r = indexedDB.open(DB_NAME, 1); r.onupgradeneeded = () => r.result.createObjectStore('b', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
@@ -20,11 +20,14 @@
   const prune = async () => { try { const lim = Date.now() - DAYS * 864e5; const all = await tx('readonly', (s) => s.getAll()); await tx('readwrite', (s) => all.filter((x) => x.at < lim).forEach((x) => s.delete(x.id))); } catch {} };
   setTimeout(prune, 8000);
   window.lvBackups = { list: () => tx('readonly', (s) => s.getAll()).then((a) => a.map(({ id, kind, at }) => ({ id, kind, at: new Date(at).toISOString() }))), restore: (id) => restoreFrom(id) };
-  const restoreFrom = async (id) => {
+  const restoreFrom = async (id, own) => {
     const b = id && await getB(id).catch(() => null); if (!b || !b.data) { toast('Não achei a cópia de segurança'); return false; }
     applyingRemote = true; db = JSON.parse(JSON.stringify(b.data)); save(); applyingRemote = false;
-    localOwnerKnown = true; syncSoon(); try { renderGoals(); } catch {} try { refresh(); } catch {} return true; };
-  const undoToast = (msg, id) => setTimeout(() => { try { toast(msg, id ? { label: 'Desfazer', fn: async () => { if (await restoreFrom(id)) toast('Desfeito'); } } : undefined); } catch {} }, 400);
+    // desfazer "Apagar deste aparelho" volta ao ponto de antes: dados no aparelho, ainda sem dono e sem subir para a conta
+    // (a pergunta volta na próxima sincronização); nos outros casos a versão devolvida passa a valer e sobe
+    if (own) { localOwnerKnown = false; ownWait = true; snoozed = false; try { setSync('Aguardando sua escolha'); } catch {} }
+    else { localOwnerKnown = true; syncSoon(); } try { renderGoals(); } catch {} try { refresh(); } catch {} return true; };
+  const undoToast = (msg, id, own) => setTimeout(() => { try { toast(msg, id ? { label: 'Desfazer', fn: async () => { if (await restoreFrom(id, own)) toast('Desfeito'); } } : undefined); } catch {} }, 400);
   const resync = () => setTimeout(() => { try { pull(); } catch {} }, 0);
   const remoteNow = async () => { try { const r = await apiCall('GET', '/v1/state'); return r.status === 200 && r.data ? r.data.data : null; } catch { return null; } };
 
@@ -55,13 +58,14 @@
       if (b.dataset.v === 'apg' && !b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Toque de novo para apagar'; return; }
       [...d.querySelectorAll('button')].forEach((x) => { x.disabled = true; });
       const v = b.dataset.v; let id = null, msg = '';
+      if (kind === 'own') { ownWait = false; }
       if (kind === 'own') {
         if (v === 'apg') { id = await backup('aparelho', db); ans.own = false; msg = 'Dados apagados deste aparelho'; }
         else { ans.own = true; msg = 'Dados levados para a sua conta'; }
       } else if (v === 'out') { id = await backup('aparelho', db); ans[kind] = kind === 'conf'; msg = kind === 'conf' ? 'Agora com as mudanças do outro aparelho' : 'Agora com os dados da nuvem';
         if (kind === 'first') ans.first = true; }
       else { const r = await remoteNow(); if (r) id = await backup('nuvem', r); ans[kind] = false; msg = 'Mantidos os dados deste aparelho'; }
-      close(); resync(); undoToast(msg, id);
+      close(); resync(); undoToast(msg, id, kind === 'own' && v === 'apg');
     });
     TR.append(d); setTimeout(() => { const f = d.querySelector('.ok'); f && f.focus(); }, 30);
   };
@@ -76,11 +80,19 @@
     if (!K) return prevC.apply(this, arguments);
     if (K.k in ans) { const v = ans[K.k]; delete ans[K.k]; return v; }
     if (asking && !asking.isConnected) { asking = null; snoozed = true; } // a folha foi fechada por fora (sair da tela): vale como "Agora não"
+    if (K.k === 'own') ownWait = true;
     if (!asking && !snoozed) open(K.k, m);
     setTimeout(() => { try { setSync(snoozed ? 'Sem sincronizar' : 'Aguardando sua escolha'); } catch {} }, 0);
     // interrompe a sincronização antes de qualquer mudança; a resposta faz ela rodar de novo
     throw new Error('lv-sync-ask');
   };
+  // enquanto a pergunta "dados sem dono" não tem resposta, nada sobe para a conta: salvar no aparelho continua normal,
+  // mas o envio espera a escolha (antes, qualquer edição subia os dados como se a pessoa tivesse escolhido "Levar")
+  try { const _push = push; push = async function () { if (ownWait && !localOwnerKnown) { try { setSync(snoozed ? 'Sem sincronizar' : 'Aguardando sua escolha'); } catch {} return; }
+    if (!(db && db.goals && db.goals.length) && !(syncMeta && syncMeta.version)) return; // aparelho vazio e nuvem nunca gravada: não há o que enviar (nunca sobe um estado vazio por cima de nada)
+    return _push.apply(this, arguments); }; } catch (e) { console.warn('sync: push', e); }
+  // Esc com o foco fora da folha (ex.: depois de tocar na tela) também vale como "Agora não"
+  window.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape' || !asking || !asking.isConnected) return; ev.preventDefault(); ev.stopImmediatePropagation(); const n = asking.querySelector('.v11no'); if (n) n.click(); }, true);
   // na próxima abertura do app, volta a perguntar
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') snoozed = false; });
 }

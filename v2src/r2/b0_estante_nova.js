@@ -10,7 +10,7 @@
 .esn-q button{border:0;background:none;color:var(--ink-2);font-size:1.1rem;padding:0 .1rem;cursor:pointer}
 .esn-ib{position:relative;width:42px;height:42px;flex:none;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
 .esn-ib svg{width:19px;height:19px}.esn-ib.acc{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff);font-size:1.5rem;font-weight:400;line-height:1}
-.esn-ib u{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:99px;background:var(--acc);color:#fff;font-size:.62rem;font-weight:900;text-decoration:none;display:grid;place-items:center;padding:0 .25rem}
+.esn-ib u{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;border-radius:99px;background:var(--acc);color:var(--on-acc,#fff);font-size:.62rem;font-weight:900;text-decoration:none;display:grid;place-items:center;padding:0 .25rem}
 .esn-tabs{display:flex;border-bottom:1.5px solid var(--line);margin:0 0 .7rem}.esn-tabs button{flex:1;border:0;background:none;font:inherit;font-weight:900;font-size:.9rem;color:var(--ink-2);padding:.55rem 0;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;cursor:pointer}
 .esn-tabs button.on{color:var(--acc);border-bottom-color:var(--acc)}
 .esn-seg{display:flex;gap:.35rem;overflow-x:auto;scrollbar-width:none;margin:0 0 .55rem;padding-bottom:2px}.esn-seg::-webkit-scrollbar{display:none}

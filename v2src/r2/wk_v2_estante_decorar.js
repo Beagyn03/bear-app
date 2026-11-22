@@ -30,7 +30,7 @@ const SHX_CSS2 = `.v4ler .bsh .sp.cvs{background-color:var(--c);background-size:
 .v4ler .shban{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:10px 12px;border-radius:14px;background:var(--ink);color:var(--bg);box-shadow:0 8px 18px rgba(0,0,0,.22)}
 .v4ler .shban b{flex:1;font-size:13.5px;line-height:1.25}
 .v4ler .shban small{display:block;font-weight:600;opacity:.82;font-size:11.5px;margin-top:2px}
-.v4ler .shban>button{min-height:38px;padding:0 15px;border:0;border-radius:10px;background:var(--acc);color:#fff;font:inherit;font-weight:800;cursor:pointer;flex:none}
+.v4ler .shban>button{min-height:38px;padding:0 15px;border:0;border-radius:10px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:800;cursor:pointer;flex:none}
 .v4ler .shban small button{background:none;border:0;padding:0;color:inherit;text-decoration:underline;font:inherit;font-weight:800;cursor:pointer}
 .v4ler .bsh.w-linho{background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.024) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(0,0,0,.018) 0 1px,transparent 1px 4px)}
 .v4ler .bsh.w-ceu{--bk-wall:#111a36;--bk-back:#0b1230;--bk-hint:#bdb4dc;background-image:radial-gradient(1.2px 1.2px at 12% 18%,rgba(255,255,255,.55),transparent 70%),radial-gradient(1px 1px at 38% 62%,rgba(255,255,255,.4),transparent 70%),radial-gradient(1.5px 1.5px at 72% 26%,rgba(255,248,220,.7),transparent 70%),radial-gradient(1px 1px at 88% 78%,rgba(255,255,255,.45),transparent 70%),radial-gradient(1px 1px at 55% 8%,rgba(255,255,255,.4),transparent 70%);background-size:140px 140px}
@@ -56,7 +56,7 @@ const SHX_CSS2 = `.v4ler .bsh .sp.cvs{background-color:var(--c);background-size:
 .v4ler .dkgrid button{flex:0 0 82px;scroll-snap-align:start;display:grid;justify-items:center;align-content:end;gap:4px;padding:8px 2px 7px;border-radius:12px;border:1px solid var(--line);background:var(--soft);font:inherit;font-size:10.5px;font-weight:700;line-height:1.15;color:var(--ink);cursor:pointer;min-height:92px;text-align:center}
 .v4ler .dkgrid .th{height:50px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
 .v4ler .dkgrid .th svg{margin:0!important}
-.v4ler .dkgrid button .n{display:inline-block;min-width:16px;padding:0 4px;border-radius:8px;background:var(--acc);color:#fff;font-size:10px}
+.v4ler .dkgrid button .n{display:inline-block;min-width:16px;padding:0 4px;border-radius:8px;background:var(--acc);color:var(--on-acc,#fff);font-size:10px}
 .v4ler .dsw{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .v4ler .dsw button{display:grid;gap:6px;justify-items:center;padding:7px 4px;border-radius:12px;border:1px solid var(--line);background:none;font:inherit;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer}
 .v4ler .dsw .sw{width:100%;height:44px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}

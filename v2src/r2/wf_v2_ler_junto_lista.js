@@ -21,7 +21,7 @@ const LJ2 = { items: null, last: {}, at: 0, busy: false };
 .lj2-card{display:grid;gap:.6rem;padding:.75rem;border-radius:16px;border:1px solid var(--line);background:var(--panel);text-align:left;color:var(--ink);font:inherit;width:100%;cursor:pointer}
 .lj2-top{display:flex;gap:.75rem;align-items:flex-start}.lj2-top .cv{width:44px;height:66px;flex:none;border-radius:3px 6px 6px 3px}
 .lj2-tx{flex:1;min-width:0;display:grid;gap:.15rem}.lj2-tx b{font-size:.92rem}.lj2-tx small{color:var(--ink-2);font-size:.76rem;font-weight:700}
-.lj2-new{flex:none;align-self:center;min-width:22px;height:22px;padding:0 .45rem;border-radius:99px;background:var(--acc);color:#fff;font-size:.72rem;font-weight:900;display:grid;place-items:center}
+.lj2-new{flex:none;align-self:center;min-width:22px;height:22px;padding:0 .45rem;border-radius:99px;background:var(--acc);color:var(--on-acc,#fff);font-size:.72rem;font-weight:900;display:grid;place-items:center}
 .lj2-ppl{display:grid;gap:.4rem}
 .lj2-p{display:grid;grid-template-columns:22px 70px 1fr 44px;align-items:center;gap:.5rem;font-size:.76rem;font-weight:700}
 .lj2-p .av{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:.66rem;font-weight:900;color:#fff}
@@ -33,7 +33,7 @@ const LJ2 = { items: null, last: {}, at: 0, busy: false };
 .lj2-inv .cv{width:34px;height:51px;flex:none;border-radius:2px 5px 5px 2px}.lj2-inv>span{flex:1 1 calc(100% - 50px);min-width:0;font-size:.84rem}
 .lj2-inv small{display:block;color:var(--ink-2);font-weight:700;font-size:.74rem}
 .lj2-inv button{flex:1;min-height:40px;padding:0 .8rem;border-radius:99px;border:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-weight:800;font-size:.84rem;cursor:pointer}
-.lj2-inv button.p{background:var(--acc);border-color:var(--acc);color:#fff}
+.lj2-inv button.p{background:var(--acc);border-color:var(--acc);color:var(--on-acc,#fff)}
 .lj2-end{opacity:.88}.lj2-tip{margin:.9rem .1rem 0;font-size:.78rem;color:var(--ink-2)}
 .lj2-empty{padding:1rem .8rem;border:1px dashed var(--line);border-radius:14px;color:var(--ink-2);font-size:.86rem;text-align:center}
 .lj2-w{position:relative}.lj2-w .lj2-top{padding-right:36px}
@@ -42,7 +42,7 @@ const LJ2 = { items: null, last: {}, at: 0, busy: false };
 .lj2-warn{color:#b3261e}
 .lj2-add{margin-left:auto;min-height:40px;padding:0 .9rem;border-radius:99px;border:1px solid var(--acc);background:none;color:var(--acc);font:inherit;font-weight:900;font-size:.86rem;cursor:pointer;white-space:nowrap}
 .lj2-empty-on{display:grid;gap:.5rem;justify-items:center;padding:1.3rem 1rem}.lj2-empty-on b{color:var(--ink);font-size:.95rem}
-.lj2-big{width:100%;min-height:52px;border:0;border-radius:14px;background:var(--acc);color:#fff;font:inherit;font-weight:900;font-size:1rem;cursor:pointer;margin-top:.3rem}
+.lj2-big{width:100%;min-height:52px;border:0;border-radius:14px;background:var(--acc);color:var(--on-acc,#fff);font:inherit;font-weight:900;font-size:1rem;cursor:pointer;margin-top:.3rem}
 .lj2-p .av.has-ph,.lj2-p .av.lj2-ph{background-size:cover;background-position:center;color:transparent!important}
 .lj2-loc{border-style:solid;border-color:color-mix(in srgb,#b3261e 40%,var(--line))}
 `; TR.append(st); }

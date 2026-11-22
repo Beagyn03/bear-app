@@ -14,6 +14,7 @@
     if (TR.querySelector('#sx-back') || ((S.tab === 'perfil') && TR.querySelector('#aj-back'))) n++;
     if (TR.querySelector('.drw')) n++;
     if (TR.querySelector('.pop')) n++;
+    if ([...TR.children].find((n) => n.classList && n.classList.contains('rt'))) n++; // retrospectiva do livro (tela cheia por cima de tudo)
     if (v4Full()) n++;
     if (document.querySelector('body > .sheet')) n++;
     if (TR.querySelector('.bd-page:not([hidden]), .gp-page:not([hidden])')) n++;
@@ -21,6 +22,7 @@
   };
   const closeTop = () => {
     if (TR.querySelector('.pop')) return closePop();
+    { const rt = [...TR.children].find((n) => n.classList && n.classList.contains('rt')); if (rt) return rt.remove(); }
     { const f = v4Full(); if (f) return f.click(); } // página cheia de Atualizar/Histórico: a seta dela sabe para onde voltar
     const sh = [...document.querySelectorAll('body > .sheet')].pop(); if (sh) return sh.remove();
     if (TR.querySelector('.bkm')) return bqClose();

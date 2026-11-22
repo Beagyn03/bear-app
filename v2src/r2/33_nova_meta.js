@@ -13,7 +13,7 @@
 .nm-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:.3rem}
 .nm-wk label{font-size:.72rem;text-align:center;gap:.2rem}
 .nm-wk input{font:inherit;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--bg,#fff);color:var(--ink);text-align:center;width:100%;min-width:0;padding:0}
-.nm-ok{height:46px;border-radius:12px;border:0;background:var(--acc);color:#fff;font-weight:800;font-size:1rem}
+.nm-ok{height:46px;border-radius:12px;border:0;background:var(--acc);color:var(--on-acc,#fff);font-weight:800;font-size:1rem}
 .nm-no{height:40px;border:0;background:none;color:var(--ink);font-weight:700;opacity:.75}
 `; TR.append(st); }
 function openGoalNew() {
