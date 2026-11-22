@@ -9,7 +9,11 @@
 // - Ler junto: o campo de cima vira "+ Ler junto"; Convites, Mensagens novas, Em andamento e Encerradas recolhidas (mesma lista e
 //   mesmo "•••" da página Ler junto: ljBodyHTML('com') + ljWire). Ponto na aba com convite, mensagem nova ou convite parado no aparelho.
 //   A aba some quando a função Ler junto está desligada.
-const V6TABS = [['amigos', 'Amizades'], ['todos', 'Todos'], ['desafio', 'Desafio'], ['junto', 'Ler junto'], ['salvos', 'Salvos']];
+// rótulos do Debate semanal (Bia, 22/11: "Desafio" virou "Debate"). A chave interna continua 'desafio' e o texto gravado nos posts
+// continua começando com "Desafio da semana: <tema>" (é assim que as respostas são reconhecidas; mudar isso pede migração/API).
+const V6DEB = { tab: 'Debate', nome: 'Debate semanal', participar: 'Participar do debate…', participou: 'Você já participou desta semana', anteriores: 'Debates anteriores',
+  desta: 'Debate desta semana', responder: 'Responder ao debate', vazio: 'Ninguém respondeu ainda', vazioTx: 'Conte qual livro você escolheria para este tema.', ranking: 'Mais citados até agora', passada: 'Resultado da semana passada' };
+const V6TABS = [['amigos', 'Amizades'], ['todos', 'Todos'], ['desafio', V6DEB.tab], ['junto', 'Ler junto'], ['salvos', 'Salvos']];
 const V6FIL = [['tudo', 'Tudo'], ['aval', 'Avaliações'], ['coment', 'Comentários']];
 const v6JuntoOn = () => { try { return typeof vFn === 'function' ? vFn('junto') !== false : true; } catch { return true; } };
 const v6FilAll = () => { try { return JSON.parse(localStorage.getItem('lv.comFil') || '{}') || {}; } catch { return {}; } };
@@ -79,9 +83,9 @@ function v6PaintTab(R) {
   // dentro da aba o tema já está no cartão de cima: a resposta aparece sem o "Desafio da semana: <tema>" na frente
   const pre = new RegExp('(<p>)Desafio da semana: ' + esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'gi');
   const posts = list.map((it, i) => v6PostHTML(it, i)).join('').replace(pre, '$1');
-  const bar = back ? '' : done ? `<div class="cbar cbar-ok">${v6MeAv()}<span class="cpart ok">${v4ic('ok', 16)}Você já participou desta semana</span></div>`
-    : `<div class="cbar">${v6MeAv()}<button class="cin cpart" type="button" data-a="v6dgo">Participar do desafio…</button></div>`;
-  const pod = rank.length && items.length >= 3 && !back ? `<div class="dh">Mais citados até agora</div><div class="dpod" role="group" aria-label="Filtrar respostas por livro">${[rank[1], rank[0], rank[2]].filter(Boolean).map((x) => { const pos = rank.indexOf(x) + 1, on = bk === x.k;
+  const bar = back ? '' : done ? `<div class="cbar cbar-ok">${v6MeAv()}<span class="cpart ok">${v4ic('ok', 16)}${V6DEB.participou}</span></div>`
+    : `<div class="cbar">${v6MeAv()}<button class="cin cpart" type="button" data-a="v6dgo">${V6DEB.participar}</button></div>`;
+  const pod = rank.length && items.length >= 3 && !back ? `<div class="dh">${V6DEB.ranking}</div><div class="dpod" role="group" aria-label="Filtrar respostas por livro">${[rank[1], rank[0], rank[2]].filter(Boolean).map((x) => { const pos = rank.indexOf(x) + 1, on = bk === x.k;
       return `<button type="button" class="dpod-i p${pos}${on ? ' on' : ''}" data-a="v6dbk" data-k="${esc(x.k)}" aria-pressed="${on}" aria-label="${pos}º ${esc(x.title)}, ${v6Cit(x.n)}; mostrar só essas respostas">${v6Cv(x.title, x.cover)}<span class="dpod-n"><b>${pos}º</b> ${x.n}×</span></button>`; }).join('')}</div>` : '';
   const flt = bk ? `<div class="dflt"><span>Respostas sobre <b>${esc((rank.find((r) => r.k === bk) || {}).title || '')}</b></span><button type="button" class="lnk" data-a="v6dbk" data-k="${esc(bk)}">Limpar</button></div>` : '';
   const res = (r3, b) => { const w = r3[0]; if (!w) return `<div class="card des-c"><div class="eb acc">Resultado · semana até ${v6WkEnd(b)}</div><h3>${esc(v6WkQ(b))}</h3><span class="mut">${items.length ? 'Nenhuma resposta citou um livro' : 'Sem respostas carregadas desta semana'}</span></div>`;
@@ -90,17 +94,17 @@ function v6PaintTab(R) {
       ${r3.length > 1 ? `<div class="des-rest">${r3.slice(1, 3).map((x, k) => `<span>${v6Cv(x.title, x.cover)}<b>${k + 2}º</b> ${esc(x.title)}<small>${v6Cit(x.n)}</small></span>`).join('')}</div>` : ''}</div>`; };
   // semana passada: o resultado aparece em cima na segunda e na terça
   const dw = new Date().getDay(), prevRank = !back && (dw === 1 || dw === 2) ? v6Rank(v6DesItems(v6WkQ(1))) : [];
-  const prevLine = prevRank[0] ? `<button type="button" class="des-prev" data-a="v6dwk" data-k="1">${v6Cv(prevRank[0].title, prevRank[0].cover)}<span><small>Resultado da semana passada</small><b>${esc(prevRank[0].title)} venceu</b></span>${v4ic('chev', 14)}</button>` : '';
-  const card = back ? res(rank, back) : `<div class="card des-c"><div class="eb acc">Desafio da semana</div><h3>${esc(q)}</h3><span class="mut">${esc(v6DesLeft())} · ${items.length} ${items.length === 1 ? 'resposta' : 'respostas'}</span></div>`;
+  const prevLine = prevRank[0] ? `<button type="button" class="des-prev" data-a="v6dwk" data-k="1">${v6Cv(prevRank[0].title, prevRank[0].cover)}<span><small>${V6DEB.passada}</small><b>${esc(prevRank[0].title)} venceu</b></span>${v4ic('chev', 14)}</button>` : '';
+  const card = back ? res(rank, back) : `<div class="card des-c"><div class="eb acc">${V6DEB.nome}</div><h3>${esc(q)}</h3><span class="mut">${esc(v6DesLeft())} · ${items.length} ${items.length === 1 ? 'resposta' : 'respostas'}</span></div>`;
   const H = [1, 2, 3, 4].map((b) => { const its = v6DesItems(v6WkQ(b)), w = v6Rank(its)[0];
     return `<button type="button" class="des-hi" data-a="v6dwk" data-k="${b}">${w ? v6Cv(w.title, w.cover) : `<span class="des-hn">${v4ic('ach', 16)}</span>`}<span class="t"><b>${esc(v6WkQ(b))}</b><small>até ${v6WkEnd(b)} · ${its.length} ${its.length === 1 ? 'resposta' : 'respostas'}${w ? ' · venceu ' + esc(w.title) : ''}</small></span>${v4ic('chev', 14)}</button>`; }).join('');
   const empty = !F.at ? '<div class="msg">Carregando as respostas…</div>'
     : back ? '<div class="msg">Nenhuma resposta desta semana no que está carregado.</div>'
-    : `<div class="msg"><b>Ninguém respondeu ainda</b><br>Conte qual livro você escolheria para este tema.<div class="macts"><button class="btn p" type="button" data-a="v6dgo">Responder ao desafio</button></div></div>`;
-  R.innerHTML = `${bar}${v6TabsHTML()}${back ? `<button type="button" class="des-back" data-a="v6dwk" data-k="0">${v4ic('back', 16)}Desafio desta semana</button>` : prevLine}
+    : `<div class="msg"><b>${V6DEB.vazio}</b><br>${V6DEB.vazioTx}<div class="macts"><button class="btn p" type="button" data-a="v6dgo">${V6DEB.responder}</button></div></div>`;
+  R.innerHTML = `${bar}${v6TabsHTML()}${back ? `<button type="button" class="des-back" data-a="v6dwk" data-k="0">${v4ic('back', 16)}${V6DEB.desta}</button>` : prevLine}
     ${card}${pod}${flt}
     <div class="dh">${back ? 'Respostas' : 'Respostas'}${list.length ? ` <small>${list.length}</small>` : ''}</div>${posts || empty}
-    ${back ? '' : `<details class="des-h"${S6.desHOpen ? ' open' : ''}><summary>Desafios anteriores · 4</summary>${H}</details>`}`;
+    ${back ? '' : `<details class="des-h"${S6.desHOpen ? ' open' : ''}><summary>${V6DEB.anteriores} · 4</summary>${H}</details>`}`;
   R.querySelectorAll('details.des-h').forEach((d) => d.addEventListener('toggle', () => { S6.desHOpen = d.open; }));
   return v6Fin(R);
 }

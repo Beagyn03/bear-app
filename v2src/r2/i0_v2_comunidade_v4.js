@@ -89,7 +89,7 @@ function v6Act(it) {
     return `<span class="pact av2">${ic('quote')}Avaliou${p ? ` <i class="st">${'★'.repeat(Math.round(p))}<u>${'★'.repeat(5 - Math.round(p))}</u></i>` : ''}</span>`;
   }
   const t = String(it.text || '');
-  if (/^Desafio da semana:/i.test(t)) return `<span class="pact de">${ic('ach')}Respondeu ao desafio</span>`;
+  if (/^Desafio da semana:/i.test(t)) return `<span class="pact de">${ic('ach')}Respondeu ao debate</span>`;
   if (/^Pergunta do dia:/i.test(t)) return `<span class="pact de">${ic('quote')}Pergunta do dia</span>`;
   if (it.kind === 'rec') return `<span class="pact in">${ic('heart')}Indicou</span>`;
   if (it.kind === 'question') return `<span class="pact qu">${ic('reply')}Perguntou</span>`;

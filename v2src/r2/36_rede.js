@@ -455,7 +455,7 @@ function openRdComposer(pre = {}) {
         ${bkLine(R.book, 1, R.kind === 'quote' || R.kind === 'rec' || R.paws || R.feelings.length ? 'Escolher o livro' : 'Escolher livro (opcional)')}
         ${R.kind === 'rec' ? `<div class="rdc2-rec"><span>Se você gostou deste, leia:</span>${bkLine(R.book2, 2, 'Escolher o livro indicado')}</div>` : ''}
         ${R.kind === 'quote' ? `<div class="rdc2-q"><textarea id="rdc-q" rows="3" maxlength="600" placeholder="Copie aqui a frase do livro">${esc(R.quote)}</textarea><label>pág. <input type="number" id="rdc-pg" min="1" inputmode="numeric" value="${esc(R.page)}"></label></div>` : ''}
-        ${R.desafio ? `<div class="rdc2-tags rdc-des"><span>Desafio da semana · ${esc(R.desafio)}<button type="button" id="rdc-desx" aria-label="Tirar a marca do desafio">×</button></span></div>` : ''}
+        ${R.desafio ? `<div class="rdc2-tags rdc-des"><span>${typeof V6DEB !== "undefined" ? V6DEB.nome : "Debate semanal"} · ${esc(R.desafio)}<button type="button" id="rdc-desx" aria-label="Tirar a marca do debate">×</button></span></div>` : ''}
         <div class="rdc2-tx"><textarea id="rdc-t" rows="4" maxlength="320" placeholder="${esc(rdPlaceholder(R.kind, R.book))}">${esc(R.text)}</textarea><div class="rdc-cnt" id="rdc-c"></div></div>
         ${fNames.length && !OPEN.fe ? `<div class="rdc2-tags">${fNames.map((n) => `<span>${esc(n)}</span>`).join('')}</div>` : ''}
         ${R.paws && !OPEN.pw ? `<div class="rdc2-tags"><span>★ nota ${R.paws}</span></div>` : ''}
