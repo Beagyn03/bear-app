@@ -30467,12 +30467,13 @@ function flDock() { const C0 = shc(), tr = Array.isArray(C0.tray) && C0.tray.len
   </div>${pill}`; }
 { const _b = shOrgBanner; shOrgBanner = function () { return flActive() ? '' : _b.apply(this, arguments); }; }
 { const _pn = shOrgPanel; shOrgPanel = function () { return flActive() ? flDock() : _pn.apply(this, arguments); }; }
-function flPosPanel() { const sr = shBibRoot(); if (!sr) return; sr.querySelectorAll('.flpos').forEach((e) => e.remove()); if (!FLX.pos || SHX_MODE !== 'org' || !flActive()) return; const f = flFind(FLX.pos); if (!f) { FLX.pos = null; return; }
-  const o = f.o, id = o.t === 'b' ? o.id : o.t === 'p' ? o.ids[0] : null; if (!id) { FLX.pos = null; return; } const b = shById(id), P = shc().pos || {}; if (!b) return;
+function flPosPanel() { const sr = shBibRoot(); if (!sr) return; sr.querySelectorAll('.flpos').forEach((e) => e.remove()); if (!FLX.pos || (SHX_MODE !== 'org' && SHX_MODE !== 'deco') || !flActive()) return; const f = flFind(FLX.pos); if (!f) { FLX.pos = null; return; }
+  const o = f.o, id = o.t === 'b' ? o.id : o.t === 'p' ? o.ids[0] : null; if (!id && o.t !== 'd') { FLX.pos = null; return; } const b = id ? shById(id) : { t: SH_DN[o.k] || 'Enfeite' }, P = shc().pos || {}; if (!b) return;
   const cur = o.t === 'p' ? 'dei' : P[id] === 'face' ? 'fre' : P[id] === 'lean' ? 'inc' : 'pe', el = sr.querySelector(`.bsh.flx .fli[data-u="${o.u}"]`), R = sr.querySelector('.v5est'); if (!el || !R) return;
   el.scrollIntoView({ block: 'nearest' }); const E = el.getBoundingClientRect(), p = document.createElement('div'); p.className = 'flpos'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Como o livro fica');
   const G = FLX.posG && FLX.posG.length > 1 ? FLX.posG.length : 0;
-  p.innerHTML = `<div class="fph"><b>${G ? G + ' livros juntos' : esc(b.t)}</b><button type="button" class="ok" data-flp="ok">Pronto</button></div><div class="fpc" role="radiogroup" aria-label="Posição">${[['pe', 'Em pé'], ['dei', 'Deitado'], ['fre', 'De frente'], ['inc', 'Inclinado']].map(([k, l]) => `<button type="button" role="radio" aria-checked="${cur === k}" class="${cur === k ? 'on' : ''}" data-flp="${k}">${l}</button>`).join('')}</div>${G ? '' : '<button type="button" class="fplb" data-flp="lomb">Lombada e edição ›</button>'}`;
+  p.innerHTML = o.t === 'd' ? `<div class="fph"><b>${esc(b.t)}</b><button type="button" class="ok" data-flp="ok">Pronto</button></div><div class="fpc">${[[o.z ? 'dtras' : 'dfrente', o.z ? 'Levar para trás' : 'Trazer para frente'], ['mv', 'Mover'], [o.k === 'leitor' ? 'dvisor' : 'dtroca', o.k === 'leitor' ? 'Trocar livro do visor' : 'Trocar'], ['drem', 'Remover']].map(([k, l]) => `<button type="button" data-flp="${k}">${l}</button>`).join('')}</div>`
+    : `<div class="fph"><b>${G ? G + ' livros juntos' : esc(b.t)}</b><button type="button" class="ok" data-flp="ok">Pronto</button></div><div class="fpc" role="radiogroup" aria-label="Posição">${[['pe', 'Em pé'], ['dei', 'Deitado'], ['fre', 'De frente'], ['inc', 'Inclinado']].map(([k, l]) => `<button type="button" role="radio" aria-checked="${cur === k}" class="${cur === k ? 'on' : ''}" data-flp="${k}">${l}</button>`).join('')}</div><div class="fpc fpc2"><button type="button" data-flp="mv">Mover</button>${G ? '<button type="button" data-flp="tirar">Tirar da estante</button>' : '<button type="button" data-flp="more">•••</button>'}</div>`;
   R.appendChild(p); const ph = p.offsetHeight, pw = p.offsetWidth, cSide = flColSide(), W = innerWidth - (cSide === 'R' ? 60 : 0), L0 = cSide === 'L' ? 68 : 8; let top = E.top - ph - 14, below = false; if (top < 64) { top = Math.min(E.bottom + 14, innerHeight - ph - 8); below = true; }
   const left = Math.max(L0, Math.min(W - pw - 8, E.left + E.width / 2 - pw / 2)); p.style.top = top + 'px'; p.style.left = left + 'px'; p.style.setProperty('--ax', Math.max(16, Math.min(pw - 16, E.left + E.width / 2 - left)) + 'px'); p.classList.toggle('below', below); }
 
@@ -30504,8 +30505,16 @@ function flTapPlace(r, n, x) { const S0 = FLX.sel;
   const P = FLX.pk; if (!P) return; if (P.pb) { const bk0 = shBk(), it = flExtract(flKeyOf(P.u, P.pb)); if (!it) return; const mv1 = { items: [it] }, res = flPlace(r, n, x, mv1); if (!res) { shRestore(bk0); return toast('Não cabe aqui. Escolha outro lugar.'); } res.bk = bk0; return flAfterPlace(res, mv1, r); }
   let mv; if (P.from === 'tray') mv = { id: P.id }; else { const f = flFind(P.u); if (!f) return; mv = { items: [f.o] }; }
   const res = flPlace(r, n, x, mv); if (!res) return toast('Não cabe aqui. Escolha outro lugar.'); flAfterPlace(res, mv, r); }
-function flPosAct(k) { const f = flFind(FLX.pos); if (!f) return; const o = f.o, C0 = shc(); C0.pos = C0.pos || {};
+function flPosAct(k, el) { const f = flFind(FLX.pos); if (!f) return; const o = f.o, C0 = shc(); C0.pos = C0.pos || {};
   if (k === 'ok') { FLX.pos = null; FLX.posG = null; return flRender(); }
+  if (k === 'mv') { const G0 = FLX.posG && FLX.posG.length > 1 ? FLX.posG.slice() : null; FLX.pos = null; FLX.posG = null; if (G0) FLX.sel = { src: 'shelf', ids: G0 }; else FLX.pk = { from: 'shelf', u: o.u, id: o.t === 'b' ? o.id : o.t === 'p' ? o.ids[0] : '' }; toast('Toque onde vai ficar, ou arraste'); return flRender(); }
+  if (k === 'tirar') { const bk = shBk(), us = new Set(FLX.posG && FLX.posG.length ? FLX.posG : [o.u]), ids = []; C0.free.rows.forEach((rw) => { rw.it = rw.it.filter((x) => { if (!us.has(x.u)) return true; if (x.t === 'b') ids.push(x.id); if (x.t === 'p') ids.push(...x.ids); return x.t === 'd' ? true : false; }); }); C0.tray = (C0.tray || []).concat(ids); FLX.pos = null; FLX.posG = null; shSave(); toast(ids.length + (ids.length > 1 ? ' livros foram' : ' livro foi') + ' para a bandeja', shUndo(bk)); return flRender(); }
+  if (k === 'more') { const id0 = o.t === 'b' ? o.id : o.ids[0]; const at = el || flQ('.flpos'); FL_POPAT = at; return shX(shTitle(id0), [['Lombada e edição', () => flPosAct('lomb')], ['Tirar da estante', () => flPosAct('tirar')], ['Ver livro', () => { FLX.pos = null; flRender(); try { const e = v5Book(id0); if (e) shOpen('v5book', { e }); } catch {} }]]); }
+  if (o.t === 'd') { const bk = shBk(), u = o.u; if (k === 'dfrente') { o.z = 1; C0.manual = 1; shSave(); toast('Enfeite na frente dos livros', shUndo(bk)); return flRender(); }
+    if (k === 'dtras') { delete o.z; const row = C0.free.rows[f.r]; row.it = row.it.filter((x) => x.u !== u); const res = flPlace(f.r, o.n || 0, o.x || 0, { items: [o] }); if (!res) { shRestore(bk); return; } FLX.pos = u; toast('Enfeite entre os livros', shUndo(bk)); return flRender(); }
+    if (k === 'dvisor') { const cur = shLeitorBook({ k: o.k, ...(o.o || {}) }); return shPickBook('Escolher livro do visor', cur && cur.id, (id) => { o.o = { ...(o.o || {}), bk: id }; shSave(); flRender(); toast('“' + shTitle(id).slice(0, 40) + '” no visor'); }); }
+    if (k === 'dtroca') { FLX.swap = u; FLX.pos = null; SHX_DKT = 'enf'; if (typeof FLX.car !== 'undefined') FLX.car = 'enf'; toast('Escolha o novo enfeite'); if (SHX_MODE !== 'deco') { const b = flQ('.v5est > .flcol [data-a=shmode][data-v=deco]'); if (b) { b.click(); return; } } return flRender(); }
+    if (k === 'drem') { C0.free.rows[f.r].it = C0.free.rows[f.r].it.filter((x) => x.u !== u); FLX.pos = null; shSave(); toast('Enfeite tirado', shUndo(bk)); return flRender(); } return; }
   if (FLX.posG && FLX.posG.length > 1) return flPosGroup(k);
   const id = o.t === 'p' ? o.ids[0] : o.id;
   if (k === 'lomb') { FLX.pos = null; flRender(); const e = v5Book(id); return e && shOpen('shxlb', { e }); }
@@ -30516,8 +30525,7 @@ function flPosAct(k) { const f = flFind(FLX.pos); if (!f) return; const o = f.o,
   if (k === 'inc') C0.pos[id] = 'lean';
   if (k === 'fre') { row.it.forEach((x) => { if (x !== o && x.t === 'b' && C0.pos[x.id] === 'face') { delete C0.pos[x.id]; swp = shTitle(x.id); } }); C0.pos[id] = 'face'; }
   const its = row.it.filter((x) => (x.n || 0) === (o.n || 0) && !x.z).sort((a, z) => a.x - z.x).map((x) => ({ o: x, x: x.x, w: flW(x) }));
-  if (!flFit(its, flNW(row, o.n || 0, flBW()))) { shRestore(bk); requestAnimationFrame(flPosPanel); return toast('Assim não cabe nesta prateleira'); }
-  its.forEach((q) => { q.o.x = Math.round(q.x); }); shSave();
+  if (!flFit(its, flNW(row, o.n || 0, flBW()))) { let e2 = 0; its.forEach((q) => { q.x = Math.max(q.x, e2); e2 = q.x + q.w; }); its.forEach((q) => { q.o.x = Math.round(q.x); }); flNormalize(C0.free); } else its.forEach((q) => { q.o.x = Math.round(q.x); }); shSave();
   toast(({ pe: 'Em pé', dei: 'Deitado', fre: 'De frente', inc: 'Inclinado' })[k] + (swp ? ' · ' + swp.slice(0, 24) + ' ficou em pé' : ''), shUndo(bk)); flRender(); }
 // posição para vários de uma vez (depois de pôr uma seleção): em pé, deitados (pilhas de até 5), inclinados
 function flPosGroup(k) { const C0 = shc(), F = C0.free, bk = shBk(); C0.pos = C0.pos || {}; if (k === 'fre') return toast('De frente vale para um livro por vez');
@@ -30712,8 +30720,8 @@ function flNicheAt(T, x) { const n = T.closest('.bsh.flx .nich'); if (n) return 
 window.addEventListener('click', (ev) => { if (!flActive()) return; const md = SHX_MODE, T = flTgt(ev); if (!T || !T.closest) return; if (!T.closest('.v5est') || T.closest('.shx-sx,.shbp,.flarr')) return;
   const st = () => { ev.stopImmediatePropagation(); ev.preventDefault(); };
   if (FLX.swallow) { FLX.swallow = 0; if (T.closest('.bsh.flx, .fldock, .flpos, .flcol')) return st(); }
-  const pp = T.closest('.flpos'); if (pp) { st(); const b = T.closest('[data-flp]'); if (b) flPosAct(b.dataset.flp); return; }
-  if (FLX.pos) { FLX.pos = null; flQA('.flpos').forEach((e) => e.remove()); if (!T.closest('.bsh.flx .fli, .fldock [data-fltr], .flcol, .bsh.flx .nich')) { st(); return flRender(); } }
+  const pp = T.closest('.flpos'); if (pp) { st(); const b = T.closest('[data-flp]'); if (b) flPosAct(b.dataset.flp, b); return; }
+  if (FLX.pos && !T.closest('.bsh.flx .fli, .flcol, .flpop')) { FLX.pos = null; flQA('.flpos').forEach((e) => e.remove()); if (!T.closest('.fldock [data-fltr], .bsh.flx .nich')) { st(); return flRender(); } }
   if (FLX.fan && !T.closest('.bsh.flx .fli[data-u="' + FLX.fan + '"]')) { FLX.fan = null; if (!T.closest('.bsh.flx .fli, [data-fl], .fldock, .flcol, .flt')) { st(); return flRender(); } }
   const a = T.closest('[data-fl]'); if (a) { st(); return flAct(a.dataset.fl, a); }
   if (md === 'org') {
@@ -30733,13 +30741,12 @@ window.addEventListener('click', (ev) => { if (!flActive()) return; const md = S
       if ((FLX.sel || multi) && f.o.t !== 'd') { if (!FLX.sel || FLX.sel.src !== 'shelf') FLX.sel = { src: 'shelf', ids: FLX.pk && FLX.pk.u && FLX.pk.u !== u ? [FLX.pk.u] : [] }; FLX.pk = null; const L = FLX.sel.ids, i = L.indexOf(u); if (i >= 0) L.splice(i, 1); else L.push(u); try { navigator.vibrate && navigator.vibrate(6); } catch {} return flRender(); }
       if (FLX.pk && FLX.pk.u === u) { FLX.pk = null; return flRender(); }
       if (FLX.pk) return flTapPlace(f.r, f.o.n || 0, f.o.x - flPkW());
-      FLX.pk = { from: 'shelf', u, id: f.o.t === 'b' ? f.o.id : f.o.t === 'p' ? f.o.ids[0] : '' };
-      try { navigator.vibrate && navigator.vibrate(8); } catch {} return flRender(); }
+      FLX.pos = FLX.pos === u ? null : u; FLX.posG = null; try { navigator.vibrate && navigator.vibrate(8); } catch {} return flRender(); }
     const ni = flNicheAt(T, ev.clientX); if (ni && (FLX.pk || (FLX.sel && FLX.sel.ids.length))) { st(); const R = ni.getBoundingClientRect(); return flTapPlace(+ni.dataset.r, +ni.dataset.n, ev.clientX - R.left - flPkW() / 2); } }
   if (md === 'deco') {
     const add = T.closest('[data-a="dkadd"]'); if (add) { st(); return flDecoAdd(add.dataset.k); }
     if (SHX_LBP && T.closest('.bsh [data-bid]')) return;
-    const dk = T.closest('.bsh.flx .fli.fl-d'); if (dk) { st(); return flDecoSheet(dk.dataset.u); }
+    const dk = T.closest('.bsh.flx .fli.fl-d'); if (dk) { st(); FLX.pos = FLX.pos === dk.dataset.u ? null : dk.dataset.u; return flRender(); }
     if (T.closest('.bsh.flx .plq, .bsh.flx .bpl')) return;
     const ni = flNicheAt(T, ev.clientX); if (ni && !T.closest('[data-bid]')) { st(); FLX.ns = ni.dataset.r + ':' + ni.dataset.n; SHX_DKT = 'est'; FLX.dkx = false; return flRender(); } } }, true);
 
