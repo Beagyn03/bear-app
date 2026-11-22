@@ -99,7 +99,7 @@
       else if (pg) pg.remove();
       const lido = /^lido\b/i.test(s.trim()) || (!s.trim() && b.querySelector('.cv.rt'));
       let ok = b.querySelector('.v2-ok');
-      if (lido && !b.querySelector('.mk-bear')) { if (!ok) { ok = document.createElement('span'); ok.className = 'v2-ok'; ok.textContent = '✓'; ok.setAttribute('aria-hidden', 'true'); b.append(ok); } }
+      if (lido && !b.querySelector('.mk-bear, .cv[data-rt]')) { if (!ok) { ok = document.createElement('span'); ok.className = 'v2-ok'; ok.textContent = '✓'; ok.setAttribute('aria-hidden', 'true'); b.append(ok); } }
       else if (ok) ok.remove();
     });
   };

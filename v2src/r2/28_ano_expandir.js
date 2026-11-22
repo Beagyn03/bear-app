@@ -40,9 +40,8 @@
       const groups = []; for (let m = 1; m <= 12; m++) { const g = list.filter((x) => !x.ap && Number(String(x.d).slice(5, 7)) === m); if (g.length) groups.push([YS_MESES[m - 1], g]); }
       const sem = list.filter((x) => x.ap || !String(x.d).slice(5, 7)); if (sem.length) groups.push(['Sem mês', sem]);
       const pages = list.reduce((s, x) => s + (x.pg || 0), 0), yi = years.indexOf(y);
-      const card = (x, i) => { let h = cvh(x.t, x.c, 'yx-cv'); const t = tier(x.p); if (t && !/\bcv rt\b/.test(h)) h = h.replace('<span class="cv ', `<span class="cv rt rt-${t} `).replace(/<\/span>$/, (t === '5' ? '<span class="rt-sp a">✦</span><span class="rt-sp b">✦</span><span class="rt-sp c">✦</span>' : '') + '</span>');
-        const p = Number(x.p) || 0, mk = p ? `<span class="ys-mk yx-mk" style="--nimg:url(img/nota_${p >= 5 ? "5" : p >= 4 ? "ouro" : p >= 3 ? "prata" : "bronze"}.webp)"><b>${String(p).replace(".", ",")}</b></span>` : "";
-        return `<button type="button" class="yx-b" data-i="${i}" title="${esc(x.t)}">${mk}${h}<small>${esc(x.t)}</small></button>`; };
+      const card = (x, i) => { const h = cvh(x.t, x.c, 'yx-cv'); // sem contorno nem marcador por nota (Bia, 22/11)
+        return `<button type="button" class="yx-b" data-i="${i}" title="${esc(x.t)}">${h}<small>${esc(x.t)}</small></button>`; };
       let k = 0; const flat = [];
       v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>Leituras por mês</b><span></span></div>
         <div class="yx-yr"><button type="button" data-yy="${years[yi + 1] || ''}" ${years[yi + 1] ? '' : 'disabled'} aria-label="Ano anterior">‹</button><b>${y}</b><button type="button" data-yy="${years[yi - 1] || ''}" ${years[yi - 1] ? '' : 'disabled'} aria-label="Ano seguinte">›</button></div>
