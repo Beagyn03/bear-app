@@ -84,3 +84,66 @@ const SHX_CSSFLC = `
 try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-shxflc]')) { const st = document.createElement('style'); st.dataset.shxflc = 1; st.textContent = SHX_CSSFLC; sr.append(st); } }); } catch {}
 window.addEventListener('pointerdown', () => { try { if (!FLX.car) return; const b = flQ('.dkpan.flcar .dbody'); if (b) FLC_SCR[FLX.car] = b.scrollLeft; } catch {} }, true);
 { const _sd = shDraw; shDraw = function () { const r = _sd.apply(this, arguments); try { const k = FLX.car, v = k && FLC_SCR[k]; if (v) { const put = () => { const b = flQ('.dkpan.flcar .dbody'); if (b && Math.abs(b.scrollLeft - v) > 2) b.scrollLeft = v; }; put(); requestAnimationFrame(put); setTimeout(put, 120); } } catch {} return r; }; }
+
+// ---------- Organizar: "Arrumar por" e "•••" saem da coluna (carrossel/popover), nada embaixo (Bia, 22/11) ----------
+// "•••" da coluna (Organizar e Decorar): as mesmas ações, num popover ao lado da coluna em vez da folha de baixo
+let FL_POPAT = null;
+function flPop(title, items, at) { const R = flQ('.v5est'); if (!R) return; R.querySelectorAll('.flpop').forEach((e) => e.remove()); const p = document.createElement('div'); p.className = 'flpop ' + (flColSide() === 'L' ? 'cL' : 'cR'); p.setAttribute('role', 'menu'); p.setAttribute('aria-label', title || 'Opções');
+  p.innerHTML = `<b>${esc(title || '')}</b>` + items.filter(Boolean).map(([l], i) => `<button type="button" role="menuitem" data-i="${i}">${esc(l)}</button>`).join('');
+  const L = items.filter(Boolean); R.appendChild(p); try { const q = at.getBoundingClientRect(); p.style.top = Math.max(70, Math.min(innerHeight - p.offsetHeight - 90, q.top + q.height / 2 - p.offsetHeight / 2)) + 'px'; } catch {}
+  const off = (ev) => { const ph = ev.composedPath ? ev.composedPath() : []; if (ph.includes(p)) return; p.remove(); document.removeEventListener('pointerdown', off, true); };
+  setTimeout(() => document.addEventListener('pointerdown', off, true), 0);
+  p.addEventListener('click', (ev) => { ev.stopPropagation(); const b = ev.target.closest('[data-i]'); if (!b) return; p.remove(); document.removeEventListener('pointerdown', off, true); const it = L[+b.dataset.i]; try { it[1](); } catch (err) { console.warn('estante: menu', err); } });
+  p.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); p.remove(); } }); const f = p.querySelector('button'); if (f) f.focus(); }
+{ const _x = shX; shX = function (title, items) { if (FL_POPAT && flActive() && (SHX_MODE === 'org' || SHX_MODE === 'deco')) { const at = FL_POPAT; FL_POPAT = null; return flPop(title, items, at); } return _x.apply(this, arguments); }; }
+{ const _a = flAct; flAct = function (k, el) { if ((k === 'more' || k === 'dkmore') && el) { FL_POPAT = el; try { return _a.apply(this, arguments); } finally { FL_POPAT = null; } } return _a.apply(this, arguments); }; }
+// o "Arrumar por" vira carrossel ao lado da coluna: Plaquinhas (chip) · critérios · ✓ Arrumar · ×
+{ const _ar = flArrSheet; flArrSheet = function () { const r = _ar.apply(this, arguments); try { const w = FL_ARRW; if (w) { w.classList.add('flcar2', flColSide() === 'L' ? 'cL' : 'cR'); const fix = () => { const go = w.querySelector('.argo'); if (go && !/✓/.test(go.textContent)) go.textContent = '✓ Arrumar'; };
+      fix(); new MutationObserver(fix).observe(w, { childList: true, subtree: true }); } } catch {} return r; }; }
+const SHX_CSSFLA = `
+.v4ler .shx-sx.flarr.flcar2{position:fixed!important;left:auto;right:auto;top:auto!important;bottom:calc(84px + env(safe-area-inset-bottom,0px))!important;width:calc(100vw - 92px)!important;max-width:520px;margin:0!important;padding:8px!important;border-radius:18px!important;box-shadow:0 10px 28px rgba(0,0,0,.42)!important;transform:none!important;z-index:9400;max-height:none!important}
+.v4ler .shx-sx.flarr.flcar2.cR{right:calc(64px + env(safe-area-inset-right,0px))!important}.v4ler .shx-sx.flarr.flcar2.cL{left:calc(64px + env(safe-area-inset-left,0px))!important}
+.v4ler .flarr.flcar2>div{display:flex!important;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}.v4ler .flarr.flcar2>div::-webkit-scrollbar{display:none}
+.v4ler .flarr.flcar2 .sxh{order:4;flex:none;margin:0!important}.v4ler .flarr.flcar2 .sxh b{display:none}
+.v4ler .flarr.flcar2 .arg,.v4ler .flarr.flcar2 .arft{display:contents!important}
+.v4ler .flarr.flcar2 .arsw{order:0;flex:none;min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.v4ler .flarr.flcar2 .arg button{order:1}
+.v4ler .flarr.flcar2 .argo{order:3;flex:none!important;min-height:44px;padding:0 16px!important;border-radius:12px;font-weight:900;white-space:nowrap}
+.v4ler .flarr.flcar2 .argo:not([disabled]){background:var(--acc)!important;color:var(--on-acc,#1b1426)!important;opacity:1!important;box-shadow:0 3px 10px color-mix(in srgb,var(--acc) 45%,transparent)}
+.v4ler .flarr.flcar2 .argo[disabled]{opacity:.45}
+.v4ler .bsh.flx .fli.flnew{animation:flnew 1.4s ease-out}@keyframes flnew{0%,60%{filter:drop-shadow(0 0 10px var(--acc)) drop-shadow(0 0 4px var(--acc))}100%{filter:none}}
+.v4ler .flpop{position:fixed;z-index:9600;display:grid;gap:2px;min-width:210px;max-width:min(300px,calc(100vw - 96px));padding:8px;border-radius:16px;background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 12px 30px rgba(0,0,0,.4);animation:flcarin .14s ease-out}
+.v4ler .flpop.cR{right:calc(64px + env(safe-area-inset-right,0px))}.v4ler .flpop.cL{left:calc(64px + env(safe-area-inset-left,0px))}
+.v4ler .flpop b{font-size:12px;color:var(--ink2);padding:4px 8px 2px;font-weight:800}
+.v4ler .flpop button{text-align:left;min-height:44px;padding:8px 10px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:14px;cursor:pointer}.v4ler .flpop button:hover,.v4ler .flpop button:focus-visible{background:color-mix(in srgb,var(--acc) 16%,transparent)}
+.v5est.flmode.flcolR .bsh.flx{margin-right:44px!important}.v5est.flmode.flcolL .bsh.flx{margin-left:44px!important}`;
+{ const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-shxfla]')) { const st = document.createElement('style'); st.dataset.shxfla = 1; st.textContent = SHX_CSSFLA; sr.append(st); } } catch {} }; }
+try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-shxfla]')) { const st = document.createElement('style'); st.dataset.shxfla = 1; st.textContent = SHX_CSSFLA; sr.append(st); } }); } catch {}
+// a margem da coluna entra na largura já no 1º desenho do modo (senão os livros da borda ficam atrás da coluna)
+{ const _bw = flBW; flBW = function () { let w = _bw.apply(this, arguments); try { const R = flQ('.v5est'), ed = (SHX_MODE === 'org' || SHX_MODE === 'deco') && flActive(), has = R && R.classList.contains('flmode') && (R.classList.contains('flcolR') || R.classList.contains('flcolL')); if (ed && !has) w -= 44; else if (!ed && has) w += 44; } catch {} return Math.max(200, w); }; }
+
+// ---------- Arrumar por: mais critérios, ordem invertível (tocar de novo no chip), desempate pelo título (Bia, 22/11) ----------
+let FL_REV = false;
+const flRaw = (id) => { try { return v5Book(id) || {}; } catch { return {}; } };
+const flSerOf = (b) => { const e = flRaw(b.id), m = e.meta || {}; const s = e.series || m.series || m.serie || ''; if (s) return { s: String(s), v: +(e.seriesIndex || m.seriesIndex || m.volume || 0) || 0 };
+  const t = String(b.t || ''), mm = t.match(/\(([^()#]+?),?\s*#\s*(\d+(?:[.,]\d+)?)\)\s*$/); return mm ? { s: mm[1].trim(), v: parseFloat(mm[2].replace(',', '.')) } : null; };
+function flArrOpts() { const ids = shAllIds(), hasFmt = ids.some((id) => flRaw(id).format), hasSer = ids.some((id) => { const b = shById(id); return b && flSerOf(b); });
+  return [['sit', 'Situação'], ['data', 'Data de conclusão'], ['genero', 'Gênero'], ['autor', 'Autor'], ['cor', 'Cor'], ['titulo', 'Título'], ['nota', 'Nota'], ['pag', 'Páginas'], ['entrada', 'Entrada na Biblioteca']]
+    .concat(hasFmt ? [['formato', 'Formato']] : []).concat(hasSer ? [['serie', 'Série']] : []).concat([['altura', 'Altura']]); }
+{ const _s = flSortArr; flSortArr = function (k) { const col = (x, y) => String(x).localeCompare(String(y), 'pt', { sensitivity: 'base' }), art = (t) => String(t || '').replace(/^(o|a|os|as|um|uma|the)\s+/i, '');
+    let out = null; const B = () => shAllIds().map((id, i) => ({ ...shById(id), i })).filter((b) => b.id), tt = (x, y) => col(art(x.t), art(y.t));
+    if (k === 'genero') { const g = (b) => { try { return v2Genre(flRaw(b.id)) || ''; } catch { return ''; } }; const S = B().sort((x, y) => (g(x) ? 0 : 1) - (g(y) ? 0 : 1) || col(g(x), g(y)) || tt(x, y)); out = { S, lab: (b) => g(b) || 'Sem gênero', none: 'Sem gênero' }; }
+    else if (k === 'nota') { const n = (b) => { const e = flRaw(b.id), r = e.review || e.rv || {}; const v = +(r.paws ?? r.nota ?? e.paws ?? 0) || 0; return v; }; const S = B().sort((x, y) => (n(x) ? 0 : 1) - (n(y) ? 0 : 1) || n(y) - n(x) || tt(x, y));
+      out = { S, lab: (b) => { const v = n(b); return !v ? 'Sem nota' : v >= 5 ? '★5' : v >= 4 ? '★4' : v >= 3 ? '★3' : 'menos de 3'; }, none: 'Sem nota' }; }
+    else if (k === 'pag') { const p = (b) => +flRaw(b.id).totalPages || 0; const S = B().sort((x, y) => (p(x) ? 0 : 1) - (p(y) ? 0 : 1) || p(x) - p(y) || tt(x, y)); out = { S, lab: (b) => { const v = p(b); return !v ? 'Sem páginas' : v < 200 ? 'até 200 pág.' : v < 400 ? '200–400 pág.' : v < 600 ? '400–600 pág.' : '600+ pág.'; }, none: 'Sem páginas' }; }
+    else if (k === 'entrada') { const d = (b) => { const e = flRaw(b.id); return String(e.addedAt || e.createdAt || e.added || ''); }; const S = B().sort((x, y) => (d(x) ? 0 : 1) - (d(y) ? 0 : 1) || d(y).localeCompare(d(x)) || x.i - y.i); out = { S, lab: (b) => (d(b) ? d(b).slice(0, 4) : 'Sem data'), none: 'Sem data' }; }
+    else if (k === 'formato') { const F = { fisico: 'Físico', ebook: 'E-book', audio: 'Audiolivro' }, f = (b) => { const v = String(flRaw(b.id).format || '').toLowerCase(); return /e-?book|kindle/.test(v) ? 'ebook' : /aud/.test(v) ? 'audio' : v ? 'fisico' : ''; };
+      const S = B().sort((x, y) => (f(x) ? 0 : 1) - (f(y) ? 0 : 1) || col(f(x), f(y)) || tt(x, y)); out = { S, lab: (b) => F[f(b)] || 'Sem formato', none: 'Sem formato' }; }
+    else if (k === 'serie') { const S = B().sort((x, y) => { const a = flSerOf(x), z = flSerOf(y); return (a ? 0 : 1) - (z ? 0 : 1) || col(a ? a.s : '', z ? z.s : '') || ((a && a.v) || 0) - ((z && z.v) || 0) || tt(x, y); }); out = { S, lab: (b) => { const a = flSerOf(b); return a ? a.s : 'Sem série'; }, none: 'Sem série' }; }
+    else out = _s.apply(this, arguments);
+    if (k === 'data' && !out.none) out.none = 'Sem data';
+    if (FL_REV && out && out.S) { const none = out.none, lab = out.lab || (() => ''); const has = out.S.filter((b) => !none || lab(b) !== none), sem = out.S.filter((b) => none && lab(b) === none); out = { ...out, S: has.reverse().concat(sem) }; }
+    return out; }; }
+// enfeite novo: rola até ele e pisca, para já poder arrastar (inclusive com a estante arrumada e cheia)
+{ const _da = flDecoAdd; flDecoAdd = function () { const before = new Set(); try { shc().free.rows.forEach((rw) => rw.it.forEach((o) => before.add(o.u))); } catch {} const r = _da.apply(this, arguments);
+    try { let nu = null; shc().free.rows.forEach((rw) => rw.it.forEach((o) => { if (!before.has(o.u) && o.t === 'd') nu = o.u; })); if (nu) setTimeout(() => { const e = flQ(`.bsh.flx .fli[data-u="${nu}"]`); if (!e) return; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); e.classList.add('flnew'); setTimeout(() => e.classList.remove('flnew'), 1600); }, 120); } catch {} return r; }; }

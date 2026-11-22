@@ -524,11 +524,11 @@ SHX_BKK.push('plq');
 const FL_ARR = [['autor', 'Autor'], ['titulo', 'Título'], ['sit', 'Situação'], ['data', 'Data de leitura'], ['cor', 'Cor (arco-íris)'], ['altura', 'Altura']];
 let FL_ARK = null;
 function flArrSheet() { const sr = shBibRoot(), R = sr && sr.querySelector('.v5est'); if (!R) return; R.querySelectorAll('.shx-sx').forEach((x) => x.remove()); try { shToastOff(); } catch {}
-  const C0 = shc(), P = v5P(), free = flActive(), opts = [['autor', 'Autor'], ['titulo', 'Título'], ['sit', 'Situação'], ['data', 'Data'], ['cor', 'Cor'], ['altura', 'Altura']].concat(C0.arr && C0.myOrd ? [['mine', 'Minha ordem']] : []);
+  const C0 = shc(), P = v5P(), free = flActive(), opts = flArrOpts().concat(C0.arr && C0.myOrd ? [['mine', 'Minha ordem']] : []);
   let K = null, pq = P.shArrPq !== 0, tok = 0; const w = document.createElement('div'); w.className = 'shx-sx sxc flarr'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-label', 'Arrumar por');
   const can = () => free && K && !['cor', 'altura', 'mine'].includes(K);
   const paint = () => { w.innerHTML = `<div><div class="sxh"><b>Arrumar por</b><button type="button" class="sxx" data-k="x" aria-label="Fechar e desfazer a prévia">×</button></div>
-      <div class="arg" role="radiogroup" aria-label="Critério">${opts.map(([k, l]) => `<button type="button" role="radio" aria-checked="${K === k}" class="${K === k ? 'on' : ''}" data-k="${k}">${C0.arr === k ? '✓ ' : ''}${l}</button>`).join('')}</div>
+      <div class="arg" role="radiogroup" aria-label="Critério">${opts.map(([k, l]) => `<button type="button" role="radio" aria-checked="${K === k}" class="${K === k ? 'on' : ''}" data-k="${k}">${C0.arr === k ? '✓ ' : ''}${l}${K === k ? (FL_REV ? ' ↑' : ' ↓') : ''}</button>`).join('')}</div>
       <div class="arft"><label class="arsw${can() ? '' : ' off'}"><input type="checkbox" role="switch" ${pq && can() ? 'checked' : ''} ${can() ? '' : 'disabled'} data-k="pq"><span>Plaquinhas</span></label><button type="button" class="btn p argo" data-k="go" ${K ? '' : 'disabled'}>Arrumar</button></div></div>`; };
   const close = (keep) => { document.removeEventListener('pointerdown', outD, true); document.removeEventListener('pointerup', outU, true); FL_ARRW = null; w.remove(); if (!keep) flPvCancel(); };
   const preview = async () => { if (!free || !K || K === 'mine') { flPvCancel(); return; } const t = ++tok; if (K === 'cor') await flColorsReady(shAllIds().map(shById).filter(Boolean)); if (t !== tok || !w.isConnected) return;
@@ -540,7 +540,7 @@ function flArrSheet() { const sr = shBibRoot(), R = sr && sr.querySelector('.v5e
   w.addEventListener('change', (ev) => { if (ev.target.dataset.k === 'pq') { pq = ev.target.checked; preview(); } });
   w.addEventListener('click', (ev) => { ev.stopPropagation(); const t = ev.target.closest('[data-k]'); if (t && t.dataset.k === 'x') return close(false); if (!t || t.dataset.k === 'pq') return;
     if (t.dataset.k === 'go') { if (!K) return; P.shArrPq = pq ? 1 : 0; const pv = FL_PV && FL_PV.k === K ? FL_PV : null; close(true); return free ? flArrange(K, pq && !['cor', 'altura', 'mine'].includes(K), pv) : shArrange(K); }
-    K = t.dataset.k; paint(); preview(); });
+    if (t.dataset.k === K && K !== 'mine') FL_REV = !FL_REV; else FL_REV = false; K = t.dataset.k; paint(); preview(); });
   w.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); close(false); } });
   setTimeout(() => { document.addEventListener('pointerdown', outD, true); document.addEventListener('pointerup', outU, true); }, 0);
   FL_ARRW = w; R.append(w); const keep = setInterval(() => { if (FL_ARRW !== w) return clearInterval(keep); if (!w.isConnected) { const R2 = flQ('.v5est'); if (R2 && flActive() && SHX_MODE === 'org') R2.append(w); else { clearInterval(keep); close(false); } } }, 250); const f = w.querySelector('.arg button'); if (f) f.focus(); }
@@ -569,8 +569,11 @@ function flArrBuild(k, withPq) { const C0 = shc(), F0 = C0.free; flPx(F0); const
   const next = () => { if (n < flNiches(row()) - 1) n++; else { r++; n = 0; row(); } cur = 0; };
   // o mesmo livro fica com o mesmo id de peça (a prévia anima cada livro do lugar antigo ao novo)
   const uOf = {}; F0.rows.forEach((row) => row.it.forEach((o) => { if (o.t === 'b') uOf[o.id] = o.u; }));
+  // enfeites ficam ancorados: mesma prateleira, nicho e lugar; os livros fluem em volta deles (Bia, 22/11)
+  const dAt = {}; decos.forEach(({ r: rr, o }) => { while (F.rows.length <= rr) flNewRow(F); const rw = F.rows[rr]; o.n = Math.min(o.n || 0, flNiches(rw) - 1); const NW = flNW(rw, o.n, BW), w = flW(o); o.x = Math.max(0, Math.min(NW - w, o.x || 0)); if (!o.z) (dAt[rr + ':' + o.n] = dAt[rr + ':' + o.n] || []).push([o.x, o.x + w]); rw.it.push(o); });
+  const skipD = (w) => { let g = 0; for (;;) { if (g++ > 80) return; const sp = (dAt[r + ':' + n] || []).slice().sort((a, z) => a[0] - z[0]); let moved = false; for (const [a, z] of sp) if (cur < z && cur + w > a) { cur = z; moved = true; } if (cur + w > nw() && (cur > 0 || sp.length)) { next(); continue; } if (!moved) return; } };
   groups.forEach((g) => { if (cur > 0 && GAP) { if (cur + GAP >= nw()) next(); else cur += GAP; } let first = true;
-    g.bs.forEach((b) => { const o = { u: uOf[b.id] || flUid(), t: 'b', id: b.id }, w = flW(o); let guard = 0; while (cur + w > nw() && cur > 0 && guard++ < 50) next();
+    g.bs.forEach((b) => { const o = { u: uOf[b.id] || flUid(), t: 'b', id: b.id }, w = flW(o); let guard = 0; while (cur + w > nw() && cur > 0 && guard++ < 50) next(); skipD(w);
       o.n = n; o.x = cur; row().it.push(o);
       if (first && withPq && g.l && g.bs.length >= 2) g.at = { r, n, x0: cur, x1: cur + w }; else if (g.at && g.at.r === r && g.at.n === n) g.at.x1 = cur + w;
       first = false; cur += w; }); });
@@ -579,7 +582,7 @@ function flArrBuild(k, withPq) { const C0 = shc(), F0 = C0.free; flPx(F0); const
     if (lastP[g.at.r] != null && cx - wq / 2 < lastP[g.at.r] + 6) return; lastP[g.at.r] = cx + wq / 2; auto.push({ t: String(g.l).slice(0, 24), s: sty, r: g.at.r, p: Math.max(0.05, Math.min(0.95, cx / BW)), a: 1 }); });
   while (F.rows.length < 3) flNewRow(F);
   // enfeites: voltam para a prateleira em que estavam, no último espaço livre dela (se não couber, vão para outra)
-  decos.forEach(({ r: rr, o }) => { const rw = F.rows[rr]; let ok = false; if (rw) for (let nn = flNiches(rw) - 1; nn >= 0 && !ok; nn--) { const NW = flNW(rw, nn, BW), its = rw.it.filter((q) => (q.n || 0) === nn && !q.z).sort((a, z) => a.x - z.x), e = its.length ? its[its.length - 1].x + flW(its[its.length - 1]) : 0, w = flW(o); if (NW - e >= w) { o.n = nn; o.x = NW - w; rw.it.push(o); ok = true; } } if (!ok) flAdd(F, o); });
+
   return { free: F, plq: (C0.plq || []).filter((q) => !q.a).concat(auto).slice(0, 24), ord: S.map((b) => b.id), auto: auto.length, sem: k === 'cor' ? S.filter((b) => flColKey(b)[0] === 99).length : 0 }; }
 // FLIP: os livros visíveis deslizam do lugar antigo ao novo (~300 ms); sem animação com movimento reduzido
 function flFlipRender(fn) { const sr = shBibRoot(), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, old = new Map();
