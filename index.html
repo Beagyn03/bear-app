@@ -9983,6 +9983,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 01_voltar.js ---
 // Botão Voltar do celular: fecha a camada de cima (menu, folha, menu lateral, tela interna) e, nas abas, volta ao Hoje.
@@ -28979,6 +28980,144 @@ searchSheet = function (opts) {
 .v3hub.v3hub button.v3hub-lj > small{grid-column:2;grid-row:2;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .v3hub.v3hub button.v3hub-lj > em{grid-column:3;grid-row:1 / span 2;align-self:center}
 `; TR.append(st); }
+// --- z6_v2_sync_seguro.js ---
+// As três escolhas da sincronização (dados sem dono no aparelho, conflito entre aparelhos, primeira conexão com dados nos dois
+// lados) usavam a janela do navegador: dispensar a janela respondia "Cancelar" e apagava ou sobrescrevia dados (Bia, 22/11).
+// Agora viram uma folha do app. Fechar, Esc, voltar ou sair da tela não apaga nada: a sincronização só espera.
+// Qualquer opção que descarta uma versão guarda essa versão neste aparelho por 30 dias (IndexedDB) e oferece Desfazer.
+// Como pull()/push() chamam confirm() no meio do caminho, a pergunta interrompe a sincronização (sem mexer em nada)
+// e, com a resposta, a sincronização roda de novo e recebe a escolha.
+{
+  const KINDS = [
+    { k: 'own', re: /^Este aparelho já tem metas salvas/ },
+    { k: 'conf', re: /^Outro aparelho salvou mudanças/ },
+    { k: 'first', re: /^Já existem dados na nuvem/ },
+  ];
+  const ans = {}; let asking = null, snoozed = false;
+  // cópia de segurança local (30 dias)
+  const DB_NAME = 'lv-backup', DAYS = 30;
+  const idb = () => new Promise((res, rej) => { const r = indexedDB.open(DB_NAME, 1); r.onupgradeneeded = () => r.result.createObjectStore('b', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const tx = async (mode, fn) => { const d = await idb(); return new Promise((res, rej) => { const t = d.transaction('b', mode), s = t.objectStore('b'), out = fn(s); t.oncomplete = () => res(out && out.result !== undefined ? out.result : out); t.onerror = () => rej(t.error); }); };
+  const backup = async (kind, data) => { const id = kind + '-' + Date.now(); try { await tx('readwrite', (s) => s.put({ id, kind, at: Date.now(), data: JSON.parse(JSON.stringify(data)) })); return id; } catch (e) { console.warn('cópia de segurança', e); return null; } };
+  const getB = (id) => tx('readonly', (s) => s.get(id));
+  const prune = async () => { try { const lim = Date.now() - DAYS * 864e5; const all = await tx('readonly', (s) => s.getAll()); await tx('readwrite', (s) => all.filter((x) => x.at < lim).forEach((x) => s.delete(x.id))); } catch {} };
+  setTimeout(prune, 8000);
+  window.lvBackups = { list: () => tx('readonly', (s) => s.getAll()).then((a) => a.map(({ id, kind, at }) => ({ id, kind, at: new Date(at).toISOString() }))), restore: (id) => restoreFrom(id) };
+  const restoreFrom = async (id) => {
+    const b = id && await getB(id).catch(() => null); if (!b || !b.data) { toast('Não achei a cópia de segurança'); return false; }
+    applyingRemote = true; db = JSON.parse(JSON.stringify(b.data)); save(); applyingRemote = false;
+    localOwnerKnown = true; syncSoon(); try { renderGoals(); } catch {} try { refresh(); } catch {} return true; };
+  const undoToast = (msg, id) => setTimeout(() => { try { toast(msg, id ? { label: 'Desfazer', fn: async () => { if (await restoreFrom(id)) toast('Desfeito'); } } : undefined); } catch {} }, 400);
+  const resync = () => setTimeout(() => { try { pull(); } catch {} }, 0);
+  const remoteNow = async () => { try { const r = await apiCall('GET', '/v1/state'); return r.status === 200 && r.data ? r.data.data : null; } catch { return null; } };
+
+  const open = (kind, msg) => {
+    const when = (String(msg).match(/\(salv[oa]s? em ([^)]+)\)/) || String(msg).match(/mudanças \(([^)]+)\)/) || [])[1] || '';
+    const T = {
+      own: { h: 'Já existem dados neste aparelho', p: 'Eles não estão ligados a nenhuma conta. Você pode levá-los para a sua conta ou apagá-los deste aparelho.\nSe fechar, nada é apagado: o app pergunta de novo da próxima vez.',
+        a: [['lev', 'Levar para minha conta', 'ok'], ['apg', 'Apagar deste aparelho', 'dng']] },
+      conf: { h: 'Mudanças em dois aparelhos', p: `Outro aparelho salvou mudanças${when ? ' em ' + when : ''}, e este tem mudanças que ainda não foram enviadas. Escolha qual versão fica.\nA outra fica guardada neste aparelho por 30 dias, e dá para desfazer.`,
+        a: [['meu', 'Manter as deste aparelho', 'ok'], ['out', 'Usar as do outro aparelho', '']] },
+      first: { h: 'Você já tem dados na nuvem', p: `A sua conta tem dados salvos${when ? ' em ' + when : ''}, e este aparelho também tem dados. Escolha qual versão fica.\nA outra fica guardada neste aparelho por 30 dias, e dá para desfazer.`,
+        a: [['out', 'Usar os da nuvem', 'ok'], ['meu', 'Usar os deste aparelho', '']] },
+    }[kind];
+    const prev = TR.activeElement || document.activeElement, d = document.createElement('div'); d.className = 'v10dlg v11sync'; d.dataset.kind = kind;
+    d.innerHTML = `<div class="bx" role="alertdialog" aria-modal="true" aria-labelledby="v11t" aria-describedby="v11b"><h3 id="v11t"></h3><p id="v11b"></p><div class="bt v11bt"></div><button type="button" class="v11no">Agora não</button></div>`;
+    d.querySelector('h3').textContent = T.h; d.querySelector('p').textContent = T.p;
+    const bt = d.querySelector('.v11bt');
+    T.a.forEach(([v, lab, cls]) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.v = v; b.textContent = lab; if (cls) b.className = cls; bt.append(b); });
+    asking = d;
+    const close = () => { d.remove(); asking = null; try { prev && prev.focus && prev.focus(); } catch {} };
+    const later = () => { close(); snoozed = true; try { setSync('Sem sincronizar'); } catch {} };
+    d.addEventListener('click', (ev) => { if (ev.target === d) later(); });
+    d.querySelector('.v11no').addEventListener('click', (ev) => { ev.stopPropagation(); later(); });
+    d.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); later(); }
+      if (ev.key === 'Tab') { const f = [...d.querySelectorAll('button')]; const i = f.indexOf(TR.activeElement || document.activeElement); if (ev.shiftKey && i <= 0) { ev.preventDefault(); f[f.length - 1].focus(); } else if (!ev.shiftKey && i === f.length - 1) { ev.preventDefault(); f[0].focus(); } } });
+    bt.addEventListener('click', async (ev) => {
+      const b = ev.target.closest('button[data-v]'); if (!b) return; ev.stopPropagation();
+      if (b.dataset.v === 'apg' && !b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Toque de novo para apagar'; return; }
+      [...d.querySelectorAll('button')].forEach((x) => { x.disabled = true; });
+      const v = b.dataset.v; let id = null, msg = '';
+      if (kind === 'own') {
+        if (v === 'apg') { id = await backup('aparelho', db); ans.own = false; msg = 'Dados apagados deste aparelho'; }
+        else { ans.own = true; msg = 'Dados levados para a sua conta'; }
+      } else if (v === 'out') { id = await backup('aparelho', db); ans[kind] = kind === 'conf'; msg = kind === 'conf' ? 'Agora com as mudanças do outro aparelho' : 'Agora com os dados da nuvem';
+        if (kind === 'first') ans.first = true; }
+      else { const r = await remoteNow(); if (r) id = await backup('nuvem', r); ans[kind] = false; msg = 'Mantidos os dados deste aparelho'; }
+      close(); resync(); undoToast(msg, id);
+    });
+    TR.append(d); setTimeout(() => { const f = d.querySelector('.ok'); f && f.focus(); }, 30);
+  };
+  const st = document.createElement('style'); st.textContent = `
+.v11sync .v11bt{display:grid;gap:8px;justify-content:stretch}.v11sync .v11bt button{width:100%}
+.v11sync .v11bt .dng{color:var(--danger,#d0574a);border-color:currentColor}.v11sync .v11bt .ok{background:var(--acc,#c76b2a);border-color:transparent;color:#fff}
+.v11sync .v11no{justify-self:center;min-height:44px;padding:0 18px;border:0;background:none;color:var(--ink-2,#666);font:inherit;font-weight:800;cursor:pointer}`; TR.append(st);
+
+  const prevC = window.confirm;
+  window.confirm = function (msg) {
+    const m = String(msg == null ? '' : msg), K = KINDS.find((x) => x.re.test(m));
+    if (!K) return prevC.apply(this, arguments);
+    if (K.k in ans) { const v = ans[K.k]; delete ans[K.k]; return v; }
+    if (asking && !asking.isConnected) { asking = null; snoozed = true; } // a folha foi fechada por fora (sair da tela): vale como "Agora não"
+    if (!asking && !snoozed) open(K.k, m);
+    setTimeout(() => { try { setSync(snoozed ? 'Sem sincronizar' : 'Aguardando sua escolha'); } catch {} }, 0);
+    // interrompe a sincronização antes de qualquer mudança; a resposta faz ela rodar de novo
+    throw new Error('lv-sync-ask');
+  };
+  // na próxima abertura do app, volta a perguntar
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') snoozed = false; });
+}
+// --- z7_v2_meta_pagina.js ---
+// Página de uma meta com prazo no padrão v2 (Bia, 22/11): abria a tela antiga, com "‹ Metas", a marca e o avatar no topo,
+// as abas antigas e sem a barra de baixo. As funções dessa tela (registrar, livros, calendário, ajustes) moram no app antigo,
+// fora da camada v2, e dependem dos estilos de lá; por isso a tela continua sendo a mesma, mas ganha a moldura v2:
+// topo com "‹" e o nome da meta (como as páginas internas), a barra de baixo da v2 (uma cópia, que leva para a aba tocada),
+// e Voltar/voltar do celular levam de volta para Metas.
+{
+  const D = document, body = D.body;
+  const css = D.createElement('style'); css.textContent = `
+body.v11meta > main .topbar .brand,body.v11meta #home-gear,body.v11meta #sync-status,body.v11meta #toca-back,body.v11meta #htabs,body.v11meta #g-title{display:none!important}
+body.v11meta > main .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;min-height:56px;padding:.35rem .2rem;margin-bottom:.6rem;background:var(--bg);border-bottom:1px solid var(--line)}
+body.v11meta #nav{display:flex!important;align-items:center;gap:.25rem;min-width:0;flex:1}
+body.v11meta #back{background:none!important;border:0!important;box-shadow:none!important;min-width:44px;min-height:44px;font-size:1.6rem;line-height:1;padding:0 .4rem;color:var(--ink)}
+body.v11meta #v11gt{font-family:'Noto Serif',Georgia,serif;font-weight:800;font-size:1.2rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+html[data-theme="dark"] body.v11meta #v-goal .bar{background:color-mix(in srgb,var(--ink) 16%,transparent)}
+body.v11meta > main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))!important}
+#v11tbh{display:none}body.v11meta #v11tbh{display:block;position:fixed;left:0;right:0;bottom:0;z-index:40}`;
+  D.head.append(css);
+  let on = false, tbh = null, mk = null, after = null, fromTab = '';
+  // a aba marcada na hora do toque que abriu a meta (a lista de Metas some antes da meta abrir)
+  window.addEventListener('click', (ev) => { const t = ev.composedPath ? ev.composedPath()[0] : ev.target; if (t && t.closest && t.closest('[data-mt="goal"]')) { const o = TR.querySelector('#tabbar .on[data-tab]'); fromTab = o ? o.dataset.tab : ''; } }, true);
+  const bar = () => {
+    const src = TR.querySelector('#tabbar'); if (!src) return;
+    if (!tbh) { tbh = D.createElement('div'); tbh.id = 'v11tbh'; body.append(tbh); const sr = tbh.attachShadow({ mode: 'open' });
+      // os mesmos estilos da camada v2, para a barra ficar idêntica
+      sr.innerHTML = [...TR.querySelectorAll('style')].map((s) => '<style>' + s.textContent + '</style>').join('') + '<div class="v11w"></div>';
+      sr.addEventListener('click', (ev) => { const b = ev.target.closest('[data-tab]'); if (!b) return; ev.preventDefault(); ev.stopPropagation(); const k = b.dataset.tab; exitTo(() => go(k)); }); }
+    const w = tbh.shadowRoot.querySelector('.v11w'); w.innerHTML = ''; const c = src.cloneNode(true); w.append(c);
+    // a barra marca a aba de onde a meta foi aberta
+    const from = fromTab || S.tab; c.querySelectorAll('[data-tab]').forEach((b) => { const k = b.dataset.tab === from; b.classList.toggle('on', k); b.setAttribute('aria-current', String(k)); });
+  };
+  const leave = () => { if (!on) return; on = false; body.classList.remove('v11meta');
+    const b = D.querySelector('#back'); if (b) { b.textContent = '‹ Metas'; b.removeAttribute('aria-label'); }
+    D.querySelector('#v11gt')?.remove(); try { show('goals'); } catch {} };
+  const toMetas = () => { leave(); body.classList.add('at-home'); try { openMetasV2(); } catch {} };
+  const go = (tab) => { leave(); body.classList.add('at-home'); setTimeout(() => { const t = TR.querySelector('#tabbar [data-tab="' + tab + '"]'); if (t) t.click(); }, 0); };
+  const enter = (g) => {
+    on = true; body.classList.add('v11meta'); body.classList.remove('at-home');
+    const b = D.querySelector('#back'); if (b) { b.textContent = '‹'; b.setAttribute('aria-label', 'Voltar para Metas'); }
+    let t = D.querySelector('#v11gt'); if (!t) { t = D.createElement('span'); t.id = 'v11gt'; D.querySelector('#nav')?.append(t); } t.textContent = g.name || 'Meta';
+    bar(); window.scrollTo(0, 0);
+    // conta como uma camada para o voltar do celular (o app conta "body > .sheet"): voltar tira a marca e volta para Metas
+    if (!mk || !mk.isConnected) { mk = D.createElement('div'); mk.className = 'sheet v11mk'; mk.hidden = true; mk.style.display = 'none'; body.append(mk); }
+  };
+  const _open = open;
+  open = function (g) { const r = _open.apply(this, arguments); try { if (g) enter(g); } catch (e) { console.warn('página da meta', e); } return r; };
+  // Voltar do topo, voltar do celular e a barra de baixo: todos tiram a marca; quem tirou decide para onde ir
+  new MutationObserver(() => { if (on && mk && !mk.isConnected) { const f = after; after = null; mk = null; if (f) f(); else toMetas(); } }).observe(body, { childList: true });
+  const exitTo = (f) => { after = f; if (mk && mk.isConnected) mk.remove(); else { after = null; f(); } };
+  D.addEventListener('click', (ev) => { if (on && ev.target.closest && ev.target.closest('#back')) { ev.stopImmediatePropagation(); ev.preventDefault(); exitTo(toMetas); } }, true);
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 
