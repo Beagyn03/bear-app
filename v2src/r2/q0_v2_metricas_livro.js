@@ -1,3 +1,7 @@
+// idioma da edição: código ISO (pt, por, fre, ger…) vira nome; código desconhecido não aparece cru (Bia 22/11: 'fre' em Dom Casmurro)
+const V2_LANG3 = { pt: 'Português', 'pt-br': 'Português', 'pt-pt': 'Português', por: 'Português', en: 'Inglês', eng: 'Inglês', es: 'Espanhol', spa: 'Espanhol', fr: 'Francês', fre: 'Francês', fra: 'Francês', it: 'Italiano', ita: 'Italiano', de: 'Alemão', ger: 'Alemão', deu: 'Alemão', ja: 'Japonês', jpn: 'Japonês', ru: 'Russo', rus: 'Russo', zh: 'Chinês', chi: 'Chinês', zho: 'Chinês', ko: 'Coreano', kor: 'Coreano', nl: 'Holandês', dut: 'Holandês', nld: 'Holandês', la: 'Latim', lat: 'Latim', ca: 'Catalão', cat: 'Catalão', pl: 'Polonês', pol: 'Polonês', sv: 'Sueco', swe: 'Sueco' };
+function v2LangName(c) { const k = String(c || '').trim(); if (!k) return ''; const n = V2_LANG3[k.toLowerCase()]; if (n) return n; return /^[a-z]{2,3}(-[a-z]{2})?$/i.test(k) ? '' : k; }
+try { window.v2LangName = v2LangName; if (typeof LANGS !== 'undefined') for (const k in V2_LANG3) if (!LANGS[k]) LANGS[k] = V2_LANG3[k]; } catch {}
 // Números do livro (Bia, 20/11; API 035): a estante vai para o servidor (PUT /v1/me/books, só quando muda) e a aba Sobre
 // da página do livro mostra os números logo abaixo do topo (duas fileiras como a faixa do perfil): lendo, leram, querem ler, abandonaram, avaliações (★ média),
 // comentários e ressaca (deu / curou). Só totais, nunca quem; números zerados não aparecem.
@@ -63,7 +67,7 @@ var v8Bust = () => {};
   const chips = (hero, title) => {
     const box = hero.querySelector('.bp-chips'); if (!box) return; let e = null; try { e = lib().find((x) => normT(x.title) === normT(title)); } catch {} if (!e) return;
     const m = e.meta || {}; let pg = 0; try { pg = readingInfo(e).total || e.totalPages || 0; } catch { pg = e.totalPages || 0; }
-    const lang = m.lang ? ((typeof LANGS !== 'undefined' && LANGS[m.lang]) || m.lang) : '', gen = e.genre || m.cat || '';
+    const lang = m.lang ? v2LangName(m.lang) : '', gen = e.genre || m.cat || '';
     const gold = box.querySelector('.bp-chip.gold');
     const L = [m.pub, pg ? pg + ' pág.' : '', lang, gen].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean);
     const sig = L.join('|') + '|' + (gold ? gold.textContent : ''); if (box.dataset.v8 === sig) return;

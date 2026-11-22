@@ -36,22 +36,28 @@
     const aj = S.tab === 'perfil' && TR.querySelector('#aj-back'); if (aj) return aj.click();
     if (S.tab && S.tab !== 'inicio') return goTab('inicio');
   };
-  let pushed = 0, skip = 0, t = 0;
+  let pushed = 0, t = 0;
   const sync = () => {
     t = 0; const n = layers();
     if (n > pushed) { while (pushed < n) { history.pushState({ bear: ++pushed }, ''); } }
-    else if (n < pushed) { const d = pushed - n; pushed = n; skip += d; history.go(-d); }
+    else if (n < pushed) { const d = pushed - n; pushed = n; history.go(-d); }
   };
   const later = () => { if (!t) t = setTimeout(sync, 60); };
   window.bearVoltarSync = later; // camadas fora do TR (sessão de leitura) avisam quando abrem/fecham
-  addEventListener('popstate', () => {
-    if (skip > 0) { skip--; return; }
-    pushed = Math.max(0, pushed - 1);
+  addEventListener('popstate', (ev) => {
+    // nível pelo estado da entrada (22/11): history.go(-d) gera UM popstate só; contar skip por d engolia voltas reais depois de várias ações seguidas
+    const lvl = (ev && ev.state && ev.state.bear) || 0;
+    if (lvl === pushed) return; // chegou onde o próprio sync mandou ir
+    if (lvl > pushed) { pushed = lvl; return; } // avançar não abre nada
+    pushed = lvl;
     try { closeTop(); } catch (err) { console.error('voltar', err); }
     later();
   });
-  const mo = new MutationObserver(later);
+  const mo = new MutationObserver(() => sync()); // sem atraso (22/11): o voltar logo depois de abrir uma camada saía do app porque a entrada ainda não existia
   mo.observe(TR, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
   mo.observe(document.body, { childList: true });
   later();
+  // Esc sem camada que trate o próprio Esc = voltar (22/11: a página de uma estante não fechava com Esc)
+  let escN = -1; window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') escN = layers(); }, true);
+  window.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape' || ev.defaultPrevented) return; if (layers() < escN) return; /* outra camada já fechou com este Esc */ const a = ev.composedPath ? ev.composedPath()[0] : ev.target; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName || '') && a.value) return; sync(); const base = S.tab && S.tab !== 'inicio' ? 1 : 0; if (pushed > base) { ev.preventDefault(); history.back(); } /* só fecha página/camada; Esc não troca de aba */ });
 })();

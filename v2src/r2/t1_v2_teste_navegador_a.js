@@ -42,7 +42,7 @@ addEventListener('click', (ev) => {
     const dl = body.querySelector('.bp-dl'); if (dl) { const o = {}; dl.querySelectorAll('dt').forEach((dt) => { const dd = dt.nextElementSibling; if (dd) o[dt.textContent.trim()] = dd.textContent.trim(); }); if (Object.keys(o).length) ficha.set(normT(title), o); }
     const box = hero.querySelector('.bp-chips');
     if (box && !box.dataset.v8 && !mine) { const o = ficha.get(normT(title)) || {}, pgs = o['Páginas'] || ((box.textContent.match(/(\d+)\s*pág/) || [])[1]);
-      const L = [o['Publicação'], pgs ? String(pgs).replace(/\D/g, '') + ' pág.' : '', o['Idioma'], o['Gênero']].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean);
+      const L = [o['Publicação'], pgs ? String(pgs).replace(/\D/g, '') + ' pág.' : '', (window.v2LangName ? window.v2LangName(o['Idioma']) : o['Idioma']), o['Gênero']].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean);
       const sig = L.join('|'); if (L.length && box.dataset.v9 !== sig) { box.innerHTML = L.map((x) => '<span class="bp-chip">' + esc(x) + '</span>').join(''); box.dataset.v9 = sig; } }
     body.classList.toggle('v9prev', !mine);
     let row = body.querySelector(':scope > .v9acts');

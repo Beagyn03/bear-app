@@ -74,6 +74,7 @@ function jnHTML() {
 }
 // abrir um atalho: os mesmos caminhos do antigo "Minha leitura"; o Voltar dessas telas devolve à Jornada
 function jnGo(k, el) {
+  try { const L0 = TR.querySelector('#lista'); S.jnY = L0 ? L0.scrollTop : 0; } catch {}
   S.jnRet = true;
   if (k === 'orbita' && typeof window.__orbCal === 'function') { try { return window.__orbCal(); } catch {} }
   if (k === 'retro') { const y = (el && el.dataset.y) || todayISO().slice(0, 4); if (typeof window.v2RtOpen === 'function' && window.v2RtOpen('ano', y) !== false) return; return goTab('progresso'); }
@@ -90,10 +91,11 @@ function jnGo(k, el) {
 { const _gt = goTab; goTab = function (tab, fromBar) {
   if (fromBar || tab === 'jornada') S.jnRet = false;
   // Voltar de uma tela aberta pela Jornada (Estatísticas e afins voltam para a "última aba"): volta para a Jornada
-  else if (S.jnRet && ['inicio', 'estante', 'comunidade', 'eu'].includes(tab)) { S.jnRet = false; tab = 'jornada'; }
+  else if (S.jnRet && ['inicio', 'estante', 'comunidade', 'eu'].includes(tab)) { S.jnRet = false; tab = 'jornada'; S.jnBackY = S.jnY || 0; }
   const L = $('#lista'), was = S.tab; if (L) delete L.dataset.jnsig;
   const r = _gt.call(this, tab, fromBar);
-  if (tab === 'jornada' && was !== 'jornada' && L) L.scrollTop = 0; // a Jornada sempre abre no topo
+  // a Jornada abre no topo pela barra; voltando de uma tela que ela abriu, volta onde estava (22/11)
+  if (tab === 'jornada' && was !== 'jornada' && L) { const y = S.jnBackY || 0; S.jnBackY = 0; L.scrollTop = y; if (y) requestAnimationFrame(() => { L.scrollTop = y; setTimeout(() => { L.scrollTop = y; }, 120); }); }
   return r;
 }; }
 
@@ -142,7 +144,7 @@ const JN_PLANET = (sz, id) => `<svg class="plsv" viewBox="0 0 64 64" width="${sz
 #v5pill[hidden]{display:none!important}
 #v5pill.snap{transition:transform .28s cubic-bezier(.2,.9,.3,1.15)}#v5pill.drag{cursor:grabbing;box-shadow:0 12px 28px rgba(20,10,30,.4)}
 #v5pill .clk{font-variant-numeric:tabular-nums}#v5pill .pt{font-weight:700;font-size:13px;opacity:.8;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#lista.v5pad.v5pad{padding-bottom:calc(var(--inst-h,0px) + 164px + env(safe-area-inset-bottom,0px))!important}#shelflist.v5pad.v5pad .sl-body{padding-bottom:calc(var(--inst-h,0px) + 164px + env(safe-area-inset-bottom,0px))!important}
+#lista.v5pad.v5pad{padding-bottom:calc(var(--inst-h,0px) + 184px + env(safe-area-inset-bottom,0px))!important}#shelflist.v5pad.v5pad .sl-body{padding-bottom:calc(var(--inst-h,0px) + 184px + env(safe-area-inset-bottom,0px))!important}
 @media (prefers-reduced-motion:reduce){#v5ler .pl::before,#v5ler .bands,#v5ler.pulse::after{animation:none}#v5ler,#v5ler .lb{transition:none}#v5pill.snap{transition:none}}
 .jn{display:grid;gap:12px;padding:4px 0 8px}
 .jn .eb{font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
@@ -186,11 +188,8 @@ const jnHits = (r, dy) => { const xs = [0.12, 0.35, 0.65, 0.88], ys = [0.12, 0.5
   for (const fx of xs) for (const fy of ys) if (jnHitAt(r.left + (r.right - r.left) * fx, r.top + dy + (r.bottom - r.top) * fy)) return true; return false; };
 let jnW = 108;
 const jnBase = (mini, left) => { const b = parseFloat(jnPl_.style.bottom) || 88, w = mini ? 60 : jnW, R = left ? 16 + w : window.innerWidth - 16, bot = window.innerHeight - b; return { left: R - w, right: R, top: bot - 60, bottom: bot }; };
-function jnDodge() { if (jnPl_.hidden) return; if (!jnPl_.classList.contains('mini') && jnPl_.offsetWidth > 70) jnW = jnPl_.offsetWidth;
-  const find = (mini, left) => { const r = jnBase(mini, left); for (let d = 0; d <= 260; d += 8) if (!jnHits(r, -d)) return -d; return null; };
-  // primeiro à direita com o rótulo; depois só o planeta; por fim o canto esquerdo
-  let mini = false, left = false, dy = find(false, false); if (dy === null) { mini = true; dy = find(true, false); } if (dy === null) { left = true; dy = find(true, true); } if (dy === null) { left = false; dy = 0; }
-  jnPl_.classList.toggle('mini', mini); jnPl_.classList.toggle('lft', left); jnPl_.dataset.dy = dy; jnPl_.style.transform = dy ? `translateY(${dy}px)` : ''; }
+// posição FIXA (Bia 22/11): canto inferior direito, 16 px acima da barra; ao parar só volta a mostrar 'Ler'. As listas reservam espaço no fim.
+function jnDodge() { if (jnPl_.hidden) return; jnPl_.classList.remove('mini', 'lft'); jnPl_.dataset.dy = 0; jnPl_.style.transform = ''; }
 const jnPulseOnce = () => { try { if (localStorage.getItem('lv.lerPulso')) return; localStorage.setItem('lv.lerPulso', '1'); } catch { return; } if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; jnPl_.classList.add('pulse'); setTimeout(() => jnPl_.classList.remove('pulse'), 2400); };
 jnPl_.addEventListener('click', () => { try { v2Ler(); } catch (err) { console.error('ler', err); } });
 const jnPill = document.createElement('button'); jnPill.type = 'button'; jnPill.id = 'v5pill'; jnPill.hidden = true;
