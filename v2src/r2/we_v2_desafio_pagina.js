@@ -2,7 +2,7 @@
 // Abre a página do desafio: tema, quanto falta (termina domingo), as respostas (posts que começam com "Desafio da semana: <tema>",
 // com o mesmo filtro de spoiler do feed) e "Participar", que abre o Novo post já marcado com o desafio (etiqueta removível).
 // Pendência: a API não tem marca própria de desafio nos posts; o app reconhece pelo começo do texto.
-{ const st = document.createElement('style'); st.textContent = `
+const WDES_CSS = `
 .v6com .wdes{display:grid;gap:14px;padding:4px 0 24px}
 .v6com .wdes-top{display:flex;align-items:center;gap:8px}
 .v6com .wdes-top button{width:44px;height:44px;border:0;border-radius:12px;background:none;color:var(--ink);display:grid;place-items:center;cursor:pointer}
@@ -13,8 +13,14 @@
 .v6com .wdes-card small{color:var(--ink-2);font-weight:700}
 .v6com .wdes-go{justify-self:start;min-height:44px;padding:0 18px;border:0;border-radius:99px;background:var(--acc);color:var(--acc-ink,#fff);font:inherit;font-weight:900;cursor:pointer}
 .v6com .wdes-h{font-weight:900;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-top:4px}
-.v6com .wdes-empty{padding:18px;border:1px dashed var(--line);border-radius:16px;text-align:center;color:var(--ink-2)}
-`; TR.append(st); }
+.v6com .wdes-empty{display:grid;justify-items:center;gap:6px;padding:20px 16px;border:1.5px dashed var(--line);border-radius:16px;text-align:center;color:var(--ink-2);line-height:1.45}
+.v6com .wdes-empty b{color:var(--ink);font-size:15px}
+.v6com .wdes-empty .btn{margin-top:6px}
+.v6com .wdes-card small{font-size:13px}
+.v6com .wdes-go.btn.p{color:var(--on-acc,#fff)}
+`;
+// o CSS precisa morar no shadow da Comunidade (no TR ele não alcança a página: Bia, 21/11, desafio aparecia sem estilo)
+const wdesArm = (sr) => { if (sr && !sr.querySelector('style[data-wdes]')) { const st = document.createElement('style'); st.dataset.wdes = 1; st.textContent = WDES_CSS; sr.append(st); } };
 const wdesQ = () => { try { return v2WkQ(); } catch { return ''; } };
 const wdesLeft = () => { const d = new Date().getDay(); const n = d === 0 ? 0 : 7 - d; return n === 0 ? 'termina hoje (domingo)' : n === 1 ? 'termina amanhã (domingo)' : `termina domingo · faltam ${n} dias`; };
 const wdesItems = () => { const q = wdesQ(), pre = ('Desafio da semana: ' + q).toLowerCase(), seen = new Set(), out = [];
@@ -24,14 +30,14 @@ const wdesItems = () => { const q = wdesQ(), pre = ('Desafio da semana: ' + q).t
     const r = _p.apply(this, arguments);
     try {
       if (!S.v6des || S.tab !== 'comunidade') return r;
-      const host = $('#lista > .v6host'); if (!host) return r; const R = host.shadowRoot.querySelector('.v6com'), S6 = v6S(); if (!R) return r;
+      const host = $('#lista > .v6host'); if (!host) return r; const R = host.shadowRoot.querySelector('.v6com'), S6 = v6S(); if (!R) return r; wdesArm(host.shadowRoot);
       const q = wdesQ(), list = wdesItems(), F = v6Feed('rede'); S6.list = list;
       if (!F.at && !F.busy) setTimeout(() => { try { v6Load('rede'); } catch {} }, 0);
       const posts = list.map((it, i) => v6PostHTML(it, i)).join('');
       R.innerHTML = `<div class="wdes"><div class="wdes-top"><button data-a="wdesback" aria-label="Voltar">${v4ic('back', 20)}</button><b>Desafio da semana</b></div>
-        <div class="wdes-card"><span class="eb">Tema desta semana</span><h2>${esc(q)}</h2><small>${esc(wdesLeft())}</small><button class="wdes-go" data-a="wdesgo">Participar</button></div>
+        <div class="wdes-card"><span class="eb">Tema desta semana</span><h2>${esc(q)}</h2><small>${esc(wdesLeft())}</small><button class="wdes-go btn p" data-a="wdesgo">Participar</button></div>
         <div class="wdes-h">Respostas${list.length ? ' · ' + list.length : ''}</div>
-        ${posts || (F.busy || !F.at ? '<div class="wdes-empty">Carregando…</div>' : '<div class="wdes-empty">Seja a primeira pessoa a responder.</div>')}</div>`;
+        ${posts || (F.busy || !F.at ? '<div class="wdes-empty">Carregando…</div>' : '<div class="wdes-empty"><b>Ninguém respondeu ainda</b><span>Conte qual livro você escolheria para este tema.</span><button class="btn s" data-a="wdesgo">Responder ao desafio</button></div>')}</div>`;
       R.querySelectorAll('[data-avh]').forEach((n) => { try { const d = avatarOf(n.dataset.avh); if (d) { n.style.backgroundImage = `url("${d}")`; n.textContent = ''; } } catch {} });
     } catch (err) { console.warn('desafio', err); }
     return r;
