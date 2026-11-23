@@ -1,19 +1,19 @@
 // ---------- v2: painel compacto, leque, deslizar para selecionar, arrastar do carrossel, temas com prévia (Bia, 22/11) ----------
 const FLP_IC = (p) => `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 const FLP_I = { pe: FLP_IC('<rect x="9" y="3" width="6" height="18" rx="1"/>'), dei: FLP_IC('<rect x="3" y="14" width="18" height="6" rx="1"/><rect x="5" y="8" width="14" height="5" rx="1"/>'),
-  fre: FLP_IC('<rect x="6" y="3" width="12" height="18" rx="1.5"/><path d="M9 8h6"/>'), inc: FLP_IC('<path d="m8 21 6-18 4 1.3-6 18z"/>'), mv: FLP_IC('<path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/>'),
+  fre: FLP_IC('<rect x="6" y="3" width="12" height="18" rx="1.5"/><path d="M9 8h6"/>'), inc: FLP_IC('<path d="m8 21 6-18 4 1.3-6 18z"/>'), incR: FLP_IC('<path d="m16 21-6-18-4 1.3 6 18z"/>'), mv: FLP_IC('<path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/>'),
   lomb: FLP_IC('<rect x="9" y="3" width="6" height="18" rx="1"/><path d="M9 7h6M9 17h6"/>'), ver: FLP_IC('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
   tirar: FLP_IC('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'), fr: FLP_IC('<path d="M12 19V5M6 11l6-6 6 6"/>'), tr: FLP_IC('<path d="M12 5v14M6 13l6 6 6-6"/>'),
   tc: FLP_IC('<path d="M4 7h13l-3-3M20 17H7l3 3"/>'), ok: FLP_IC('<path d="m5 12 5 5 9-10"/>') };
 // painel do livro e do enfeite: tudo à vista (sem "•••"), compacto, ancorado ao livro com a seta
 { const _pp = flPosPanel; flPosPanel = function () { const r = _pp.apply(this, arguments); try { const sr = shBibRoot(), p = sr && sr.querySelector('.flpos'); if (!p) return r; const f = flFind(FLX.pos); if (!f) return r;
     const o = f.o, P = shc().pos || {}, id = o.t === 'b' ? o.id : o.t === 'p' ? o.ids[0] : null, G = FLX.posG && FLX.posG.length > 1 ? FLX.posG.length : 0;
-    const cur = o.t === 'p' ? 'dei' : P[id] === 'face' ? 'fre' : P[id] === 'lean' ? 'inc' : 'pe';
+    const cur = o.t === 'p' ? 'dei' : P[id] === 'face' ? 'fre' : P[id] === 'lean' || P[id] === 'leanR' ? 'inc' : 'pe';
     const B = (k, ic, l, cls, on) => `<button type="button" class="fpb${cls ? ' ' + cls : ''}${on ? ' on' : ''}" data-flp="${k}"${on != null ? ` role="radio" aria-checked="${!!on}"` : ''}>${FLP_I[ic]}<span>${l}</span></button>`;
     const nm = o.t === 'd' ? (SH_DN[o.k] || 'Enfeite') : G ? G + ' livros juntos' : ((shById(id) || {}).t || '');
     p.innerHTML = `<div class="fph2"><span class="fpn">${esc(nm)}</span><button type="button" class="fpok" data-flp="ok" aria-label="Pronto">${FLP_I.ok}</button></div>` + (o.t === 'd'
       ? `<div class="fpg">${B(o.z ? 'dtras' : 'dfrente', o.z ? 'tr' : 'fr', o.z ? 'Atrás' : 'Frente')}${B('mv', 'mv', 'Mover')}${B(o.k === 'leitor' ? 'dvisor' : 'dtroca', 'tc', o.k === 'leitor' ? 'Visor' : 'Trocar')}${B('drem', 'tirar', 'Remover', 'red')}</div>`
-      : `<div class="fpg" role="radiogroup" aria-label="Posição">${B('pe', 'pe', 'Em pé', '', cur === 'pe')}${B('dei', 'dei', 'Deitado', '', cur === 'dei')}${B('fre', 'fre', 'De frente', '', cur === 'fre')}${B('inc', 'inc', 'Inclinado', '', cur === 'inc')}</div>`
+      : `<div class="fpg" role="radiogroup" aria-label="Posição">${B('pe', 'pe', 'Em pé', '', cur === 'pe')}${B('dei', 'dei', 'Deitado', '', cur === 'dei')}${B('fre', 'fre', 'De frente', '', cur === 'fre')}${B('inc', P[id] === 'leanR' ? 'incR' : 'inc', 'Inclinado', '', cur === 'inc')}</div>`
         + `<div class="fpg">${B('mv', 'mv', 'Mover')}${G ? '' : B('lomb', 'lomb', 'Lombada')}${G ? '' : B('ver', 'ver', 'Ver livro')}${B('tirar', 'tirar', 'Tirar', 'red')}</div>`);
     p.classList.add('fpc3');
     const el = sr.querySelector(`.bsh.flx .fli[data-u="${o.u}"]`); if (el) { const E = el.getBoundingClientRect(), ph = p.offsetHeight, pw = p.offsetWidth, cSide = flColSide(), W = innerWidth - (cSide === 'R' ? 60 : 0), L0 = cSide === 'L' ? 68 : 8;

@@ -26648,6 +26648,8 @@ const SHX_CSS1 = `.v4ler .bsh{--bk-wall:#efe7da;--bk-back:#e4d8c5;--bk-w1:#d6aa7
 .v4ler .bsh .sp:focus-visible{outline:2px solid var(--acc);outline-offset:2px;z-index:4}
 .v4ler .bsh .sp.lean{transform-origin:0 100%;transform:rotate(-7deg)}
 .v4ler .bsh .sp.lean:hover{transform:rotate(-7deg) translateY(-5px)}
+.v4ler .bsh .sp.lean.lr{transform-origin:100% 100%;transform:rotate(7deg)}
+.v4ler .bsh .sp.lean.lr:hover{transform:rotate(7deg) translateY(-5px)}
 .v4ler .bsh .sp .tb{position:absolute;left:0;right:0;top:0;background:var(--c2)}
 .v4ler .bsh .sp .fb{position:absolute;left:2px;right:2px;height:1px;background:var(--k);opacity:.55}
 .v4ler .bsh .sp .lb{position:absolute;left:2px;right:2px;border-radius:1px;background:rgba(0,0,0,.42);box-shadow:inset 0 0 0 .5px rgba(255,220,150,.45)}
@@ -26776,7 +26778,7 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   // lombada da capa: cor sólida + faixa da arte; sem etiqueta escura nem tarja (nada de caixa por trás do título)
   if (cvUrl && (sty === 'cl' || sty === 'dt')) sty = G.hc ? 'hc' : 'pb';
   let fi = sty === 'cl' ? 4 : sty === 'ep' ? 0 : (hh >>> 9) % 4; if (String(b.t).length > 13 && fi === 2) fi = hh % 2 ? 3 : 0;
-  const cls = `sp ${sty} f${fi}${b.lean ? ' lean' : ''}${cvUrl ? ' cvs' : ''}${photo ? ' ph' : ''}`;
+  const cls = `sp ${sty} f${fi}${b.lean ? ' lean' + (b.lean === 2 ? ' lr' : '') : ''}${cvUrl ? ' cvs' : ''}${photo ? ' ph' : ''}`;
   // título de cima para baixo; ocupa o meio da lombada; autor no terço de baixo; marca da editora no pé
   // 22/11 (Bia): sem o sufixo de série "(Next, #1)" na lombada; a página do livro continua com ele
   const t = String(b.t).replace(/\s*\((?=[^)]*#\s*\d)[^)]*\)\s*$/, '').trim() || String(b.t), au = String(b.a || '').split(' ').slice(-1)[0], sz = sm ? 0.6 : 1;
@@ -26807,7 +26809,7 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   const pm = false ? `<span class="pm p${(hh >>> 13) % 4}" aria-hidden="true"></span>` : '';
   const bg = photo ? `;background-image:url('${photo}')` : '';
   const inner = photo ? edge : `${deco}${edge}<span class="tt${nl > 1 ? ' w2' : ''}" style="top:${topR}px;height:${L}px;font-size:${fs.toFixed(1)}px${nl > 1 ? `;-webkit-line-clamp:${nl}` : ''}">${esc(t)}</span>${auH}${pm}`;
-  return `<${tag}${tag === 'button' ? ' type="button"' : ''} class="${cls}"${at} data-bid="${esc(b.id)}"${cvUrl ? ` data-sk="${spnHash(b.img)}"` : ''} aria-label="${esc(lab)}" style="width:${w}px;height:${h}px;--c:${cc};--k:${kx}${bg}${b.lean ? `;margin-left:${Math.ceil(h * 0.125)}px` : ''}">${inner}${mk}</${tag}>`; }
+  return `<${tag}${tag === 'button' ? ' type="button"' : ''} class="${cls}"${at} data-bid="${esc(b.id)}"${cvUrl ? ` data-sk="${spnHash(b.img)}"` : ''} aria-label="${esc(lab)}" style="width:${w}px;height:${h}px;--c:${cc};--k:${kx}${bg}${b.lean ? `;margin-${b.lean === 2 ? 'right' : 'left'}:${Math.ceil(h * 0.125)}px` : ''}">${inner}${mk}</${tag}>`; }
 // objetos (desenho próprio, nos tons do universo do app); s = escala
 const SH_DEC = {
   lua: (s) => `<svg width="${34 * s}" height="${92 * s}" viewBox="0 0 34 92" aria-hidden="true"><defs><linearGradient id="bkl1" x1="0" x2="1"><stop offset="0" stop-color="#8a6326"/><stop offset=".45" stop-color="#e9c46a"/><stop offset="1" stop-color="#9a6f2c"/></linearGradient></defs><path d="M28 6C10 14 4 34 8 52s16 28 24 30c-16-8-22-24-20-40S20 12 28 6z" fill="url(#bkl1)"/><circle cx="21" cy="30" r="1.2" fill="#fff3c4"/><circle cx="17" cy="50" r=".9" fill="#fff3c4"/><rect x="2" y="82" width="30" height="10" rx="1.5" fill="#5b3f1c"/><rect x="2" y="82" width="30" height="3" rx="1" fill="#a07a3c"/></svg>`,
@@ -26861,7 +26863,7 @@ function pratHTML(list0, sm, wBsh) {
   let list = list0.map((b) => ({ ...b })); if (typeof SHX_LTN !== 'undefined') SHX_LTN = 0;
   // Esvaziar e arrumar: no Organizar, os livros da bandeja saem da estante (fora dele ficam no fim, até a pessoa terminar)
   const TRAY = !sm && md === 'org' && Array.isArray(C0.tray) && C0.tray.length ? new Set(C0.tray) : null; if (TRAY) list = list.filter((b) => !TRAY.has(b.id));
-  const POS = C0.pos || {}; list.forEach((b) => { if (POS[b.id] === 'lean') b.lean = 1; });
+  const POS = C0.pos || {}; list.forEach((b) => { if (POS[b.id] === 'lean') b.lean = 1; else if (POS[b.id] === 'leanR') b.lean = 2; });
   // "Minha ordem" (Organizar): vale dentro do filtro; o que não está na ordem salva vai para o fim
   if (C0.ord && C0.ord.length) { const ix = new Map(C0.ord.map((id, i) => [id, i])); list = list.map((b, i) => [b, ix.has(b.id) ? ix.get(b.id) : 1e6 + i]).sort((x, y) => x[1] - y[1]).map((x) => x[0]); }
   const man = !!C0.manual || Object.keys(C0.lay || {}).some((id) => C0.lay[id]);
@@ -27632,9 +27634,9 @@ function shSetPos(id, k) { const C0 = shc(), b = shById(id); if (!b) return; if 
     delete C0.lay[id]; C0.pos[id] = 'face'; return done('Livro de frente, com a capa à mostra'); }
   if (k === 'pe') { delete C0.lay[id]; delete C0.pos[id]; return done('Livro em pé'); }
   if (k === 'dei') { C0.lay[id] = 1; delete C0.pos[id]; return done('Livro deitado'); }
-  if (k === 'inc') { delete C0.lay[id]; C0.pos[id] = 'lean'; return done('Livro inclinado'); }
+  if (k === 'inc') { delete C0.lay[id]; const R2 = C0.pos[id] === 'lean'; C0.pos[id] = R2 ? 'leanR' : 'lean'; return done(R2 ? 'Livro inclinado para a direita' : 'Livro inclinado para a esquerda · toque de novo para virar'); }
   if (k === 'dir') { delete C0.pos[id]; return done('Livro endireitado'); } }
-const shPosOf = (id) => { const C0 = shc(); if (C0.lay && C0.lay[id]) return 'dei'; const p = C0.pos && C0.pos[id]; if (p === 'face') return 'fre'; if (p === 'lean') return 'inc'; const sr = shBibRoot(), el = sr && [...sr.querySelectorAll('.bsh:not(.sm) [data-bid]')].find((e) => e.dataset.bid === id); if (el && el.closest('.pile')) return 'dei'; if (el && el.classList.contains('face')) return 'fre'; return 'pe'; };
+const shPosOf = (id) => { const C0 = shc(); if (C0.lay && C0.lay[id]) return 'dei'; const p = C0.pos && C0.pos[id]; if (p === 'face') return 'fre'; if (p === 'lean' || p === 'leanR') return 'inc'; const sr = shBibRoot(), el = sr && [...sr.querySelectorAll('.bsh:not(.sm) [data-bid]')].find((e) => e.dataset.bid === id); if (el && el.closest('.pile')) return 'dei'; if (el && el.classList.contains('face')) return 'fre'; return 'pe'; };
 
 // ---------- Arrumar por ----------
 const SH_ARR = [['cor', 'Cor (arco-íris)'], ['autor', 'Autor'], ['titulo', 'Título'], ['altura', 'Altura'], ['sit', 'Situação'], ['data', 'Data de leitura']];
@@ -30445,7 +30447,7 @@ function flW(it) { const P = shc().pos || {};
   if (it.t === 'd') return flDecW(it.k);
   if (it.t === 'p') { let m = 0; (it.ids || []).forEach((id) => { const b = shById(id); if (b) m = Math.max(m, Math.round(spnGeo(b, false).h * 0.86)); }); return m + 10; }
   const b = shById(it.id); if (!b) return 20; if (flFace(it.id)) return 98;
-  const G = spnGeo(b, false); return G.w + (P[it.id] === 'lean' ? Math.ceil(G.h * 0.125) + 4 : 0) + 1; }
+  const G = spnGeo(b, false); return G.w + (P[it.id] === 'lean' || P[it.id] === 'leanR' ? Math.ceil(G.h * 0.125) + 4 : 0) + 1; }
 function flBW() { const br = flQ('.bsh:not(.sm) .brow'); const w = br ? br.clientWidth : 0; return Math.max(200, w || ((FL_WB || Math.min(480, innerWidth)) - 30)); }
 const flBounds = (row) => [0, ...(row.dv || []), 1];
 function flNW(row, n, BW) { const b = flBounds(row), li = n > 0 ? FL_INS : 0, ri = n < b.length - 2 ? FL_INS : 0; return Math.floor((b[n + 1] - b[n]) * BW - li - ri); }
@@ -30555,7 +30557,7 @@ function flIntoPile(srcKey, tu, before) { const C0 = shc(), bk = shBk(), [su, sb
   C0.manual = 1; C0.arr = null; FLX.pk = null; FLX.sel = null; FLX.pos = null; shSave(); toast(su === tu && sb ? 'Pilha reordenada' : 'Livro deitado na pilha', shUndo(bk)); flRender(); }
 function flItemHTML(o, x, md) { const P = shc().pos || {}; let inner = '';
   if (o.t === 'b') { const b = shById(o.id); if (!b) return '';
-    inner = flFace(o.id) ? `<button type="button" class="face" data-bid="${esc(b.id)}"${md ? '' : shAct(b, true)} aria-label="${esc(b.t)}, de frente">${v4cv({ title: b.t, cover: b.img })}</button>` : spnHTML(P[o.id] === 'lean' ? { ...b, lean: 1 } : b, false); }
+    inner = flFace(o.id) ? `<button type="button" class="face" data-bid="${esc(b.id)}"${md ? '' : shAct(b, true)} aria-label="${esc(b.t)}, de frente">${v4cv({ title: b.t, cover: b.img })}</button>` : spnHTML(P[o.id] === 'lean' ? { ...b, lean: 1 } : P[o.id] === 'leanR' ? { ...b, lean: 2 } : b, false); }
   else if (o.t === 'p') inner = flPileHTML(o.ids, md, o);
   else if (o.t === 'd') { if (!SH_DEC[o.k]) return ''; const d = { k: o.k, ...(o.o || {}) }, lb = !md && o.k === 'leitor' && typeof shLeitorBook === 'function' ? shLeitorBook(d) : null;
     inner = `<span class="dec${lb ? ' lk' : ''}"${lb ? `${shAct(lb, false)} role="button" tabindex="0" aria-label="Leitor digital: ${esc(lb.t)}"` : ''}>${SH_DEC[o.k](1, d)}</span>`; }
@@ -30609,7 +30611,7 @@ function flDock() { const C0 = shc(), tr = Array.isArray(C0.tray) && C0.tray.len
 { const _pn = shOrgPanel; shOrgPanel = function () { return flActive() ? flDock() : _pn.apply(this, arguments); }; }
 function flPosPanel() { const sr = shBibRoot(); if (!sr) return; sr.querySelectorAll('.flpos').forEach((e) => e.remove()); if (!FLX.pos || (SHX_MODE !== 'org' && SHX_MODE !== 'deco') || !flActive()) return; const f = flFind(FLX.pos); if (!f) { FLX.pos = null; return; }
   const o = f.o, id = o.t === 'b' ? o.id : o.t === 'p' ? o.ids[0] : null; if (!id && o.t !== 'd') { FLX.pos = null; return; } const b = id ? shById(id) : { t: SH_DN[o.k] || 'Enfeite' }, P = shc().pos || {}; if (!b) return;
-  const cur = o.t === 'p' ? 'dei' : P[id] === 'face' ? 'fre' : P[id] === 'lean' ? 'inc' : 'pe', el = sr.querySelector(`.bsh.flx .fli[data-u="${o.u}"]`), R = sr.querySelector('.v5est'); if (!el || !R) return;
+  const cur = o.t === 'p' ? 'dei' : P[id] === 'face' ? 'fre' : P[id] === 'lean' || P[id] === 'leanR' ? 'inc' : 'pe', el = sr.querySelector(`.bsh.flx .fli[data-u="${o.u}"]`), R = sr.querySelector('.v5est'); if (!el || !R) return;
   el.scrollIntoView({ block: 'nearest' }); const E = el.getBoundingClientRect(), p = document.createElement('div'); p.className = 'flpos'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Como o livro fica');
   const G = FLX.posG && FLX.posG.length > 1 ? FLX.posG.length : 0;
   p.innerHTML = o.t === 'd' ? `<div class="fph"><b>${esc(b.t)}</b><button type="button" class="ok" data-flp="ok">Pronto</button></div><div class="fpc">${[[o.z ? 'dtras' : 'dfrente', o.z ? 'Levar para trás' : 'Trazer para frente'], ['mv', 'Mover'], [o.k === 'leitor' ? 'dvisor' : 'dtroca', o.k === 'leitor' ? 'Trocar livro do visor' : 'Trocar'], ['drem', 'Remover']].map(([k, l]) => `<button type="button" data-flp="${k}">${l}</button>`).join('')}</div>`
@@ -30659,20 +30661,20 @@ function flPosAct(k, el) { const f = flFind(FLX.pos); if (!f) return; const o = 
   const id = o.t === 'p' ? o.ids[0] : o.id;
   if (k === 'lomb') { FLX.pos = null; flRender(); const e = v5Book(id); return e && shOpen('shxlb', { e }); }
   const b = shById(id); if (k === 'fre' && !(b && b.img)) return toast('Livro sem capa não fica de frente');
-  const bk = shBk(), row = C0.free.rows[f.r]; let swp = '';
+  const bk = shBk(), row = C0.free.rows[f.r]; let swp = ''; const was = C0.pos[id]; // Inclinado de novo vira o lado (Bia 23/11)
   if (o.t === 'p') { o.t = 'b'; o.id = id; delete o.ids; } delete C0.pos[id]; if (C0.lay) delete C0.lay[id];
   if (k === 'dei') { o.t = 'p'; o.ids = [id]; delete o.id; }
-  if (k === 'inc') C0.pos[id] = 'lean';
+  if (k === 'inc') C0.pos[id] = was === 'lean' ? 'leanR' : 'lean';
   if (k === 'fre') { row.it.forEach((x) => { if (x !== o && x.t === 'b' && C0.pos[x.id] === 'face') { delete C0.pos[x.id]; swp = shTitle(x.id); } }); C0.pos[id] = 'face'; }
   const its = row.it.filter((x) => (x.n || 0) === (o.n || 0) && !x.z).sort((a, z) => a.x - z.x).map((x) => ({ o: x, x: x.x, w: flW(x) }));
   if (!flFit(its, flNW(row, o.n || 0, flBW()))) { let e2 = 0; its.forEach((q) => { q.x = Math.max(q.x, e2); e2 = q.x + q.w; }); its.forEach((q) => { q.o.x = Math.round(q.x); }); flNormalize(C0.free); } else its.forEach((q) => { q.o.x = Math.round(q.x); }); shSave();
-  toast(({ pe: 'Em pé', dei: 'Deitado', fre: 'De frente', inc: 'Inclinado' })[k] + (swp ? ' · ' + swp.slice(0, 24) + ' ficou em pé' : ''), shUndo(bk)); flRender(); }
+  toast(({ pe: 'Em pé', dei: 'Deitado', fre: 'De frente', inc: C0.pos[id] === 'leanR' ? 'Inclinado para a direita' : 'Inclinado para a esquerda · toque de novo para virar' })[k] + (swp ? ' · ' + swp.slice(0, 24) + ' ficou em pé' : ''), shUndo(bk)); flRender(); }
 // posição para vários de uma vez (depois de pôr uma seleção): em pé, deitados (pilhas de até 5), inclinados
 function flPosGroup(k) { const C0 = shc(), F = C0.free, bk = shBk(); C0.pos = C0.pos || {}; if (k === 'fre') return toast('De frente vale para um livro por vez');
   const its = FLX.posG.map(flFind).filter(Boolean); if (!its.length) return; const r = its[0].r, row = F.rows[r], n = its[0].o.n || 0, x0 = Math.min(...its.map((f) => f.o.x));
-  const ids = []; its.forEach((f) => { if (f.o.t === 'p') ids.push(...f.o.ids); else if (f.o.t === 'b') ids.push(f.o.id); });
+  const ids = []; its.forEach((f) => { if (f.o.t === 'p') ids.push(...f.o.ids); else if (f.o.t === 'b') ids.push(f.o.id); }); const LR = ids.length && C0.pos[ids[0]] === 'lean' ? 'leanR' : 'lean';
   const gone = new Set(its.map((f) => f.o.u)); F.rows.forEach((rw) => { rw.it = rw.it.filter((o) => !gone.has(o.u)); });
-  ids.forEach((id) => { delete C0.pos[id]; if (C0.lay) delete C0.lay[id]; if (k === 'inc') C0.pos[id] = 'lean'; });
+  ids.forEach((id) => { delete C0.pos[id]; if (C0.lay) delete C0.lay[id]; if (k === 'inc') C0.pos[id] = LR; });
   const nw = []; if (k === 'dei') { for (let i = 0; i < ids.length; i += 5) nw.push({ u: flUid(), t: 'p', ids: ids.slice(i, i + 5), n }); } else ids.forEach((id) => nw.push({ u: flUid(), t: 'b', id, n }));
   let e = x0; nw.forEach((o) => { o.x = e; e += flW(o); row.it.push(o); });
   const all = row.it.filter((o) => (o.n || 0) === n && !o.z).sort((a, z) => a.x - z.x).map((o) => ({ o, x: o.x, w: flW(o) }));
@@ -31632,19 +31634,19 @@ const flWKey = () => { try { return [SHX_MODE || '', flColSide(), innerWidth].jo
 // ---------- v2: painel compacto, leque, deslizar para selecionar, arrastar do carrossel, temas com prévia (Bia, 22/11) ----------
 const FLP_IC = (p) => `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 const FLP_I = { pe: FLP_IC('<rect x="9" y="3" width="6" height="18" rx="1"/>'), dei: FLP_IC('<rect x="3" y="14" width="18" height="6" rx="1"/><rect x="5" y="8" width="14" height="5" rx="1"/>'),
-  fre: FLP_IC('<rect x="6" y="3" width="12" height="18" rx="1.5"/><path d="M9 8h6"/>'), inc: FLP_IC('<path d="m8 21 6-18 4 1.3-6 18z"/>'), mv: FLP_IC('<path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/>'),
+  fre: FLP_IC('<rect x="6" y="3" width="12" height="18" rx="1.5"/><path d="M9 8h6"/>'), inc: FLP_IC('<path d="m8 21 6-18 4 1.3-6 18z"/>'), incR: FLP_IC('<path d="m16 21-6-18-4 1.3 6 18z"/>'), mv: FLP_IC('<path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/>'),
   lomb: FLP_IC('<rect x="9" y="3" width="6" height="18" rx="1"/><path d="M9 7h6M9 17h6"/>'), ver: FLP_IC('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
   tirar: FLP_IC('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'), fr: FLP_IC('<path d="M12 19V5M6 11l6-6 6 6"/>'), tr: FLP_IC('<path d="M12 5v14M6 13l6 6 6-6"/>'),
   tc: FLP_IC('<path d="M4 7h13l-3-3M20 17H7l3 3"/>'), ok: FLP_IC('<path d="m5 12 5 5 9-10"/>') };
 // painel do livro e do enfeite: tudo à vista (sem "•••"), compacto, ancorado ao livro com a seta
 { const _pp = flPosPanel; flPosPanel = function () { const r = _pp.apply(this, arguments); try { const sr = shBibRoot(), p = sr && sr.querySelector('.flpos'); if (!p) return r; const f = flFind(FLX.pos); if (!f) return r;
     const o = f.o, P = shc().pos || {}, id = o.t === 'b' ? o.id : o.t === 'p' ? o.ids[0] : null, G = FLX.posG && FLX.posG.length > 1 ? FLX.posG.length : 0;
-    const cur = o.t === 'p' ? 'dei' : P[id] === 'face' ? 'fre' : P[id] === 'lean' ? 'inc' : 'pe';
+    const cur = o.t === 'p' ? 'dei' : P[id] === 'face' ? 'fre' : P[id] === 'lean' || P[id] === 'leanR' ? 'inc' : 'pe';
     const B = (k, ic, l, cls, on) => `<button type="button" class="fpb${cls ? ' ' + cls : ''}${on ? ' on' : ''}" data-flp="${k}"${on != null ? ` role="radio" aria-checked="${!!on}"` : ''}>${FLP_I[ic]}<span>${l}</span></button>`;
     const nm = o.t === 'd' ? (SH_DN[o.k] || 'Enfeite') : G ? G + ' livros juntos' : ((shById(id) || {}).t || '');
     p.innerHTML = `<div class="fph2"><span class="fpn">${esc(nm)}</span><button type="button" class="fpok" data-flp="ok" aria-label="Pronto">${FLP_I.ok}</button></div>` + (o.t === 'd'
       ? `<div class="fpg">${B(o.z ? 'dtras' : 'dfrente', o.z ? 'tr' : 'fr', o.z ? 'Atrás' : 'Frente')}${B('mv', 'mv', 'Mover')}${B(o.k === 'leitor' ? 'dvisor' : 'dtroca', 'tc', o.k === 'leitor' ? 'Visor' : 'Trocar')}${B('drem', 'tirar', 'Remover', 'red')}</div>`
-      : `<div class="fpg" role="radiogroup" aria-label="Posição">${B('pe', 'pe', 'Em pé', '', cur === 'pe')}${B('dei', 'dei', 'Deitado', '', cur === 'dei')}${B('fre', 'fre', 'De frente', '', cur === 'fre')}${B('inc', 'inc', 'Inclinado', '', cur === 'inc')}</div>`
+      : `<div class="fpg" role="radiogroup" aria-label="Posição">${B('pe', 'pe', 'Em pé', '', cur === 'pe')}${B('dei', 'dei', 'Deitado', '', cur === 'dei')}${B('fre', 'fre', 'De frente', '', cur === 'fre')}${B('inc', P[id] === 'leanR' ? 'incR' : 'inc', 'Inclinado', '', cur === 'inc')}</div>`
         + `<div class="fpg">${B('mv', 'mv', 'Mover')}${G ? '' : B('lomb', 'lomb', 'Lombada')}${G ? '' : B('ver', 'ver', 'Ver livro')}${B('tirar', 'tirar', 'Tirar', 'red')}</div>`);
     p.classList.add('fpc3');
     const el = sr.querySelector(`.bsh.flx .fli[data-u="${o.u}"]`); if (el) { const E = el.getBoundingClientRect(), ph = p.offsetHeight, pw = p.offsetWidth, cSide = flColSide(), W = innerWidth - (cSide === 'R' ? 60 : 0), L0 = cSide === 'L' ? 68 : 8;

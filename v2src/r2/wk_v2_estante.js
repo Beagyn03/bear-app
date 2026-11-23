@@ -38,6 +38,8 @@ const SHX_CSS1 = `.v4ler .bsh{--bk-wall:#efe7da;--bk-back:#e4d8c5;--bk-w1:#d6aa7
 .v4ler .bsh .sp:focus-visible{outline:2px solid var(--acc);outline-offset:2px;z-index:4}
 .v4ler .bsh .sp.lean{transform-origin:0 100%;transform:rotate(-7deg)}
 .v4ler .bsh .sp.lean:hover{transform:rotate(-7deg) translateY(-5px)}
+.v4ler .bsh .sp.lean.lr{transform-origin:100% 100%;transform:rotate(7deg)}
+.v4ler .bsh .sp.lean.lr:hover{transform:rotate(7deg) translateY(-5px)}
 .v4ler .bsh .sp .tb{position:absolute;left:0;right:0;top:0;background:var(--c2)}
 .v4ler .bsh .sp .fb{position:absolute;left:2px;right:2px;height:1px;background:var(--k);opacity:.55}
 .v4ler .bsh .sp .lb{position:absolute;left:2px;right:2px;border-radius:1px;background:rgba(0,0,0,.42);box-shadow:inset 0 0 0 .5px rgba(255,220,150,.45)}
@@ -166,7 +168,7 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   // lombada da capa: cor sólida + faixa da arte; sem etiqueta escura nem tarja (nada de caixa por trás do título)
   if (cvUrl && (sty === 'cl' || sty === 'dt')) sty = G.hc ? 'hc' : 'pb';
   let fi = sty === 'cl' ? 4 : sty === 'ep' ? 0 : (hh >>> 9) % 4; if (String(b.t).length > 13 && fi === 2) fi = hh % 2 ? 3 : 0;
-  const cls = `sp ${sty} f${fi}${b.lean ? ' lean' : ''}${cvUrl ? ' cvs' : ''}${photo ? ' ph' : ''}`;
+  const cls = `sp ${sty} f${fi}${b.lean ? ' lean' + (b.lean === 2 ? ' lr' : '') : ''}${cvUrl ? ' cvs' : ''}${photo ? ' ph' : ''}`;
   // título de cima para baixo; ocupa o meio da lombada; autor no terço de baixo; marca da editora no pé
   // 22/11 (Bia): sem o sufixo de série "(Next, #1)" na lombada; a página do livro continua com ele
   const t = String(b.t).replace(/\s*\((?=[^)]*#\s*\d)[^)]*\)\s*$/, '').trim() || String(b.t), au = String(b.a || '').split(' ').slice(-1)[0], sz = sm ? 0.6 : 1;
@@ -197,7 +199,7 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   const pm = false ? `<span class="pm p${(hh >>> 13) % 4}" aria-hidden="true"></span>` : '';
   const bg = photo ? `;background-image:url('${photo}')` : '';
   const inner = photo ? edge : `${deco}${edge}<span class="tt${nl > 1 ? ' w2' : ''}" style="top:${topR}px;height:${L}px;font-size:${fs.toFixed(1)}px${nl > 1 ? `;-webkit-line-clamp:${nl}` : ''}">${esc(t)}</span>${auH}${pm}`;
-  return `<${tag}${tag === 'button' ? ' type="button"' : ''} class="${cls}"${at} data-bid="${esc(b.id)}"${cvUrl ? ` data-sk="${spnHash(b.img)}"` : ''} aria-label="${esc(lab)}" style="width:${w}px;height:${h}px;--c:${cc};--k:${kx}${bg}${b.lean ? `;margin-left:${Math.ceil(h * 0.125)}px` : ''}">${inner}${mk}</${tag}>`; }
+  return `<${tag}${tag === 'button' ? ' type="button"' : ''} class="${cls}"${at} data-bid="${esc(b.id)}"${cvUrl ? ` data-sk="${spnHash(b.img)}"` : ''} aria-label="${esc(lab)}" style="width:${w}px;height:${h}px;--c:${cc};--k:${kx}${bg}${b.lean ? `;margin-${b.lean === 2 ? 'right' : 'left'}:${Math.ceil(h * 0.125)}px` : ''}">${inner}${mk}</${tag}>`; }
 // objetos (desenho próprio, nos tons do universo do app); s = escala
 const SH_DEC = {
   lua: (s) => `<svg width="${34 * s}" height="${92 * s}" viewBox="0 0 34 92" aria-hidden="true"><defs><linearGradient id="bkl1" x1="0" x2="1"><stop offset="0" stop-color="#8a6326"/><stop offset=".45" stop-color="#e9c46a"/><stop offset="1" stop-color="#9a6f2c"/></linearGradient></defs><path d="M28 6C10 14 4 34 8 52s16 28 24 30c-16-8-22-24-20-40S20 12 28 6z" fill="url(#bkl1)"/><circle cx="21" cy="30" r="1.2" fill="#fff3c4"/><circle cx="17" cy="50" r=".9" fill="#fff3c4"/><rect x="2" y="82" width="30" height="10" rx="1.5" fill="#5b3f1c"/><rect x="2" y="82" width="30" height="3" rx="1" fill="#a07a3c"/></svg>`,
@@ -251,7 +253,7 @@ function pratHTML(list0, sm, wBsh) {
   let list = list0.map((b) => ({ ...b })); if (typeof SHX_LTN !== 'undefined') SHX_LTN = 0;
   // Esvaziar e arrumar: no Organizar, os livros da bandeja saem da estante (fora dele ficam no fim, até a pessoa terminar)
   const TRAY = !sm && md === 'org' && Array.isArray(C0.tray) && C0.tray.length ? new Set(C0.tray) : null; if (TRAY) list = list.filter((b) => !TRAY.has(b.id));
-  const POS = C0.pos || {}; list.forEach((b) => { if (POS[b.id] === 'lean') b.lean = 1; });
+  const POS = C0.pos || {}; list.forEach((b) => { if (POS[b.id] === 'lean') b.lean = 1; else if (POS[b.id] === 'leanR') b.lean = 2; });
   // "Minha ordem" (Organizar): vale dentro do filtro; o que não está na ordem salva vai para o fim
   if (C0.ord && C0.ord.length) { const ix = new Map(C0.ord.map((id, i) => [id, i])); list = list.map((b, i) => [b, ix.has(b.id) ? ix.get(b.id) : 1e6 + i]).sort((x, y) => x[1] - y[1]).map((x) => x[0]); }
   const man = !!C0.manual || Object.keys(C0.lay || {}).some((id) => C0.lay[id]);

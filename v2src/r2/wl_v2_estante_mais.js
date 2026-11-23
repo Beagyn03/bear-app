@@ -244,9 +244,9 @@ function shSetPos(id, k) { const C0 = shc(), b = shById(id); if (!b) return; if 
     delete C0.lay[id]; C0.pos[id] = 'face'; return done('Livro de frente, com a capa à mostra'); }
   if (k === 'pe') { delete C0.lay[id]; delete C0.pos[id]; return done('Livro em pé'); }
   if (k === 'dei') { C0.lay[id] = 1; delete C0.pos[id]; return done('Livro deitado'); }
-  if (k === 'inc') { delete C0.lay[id]; C0.pos[id] = 'lean'; return done('Livro inclinado'); }
+  if (k === 'inc') { delete C0.lay[id]; const R2 = C0.pos[id] === 'lean'; C0.pos[id] = R2 ? 'leanR' : 'lean'; return done(R2 ? 'Livro inclinado para a direita' : 'Livro inclinado para a esquerda · toque de novo para virar'); }
   if (k === 'dir') { delete C0.pos[id]; return done('Livro endireitado'); } }
-const shPosOf = (id) => { const C0 = shc(); if (C0.lay && C0.lay[id]) return 'dei'; const p = C0.pos && C0.pos[id]; if (p === 'face') return 'fre'; if (p === 'lean') return 'inc'; const sr = shBibRoot(), el = sr && [...sr.querySelectorAll('.bsh:not(.sm) [data-bid]')].find((e) => e.dataset.bid === id); if (el && el.closest('.pile')) return 'dei'; if (el && el.classList.contains('face')) return 'fre'; return 'pe'; };
+const shPosOf = (id) => { const C0 = shc(); if (C0.lay && C0.lay[id]) return 'dei'; const p = C0.pos && C0.pos[id]; if (p === 'face') return 'fre'; if (p === 'lean' || p === 'leanR') return 'inc'; const sr = shBibRoot(), el = sr && [...sr.querySelectorAll('.bsh:not(.sm) [data-bid]')].find((e) => e.dataset.bid === id); if (el && el.closest('.pile')) return 'dei'; if (el && el.classList.contains('face')) return 'fre'; return 'pe'; };
 
 // ---------- Arrumar por ----------
 const SH_ARR = [['cor', 'Cor (arco-íris)'], ['autor', 'Autor'], ['titulo', 'Título'], ['altura', 'Altura'], ['sit', 'Situação'], ['data', 'Data de leitura']];
