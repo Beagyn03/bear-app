@@ -10018,6 +10018,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 00_v2_capa_canvas.js ---
 // Capa para canvas (Bia, 22/11): o Google Livros não manda CORS, então o canvas não pode ler os pixels dessas capas
@@ -31335,8 +31336,8 @@ function flArrOpts() { const ids = shAllIds(), hasFmt = ids.some((id) => flRaw(i
 // Os desenhos antigos com equivalente passam a usar a ilustração (as chaves salvas continuam as mesmas: nada a migrar).
 // Altura fixa por tipo (fração da altura da prateleira), luz ajustada ao tema e sombra de contato no pé.
 // Guirlandas: peça nova, pendurada no alto do vão de uma prateleira (uma por prateleira).
-// Desfazer/Refazer da coluna e os toasts com Desfazer também voltam escolhas de decoração (parede, madeira, lombadas, luzes, guirlanda, enfeites)
-['deco', 'wood', 'wall', 'lt', 'spMode', 'spb', 'sp', 'ed', 'mk', 'lights', 'grl', 'freePend'].forEach((k) => { if (!SHX_BKK.includes(k)) SHX_BKK.push(k); });
+// Desfazer/Refazer da coluna e os toasts com Desfazer também voltam escolhas de decoração (parede, madeira, lombadas, luzes, enfeites)
+['deco', 'wood', 'wall', 'lt', 'spMode', 'spb', 'sp', 'ed', 'mk', 'lights', 'freePend'].forEach((k) => { if (!SHX_BKK.includes(k)) SHX_BKK.push(k); });
 // congelar a estante ao entrar no Organizar/Decorar não vira passo do Desfazer
 { const _fz = flFreeze; flFreeze = function () { const r = _fz.apply(this, arguments); if (r) { FLH_LOCK++; queueMicrotask(() => { FLH_LOCK--; try { const b = shBk(); FLH_CUR = { bk: b, js: JSON.stringify(b) }; flhPaint(); } catch {} }); } return r; }; }
 // faixa Lombadas: o botão de um livro só cabe no cartão
@@ -31402,43 +31403,14 @@ SH_DEC.leitor = (s, d) => { const b = typeof shLeitorBook === 'function' ? shLei
   return `<span class="eia erdi${d && d.gr ? ' gr' : ''}" aria-hidden="true" style="width:${W}px;height:${H}px"><img alt="" width="${W}" height="${H}" decoding="async" src="${eiaSrc('leitor', 'leitor_' + cap)}"><span class="escr" style="width:100px;height:150px;transform:matrix3d(${eiaQuad(P, 100, 150)})">${scr}</span></span>`; };
 SH_DW.leitor = Math.round(0.9 * EIA_HB * 268 / 320); SH_DH.leitor = Math.round(0.9 * EIA_HB);
 try { FLW_DEC.leitor = undefined; delete FLW_DEC.leitor; Object.keys(FLW_DEC).forEach((k) => delete FLW_DEC[k]); } catch {}
-// ---------- guirlandas: penduradas no alto do vão de uma prateleira ----------
-const EIA_GRL = { natal: ['Guirlanda de Natal', 'natal'], encantado: ['Guirlanda encantada', 'encantado'] };
-const grlMap = () => { const C0 = shc(); if (!C0.grl || typeof C0.grl !== 'object') C0.grl = {}; return C0.grl; };
-function grlPaint() { try { const sr = shBibRoot(); if (!sr) return; try { sr.host.classList.toggle('eiaL', !!(TR && TR.host && TR.host.classList.contains('light'))); } catch {} const G = (shc().grl) || {}, md = typeof SHX_MODE !== 'undefined' ? SHX_MODE : '';
-    sr.querySelectorAll('.bsh').forEach((sh) => { const bays = [...sh.querySelectorAll(':scope .bay')]; bays.forEach((bay, i) => { const r = bay.dataset.r != null ? bay.dataset.r : String(i), k = G[r];
-      let el = bay.querySelector(':scope > .grl'); if (!k || !EIA_GRL[k]) { if (el) el.remove(); return; }
-      if (!el || el.dataset.k !== k) { if (el) el.remove(); el = document.createElement('span'); el.className = 'grl'; el.dataset.k = k; el.innerHTML = `<img alt="" decoding="async" src="${eiaSrc(EIA_GRL[k][1], 'guirlanda')}">`; bay.prepend(el); }
-      const ed = md === 'deco'; el.classList.toggle('ed', ed); el.classList.toggle('sel', ed && GRL_SEL === r); el.dataset.r = r;
-      }); }); grlPanel(sr); } catch (e) { console.warn('guirlanda', e); } }
-function grlRows() { try { const sr = shBibRoot(), sh = sr && sr.querySelector('.bsh'); return sh ? [...sh.querySelectorAll('.bay')].map((b, i) => (b.dataset.r != null ? b.dataset.r : String(i))) : []; } catch { return []; } }
-function grlAdd(k) { const G = grlMap(), rows = grlRows(); let r = rows.find((x) => !G[x]); if (r == null) r = rows[0] || '0';
-  try { const sr = shBibRoot(); const vis = [...sr.querySelectorAll('.bsh .bay')].find((b) => { const R = b.getBoundingClientRect(); return R.bottom > 80 && R.top < innerHeight - 120 && !G[b.dataset.r != null ? b.dataset.r : '']; }); if (vis && vis.dataset.r != null) r = vis.dataset.r; } catch {}
-  const bk = JSON.parse(JSON.stringify(G)); G[r] = k; shSave(); grlPaint(); toast(EIA_GRL[k][0] + ' na estante', { label: 'Desfazer', fn: () => { shc().grl = bk; shSave(); grlPaint(); } }); }
-let GRL_SEL = null;
-// painel da guirlanda selecionada (mesmo padrão do painel dos enfeites): Subir · Descer · Trocar · Remover
-function grlPanel(sr) { try { sr.querySelectorAll('.grlpan').forEach((e) => e.remove()); if (GRL_SEL == null || SHX_MODE !== 'deco') return; const el = sr.querySelector(`.bsh .grl[data-r="${GRL_SEL}"]`); if (!el) { GRL_SEL = null; return; }
-  const E = el.getBoundingClientRect(), p = document.createElement('div'); p.className = 'grlpan'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Guirlanda');
-  const B = (a, ic, l, c) => `<button type="button" class="fpb${c ? ' ' + c : ''}" data-grl="${a}" data-r="${GRL_SEL}">${ic}<span>${l}</span></button>`, I = (d) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-  p.innerHTML = `<div class="fph2"><span class="fpn">${esc((EIA_GRL[(shc().grl || {})[GRL_SEL]] || ['Guirlanda'])[0])}</span><button type="button" class="fpok" data-grl="ok" aria-label="Pronto">${I('<path d="m5 12 5 5 9-10"/>')}</button></div><div class="fpg">${B('up', I('<path d="M12 19V5M6 11l6-6 6 6"/>'), 'Subir')}${B('dn', I('<path d="M12 5v14M6 13l6 6 6-6"/>'), 'Descer')}${B('tc', I('<path d="M4 7h13l-3-3M20 17H7l3 3"/>'), 'Trocar')}${B('rm', I('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'), 'Remover', 'red')}</div>`;
-  const R = sr.querySelector('.v5est') || sr; R.appendChild(p); const ph = p.offsetHeight, pw = p.offsetWidth; let top = E.bottom + 10; if (top + ph > innerHeight - 90) top = Math.max(64, E.top - ph - 10);
-  const left = Math.max(8, Math.min(innerWidth - pw - 70, E.left + E.width / 2 - pw / 2)); p.style.top = top + 'px'; p.style.left = left + 'px'; } catch (e) { console.warn('painel guirlanda', e); } }
-// o toque na faixa da guirlanda é dela, não do livro de baixo
-{ const _n = flNicheAt; flNicheAt = function (T) { try { if (T && T.closest && (T.closest('.grl') || T.closest('.grlpan'))) return null; } catch {} return _n.apply(this, arguments); }; }
-{ const _h = flHitFli; flHitFli = function (T) { try { if (SHX_MODE === 'deco' && T && T.closest && (T.closest('.grl') || T.closest('.grlpan'))) return null; } catch {} return _h.apply(this, arguments); }; }
-window.addEventListener('click', (ev) => { try { if (typeof SHX_MODE === 'undefined' || SHX_MODE !== 'deco') return; const p = ev.composedPath ? ev.composedPath() : [], b = p.find((n) => n && n.dataset && n.dataset.grl), g = p.find((n) => n && n.classList && n.classList.contains && n.classList.contains('grl'));
-  if (!b && g) { ev.stopImmediatePropagation(); ev.preventDefault(); GRL_SEL = GRL_SEL === g.dataset.r ? null : g.dataset.r; try { navigator.vibrate && navigator.vibrate(8); } catch {} return grlPaint(); }
-  if (!b) { if (GRL_SEL != null && !p.find((n) => n && n.classList && n.classList.contains && n.classList.contains('grlpan'))) { GRL_SEL = null; grlPaint(); } return; }
-  ev.stopImmediatePropagation(); ev.preventDefault(); const a = b.dataset.grl; if (a === 'ok') { GRL_SEL = null; return grlPaint(); }
-  const G = grlMap(), r = b.dataset.r, rows = grlRows(), i = rows.indexOf(r), bk = JSON.parse(JSON.stringify(G));
-  if (a === 'rm') { delete G[r]; GRL_SEL = null; } else if (a === 'tc') { G[r] = G[r] === 'natal' ? 'encantado' : 'natal'; } else { const j = i + (a === 'up' ? -1 : 1); if (j < 0 || j >= rows.length) return toast(a === 'up' ? 'Já está na prateleira de cima' : 'Já está na prateleira de baixo'); const k = G[r]; delete G[r]; const o = G[rows[j]]; G[rows[j]] = k; if (o) G[r] = o; GRL_SEL = rows[j]; }
-  shSave(); grlPaint(); if (a === 'rm') toast('Guirlanda tirada', { label: 'Desfazer', fn: () => { shc().grl = bk; shSave(); grlPaint(); } }); } catch (e) { console.warn('guirlanda', e); } }, true);
-// botões de guirlanda no carrossel de Temas e de Luzinhas
-const grlBtns = () => Object.entries(EIA_GRL).map(([k, [l, t]]) => `<button type="button" class="tzi grlbtn" data-grlk="${k}" aria-label="Pôr ${l}"><span class="tzv th"><span class="eia" style="width:56px;height:18px"><img alt="" loading="lazy" src="${eiaSrc(t, 'guirlanda')}"></span></span><small>${l}</small></button>`).join('');
-{ const _dp = dkPanel; dkPanel = function () { let h = _dp.apply(this, arguments); try { if (typeof FLX !== 'undefined' && FLX && FLX.car === 'temas' && h && h.includes('class="dbody')) h = h.replace(/(<div class="dbody[^"]*"[^>]*>)/, `$1${grlBtns()}`); } catch {} return h; }; }
-document.addEventListener('click', (ev) => { const p = ev.composedPath ? ev.composedPath() : [], b = p.find((n) => n && n.dataset && n.dataset.grlk); if (!b) return; ev.stopImmediatePropagation(); ev.preventDefault(); grlAdd(b.dataset.grlk); }, true);
-{ const _sd = shDraw; shDraw = function () { const r = _sd.apply(this, arguments); try { grlPaint(); requestAnimationFrame(grlPaint); } catch {} return r; }; }
-{ const _fr = flRender; flRender = function () { const r = _fr.apply(this, arguments); try { grlPaint(); } catch {} return r; }; }
+// ---------- guirlandas: retiradas a pedido da Bia (22/11) ----------
+// quem já tinha guirlanda salva perde a chave ao abrir a estante; as imagens saem do cache do service worker
+function eiaTheme() { try { const sr = shBibRoot(); if (sr) sr.host.classList.toggle('eiaL', !!(TR && TR.host && TR.host.classList.contains('light'))); } catch {} }
+function eiaNoGrl() { try { const P = v5P(); if (P && P.shx && P.shx.grl !== undefined) { delete P.shx.grl; if (typeof FLH_LOCK !== 'undefined') FLH_LOCK++; try { v5Save(); } finally { if (typeof FLH_LOCK !== 'undefined') FLH_LOCK--; } } } catch {}
+  try { const sr = shBibRoot(); if (sr) sr.querySelectorAll('.grl, .grlpan').forEach((e) => e.remove()); } catch {} }
+try { if (window.caches) caches.keys().then((ks) => ks.forEach((k) => caches.open(k).then((c) => c.keys().then((rs) => rs.forEach((r) => { if (/\/img\/enfeites\/[^/]+\/guirlanda\.webp/.test(r.url)) c.delete(r); }))))).catch(() => {}); } catch {}
+{ const _sd = shDraw; shDraw = function () { eiaNoGrl(); const r = _sd.apply(this, arguments); try { eiaTheme(); } catch {} return r; }; }
+{ const _fr = flRender; flRender = function () { const r = _fr.apply(this, arguments); try { eiaTheme(); } catch {} return r; }; }
 const EIA_CSS = `
 .v4ler .dkpan.flcar .dbody [data-a=dkpqok],.v4ler .dkpan.flcar .dbody [data-a=dkpqrm],.v4ler .dkpan.flcar .dbody [data-a=dkpqnew]{order:1}.v4ler .dkpan.flcar .dbody .pqsw>button{order:2}.v4ler .dkpan.flcar .dbody .dchips>button{order:3}.v4ler .dkpan.flcar .dbody .pqin{order:0;display:flex!important;flex:0 0 168px;height:96px;margin:0;box-sizing:border-box;flex-direction:column;align-items:stretch;justify-content:center;gap:2px;border-radius:14px;background:color-mix(in srgb,var(--card) 70%,transparent)}.v4ler .dkpan.flcar .dbody .pqin input{min-height:40px;font-size:15px;border-bottom:1.5px solid var(--line)}.v4ler .dkpan.flcar .dbody .pqin .cnt{align-self:flex-end}
 .v4ler .dkpan.flcar .dbody button.btn{white-space:normal;line-height:1.15;text-align:center;gap:4px}.v4ler .dkpan.flcar .dbody button.btn small{font-size:11px;font-weight:600;color:var(--ink2)}.v4ler .dkpan.flcar .dbody button.btn.p small{color:inherit;opacity:.85}.eia{display:block;position:relative;line-height:0}.eia>img{width:100%;height:100%;object-fit:contain;display:block;filter:brightness(.86) saturate(.86) contrast(.94) drop-shadow(-2px 2px 3px rgba(0,0,0,.45))}
@@ -31447,9 +31419,7 @@ const EIA_CSS = `
 .th .eia,.tzv .eia,.dkpan .eia{max-width:56px;max-height:54px;width:auto!important;height:54px!important}.th .eia>img,.tzv .eia>img,.dkpan .eia>img{filter:none}.th .eia::after,.tzv .eia::after,.dkpan .eia::after{display:none}
 .erdi .escr{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;background:#d9d6cf;pointer-events:none}.erdi .escr>img,.erdi .escr .gen{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.erdi .escr .gen.hd{opacity:0}
 .erdi .escr{filter:grayscale(.3) contrast(.92) brightness(1.02) sepia(.1)}.erdi.gr .escr{filter:grayscale(1) contrast(.95)}
-.bay{position:relative}.grl{position:absolute;left:0;right:0;top:0;z-index:4;pointer-events:none;display:block;line-height:0}.grl>img{width:100%;max-height:58px;object-fit:cover;object-position:center top;display:block;filter:brightness(.92) drop-shadow(0 3px 3px rgba(0,0,0,.35))}
-.grl.ed{pointer-events:auto;cursor:pointer}.grl.sel{outline:2px solid var(--acc,#e0ad3a);outline-offset:-2px;z-index:6}.grlpan{position:fixed;z-index:10003;padding:6px;border-radius:16px;background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 14px 34px rgba(0,0,0,.38)}.grlpan .fph2{display:flex;align-items:center;gap:6px;margin:0 2px 4px}.grlpan .fpn{flex:1;font-size:11.5px;font-weight:700;color:var(--ink2)}.grlpan .fpok{width:32px;height:32px;border-radius:50%;border:0;background:var(--acc);color:var(--on-acc,#fff);display:grid;place-items:center}.grlpan .fpg{display:grid;grid-template-columns:repeat(4,64px);gap:4px}.grlpan .fpb{height:46px;border-radius:10px;border:1px solid var(--line);background:var(--soft,rgba(127,127,127,.12));color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;font:inherit;font-size:10.5px;font-weight:700;cursor:pointer}.grlpan .fpb.red{color:#e5675a}.grl .grb{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:4px}.grl .grb button{width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font:700 15px/1 system-ui;cursor:pointer}
-.grlbtn .eia{height:20px!important}`;
+.bay{position:relative}`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-eia]')) { const st = document.createElement('style'); st.dataset.eia = 1; st.textContent = EIA_CSS; sr.append(st); } } catch {} }; }
 // enfeite que vai para a frente dos livros não cai em cima de outro da frente: procura o lugar mais livre nas prateleiras à vista
 { const _da = flDecoAdd; flDecoAdd = function () { const before = new Set(); try { shc().free.rows.forEach((rw) => rw.it.forEach((o) => before.add(o.u))); } catch {} const r = _da.apply(this, arguments);
@@ -31540,13 +31510,8 @@ window.addEventListener('pointerup', flcdEnd, true); window.addEventListener('po
 window.addEventListener('click', (ev) => { try { if (FLX && FLX.swallow) { const p = ev.composedPath ? ev.composedPath() : []; if (p.find((n) => n && n.dataset && n.dataset.a === 'dkadd')) { ev.stopImmediatePropagation(); ev.preventDefault(); } } } catch {} }, true);
 // ---------- temas: tocar já mostra a prévia na estante; miniatura da peça principal ----------
 const TZ_MAIN = { natal: 'ia_natal_redoma', terror: 'ia_terror_abobora', romance: 'ia_romance_rosas', fantasia: 'ia_fantasia_dragao', misterio: 'ia_fantasia_lamparina', aconchego: 'ia_basicos_gato', encantado: 'ia_encantado_dragao' };
-const TZ_GRL = { natal: 'natal', encantado: 'encantado' };
-{ const _ap = tzApply; tzApply = function (id) { const C0 = shc(), g0 = JSON.parse(JSON.stringify(C0.grl || {})); const r = _ap.apply(this, arguments);
-    try { if (TZ_PV) TZ_PV.grl0 = g0; const gk = TZ_GRL[id]; const G = grlMap(); Object.keys(G).forEach((k) => { if (TZ_GRL_SET.has(k)) delete G[k]; }); TZ_GRL_SET.clear(); if (gk) { const rows = grlRows(), rr = rows.find((x) => !G[x]); if (rr != null) { G[rr] = gk; TZ_GRL_SET.add(rr); } } shSave(); grlPaint(); } catch {}
+{ const _ap = tzApply; tzApply = function (id) { const r = _ap.apply(this, arguments);
     try { const sr = shBibRoot(), sh = sr && sr.querySelector('.bsh'); if (sh) { const R = sh.getBoundingClientRect(); if (R.top < 60 || R.top > innerHeight * 0.4) sh.scrollIntoView({ block: 'start', behavior: 'smooth' }); } } catch {} return r; }; }
-const TZ_GRL_SET = new Set();
-{ const _c = tzCancel; tzCancel = function () { const g0 = TZ_PV && TZ_PV.grl0; const r = _c.apply(this, arguments); try { if (g0) { shc().grl = g0; shSave(); grlPaint(); } TZ_GRL_SET.clear(); } catch {} return r; }; }
-{ const _k = tzKeep; tzKeep = function () { TZ_GRL_SET.clear(); return _k.apply(this, arguments); }; }
 // tocar no chip do tema = abrir + aplicar a prévia
 window.addEventListener('click', (ev) => { try { const p = ev.composedPath ? ev.composedPath() : [], b = p.find((n) => n && n.dataset && n.dataset.tz === 'open'); if (!b) return; const k = b.dataset.k; ev.stopImmediatePropagation(); ev.preventDefault();
   TZ_OPEN = k; tzApply(k); setTimeout(() => { try { flRender(); } catch {} tzRepaint(); }, 80); } catch (e) { console.warn('tema', e); } }, true);
@@ -31557,7 +31522,7 @@ window.addEventListener('click', (ev) => { try { const p = ev.composedPath ? ev.
       return `<button type="button" class="tzc tzm${cls}" data-tz="open" data-k="${k}"${rest}><span class="tzv th">${mk && SH_DEC[mk] ? SH_DEC[mk](0.5) : ''}</span><small>${l}</small></button>`; }); } catch {} return h; }; }
 const FLP_CSS = `.v4ler .flpos.fpc3{width:auto!important;max-width:calc(100vw - 84px);padding:6px!important}
 .v4ler .flpos.fpc3 .fph2{display:flex;align-items:center;gap:6px;margin:0 2px 4px}.v4ler .flpos.fpc3 .fpn{flex:1;min-width:0;font-size:11.5px;font-weight:700;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v4ler .flpos.fpc3 .fpok{width:30px;height:30px;border-radius:50%;border:0;background:var(--acc);color:var(--on-acc,#fff);display:grid;place-items:center;cursor:pointer;flex:none}
+.v4ler .flpos.fpc3 .fpok{width:44px;height:44px;margin:-6px -4px -6px 0;border-radius:50%;border:0;background:var(--acc);color:var(--on-acc,#fff);display:grid;place-items:center;cursor:pointer;flex:none}
 .v4ler .flpos.fpc3 .fpg{display:grid;grid-template-columns:repeat(4,64px);gap:4px}.v4ler .flpos.fpc3 .fpg+.fpg{margin-top:4px}
 .v4ler .flpos.fpc3 .fpb{height:46px;min-height:0!important;border-radius:10px;border:1px solid var(--line);background:var(--soft,rgba(127,127,127,.12));color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0!important;font:inherit;font-size:10.5px;font-weight:700;line-height:1;cursor:pointer}
 .v4ler .flpos.fpc3 .fpb.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}.v4ler .flpos.fpc3 .fpb.red{color:#e5675a}
@@ -31566,10 +31531,9 @@ const FLP_CSS = `.v4ler .flpos.fpc3{width:auto!important;max-width:calc(100vw - 
 .v4ler .dkpan .tzsec .tzc.tzm,.v4ler .dkpan.flcar .dbody button.tzc.tzm{width:86px!important;height:96px!important;max-height:96px!important;border-radius:14px!important;display:flex!important;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding:6px 4px!important;font-size:11px}`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-flp3]')) { const st = document.createElement('style'); st.dataset.flp3 = 1; st.textContent = FLP_CSS; sr.append(st); } } catch {} }; }
 // prévia de tema e Desfazer: a prévia não entra no histórico; Desfazer cancela a prévia; Manter vira um passo só.
-// Trocar de tema durante a prévia e depois cancelar volta à estante de antes da primeira prévia (inclusive a guirlanda).
+// Trocar de tema durante a prévia e depois cancelar volta à estante de antes da primeira prévia.
 let TZ_H = null;
-{ const _ap = tzApply; tzApply = function () { const first = !TZ_PV; if (first) TZ_H = { hb: shBk(), grl: JSON.parse(JSON.stringify(shc().grl || {})) }; FLH_LOCK++; let r; try { r = _ap.apply(this, arguments); } finally { FLH_LOCK--; }
-    try { if (TZ_PV && TZ_H) TZ_PV.grl0 = TZ_H.grl; } catch {} return r; }; }
+{ const _ap = tzApply; tzApply = function () { const first = !TZ_PV; if (first) TZ_H = { hb: shBk() }; FLH_LOCK++; let r; try { r = _ap.apply(this, arguments); } finally { FLH_LOCK--; } return r; }; }
 { const _k = tzKeep; tzKeep = function () { const h = TZ_H; FLH_LOCK++; let r; try { r = _k.apply(this, arguments); } finally { FLH_LOCK--; }
     try { if (h) { FLH_U.push(h.hb); if (FLH_U.length > 40) FLH_U.shift(); FLH_R = []; const b = shBk(); FLH_CUR = { bk: b, js: JSON.stringify(b) }; flhPaint(); } } catch {} TZ_H = null; return r; }; }
 { const _c = tzCancel; tzCancel = function () { FLH_LOCK++; let r; try { r = _c.apply(this, arguments); } finally { FLH_LOCK--; } try { const b = shBk(); FLH_CUR = { bk: b, js: JSON.stringify(b) }; flhPaint(); } catch {} TZ_H = null; return r; }; }

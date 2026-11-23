@@ -54,13 +54,8 @@ window.addEventListener('pointerup', flcdEnd, true); window.addEventListener('po
 window.addEventListener('click', (ev) => { try { if (FLX && FLX.swallow) { const p = ev.composedPath ? ev.composedPath() : []; if (p.find((n) => n && n.dataset && n.dataset.a === 'dkadd')) { ev.stopImmediatePropagation(); ev.preventDefault(); } } } catch {} }, true);
 // ---------- temas: tocar já mostra a prévia na estante; miniatura da peça principal ----------
 const TZ_MAIN = { natal: 'ia_natal_redoma', terror: 'ia_terror_abobora', romance: 'ia_romance_rosas', fantasia: 'ia_fantasia_dragao', misterio: 'ia_fantasia_lamparina', aconchego: 'ia_basicos_gato', encantado: 'ia_encantado_dragao' };
-const TZ_GRL = { natal: 'natal', encantado: 'encantado' };
-{ const _ap = tzApply; tzApply = function (id) { const C0 = shc(), g0 = JSON.parse(JSON.stringify(C0.grl || {})); const r = _ap.apply(this, arguments);
-    try { if (TZ_PV) TZ_PV.grl0 = g0; const gk = TZ_GRL[id]; const G = grlMap(); Object.keys(G).forEach((k) => { if (TZ_GRL_SET.has(k)) delete G[k]; }); TZ_GRL_SET.clear(); if (gk) { const rows = grlRows(), rr = rows.find((x) => !G[x]); if (rr != null) { G[rr] = gk; TZ_GRL_SET.add(rr); } } shSave(); grlPaint(); } catch {}
+{ const _ap = tzApply; tzApply = function (id) { const r = _ap.apply(this, arguments);
     try { const sr = shBibRoot(), sh = sr && sr.querySelector('.bsh'); if (sh) { const R = sh.getBoundingClientRect(); if (R.top < 60 || R.top > innerHeight * 0.4) sh.scrollIntoView({ block: 'start', behavior: 'smooth' }); } } catch {} return r; }; }
-const TZ_GRL_SET = new Set();
-{ const _c = tzCancel; tzCancel = function () { const g0 = TZ_PV && TZ_PV.grl0; const r = _c.apply(this, arguments); try { if (g0) { shc().grl = g0; shSave(); grlPaint(); } TZ_GRL_SET.clear(); } catch {} return r; }; }
-{ const _k = tzKeep; tzKeep = function () { TZ_GRL_SET.clear(); return _k.apply(this, arguments); }; }
 // tocar no chip do tema = abrir + aplicar a prévia
 window.addEventListener('click', (ev) => { try { const p = ev.composedPath ? ev.composedPath() : [], b = p.find((n) => n && n.dataset && n.dataset.tz === 'open'); if (!b) return; const k = b.dataset.k; ev.stopImmediatePropagation(); ev.preventDefault();
   TZ_OPEN = k; tzApply(k); setTimeout(() => { try { flRender(); } catch {} tzRepaint(); }, 80); } catch (e) { console.warn('tema', e); } }, true);
@@ -71,7 +66,7 @@ window.addEventListener('click', (ev) => { try { const p = ev.composedPath ? ev.
       return `<button type="button" class="tzc tzm${cls}" data-tz="open" data-k="${k}"${rest}><span class="tzv th">${mk && SH_DEC[mk] ? SH_DEC[mk](0.5) : ''}</span><small>${l}</small></button>`; }); } catch {} return h; }; }
 const FLP_CSS = `.v4ler .flpos.fpc3{width:auto!important;max-width:calc(100vw - 84px);padding:6px!important}
 .v4ler .flpos.fpc3 .fph2{display:flex;align-items:center;gap:6px;margin:0 2px 4px}.v4ler .flpos.fpc3 .fpn{flex:1;min-width:0;font-size:11.5px;font-weight:700;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v4ler .flpos.fpc3 .fpok{width:30px;height:30px;border-radius:50%;border:0;background:var(--acc);color:var(--on-acc,#fff);display:grid;place-items:center;cursor:pointer;flex:none}
+.v4ler .flpos.fpc3 .fpok{width:44px;height:44px;margin:-6px -4px -6px 0;border-radius:50%;border:0;background:var(--acc);color:var(--on-acc,#fff);display:grid;place-items:center;cursor:pointer;flex:none}
 .v4ler .flpos.fpc3 .fpg{display:grid;grid-template-columns:repeat(4,64px);gap:4px}.v4ler .flpos.fpc3 .fpg+.fpg{margin-top:4px}
 .v4ler .flpos.fpc3 .fpb{height:46px;min-height:0!important;border-radius:10px;border:1px solid var(--line);background:var(--soft,rgba(127,127,127,.12));color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0!important;font:inherit;font-size:10.5px;font-weight:700;line-height:1;cursor:pointer}
 .v4ler .flpos.fpc3 .fpb.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}.v4ler .flpos.fpc3 .fpb.red{color:#e5675a}
@@ -80,10 +75,9 @@ const FLP_CSS = `.v4ler .flpos.fpc3{width:auto!important;max-width:calc(100vw - 
 .v4ler .dkpan .tzsec .tzc.tzm,.v4ler .dkpan.flcar .dbody button.tzc.tzm{width:86px!important;height:96px!important;max-height:96px!important;border-radius:14px!important;display:flex!important;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding:6px 4px!important;font-size:11px}`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-flp3]')) { const st = document.createElement('style'); st.dataset.flp3 = 1; st.textContent = FLP_CSS; sr.append(st); } } catch {} }; }
 // prévia de tema e Desfazer: a prévia não entra no histórico; Desfazer cancela a prévia; Manter vira um passo só.
-// Trocar de tema durante a prévia e depois cancelar volta à estante de antes da primeira prévia (inclusive a guirlanda).
+// Trocar de tema durante a prévia e depois cancelar volta à estante de antes da primeira prévia.
 let TZ_H = null;
-{ const _ap = tzApply; tzApply = function () { const first = !TZ_PV; if (first) TZ_H = { hb: shBk(), grl: JSON.parse(JSON.stringify(shc().grl || {})) }; FLH_LOCK++; let r; try { r = _ap.apply(this, arguments); } finally { FLH_LOCK--; }
-    try { if (TZ_PV && TZ_H) TZ_PV.grl0 = TZ_H.grl; } catch {} return r; }; }
+{ const _ap = tzApply; tzApply = function () { const first = !TZ_PV; if (first) TZ_H = { hb: shBk() }; FLH_LOCK++; let r; try { r = _ap.apply(this, arguments); } finally { FLH_LOCK--; } return r; }; }
 { const _k = tzKeep; tzKeep = function () { const h = TZ_H; FLH_LOCK++; let r; try { r = _k.apply(this, arguments); } finally { FLH_LOCK--; }
     try { if (h) { FLH_U.push(h.hb); if (FLH_U.length > 40) FLH_U.shift(); FLH_R = []; const b = shBk(); FLH_CUR = { bk: b, js: JSON.stringify(b) }; flhPaint(); } } catch {} TZ_H = null; return r; }; }
 { const _c = tzCancel; tzCancel = function () { FLH_LOCK++; let r; try { r = _c.apply(this, arguments); } finally { FLH_LOCK--; } try { const b = shBk(); FLH_CUR = { bk: b, js: JSON.stringify(b) }; flhPaint(); } catch {} TZ_H = null; return r; }; }
