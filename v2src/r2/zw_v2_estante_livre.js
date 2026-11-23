@@ -98,7 +98,7 @@ function flSync(list) { const C0 = shc(), F = FL_PV ? FL_PV.free : C0.free, ids 
   F.rows.forEach((row) => { row.it = row.it.filter((o) => { if (o.t === 'b') { if (!ids.has(o.id) || tray.has(o.id) || have.has(o.id)) { ch = 1; return false; } have.add(o.id); }
     if (o.t === 'p') { const k = o.ids.filter((id) => ids.has(id) && !tray.has(id) && !have.has(id)); if (k.length !== o.ids.length) { ch = 1; o.ids = k; } k.forEach((id) => have.add(id)); return k.length > 0; } return true; }); });
   list.forEach((b) => { if (!have.has(b.id) && !tray.has(b.id)) { flAdd(F, { u: flUid(), t: 'b', id: b.id }); ch = 1; } });
-  while (F.rows.length < 3) flNewRow(F); if (ch && !FL_PV) shSave(); }
+  while (F.rows.length < 1) flNewRow(F); if (ch && !FL_PV) shSave(); }
 // 1ª vez: a estante automática (ou a ordem da pessoa) vira posições livres, sem nada pular de lugar
 function flFreeze() { const C0 = shc(), sh = flQ('.bsh:not(.sm)'); if (!sh) return false; const F = { st: 'aberta', rows: [] }, UD = C0.deco || [];
   sh.querySelectorAll('.bay').forEach((bay, r) => { const br = bay.querySelector('.brow'); if (!br) return; const R = br.getBoundingClientRect(), row = { dv: [], nb: [], it: [] }, ud = UD.filter((d) => d.r === r && SH_DEC[d.k]).sort((a, z) => a.p - z.p); let di = 0;
@@ -175,7 +175,8 @@ function flHTML(list0) { const C0 = shc(), F = FL_PV ? FL_PV.free : C0.free, md 
       nich += `<div class="nich${nb.bg ? ' bg-' + esc(nb.bg) : ''}${nb.lt ? ' nlt nlt' + esc(String(nb.lt)) : ''}${sel ? ' sel' : ''}" data-r="${k}" data-n="${n}" style="left:calc(${(bnd[n] * 100).toFixed(3)}% + ${li}px);width:calc(${((bnd[n + 1] - bnd[n]) * 100).toFixed(3)}% - ${li + ri}px)">${nb.lt ? '<i class="npk" aria-hidden="true"></i>' : ''}${h}</div>`;
       if (n > 0) dvs += `<span class="ndv" data-r="${k}" data-i="${n - 1}" style="left:calc(${(bnd[n] * 100).toFixed(3)}% - ${FL_INS}px)"${md === 'deco' ? ` role="slider" tabindex="0" aria-label="Divisória da ${k + 1}ª prateleira: arraste ou use as setas" aria-valuenow="${Math.round(bnd[n] * 100)}" aria-valuemin="5" aria-valuemax="95"` : ' aria-hidden="true"'}></span>`; }
     const pq = ((FL_PV ? FL_PV.plq : C0.plq) || []).map((q, i) => ({ ...q, i })).filter((q) => q.r === k && q.t).map((q) => `<span class="plq s-${esc(q.s || 'mad')}${md === 'deco' ? ' u' : ''}" style="left:${Math.max(4, Math.min(96, (q.p == null ? 0.5 : q.p) * 100)).toFixed(1)}%"${md === 'deco' ? ` data-pq="${q.i}" role="button" tabindex="0"` : ''}>${esc(String(q.t).slice(0, 24))}</span>`).join('');
-    return `<div class="bay fl" data-r="${k}">${shLtRow(k, false, 'b')}<div class="brow flr">${nich}${dvs}</div></div><div class="bpl"${pq ? '' : ' aria-hidden="true"'} data-r="${k}">${shLtRow(k, false, 'f')}${pq}</div>`; }).join('');
+    const rmb = md === 'org' && !row.it.length && F.rows.length > 1 && !FL_PV ? `<button type="button" class="flrmrow" data-fl="rmrow" data-r="${k}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;min-height:44px;padding:0 16px;border-radius:999px;border:1.5px dashed var(--line);background:color-mix(in srgb,var(--card) 88%,transparent);color:var(--ink);font:inherit;font-weight:800;font-size:.9rem;cursor:pointer;white-space:nowrap">Tirar prateleira</button>` : '';
+    return `<div class="bay fl" data-r="${k}">${shLtRow(k, false, 'b')}<div class="brow flr">${nich}${dvs}${rmb}</div></div><div class="bpl"${pq ? '' : ' aria-hidden="true"'} data-r="${k}">${shLtRow(k, false, 'f')}${pq}</div>`; }).join('');
   const hint = md ? '' : `<div class="hint"><span><i class="k1"></i>lendo</span><span><i class="k2">✦</i>lido</span><span class="r">Minha arrumação · toque abre · segure para opções</span></div>`;
   const ltOff = C0.lt && C0.lt.on === 0;
   const cls = `bsh flx${md ? ' ' + md : ''}${shDark() ? ' dk' : ''}${/^c[23]$/.test(F.st) ? ' cubo' : ''}${PK ? ' flpk' : ''}${md === 'deco' && SHX_LBP ? ' lbp' : ''} w-${C0.wall || 'linho'} lt-${ltOff ? 'off' : (C0.lt && C0.lt.c) || 'quente'}`;
@@ -295,7 +296,16 @@ function flDecoSheet(u) { const f = flFind(u); if (!f) return; const o = f.o, C0
   items.push(['Tirar da estante', () => { const bk = shBk(); C0.free.rows[f.r].it = C0.free.rows[f.r].it.filter((x) => x.u !== u); shSave(); toast('Enfeite tirado', shUndo(bk)); flRender(); }]);
   shX(SH_DN[o.k] || 'Enfeite', items); }
 function flDkReset() { const C0 = shc(), bk = shBk(); C0.free.rows.forEach((r) => { r.nb = []; }); shSave(); const R = flQ('.v5est'); if (!R) return; const b = document.createElement('button'); b.type = 'button'; b.dataset.a = 'dkreset'; b.hidden = true; R.appendChild(b); b.click(); b.remove(); }
+// prateleiras vazias (Bia 23/11): tirar uma (botão na prateleira) ou todas (••• do Organizar); plaquinhas e luzes
+// daquela prateleira saem junto e as de baixo sobem um número. Fica pelo menos uma prateleira.
+function flDropRows(rs) { const C0 = shc(), F = C0.free, set = new Set(rs), map = (r) => r - rs.filter((x) => x < r).length, num = (v) => typeof v === 'number' || /^\d+$/.test(String(v));
+  F.rows = F.rows.filter((_, i) => !set.has(i));
+  if (Array.isArray(C0.plq)) C0.plq = C0.plq.filter((q) => !set.has(q.r)).map((q) => ({ ...q, r: map(q.r) }));
+  if (Array.isArray(C0.lights)) C0.lights = C0.lights.filter((L) => !(num(L.r) && set.has(+L.r))).map((L) => (num(L.r) ? { ...L, r: typeof L.r === 'number' ? map(L.r) : String(map(+L.r)) } : L)); }
+function flDropEmpty() { const C0 = shc(), F = C0.free; let rs = F.rows.map((row, i) => (row.it.length ? -1 : i)).filter((i) => i >= 0); if (!rs.length) return toast('Nenhuma prateleira vazia');
+  if (rs.length >= F.rows.length) rs = rs.slice(1); if (!rs.length) return toast('A estante precisa de pelo menos uma prateleira'); const bk = shBk(); flDropRows(rs); C0.manual = 1; shSave(); toast(rs.length === 1 ? '1 prateleira vazia tirada' : rs.length + ' prateleiras vazias tiradas', shUndo(bk)); flRender(); }
 function flAct(k, el) { const C0 = shc();
+  if (k === 'rmrow') { const r = +el.dataset.r, row = C0.free.rows[r]; if (!row || row.it.length || C0.free.rows.length < 2) return; const bk = shBk(); flDropRows([r]); C0.manual = 1; shSave(); toast('Prateleira tirada', shUndo(bk)); return flRender(); }
   if (k === 'dock') { FLX.open = !FLX.open; return flRender(); }
   if (k === 'filt') { FLX.filt = !FLX.filt; return flRender(); }
   if (k === 'pkx') { FLX.pk = null; return flRender(); }
@@ -304,7 +314,7 @@ function flAct(k, el) { const C0 = shc();
   if (k === 'grip') return;
   if (k === 'sel') { FLX.pk = null; FLX.pos = null; FLX.posG = null; FLX.sel = { src: Array.isArray(C0.tray) && C0.tray.length && !FLX.trayHide ? 'tray' : 'shelf', ids: [] }; return flRender(); }
   if (k === 'selx') { FLX.sel = null; return flRender(); }
-  if (k === 'more') { const tr = Array.isArray(C0.tray) && C0.tray.length; return shX('Organizar', [tr ? ['Desfazer o esvaziar', () => { FLX.open = false; shTrayUndo(); }] : ['Esvaziar a estante', () => flEmpty()], ['Juntar os livros', () => flCloseGaps()], ['Arrumação automática', () => flAuto()]]); }
+  if (k === 'more') { const tr = Array.isArray(C0.tray) && C0.tray.length; return shX('Organizar', [tr ? ['Desfazer o esvaziar', () => { FLX.open = false; shTrayUndo(); }] : ['Esvaziar a estante', () => flEmpty()], ['Juntar os livros', () => flCloseGaps()], ['Tirar prateleiras vazias', () => flDropEmpty()], ['Arrumação automática', () => flAuto()]]); }
   if (k === 'st') return flTpl(el.dataset.k);
   if (k === 'nbg' || k === 'nlt') { const [r, n] = String(FLX.ns || '').split(':').map(Number), row = C0.free.rows[r]; if (!row) return; row.nb = row.nb || []; const nb = row.nb[n] = { ...(row.nb[n] || {}) };
     if (k === 'nbg') { if (el.dataset.k) nb.bg = el.dataset.k; else delete nb.bg; } else { if (+el.dataset.k) nb.lt = +el.dataset.k; else delete nb.lt; } shSave(); return flRender(); }
