@@ -31478,6 +31478,18 @@ function eiaScrollers() { const o = []; try { let n = shBibRoot()?.querySelector
 // (faixa abrindo/fechando, barra de rolagem). Depois que o layout assenta, redesenha de novo para recalcular x = f × largura.
 { const _r = shRestore; shRestore = function () { const r = _r.apply(this, arguments); const again = () => { try { if (typeof flActive === 'function' && flActive() && (SHX_MODE === 'org' || SHX_MODE === 'deco') && !(FLX.D && FLX.D.on)) flRender(); } catch {} };
     requestAnimationFrame(() => requestAnimationFrame(again)); setTimeout(again, 260); return r; }; }
+// Largura da prateleira (23/11): o desenho media .brow ANTES de a coluna lateral reservar o espaço dela (classes flmode/flcol entram
+// depois do desenho) ou, sem estante na tela, estimava innerWidth − 30. A estante saía desenhada numa largura e mostrada noutra, e o
+// próximo salvar convertia x→fração com a largura errada (era o "livro alguns px fora do lugar depois do Desfazer").
+// Agora: a largura assentada fica guardada por modo/lado da coluna/largura da tela; flBW usa a medida só quando ela é desse mesmo estado,
+// senão a guardada; e se o desenho saiu numa largura diferente da assentada, redesenha uma vez, na hora (antes de pintar).
+let FL_WSET = {}, FL_WFIX = 0;
+const flWKey = () => { try { return [SHX_MODE || '', flColSide(), innerWidth].join('|'); } catch { return ''; } };
+{ const _bw = flBW; flBW = function () { try { const k = flWKey(), R = flQ('.v5est'), br = flQ('.bsh:not(.sm) .brow'), side = flColSide();
+      const ok = br && R && (!(SHX_MODE === 'org' || SHX_MODE === 'deco') || !flActive() || (R.classList.contains('flmode') && R.classList.contains(side === 'L' ? 'flcolL' : 'flcolR')));
+      if (ok) { const w = br.clientWidth; if (w) return Math.max(200, w); } if (FL_WSET[k]) return FL_WSET[k]; } catch {} return _bw.apply(this, arguments); }; }
+{ const _sd = shDraw; shDraw = function () { const r = _sd.apply(this, arguments); try { if (typeof flActive === 'function' && flActive()) { const br = flQ('.bsh:not(.sm) .brow'), w = br ? br.clientWidth : 0;
+      if (w) { const k = flWKey(); FL_WSET[k] = Math.max(200, w); if (!FL_WFIX && Math.abs(FL_WSET[k] - FL_HBW) > 0.5) { FL_WFIX = 1; try { v5Redraw(); } finally { FL_WFIX = 0; } } } } } catch (e) { console.warn('estante: largura', e); } return r; }; }
 // --- zwzz_v2_enfeites_ib.js ---
 // ---------- v2: painel compacto, leque, deslizar para selecionar, arrastar do carrossel, temas com prévia (Bia, 22/11) ----------
 const FLP_IC = (p) => `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
