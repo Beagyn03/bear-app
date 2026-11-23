@@ -124,6 +124,15 @@ const flSelCount = () => { const S0 = FLX.sel; if (!S0) return 0; if (S0.src ===
 function flExtract(key) { const [u, bid] = String(key).split('|'), f = flFind(u); if (!f) return null; if (!bid) return f.o;
   const o = f.o; if (o.t !== 'p' || !o.ids.includes(bid)) return null; o.ids = o.ids.filter((x) => x !== bid); if (!o.ids.length) { const row = shc().free.rows[f.r]; row.it = row.it.filter((x) => x !== o); }
   return { u: flUid(), t: 'b', id: bid, n: o.n, x: o.x }; } // o livro tirado da pilha fica em pé (o painel de posição deixa deitar de novo)
+// seleção com livros de pilha (Bia 23/11): os livros de uma mesma pilha vão juntos, deitados e na ordem da pilha;
+// pilha inteira selecionada vai como está (com o enfeite de cima)
+function flSeqItems(keys) { const out = [], byP = new Map(), order = [], seen = new Set();
+  keys.forEach((k) => { const [u, b] = String(k).split('|'); if (b) { if (!byP.has(u)) { byP.set(u, []); order.push({ p: u }); } byP.get(u).push(b); } else order.push({ u }); });
+  order.forEach((e) => { if (e.u) { if (seen.has(e.u)) return; seen.add(e.u); const f = flFind(e.u); if (f) out.push(f.o); return; }
+    if (seen.has(e.p)) return; seen.add(e.p); const f = flFind(e.p); if (!f || f.o.t !== 'p') return; const o = f.o, sel = byP.get(e.p), ids = o.ids.filter((id) => sel.includes(id)); if (!ids.length) return;
+    if (ids.length === o.ids.length) { out.push(o); return; }
+    ids.forEach((id) => flExtract(flKeyOf(e.p, id))); out.push({ u: flUid(), t: 'p', ids, n: o.n, x: o.x }); });
+  return out; }
 // põe um livro dentro de uma pilha, antes de outro (ou no topo)
 function flIntoPile(srcKey, tu, before) { const C0 = shc(), bk = shBk(), [su, sb] = String(srcKey).split('|'); let id = sb;
   if (!id) { const f = flFind(su); if (!f || f.o.t !== 'b') return toast('Só um livro por vez entra na pilha'); id = f.o.id; const row = C0.free.rows[f.r]; row.it = row.it.filter((x) => x !== f.o); if (C0.pos) delete C0.pos[id]; }
@@ -222,7 +231,7 @@ function flAfterPlace(res, mv, r) { try { navigator.vibrate && navigator.vibrate
   toast(`${t.length > 34 ? t.slice(0, 33) + '…' : t} na ${r + 1}ª prateleira${sobra}${fromTray && left && !res.left ? ' · faltam ' + left : ''}${fromTray && !left ? ' · todos guardados' : ''}`, shUndo(res.bk)); flRender(); }
 function flSelMv() { const S0 = FLX.sel; if (!S0 || !S0.ids.length) return null; if (S0.src === 'tray') return { ids: S0.ids.slice() }; const its = S0.ids.map((u) => flFind(u)).filter(Boolean).map((f) => f.o); return its.length ? { items: its, seq: 1 } : null; }
 function flTapPlace(r, n, x) { const S0 = FLX.sel;
-  if (S0 && S0.ids.length && S0.src === 'shelf') { const bk0 = shBk(), its = S0.ids.map(flExtract).filter(Boolean); if (!its.length) return; const mvS = { items: its, seq: 1 }, res = flPlaceMany(r, n, x, mvS); if (!res) { shRestore(bk0); return toast('Não cabe aqui. Escolha outro lugar.'); } res.bk = bk0; return flAfterPlace(res, mvS, r); }
+  if (S0 && S0.ids.length && S0.src === 'shelf') { const bk0 = shBk(), its = flSeqItems(S0.ids); if (!its.length) return; const mvS = { items: its, seq: 1 }, res = flPlaceMany(r, n, x, mvS); if (!res) { shRestore(bk0); return toast('Não cabe aqui. Escolha outro lugar.'); } res.bk = bk0; return flAfterPlace(res, mvS, r); }
   const mvS = flSelMv(); if (mvS) { const res = flPlaceMany(r, n, x, mvS); if (!res) return toast('Não cabe aqui. Escolha outro lugar.'); return flAfterPlace(res, mvS, r); }
   const P = FLX.pk; if (!P) return; if (P.pb) { const bk0 = shBk(), it = flExtract(flKeyOf(P.u, P.pb)); if (!it) return; const mv1 = { items: [it] }, res = flPlace(r, n, x, mv1); if (!res) { shRestore(bk0); return toast('Não cabe aqui. Escolha outro lugar.'); } res.bk = bk0; return flAfterPlace(res, mv1, r); }
   let mv; if (P.from === 'tray') mv = { id: P.id }; else { const f = flFind(P.u); if (!f) return; mv = { items: [f.o] }; }
@@ -361,7 +370,7 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
       D.w = ids.reduce((a, id) => a + flW({ t: 'b', id }), 0); D.h = h; gin.style.width = e + 'px'; gin.style.height = h + 'px'; D.offX = Math.min(e, flW({ t: 'b', id: ids[0] })) / 2; D.offY = h * 0.55; }
     else if (D.pb && !D.grp && !D.seqU) { const pe = sh.querySelector(`.fli[data-u="${D.u}"] .pb[data-bid="${D.pb}"]`); if (!pe) { D.on = false; return; } const R = pe.getBoundingClientRect(); D.items = []; D.w = flW({ t: 'p', ids: [D.pb] }); D.h = R.height;
       const c = pe.cloneNode(true); c.style.position = 'absolute'; c.style.left = '0'; c.style.bottom = '0'; c.style.margin = '0'; gin.appendChild(c); gin.style.width = R.width + 'px'; gin.style.height = R.height + 'px'; pe.style.visibility = 'hidden'; D.offX = D.x - R.left; D.offY = D.y - R.top; }
-    else if (D.seqU) { D.items = D.seqU.map((k) => flFind(String(k).split('|')[0])).filter(Boolean).map((f) => f.o); if (!D.items.length) { D.on = false; return; } let e = 0, h = 0, L0 = null;
+    else if (D.seqU) { D.items = [...new Set(D.seqU.map((k) => String(k).split('|')[0]))].map((u) => flFind(u)).filter(Boolean).map((f) => f.o); if (!D.items.length) { D.on = false; return; } let e = 0, h = 0, L0 = null;
       D.items.forEach((o) => { const el = sh.querySelector(`.fli[data-u="${o.u}"]`); if (!el) return; const R = el.getBoundingClientRect(); if (o.u === D.u) L0 = R; h = Math.max(h, R.height); const c = el.cloneNode(true); c.removeAttribute('data-u'); c.classList.remove('flsel', 'flgrp'); c.style.left = e + 'px'; c.style.top = 'auto'; c.style.bottom = '0'; c.style.transition = 'none'; gin.appendChild(c); el.style.visibility = 'hidden'; e += flW(o); });
       if (D.items.length > 1) gin.insertAdjacentHTML('beforeend', `<i class="flcnt">${D.items.length}</i>`); D.w = e; D.h = h; gin.style.width = e + 'px'; gin.style.height = h + 'px'; D.offX = L0 ? Math.min(e, D.x - L0.left) : e / 2; D.offY = L0 ? D.y - (L0.bottom - h) : h * 0.55; D.seq = 1; }
     else { const f = flFind(D.u); if (!f) { D.on = false; return; } 
@@ -421,7 +430,7 @@ function flEstBody() { const F = shc().free; if (!F) return '<p class="dkh">Abra
     if (D.front && ev.type === 'pointerup') { const fr = D.front, o = D.items[0], C0 = shc(), bk = shBk(), f0 = flFind(o.u); if (f0) { C0.free.rows[f0.r].it = C0.free.rows[f0.r].it.filter((q) => q.u !== o.u); o.z = 1; o.n = fr.n; o.x = Math.round(fr.x); C0.free.rows[fr.r].it.push(o); C0.manual = 1; shSave(); try { navigator.vibrate && navigator.vibrate(10); } catch {} toast('Enfeite na frente dos livros', shUndo(bk)); } return flRender(); }
     if (D.items) D.items.forEach((o) => { delete o.z; });
     if (!D.tgt || ev.type === 'pointercancel') { if (D.nn) resetNiche(D.nn); flRender(); if (ev.type === 'pointercancel') return; return toast(D.bad ? 'Não coube aí' + (D.src === 'tray' ? ': o livro voltou para a bandeja' : '; nada mudou') : D.src === 'tray' ? 'O livro voltou para a bandeja' : 'Nada mudou de lugar'); }
-    let bk0 = null; if (D.pb && !D.grp) { bk0 = shBk(); const it = flExtract(flKeyOf(D.u, D.pb)); D.items = it ? [it] : []; } else if (D.seq && D.seqU.some((k) => String(k).includes('|'))) { bk0 = shBk(); D.items = D.seqU.map(flExtract).filter(Boolean); }
+    let bk0 = null; if (D.pb && !D.grp) { bk0 = shBk(); const it = flExtract(flKeyOf(D.u, D.pb)); D.items = it ? [it] : []; } else if (D.seq && D.seqU.some((k) => String(k).includes('|'))) { bk0 = shBk(); D.items = flSeqItems(D.seqU); }
     const many = !!(D.ids || D.seq), mv = D.src === 'tray' ? (D.ids ? { ids: D.ids } : { id: D.id }) : D.seq ? { items: D.items, seq: 1 } : { items: D.items }, res = D.items && !D.items.length && D.src !== 'tray' ? null : many ? flPlaceMany(D.tgt.r, D.tgt.n, D.tgt.x, mv) : flPlace(D.tgt.r, D.tgt.n, D.tgt.x, mv); if (!res) { if (bk0) shRestore(bk0); flRender(); return toast('Não cabe aqui'); } if (bk0) res.bk = bk0;
     if (D.src === 'shelf' && D.items.some((o) => o.t === 'd') && SHX_MODE === 'deco') { FLX.pos = null; toast('Enfeite no novo lugar', shUndo(res.bk)); return flRender(); }
     flAfterPlace(res, mv, D.tgt.r); };
