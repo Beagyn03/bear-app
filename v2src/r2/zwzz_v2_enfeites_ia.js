@@ -126,3 +126,5 @@ const FLA_CSS = `.v4ler .flanc{overflow:visible!important}.v4ler .flanc::after{c
 // Apagar todas as luzinhas: Desfazer volta exatamente ao que era (antes recriava um cordão padrão)
 window.addEventListener('click', (ev) => { try { const p = ev.composedPath ? ev.composedPath() : [], b = p.find((n) => n && n.dataset && n.dataset.a === 'dkltoff'); if (!b || SHX_MODE !== 'deco') return;
   ev.stopImmediatePropagation(); ev.preventDefault(); const bk = shBk(); shLtSave((Ls) => { Ls.length = 0; }); toast('Luzinhas apagadas', shUndo(bk)); } catch (e) { console.warn('luzinhas', e); } }, true);
+// toast acima das folhas (z 9500): o Desfazer de uma mudança feita dentro de uma folha precisa ser tocável
+try { const st = document.createElement('style'); st.dataset.eiaToast = 1; st.textContent = '#toast{z-index:10050!important}'; document.head.append(st); } catch {}
