@@ -86,14 +86,9 @@ function orbCardHTML(compact) {
     else now.insertAdjacentHTML('afterend', html);
     c = box.querySelector('#orb-card'); c.dataset.h = html; c.addEventListener('click', () => openOrbita()); };
   new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(paint, 90); }).observe(TR, { childList: true, subtree: true }); }
-// página
-function openOrbita(ym) {
-  const v = $('#shelflist'); if (!v) return; const t = todayISO();
-  // aba de origem para a barra de baixo (a página tira a classe mine-page do perfil)
-  const from = (() => { try { return v2OnTab(); } catch { return ''; } })();
-  S.orbYM = ym || S.orbYM || t.slice(0, 7);
-  const draw = () => {
-    const s = orbStats(), [Y, M] = S.orbYM.split('-').map(Number), first = new Date(Y, M - 1, 1), nDays = new Date(Y, M, 0).getDate(), lead = (first.getDay() + 6) % 7;
+// calendário do mês (página Órbita e Você › Sobre, Bia 23/11): um quadrado por dia com a capa do livro mais lido no dia
+function orbCalHTML(ym) { const t = todayISO();
+    const s = orbStats(), [Y, M] = ym.split('-').map(Number), first = new Date(Y, M - 1, 1), nDays = new Date(Y, M, 0).getDate(), lead = (first.getDay() + 6) % 7;
     const mName = first.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
     // meta do prazo batida por dia (mesma conta do histórico do diário)
     const ok = new Set(); lib().forEach((e) => { if (!e.dueAt || !e.dueSince) return; try { tlEvents(e).forEach((x) => { if (x.ok) ok.add(x.d); }); } catch {} });
@@ -106,15 +101,27 @@ function openOrbita(ym) {
       cells += '<span class="d' + (x ? ' rd' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + '"' + (iso === t ? ' aria-current="date"' : '') + '><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u aria-label="meta do prazo batida">★</u>' : '') + '</span>';
     }
     const minYM = ([...s.days.keys()].sort()[0] || t).slice(0, 7);
+    return '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (ym <= minYM ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (ym >= t.slice(0, 7) ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>'
+      + '<p class="orb-sum">' + (nRead ? nRead + (nRead === 1 ? ' dia lido' : ' dias lidos') + ' · ' + pages.toLocaleString('pt-BR') + ' páginas' : 'Nenhuma leitura registrada neste mês') + '</p><div class="orb-g">' + cells + '</div>'
+      + '<div class="orb-leg">' + (ym === t.slice(0, 7) ? '<span class="lk"><i class="lk-hj"></i>hoje</span>' : '') + (nStar ? '<span class="lk"><i class="lk-st">★</i>meta do prazo batida</span>' : '') + '</div></div>';
+}
+// setas de mês: quem monta passa o estado e o redesenho
+function orbCalWire(root, get, set) { root.querySelectorAll('.orb-mn [data-m]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); const [y, m] = get().split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.m), 1); set(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')); })); }
+// página
+function openOrbita(ym) {
+  const v = $('#shelflist'); if (!v) return; const t = todayISO();
+  // aba de origem para a barra de baixo (a página tira a classe mine-page do perfil)
+  const from = (() => { try { return v2OnTab(); } catch { return ''; } })();
+  S.orbYM = ym || S.orbYM || t.slice(0, 7);
+  const draw = () => {
+    const s = orbStats();
     v.querySelector('.sl-body').innerHTML = '<div class="sl-top"' + (from ? ' data-v4from="' + esc(from) + '"' : '') + '><button type="button" class="sl-back">‹ Voltar</button><b>Órbita</b><span></span></div>'
       + '<div class="orb-pg"><div class="orb-big"><span class="orb-ic' + (s.today ? '' : ' off') + '">' + ORB_SVG + '</span><div><b>' + s.cur + (s.cur === 1 ? ' dia' : ' dias') + '</b><small>' + (s.cur ? 'em órbita' + (s.since ? ' · sem parar desde ' + s.since.slice(8, 10) + '/' + s.since.slice(5, 7) : '') : 'fora de órbita') + '</small></div><div class="orb-rec"><small>recorde</small><b>' + s.best + (s.best === 1 ? ' dia' : ' dias') + '</b></div></div>'
       + '<p class="orb-tx">Cada dia em que você atualiza a página de um livro conta. Um dia sem leitura e a órbita recomeça. Dias de folga de um prazo não quebram a órbita.</p>'
-      + '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (S.orbYM <= minYM ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (S.orbYM >= t.slice(0, 7) ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>'
-      + '<p class="orb-sum">' + (nRead ? nRead + (nRead === 1 ? ' dia lido' : ' dias lidos') + ' · ' + pages.toLocaleString('pt-BR') + ' páginas' : 'Nenhuma leitura registrada neste mês') + '</p><div class="orb-g">' + cells + '</div>'
-      + '<div class="orb-leg">' + (S.orbYM === t.slice(0, 7) ? '<span class="lk"><i class="lk-hj"></i>hoje</span>' : '') + (nStar ? '<span class="lk"><i class="lk-st">★</i>meta do prazo batida</span>' : '') + '</div></div></div>';
+      + orbCalHTML(S.orbYM) + '</div>';
     try { paintCv(v); } catch {}
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; });
-    v.querySelectorAll('.orb-mn [data-m]').forEach((b) => b.addEventListener('click', () => { const [y, m] = S.orbYM.split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.m), 1); S.orbYM = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); draw(); }));
+    orbCalWire(v, () => S.orbYM, (ym) => { S.orbYM = ym; draw(); });
   };
   // redesenho vindo de fora (sincronização, salvar) redesenha o calendário, não a tela anterior (Metas aparecia por cima, 22/11)
   v.hidden = false; v.classList.remove('mine-page'); draw(); S.listRedraw = () => { const sc = v.scrollTop; draw(); v.scrollTop = sc; }; try { v.scrollTop = 0; } catch {}

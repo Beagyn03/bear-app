@@ -55,13 +55,29 @@
     const n = dest.querySelector(':scope > .v3num'); n ? n.after(ys) : dest.prepend(ys);
   } catch (err) { console.warn('Leituras por mês no Sobre', err); } };
   if (typeof mountYearShelf === 'function') { const _m = mountYearShelf; mountYearShelf = function (root) { const r = _m.apply(this, arguments); try { moveYs(root && (root.closest ? root.closest('.sl-body') : null) || (root && root.querySelector && root.querySelector('.sl-body'))); } catch {} return r; }; }
+  css.textContent += `
+.sl-body.v3nys section.ys{display:none!important}.v3pane > .v3cal{margin:0 0 1rem}.v3cal .orb-cal{margin:0}`;
+  const v3CalHTML = () => { const t = todayISO(); S.v3calYM = S.v3calYM || t.slice(0, 7); try { return orbCalHTML(S.v3calYM); } catch { return ''; } };
+  function v3CalMount(body) { try {
+    const dest = body.querySelector(':scope > .v3pane[data-k=sobre]'); if (!dest) return;
+    let c = dest.querySelector(':scope > .v3cal'); const html = v3CalHTML(); if (!html) { if (c) c.remove(); return; }
+    if (!c) { c = document.createElement('section'); c.className = 'v3cal'; c.setAttribute('aria-label', 'Calendário de leitura'); }
+    if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; try { paintCv(c); } catch {} orbCalWire(c, () => S.v3calYM, (ym) => { S.v3calYM = ym; c.dataset.h = ''; v3CalMount(body); }); }
+    const n = dest.querySelector(':scope > .v3num'); const want = n ? n.nextElementSibling : dest.firstElementChild; if (want !== c) (n ? n.after(c) : dest.prepend(c));
+  } catch (err) { console.warn('calendário no Sobre', err); } }
   const _vb = v3Build;
   v3Build = function (v, d) {
     const r = _vb.apply(this, arguments);
     try {
       const body = v && v.querySelector('.sl-body'); if (!body) return r;
-      const self = !!(d && d.self), ro = self && !!S.v3prev; body.dataset.ysDest = self && !ro ? 'sobre' : 'top'; setTimeout(() => moveYs(body), 400);
-      const dest = body.querySelector(':scope > .v3pane[data-k=' + (self && !ro ? 'sobre' : 'top') + ']'); if (!dest) return r;
+      const self = !!(d && d.self), ro = self && !!S.v3prev;
+      // Sobre do próprio perfil (Bia, 23/11): sem "Leituras por mês" (os livros do ano ficam em Estatísticas); no lugar, o
+      // calendário do mês da Órbita (um quadrado por dia com a capa do que leu). Visitante e prévia seguem como estavam:
+      // o calendário usa o registro de leitura do aparelho, que não é publicado.
+      body.classList.toggle('v3nys', self && !ro);
+      if (self && !ro) { body.dataset.ysDest = ''; v3CalMount(body); return r; }
+      body.dataset.ysDest = 'top'; setTimeout(() => moveYs(body), 400);
+      const dest = body.querySelector(':scope > .v3pane[data-k=top]'); if (!dest) return r;
       const ys = body.querySelector(':scope > .v3pane[data-k=est] > section.ys') || body.querySelector(':scope > section.ys') || [...body.querySelectorAll('.v3pane > section.ys')].find((x) => x.parentElement !== dest);
       if (ys) { const n = dest.querySelector(':scope > .v3num'); const want = n ? n.nextElementSibling : dest.firstElementChild; if (want !== ys) (n ? n.after(ys) : dest.prepend(ys)); }
     } catch (err) { console.warn('Leituras por mês no Sobre', err); }
