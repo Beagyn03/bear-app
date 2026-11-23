@@ -17,13 +17,15 @@
     if (TR.querySelector('.pop')) n++;
     if ([...TR.children].find((n) => n.classList && n.classList.contains('rt'))) n++; // retrospectiva do livro (tela cheia por cima de tudo)
     if (v4Full()) n++;
-    if (v4Sh()) n++; // folha da camada de leitura (ex.: Ler › Entrar no silêncio / Atualizar página): o voltar fecha a folha
+    if (v4Sh()) n++;
+    if (TR.querySelector('.v2-pk')) n++; // folha "Qual leio agora?" do Hoje // folha da camada de leitura (ex.: Ler › Entrar no silêncio / Atualizar página): o voltar fecha a folha
     if (document.querySelector('body > .sheet')) n++;
     if (TR.querySelector('.bd-page:not([hidden]), .gp-page:not([hidden])')) n++;
     return n;
   };
   const closeTop = () => {
     if (TR.querySelector('.pop')) return closePop();
+    { const pk = TR.querySelector('.v2-pk'); if (pk) return pk.remove(); }
     { const rt = [...TR.children].find((n) => n.classList && n.classList.contains('rt')); if (rt) return rt.remove(); }
     { const f = v4Full(); if (f) return f.click(); }
     if (v4Sh()) { try { return v5SheetClose(); } catch { try { return v4Close(); } catch {} } } // página cheia de Atualizar/Histórico: a seta dela sabe para onde voltar

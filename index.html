@@ -10086,13 +10086,15 @@ const rrUndo = (recs) => { for (let i = recs.length - 1; i >= 0; i--) { const m 
     if (TR.querySelector('.pop')) n++;
     if ([...TR.children].find((n) => n.classList && n.classList.contains('rt'))) n++; // retrospectiva do livro (tela cheia por cima de tudo)
     if (v4Full()) n++;
-    if (v4Sh()) n++; // folha da camada de leitura (ex.: Ler › Entrar no silêncio / Atualizar página): o voltar fecha a folha
+    if (v4Sh()) n++;
+    if (TR.querySelector('.v2-pk')) n++; // folha "Qual leio agora?" do Hoje // folha da camada de leitura (ex.: Ler › Entrar no silêncio / Atualizar página): o voltar fecha a folha
     if (document.querySelector('body > .sheet')) n++;
     if (TR.querySelector('.bd-page:not([hidden]), .gp-page:not([hidden])')) n++;
     return n;
   };
   const closeTop = () => {
     if (TR.querySelector('.pop')) return closePop();
+    { const pk = TR.querySelector('.v2-pk'); if (pk) return pk.remove(); }
     { const rt = [...TR.children].find((n) => n.classList && n.classList.contains('rt')); if (rt) return rt.remove(); }
     { const f = v4Full(); if (f) return f.click(); }
     if (v4Sh()) { try { return v5SheetClose(); } catch { try { return v4Close(); } catch {} } } // página cheia de Atualizar/Histórico: a seta dela sabe para onde voltar
@@ -17496,9 +17498,7 @@ document.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape') return;
   if (TR.querySelector('.pop')) { closePop(); return; } if (TR.querySelector('.bkm')) bqClose(); });
 // --- b9_v2_hoje.js ---
 // v2 (Bia, 19/11): Hoje com "Qual leio agora?" e "Pergunta do dia".
-//  - "Qual leio agora?": linha logo abaixo do card da leitura (com 2 ou mais livros na fila). Abre 3 livros da fila
-//    (prioridade alta primeiro, o resto sorteado); tocar num marca como próxima leitura (T().nextId, o mesmo do
-//    "Marcar como próxima leitura" da página do livro). "Mostrar outros 3" sorteia de novo.
+//  - "Qual leio agora?": linha logo abaixo do card da leitura. Folha com Da minha fila / Sortear / Buscar (ver v2QualLeio).
 //  - "Pergunta do dia": uma pergunta por dia (fixa pela data), sem spoiler. As respostas são livros da pessoa;
 //    tocar abre o post novo da Rede já com o livro e a pergunta, para a pessoa escrever e publicar (nunca publica
 //    sozinho). Depois de responder, o cartão mostra "Você respondeu: …" naquele dia (db.prefs.qday).
@@ -17534,30 +17534,53 @@ document.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape') return;
 .v2-pk .ac{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:1rem}
 .v2-pk .ac button{height:44px;border-radius:13px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:900;font-size:.86rem}
 `; TR.append(st); }
+// "Qual leio agora?" (Bia, 23/11): em vez de 3 livros sorteados, três caminhos — Da minha fila (prioridade Alta, depois
+// Normal e Baixa, em carrossel; tocar marca como próxima leitura), Sortear de uma estante (a folha do sorteio com cometa,
+// que já deixa escolher a fila ou uma estante) e Buscar um livro. Sem fila, só a busca.
 const V2_FILA = () => lib().filter((e) => e.status === 'QUERO');
-function v2Pick3(prev) {
-  const fila = V2_FILA(), sh = (a) => a.map((x) => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map((x) => x[1]);
-  const skip = new Set(prev || []), pool = fila.filter((e) => !skip.has(e.id)), base = pool.length >= 3 ? pool : fila;
-  const alta = sh(base.filter((e) => e.prio === 1)), resto = sh(base.filter((e) => e.prio !== 1));
-  return [...alta, ...resto].slice(0, 3);
-}
-function v2QualLeio(prev) {
+const V2_PRIO = (e) => (e.prio === 1 ? 1 : e.prio === 3 ? 3 : 2);
+function v2QualLeio() {
   TR.querySelector('.v2-pk')?.remove();
-  const ids = v2Pick3(prev), w = document.createElement('div'); w.className = 'v2-pk'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-label', 'Qual leio agora?');
-  const nx = T().nextId;
-  w.innerHTML = `<div class="bx"><h3>Qual você lê agora?</h3><p>Três da sua fila. Toque no que está te chamando hoje.</p>
-    <div class="row">${ids.map((e) => `<button type="button" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'cv')}<small>${esc(e.title)}</small>${e.prio === 1 ? '<i>prioridade alta</i>' : nx === e.id ? '<i>já é a próxima</i>' : ''}</button>`).join('')}</div>
-    <div class="ac"><button type="button" data-a="x">Agora não</button>${V2_FILA().length > 3 ? '<button type="button" data-a="re">Mostrar outros 3</button>' : ''}</div></div>`;
+  const fila = V2_FILA();
+  if (!fila.length) { try { return openCatalog(); } catch { return goTab('estante'); } }
+  const nx = T().nextId, ord = fila.map((e, i) => [V2_PRIO(e), i, e]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map((x) => x[2]);
+  const ver = ord.slice(0, 12), hasShelf = (() => { try { return v5Shelves().some((s) => !s.arch && (s.bookIds || []).length); } catch { return false; } })();
+  const w = document.createElement('div'); w.className = 'v2-pk'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-label', 'Qual leio agora?');
+  const tag = (e) => (nx === e.id ? '<i>já é a próxima</i>' : V2_PRIO(e) === 1 ? '<i>prioridade alta</i>' : '');
+  w.innerHTML = `<div class="bx"><h3>Qual leio agora?</h3>
+    <div class="pkh"><b>Da minha fila</b><button type="button" data-a="fila">Ver toda a fila ›</button></div>
+    <p>Prioridade alta primeiro. Toque para marcar como próxima leitura.</p>
+    <div class="car">${ver.map((e) => `<button type="button" data-id="${esc(e.id)}">${cvh(e.title, e.cover, 'cv')}<small>${esc(e.title)}</small>${tag(e)}</button>`).join('')}</div>
+    <div class="opt"><button type="button" data-a="sort">${v4ic('orb', 20)}<span><b>Sortear</b><small>${hasShelf ? 'da fila ou de uma estante' : 'um livro da fila'}</small></span>${v4ic('chev', 16)}</button>
+    <button type="button" data-a="busca">${v4ic('busca', 20)}<span><b>Buscar um livro</b><small>fora da sua Biblioteca</small></span>${v4ic('chev', 16)}</button></div>
+    <div class="ac"><button type="button" data-a="x">Agora não</button></div></div>`;
   w.addEventListener('click', (ev) => {
     if (ev.target === w) return w.remove();
     const b = ev.target.closest('[data-id],[data-a]'); if (!b) return;
-    if (b.dataset.a === 'x') return w.remove();
-    if (b.dataset.a === 're') return v2QualLeio(ids.map((e) => e.id));
+    const a = b.dataset.a;
+    if (a === 'x') return w.remove();
+    if (a === 'sort') { w.remove(); try { return v5Sheet('v5sorteio', {}); } catch (err) { console.warn('sortear', err); return toast('Não consegui abrir o sorteio'); } }
+    if (a === 'busca') { w.remove(); try { return openCatalog(); } catch { return goTab('estante'); } }
+    if (a === 'fila') { w.remove(); try { const S5 = v5S(); S5.tab = 'livros'; S5.sub = null; v5P().shF = 'quero'; v5Save(); } catch {} return goTab('estante'); }
     const e = byId(b.dataset.id); if (!e) return; w.remove();
     T().nextId = e.id; save(); toast(`“${e.title}” é a sua próxima leitura`); try { refresh(); } catch {}
   });
   TR.append(w); try { paintCv(w); } catch {}
 }
+{ const st = document.createElement('style'); st.textContent = `
+.v2-pk .pkh{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.7rem}.v2-pk .pkh b{font-size:.95rem}
+.v2-pk .pkh button{border:0;background:none;color:var(--acc);font:inherit;font-weight:900;font-size:.82rem;padding:.6rem 0;min-height:44px;cursor:pointer}
+.v2-pk .car{display:flex;gap:.7rem;overflow-x:auto;padding:2px 2px 6px;scroll-snap-type:x proximity;scrollbar-width:none}
+.v2-pk .car button{flex:none;width:92px;border:0;background:none;padding:0;text-align:center;font:inherit;color:var(--ink);cursor:pointer;scroll-snap-align:start}
+.v2-pk .car .cv{width:100%;aspect-ratio:2/3;height:auto;border-radius:4px 7px 7px 4px;box-shadow:0 6px 14px rgba(0,0,0,.18)}
+.v2-pk .car small{display:-webkit-box;margin-top:.35rem;font-size:.74rem;font-weight:800;line-height:1.25;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.v2-pk .car i{display:block;font-style:normal;font-size:.66rem;color:var(--acc);font-weight:900;margin-top:.1rem}
+.v2-pk .opt{display:grid;gap:.5rem;margin-top:.9rem}
+.v2-pk .opt button{display:flex;align-items:center;gap:.75rem;width:100%;min-height:56px;padding:.6rem .8rem;border:1.5px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.v2-pk .opt button > span{flex:1;min-width:0;display:grid}.v2-pk .opt b{font-size:.92rem}.v2-pk .opt small{font-size:.76rem;color:var(--ink-2);font-weight:700}
+.v2-pk .opt svg{flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.v2-pk .opt svg:last-child{width:16px;height:16px;color:var(--ink-2)}
+.v2-pk .ac{grid-template-columns:1fr}
+`; TR.append(st); }
 // perguntas do dia: livro como resposta; "de" diz de onde vêm as sugestões
 const V2_QS = [
   ['Que livro você releria hoje?', 'lido'], ['Qual personagem você levaria para jantar?', 'lido'], ['Qual final você reescreveria?', 'lido'],
