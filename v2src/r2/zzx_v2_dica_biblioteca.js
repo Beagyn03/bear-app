@@ -12,7 +12,12 @@
 @media (prefers-reduced-motion: reduce){.v8tipb{transition:none}}`; TR.append(st);
   let el = null, lastTab = '', shownFor = '', readyAt = 0, shownAt = 0;
   const off = () => !!((db.prefs || {}).tipBib);
-  const ok = () => { try { const S5 = v5S(); return S.tab === 'estante' && S5.tab === 'livros' && !S5.sub && !(typeof SHX_MODE !== 'undefined' && SHX_MODE); } catch { return false; } };
+  const ok = () => { try { const S5 = v5S(); if (!(S.tab === 'estante' && S5.tab === 'livros' && !S5.sub && !(typeof SHX_MODE !== 'undefined' && SHX_MODE))) return false;
+      // página por cima (livro, avaliação…) ou folha/menu aberto: a dica sai (QA 23/11)
+      const v = $('#shelflist'); if (v && !v.hidden && !v.classList.contains('tabroot')) return false;
+      if ([...TR.querySelectorAll('.pop, .sheet, .v4sheet, [role=dialog]')].some((n) => n !== el && !(el && el.contains(n)) && n.getClientRects().length)) return false;
+      try { if (v4State().sheet) return false; } catch {}
+      return true; } catch { return false; } };
   const hide = () => { if (!el) return; const n = el; el = null; n.classList.remove('on'); setTimeout(() => n.remove(), 250); };
   const show = () => {
     if (el || off() || !ok()) return; const v = $('#shelflist'); if (v && !v.hidden && !v.classList.contains('tabroot')) return;
