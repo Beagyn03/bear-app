@@ -43,8 +43,17 @@ function flNW(row, n, BW) { const b = flBounds(row), li = n > 0 ? FL_INS : 0, ri
 const flNiches = (row) => (row.dv || []).length + 1;
 // fração <-> px: a fração é o que fica salvo; o px é recalculado com a largura desta tela
 let FL_HBW = 0; // largura usada para transformar fração em px (a mesma volta a valer ao salvar)
-function flPx(F) { const BW = flBW(); FL_HBW = BW; (F.rows || []).forEach((row) => { row.it.forEach((o) => { if (o.f != null) o.x = Math.round(o.f * flNW(row, o.n || 0, BW)); else if (o.x == null) o.x = 0; }); }); }
-function flFrac(F) { const BW = FL_HBW || flBW(); (F.rows || []).forEach((row) => { row.it.forEach((o) => { const NW = flNW(row, o.n || 0, BW); o.f = NW > 0 ? Math.round(Math.max(0, o.x || 0) / NW * 10000) / 10000 : 0; }); }); }
+function flPx(F) { const BW = flBW(); FL_HBW = BW; (F.rows || []).forEach((row) => { row.it.forEach((o) => { if (o.f != null) o.x = Math.round(o.f * flNW(row, o.n || 0, BW)); else if (o.x == null) o.x = 0; }); flGlue(row, BW); }); }
+// livros encostados andam juntos (Bia 23/11): na edição a prateleira é mais estreita e a fração sozinha abria espaço
+// entre eles na largura cheia. o.g = encostado no anterior; o.ar = bloco encostado na parede direita (ancora à direita)
+function flGlue(row, BW) { for (let n = 0; n < flNiches(row); n++) { const NW = flNW(row, n, BW), L = row.it.filter((o) => (o.n || 0) === n && !o.z).sort((a, z) => (a.f != null && z.f != null ? a.f - z.f : a.x - z.x));
+    let i = 0, pe = 0; while (i < L.length) { let j = i, tot = flW(L[i]); while (j + 1 < L.length && L[j + 1].g) { j++; tot += flW(L[j]); }
+      let x0 = L[i].ar ? NW - tot : L[i].x; if (L[i].ar) x0 = Math.max(x0, pe); for (let k = i; k <= j; k++) { L[k].x = Math.round(x0); x0 += flW(L[k]); } pe = x0; i = j + 1; } } }
+function flGlueMark(row, BW) { for (let n = 0; n < flNiches(row); n++) { const NW = flNW(row, n, BW), L = row.it.filter((o) => (o.n || 0) === n && !o.z).sort((a, z) => a.x - z.x);
+    L.forEach((o, i) => { const g = i > 0 && Math.abs(o.x - (L[i - 1].x + flW(L[i - 1]))) <= 2; if (g) o.g = 1; else delete o.g; delete o.ar; });
+    // bloco que termina na parede direita fica ancorado nela (só se não começa na parede esquerda)
+    let i = L.length - 1; if (i >= 0 && L[i].x + flW(L[i]) >= NW - 2) { while (i > 0 && L[i].g) i--; if (L[i].x > 2) L[i].ar = 1; } } }
+function flFrac(F) { const BW = FL_HBW || flBW(); (F.rows || []).forEach((row) => { try { flGlueMark(row, BW); } catch {} row.it.forEach((o) => { const NW = flNW(row, o.n || 0, BW); o.f = NW > 0 ? Math.round(Math.max(0, o.x || 0) / NW * 10000) / 10000 : 0; }); }); }
 { const _s = shSave; shSave = function () { try { const C0 = shc(); if (C0.free && !SHX_CTX) flFrac(C0.free); } catch (err) { console.warn('estante livre (fração)', err); } return _s.apply(this, arguments); }; }
 // encaixa sem sobrepor: empurra para a direita e depois volta da borda direita; falso se não cabe
 function flFit(its, NW) { let e = 0; its.forEach((o) => { o.x = Math.max(o.x, e); e = o.x + o.w; });
