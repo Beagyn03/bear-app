@@ -10073,6 +10073,7 @@ const rrUndo = (recs) => { for (let i = recs.length - 1; i >= 0; i--) { const m 
   const vis = (n) => n && !n.hidden && n.offsetParent !== null;
   // a página cheia de Atualizar fica na sessão de leitura (outra raiz): conta como camada própria
   const v4Full = () => { try { const r = typeof V4 !== 'undefined' && V4 && V4.isConnected ? V4 : null; return r && r.querySelector('.sheet.upfullpg .upfh [data-a=upfull]'); } catch { return null; } };
+  const v4Sh = () => { try { return !!(S.v4 && S.v4.sheet && V4 && V4.isConnected && !v4Full()); } catch { return false; } };
   const layers = () => {
     let n = 0;
     if (S.tab && S.tab !== 'inicio') n++;
@@ -10085,6 +10086,7 @@ const rrUndo = (recs) => { for (let i = recs.length - 1; i >= 0; i--) { const m 
     if (TR.querySelector('.pop')) n++;
     if ([...TR.children].find((n) => n.classList && n.classList.contains('rt'))) n++; // retrospectiva do livro (tela cheia por cima de tudo)
     if (v4Full()) n++;
+    if (v4Sh()) n++; // folha da camada de leitura (ex.: Ler › Entrar no silêncio / Atualizar página): o voltar fecha a folha
     if (document.querySelector('body > .sheet')) n++;
     if (TR.querySelector('.bd-page:not([hidden]), .gp-page:not([hidden])')) n++;
     return n;
@@ -10092,7 +10094,8 @@ const rrUndo = (recs) => { for (let i = recs.length - 1; i >= 0; i--) { const m 
   const closeTop = () => {
     if (TR.querySelector('.pop')) return closePop();
     { const rt = [...TR.children].find((n) => n.classList && n.classList.contains('rt')); if (rt) return rt.remove(); }
-    { const f = v4Full(); if (f) return f.click(); } // página cheia de Atualizar/Histórico: a seta dela sabe para onde voltar
+    { const f = v4Full(); if (f) return f.click(); }
+    if (v4Sh()) { try { return v5SheetClose(); } catch { try { return v4Close(); } catch {} } } // página cheia de Atualizar/Histórico: a seta dela sabe para onde voltar
     const sh = [...document.querySelectorAll('body > .sheet')].pop(); if (sh) return sh.remove();
     if (TR.querySelector('.bkm')) return bqClose();
     const ed = $('#editor'); if (ed && !ed.hidden) { const nb = ed.querySelector('#nt-back'); return nb ? nb.click() : closeEd(); }
@@ -23070,35 +23073,102 @@ function v8DiaMsg() {
       return ['trecho', 'quote', 'Seu trecho', `“${String(q.t).replace(/^["“]|["”]$/g, '')}”`, e.title + (q.p ? ' · pág. ' + q.p : ''), e.status === 'LENDO' ? 'Continuar lendo' : 'Ver o livro', e.id]; } } catch {}
   return null;
 }
+// Card de lembretes (Bia, 23/11): prazo, órbita, ler junto, meta e Debate semanal no mesmo cartão do topo. Com 2 ou mais, ele
+// alterna sozinho a cada 6 s (pausa ao tocar, segurar ou focar; não alterna com movimento reduzido). Os lembretes ficam
+// empilhados na mesma célula, então a altura é a do maior e nada pula. Pontinhos mostram quantos são; o × fecha só o lembrete
+// da vez, naquele dia. O Debate abre o voto no próprio cartão (capas + Outro livro), sem tela nova.
+let V8I = 0, V8QDV = false;
+function v8DiaSkip(k) { const s = v8DiaSt(); if (!s.skip.includes(k)) s.skip.push(k); v8DiaPut(s); V8QDV = false; }
+function v8DiaList() {
+  const S9 = v8DiaSt(), sk = (k) => S9.skip.includes(k), t = todayISO(), on = (k) => { try { return vFn(k); } catch { return true; } };
+  const R = (() => { try { return reading(); } catch { return null; } })(), out = [];
+  const first = (() => { try { return v8DiaMsg(); } catch { return null; } })();
+  if (first && first[0] === 'sessao') return [first];
+  // prazo (também quando passou)
+  if (R && R.e.dueAt && on('prazos') && !sk('prazo')) { try { const d = dueToday(R.e), dd = new Date(R.e.dueAt + 'T12:00:00Z'), dia = R.e.dueAt === t ? 'hoje' : 'até ' + V8DOW[dd.getUTCDay()];
+    if (!d) out.push(['prazo', 'cal', 'Prazo', `O prazo de ${R.e.title} passou`, 'escolha uma data nova', 'Ajustar', 'late']);
+    else if (!d.done && !d.todayOff) { const left = Math.max(0, d.total - d.now), hoje = Math.max(0, d.target - d.now), r = v8Ritmo(), min = r && hoje ? Math.max(5, Math.round(hoje / r / 5) * 5) : 0;
+      out.push(['prazo', 'cal', 'Prazo', `Faltam ${left} pág. ${dia}`, min ? `hoje ${hoje} pág. · uns ${min} min no seu ritmo` : `hoje até a pág. ${d.target}`, 'Ler']); } } catch {} }
+  // órbita (só se ainda não leu hoje)
+  if (R && on('orbita') && !sk('orbita')) { try { const days = new Set(); for (const x of readingEvents()) if (x.pages > 0) days.add(x.date); for (const f of db.focus || []) if (f.date) days.add(f.date);
+    if (!days.has(t)) { const n = streakNow(); if (n > 0) out.push(v8Hora() === 'noite' ? ['orbita', 'orb', 'Órbita', `Sua órbita de ${n} ${n === 1 ? 'dia' : 'dias'} acaba à meia-noite`, 'uma página já salva', 'Ler'] : ['orbita', 'orb', 'Órbita', `Mais um dia e sua órbita chega a ${n + 1}`, 'uma página hoje já conta', 'Ler']); } } catch {} }
+  if (first && first[0] === 'junto' && !sk('junto')) out.push(first);
+  // meta do ano
+  if (on('metas') && !sk('meta')) { try { const m = myStatsSnap().meta; if (m && m.alvo > m.feitos) { const f = m.alvo - m.feitos, fim = Date.parse(m.ano + '-12-31'), dl = Math.max(1, Math.round((fim - Date.parse(t)) / 864e5) + 1), cada = Math.max(1, Math.floor(dl / f));
+    out.push(['meta', 'meta', 'Meta', `Faltam ${f} ${f === 1 ? 'livro' : 'livros'} para a meta de ${m.ano}`, cada <= 1 ? 'mais de um por dia até dezembro' : `um a cada ${cada} dias até dezembro`, 'Ver meta']); } } catch {} }
+  // Debate semanal sem o seu voto
+  if (on('qday') && !sk('qday') && !(() => { try { return homePrefs().off.includes('qday'); } catch { return false; } })()) { try { const Q = typeof V6QD !== 'undefined' ? V6QD : null; if (Q && Q.question && !Q.failed && !Q.mine) out.push(['qday', 'reply', DEB.nome, Q.question, Q.total ? `${Q.total} ${Q.total === 1 ? 'voto' : 'votos'} · falta o seu` : 'vote e veja o resultado', 'Votar']); } catch {} }
+  if (out.length) return out;
+  // sem lembrete: uma lembrança (memória ou trecho), como antes
+  return first && (first[0] === 'memoria' || first[0] === 'trecho') ? [first] : [];
+}
+function v8DiaQdHTML() { // capas para votar, dentro do card
+  let bks = []; try { const [, from] = v2QOfDay(); bks = v2QBooks(from); } catch {}
+  const Q = typeof V6QD !== 'undefined' ? V6QD : null;
+  return `<div class="v8qdv" role="group" aria-label="Votar no ${esc(DEB.nome)}">${v6QdPicks(bks).replace(/ data-qb=/g, ' data-v8qb=')}<div class="ft"><span>${Q && Q.total ? Q.total + (Q.total === 1 ? ' voto até agora' : ' votos até agora') : 'Vote e veja o resultado'}</span><button type="button" data-q6go="1">Ver o debate ›</button></div></div>`;
+}
 function v8DiaHTML() {
-  const M = v8DiaMsg(), hr = v8Hora(), noite = hr === 'noite', d = new Date();
+  const L = v8DiaList(), hr = v8Hora(), noite = hr === 'noite', d = new Date();
   const dt = V8DOW[d.getDay()].slice(0, 3) + ' · ' + d.getDate() + ' ' + d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
   const stars = Array.from({ length: noite ? 16 : 7 }, (_, i) => `<i style="left:${(i * 41 + 9) % 100}%;top:${(i * 29 + 13) % 80}%;opacity:${(0.3 + (i % 4) / 6).toFixed(2)}"></i>`).join('');
   const astro = noite ? '<svg class="astro lua" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 3.5a8.5 8.5 0 1 0 5 13.6A7 7 0 0 1 15.5 3.5z"/></svg>' : '<svg class="astro" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10.5" ry="3.6" transform="rotate(-18 12 12)"/></svg>';
-  const S9 = v8DiaSt();
-  if (S9.closed || (!M && (S9.skip.length || S9.seen.length))) return `<div class="v8dia-min">${esc(dt)}</div>`;
-  if (!M) return `<div class="v8diaw"><div class="v8dia ${hr}" role="note">${astro}<span class="sky">${stars}</span><span class="top"><span class="dt">${esc(dt)}</span></span><b class="big">${noite ? 'O céu de hoje está calmo' : 'Um bom dia para ler'}</b></div><button type="button" class="v8x ${hr}" data-v8x="nada" aria-label="Dispensar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
-  const [k, icn, rot, big, sub, cta, id] = M;
-  const x = k === 'sessao' ? '' : `<button type="button" class="v8x ${hr}" data-v8x="${k}" aria-label="Dispensar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`;
-  return `<div class="v8diaw"><button type="button" class="v8dia ${hr}" data-v8k="${k}" data-v8id="${esc(id || '')}" aria-label="${esc(big)}. ${esc(cta)}">${astro}<span class="sky">${stars}</span>`
+  if (!L.length) return `<div class="v8dia-min">${esc(dt)}</div>`;
+  if (V8QDV && !L.some((m) => m[0] === 'qday')) V8QDV = false;
+  let a = V8QDV ? L.findIndex((m) => m[0] === 'qday') : V8I % L.length; if (a < 0) a = 0; V8I = a;
+  const cur = L[a];
+  const sl = L.map(([k, icn, rot, big, sub, cta, id], i) => `<button type="button" class="sl${i === a ? ' on' : ''}" data-v8k="${k}" data-v8id="${esc(id || '')}" data-i="${i}" aria-label="${esc(rot)}: ${esc(big)}. ${esc(cta)}"${i === a ? '' : ' tabindex="-1" aria-hidden="true"'}>`
     + `<span class="top"><span class="dt">${esc(dt)}</span><span class="k">${v4ic(icn, 13)}${esc(rot)}</span></span>`
-    + `<b class="big">${esc(big)}</b><span class="sub"><span>${esc(sub)}</span><em>${esc(cta)} ${v4ic('chev', 14)}</em></span></button>${x}</div>`;
+    + `<b class="big">${esc(big)}</b><span class="sub"><span>${esc(sub)}</span><em>${k === 'qday' && V8QDV ? 'Fechar' : esc(cta)} ${v4ic('chev', 14)}</em></span></button>`).join('');
+  const dots = L.length > 1 ? `<span class="v8dots">${L.map((m, i) => `<button type="button" data-v8dot="${i}" aria-label="Lembrete ${i + 1} de ${L.length}: ${esc(m[2])}"${i === a ? ' class="on" aria-current="true"' : ''}><i></i></button>`).join('')}</span>` : '';
+  const x = cur[0] === 'sessao' ? '' : `<button type="button" class="v8x ${hr}" data-v8x="${cur[0]}" aria-label="Dispensar este lembrete hoje"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`;
+  return `<div class="v8diaw${L.length > 1 ? ' multi' : ''}${V8QDV ? ' qdv' : ''}"><div class="v8dia ${hr}" data-n="${L.length}">${astro}<span class="sky">${stars}</span><span class="sls">${sl}</span>${dots}${V8QDV ? v8DiaQdHTML() : ''}</div>${x}</div>`;
 }
+// alternar sozinho: troca só a classe (sem redesenhar), guarda o índice para o próximo desenho do Hoje vir no mesmo lembrete
+function v8DiaShow(w, i) { const sl = [...w.querySelectorAll('.sls > .sl')]; if (sl.length < 2) return; i = ((i % sl.length) + sl.length) % sl.length; V8I = i;
+  sl.forEach((b, j) => { const on = j === i; b.classList.toggle('on', on); if (on) { b.removeAttribute('tabindex'); b.removeAttribute('aria-hidden'); } else { b.setAttribute('tabindex', '-1'); b.setAttribute('aria-hidden', 'true'); } });
+  w.querySelectorAll('[data-v8dot]').forEach((b, j) => { b.classList.toggle('on', j === i); if (j === i) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); });
+  const x = w.querySelector('.v8x[data-v8x]'); if (x) x.dataset.v8x = sl[i].dataset.v8k; }
+{ let hold = 0; const RMv = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
+  TR.addEventListener('pointerdown', (ev) => { if (ev.target.closest && ev.target.closest('.v8diaw')) hold = Date.now() + 8000; }, true);
+  setInterval(() => { if (RMv() || Date.now() < hold || document.hidden || S.tab !== 'inicio') return; const w = TR.querySelector('#lista:not(.lista-snap) .v8diaw.multi:not(.qdv)'); if (!w || w.matches(':hover') || w.contains(TR.activeElement)) return;
+    const r = w.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return; v8DiaShow(w, V8I + 1); }, 6000);
+  TR.addEventListener('click', (ev) => { const d = ev.target.closest && ev.target.closest('.v8diaw [data-v8dot]'); if (d) { ev.stopPropagation(); ev.preventDefault(); hold = Date.now() + 12000; v8DiaShow(d.closest('.v8diaw'), +d.dataset.v8dot); return; }
+    const v = ev.target.closest && ev.target.closest('.v8diaw [data-v8qb]'); if (v) { ev.stopPropagation(); ev.preventDefault(); V8QDV = false; try { v6QdOpenDay = ''; } catch {} try { v2QAnswer(v.dataset.v8qb); } catch (err) { console.warn('votar', err); } v8DiaRedraw(v); } }, true); }
+{ const st = document.createElement('style'); st.textContent = `
+.v8dia .sls{position:relative;display:grid}.v8dia .sls > .sl{grid-area:1/1;display:grid;gap:3px;align-content:start;border:0;background:none;padding:0;margin:0;text-align:left;font:inherit;color:inherit;cursor:pointer;visibility:hidden;opacity:0;transition:opacity .35s ease;-webkit-tap-highlight-color:transparent;min-width:0}
+.v8dia .sls > .sl.on{visibility:visible;opacity:1}
+.v8dia .sls > .sl .big{min-height:2.3em}
+.v8dia .v8dots{position:relative;display:flex;gap:2px;margin:2px 0 -6px -10px}.v8dia .v8dots button{width:22px;height:22px;display:grid;place-items:center;border:0;background:none;padding:0;cursor:pointer}
+.v8dia .v8dots i{display:block;width:6px;height:6px;border-radius:9px;background:currentColor;opacity:.28;transition:width .2s}.v8dia .v8dots .on i{width:16px;opacity:1;background:var(--acc)}
+.v8diaw .v8dia{cursor:default}
+.v8dia .v8qdv{position:relative;margin-top:8px;display:grid;gap:8px}
+.v8dia .v8qdv .qpicks{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none}
+.v8dia .v8qdv .qpicks button{display:grid;gap:5px;justify-items:center;align-content:start;border:0;background:none;padding:0;font:inherit;font-size:11.5px;font-weight:800;color:inherit;width:66px;flex:none;text-align:center;cursor:pointer;min-height:44px}
+.v8dia .v8qdv .qpicks button span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.v8dia .v8qdv .qcv{width:58px;height:87px;border-radius:3px 7px 7px 3px;box-shadow:0 4px 10px rgba(0,0,0,.22);font-size:.55rem}
+.v8dia .v8qdv .qo{display:grid;place-items:center;background:color-mix(in srgb,currentColor 8%,transparent);border:1.5px dashed color-mix(in srgb,currentColor 35%,transparent);box-shadow:none}.v8dia .v8qdv .qo svg{width:22px;height:22px}
+.v8dia .v8qdv .ft{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;font-weight:700}.v8dia .v8qdv .ft span{opacity:.8}
+.v8dia .v8qdv .ft button{border:0;background:none;font:inherit;font-weight:900;color:var(--acc);padding:10px 0;min-height:44px;cursor:pointer}.v8dia.noite .v8qdv .ft button{color:#ffd6a3}
+/* o cartão grande do Debate saiu do Hoje: o voto mora no card de lembretes */
+#lista [data-v2qd]{display:none!important}
+@media (prefers-reduced-motion: reduce){.v8dia .sls > .sl{transition:none}}
+`; TR.append(st); }
 const v8DiaRedraw = (el) => { try { const w = el.closest('.v8diaw') || el; const tmp = document.createElement('div'); tmp.innerHTML = v8DiaHTML(); const n = tmp.firstElementChild; if (n) w.replaceWith(n); } catch {} };
 TR.addEventListener('click', (ev) => {
   const xb = ev.target.closest && ev.target.closest('.v8x[data-v8x]');
-  if (xb) { ev.stopPropagation(); ev.preventDefault(); const s = v8DiaSt(); if (s.skip.length) s.closed = true; else s.skip.push(xb.dataset.v8x); v8DiaPut(s); v8DiaRedraw(xb); return; }
-  const b = ev.target.closest && ev.target.closest('.v8dia[data-v8k]'); if (!b) return; ev.stopPropagation();
+  if (xb) { ev.stopPropagation(); ev.preventDefault(); v8DiaSkip(xb.dataset.v8x); v8DiaRedraw(xb); return; }
+  const b = ev.target.closest && ev.target.closest('[data-v8k]'); if (!b || !b.closest('.v8diaw')) return; ev.stopPropagation();
   const k = b.dataset.v8k;
   if (['memoria', 'trecho', 'meta', 'junto'].includes(k)) { const s = v8DiaSt(); if (!s.seen.includes(k)) { s.seen.push(k); v8DiaPut(s); } setTimeout(() => v8DiaRedraw(b), 400); }
   const e = b.dataset.v8id ? byId(b.dataset.v8id) : null, R = (() => { try { return reading(); } catch { return null; } })();
   try {
     if (k === 'sessao') { if (e) v4Open(e); return; }
+    if (k === 'prazo' && b.dataset.v8id === 'late') { const h = TR.querySelector('#lista:not(.lista-snap) [data-h3="prazo"]'); if (h) h.click(); else if (R) openBookPage(R.e); return; }
     if (k === 'prazo' || k === 'orbita') { if (R) v4Open(R.e); return; }
     if (k === 'junto') { if (e) openBuddyPage(e); return; }
     if (k === 'meta') { openGoalPage(Number(todayISO().slice(0, 4))); return; }
     if (k === 'memoria') { if (e) openBookPage(e); return; }
-    if (k === 'qday') { const q = TR.querySelector('#lista [data-v2qd]'); if (q) q.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (k === 'qday') { V8QDV = !V8QDV; v8DiaRedraw(b); return; }
     if (k === 'trecho') { if (e && e.status === 'LENDO') v4Open(e); else if (e) openBookPage(e); }
   } catch (err) { console.warn('abertura do dia', err); }
 }, true);
@@ -23117,7 +23187,7 @@ new MutationObserver(() => { const c = TR.querySelector('#lista:not(.lista-snap)
     w.classList.remove('drag'); const xb = w.querySelector('.v8x[data-v8x]'), lim = (w.offsetWidth || 300) * 0.3;
     const stop = (e) => { e.stopPropagation(); e.preventDefault(); }; window.addEventListener('click', stop, { capture: true, once: true }); setTimeout(() => window.removeEventListener('click', stop, true), 350);
     if (xb && Math.abs(dx) > lim) { w.classList.add('out'); w.style.setProperty('--dx', (dx > 0 ? 1 : -1) * (w.offsetWidth + 20) + 'px'); w.style.opacity = '0';
-      setTimeout(() => { const s = v8DiaSt(); if (s.skip.length) s.closed = true; else s.skip.push(xb.dataset.v8x); v8DiaPut(s); v8DiaRedraw(w); }, 200); return; }
+      setTimeout(() => { v8DiaSkip(xb.dataset.v8x); v8DiaRedraw(w); }, 200); return; }
     w.classList.add('back'); w.style.removeProperty('--dx'); w.style.opacity = ''; };
   window.addEventListener('pointerup', end, true); window.addEventListener('pointercancel', end, true); }
 // --- s0_v2_combinacao.js ---

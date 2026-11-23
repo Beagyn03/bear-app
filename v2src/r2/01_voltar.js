@@ -4,6 +4,7 @@
   const vis = (n) => n && !n.hidden && n.offsetParent !== null;
   // a página cheia de Atualizar fica na sessão de leitura (outra raiz): conta como camada própria
   const v4Full = () => { try { const r = typeof V4 !== 'undefined' && V4 && V4.isConnected ? V4 : null; return r && r.querySelector('.sheet.upfullpg .upfh [data-a=upfull]'); } catch { return null; } };
+  const v4Sh = () => { try { return !!(S.v4 && S.v4.sheet && V4 && V4.isConnected && !v4Full()); } catch { return false; } };
   const layers = () => {
     let n = 0;
     if (S.tab && S.tab !== 'inicio') n++;
@@ -16,6 +17,7 @@
     if (TR.querySelector('.pop')) n++;
     if ([...TR.children].find((n) => n.classList && n.classList.contains('rt'))) n++; // retrospectiva do livro (tela cheia por cima de tudo)
     if (v4Full()) n++;
+    if (v4Sh()) n++; // folha da camada de leitura (ex.: Ler › Entrar no silêncio / Atualizar página): o voltar fecha a folha
     if (document.querySelector('body > .sheet')) n++;
     if (TR.querySelector('.bd-page:not([hidden]), .gp-page:not([hidden])')) n++;
     return n;
@@ -23,7 +25,8 @@
   const closeTop = () => {
     if (TR.querySelector('.pop')) return closePop();
     { const rt = [...TR.children].find((n) => n.classList && n.classList.contains('rt')); if (rt) return rt.remove(); }
-    { const f = v4Full(); if (f) return f.click(); } // página cheia de Atualizar/Histórico: a seta dela sabe para onde voltar
+    { const f = v4Full(); if (f) return f.click(); }
+    if (v4Sh()) { try { return v5SheetClose(); } catch { try { return v4Close(); } catch {} } } // página cheia de Atualizar/Histórico: a seta dela sabe para onde voltar
     const sh = [...document.querySelectorAll('body > .sheet')].pop(); if (sh) return sh.remove();
     if (TR.querySelector('.bkm')) return bqClose();
     const ed = $('#editor'); if (ed && !ed.hidden) { const nb = ed.querySelector('#nt-back'); return nb ? nb.click() : closeEd(); }
