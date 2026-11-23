@@ -132,3 +132,13 @@ try { const st = document.createElement('style'); st.dataset.eiaToast = 1; st.te
 function eiaScrollers() { const o = []; try { let n = shBibRoot()?.querySelector('.bsh'); while (n) { if (n.nodeType === 1 && n.scrollHeight > n.clientHeight + 2 && /auto|scroll/.test(getComputedStyle(n).overflowY)) o.push(n); n = n.parentNode || (n.host); if (n && n.nodeType === 11) n = n.host; } } catch {} o.push(document.scrollingElement || document.documentElement); return o; }
 { const _v = drawEstante; drawEstante = function () { const ed = typeof SHX_MODE !== 'undefined' && (SHX_MODE === 'org' || SHX_MODE === 'deco'); const S0 = ed ? eiaScrollers().map((e) => [e, e.scrollTop]).filter((x) => x[1] > 0) : []; const r = _v.apply(this, arguments);
     if (S0.length) { const put = () => S0.forEach(([e, t]) => { try { if (e.isConnected && e.scrollTop === 0) e.scrollTop = t; } catch {} }); put(); requestAnimationFrame(put); setTimeout(put, 120); } return r; }; }
+// página cheia aberta (Minha avaliação, etc.): o conteúdo da aba por baixo fica escondido depois que a página termina de entrar
+// (antes continuava "visível" e alcançável por teclado/leitor de tela por trás da página; o portão marcava as abas da Biblioteca como cobertas)
+{ let tm = 0, mo = null; const sync = () => { try { const sr = v4Host(), L = TR.querySelector('#lista'); if (!L) return; const open = !!sr.querySelector('.v4ler > .page'); clearTimeout(tm);
+    if (open) tm = setTimeout(() => { try { if (sr.querySelector('.v4ler > .page')) { L.style.visibility = 'hidden'; L.setAttribute('aria-hidden', 'true'); } } catch {} }, 260); else { L.style.removeProperty('visibility'); L.removeAttribute('aria-hidden'); } } catch {} };
+  const arm = () => { try { if (mo) return; const sr = v4Host(); mo = new MutationObserver(sync); mo.observe(sr, { childList: true, subtree: true }); sync(); } catch {} };
+  try { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arm); else setTimeout(arm, 0); } catch {} }
+// Desfazer: a posição salva é a fração (f) da largura da prateleira; o redesenho do restore pode acontecer com a largura ainda mudando
+// (faixa abrindo/fechando, barra de rolagem). Depois que o layout assenta, redesenha de novo para recalcular x = f × largura.
+{ const _r = shRestore; shRestore = function () { const r = _r.apply(this, arguments); const again = () => { try { if (typeof flActive === 'function' && flActive() && (SHX_MODE === 'org' || SHX_MODE === 'deco') && !(FLX.D && FLX.D.on)) flRender(); } catch {} };
+    requestAnimationFrame(() => requestAnimationFrame(again)); setTimeout(again, 260); return r; }; }
