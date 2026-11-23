@@ -655,10 +655,10 @@ app.addEventListener('click', (ev) => { const el = ev.target.closest && ev.targe
 `; TR.append(st); }
   const covers3 = (D) => ((D.top5 && D.top5.length ? D.top5.map((t) => t[0]) : D.livros) || []).slice(0, 3).map((id) => { const b = RTB.get(id); return b && b.img ? `<img src="${esc(b.img)}" alt="" loading="lazy">` : '<span></span>'; }).join('');
   const card = (D, t, s, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'v2rt-card'; b.innerHTML = `<span class="cvs" aria-hidden="true">${covers3(D)}</span><span><b>${esc(t)}</b><small>${esc(s)}</small></span><em aria-hidden="true">›</em>`; b.addEventListener('click', fn); return b; };
-  let tm = 0; const put = () => {
-    tm = 0; if (S.rt) return;
+  let tm = 0; const put = (R0) => {
+    if (!R0) tm = 0; if (S.rt) return;
     // Estatísticas: Retrospectiva do ano escolhido e os resumos de cada mês daquele ano
-    const yr = TR.querySelector('.sx-yr'); if (yr) { const Y = (yr.querySelector('b') || {}).textContent || ''; const old = yr.parentElement.querySelector(':scope > .v2rt-st');
+    const yr = ((R0 && R0.querySelector) ? R0 : TR).querySelector('.sx-yr'); if (yr) { const Y = (yr.querySelector('b') || {}).textContent || ''; const old = yr.parentElement.querySelector(':scope > .v2rt-st');
       if (/^\d{4}$/.test(Y) && (!old || old.dataset.y !== Y)) { old?.remove(); meInfo(); RTB.clear(); const D = buildAno(Y), cur = hoje(); const ms = [];
         for (let m = (cur.slice(0, 4) === Y ? +cur.slice(5, 7) : 12); m >= 1; m--) { const ym = `${Y}-${String(m).padStart(2, '0')}`, dm = buildMes(ym); if (dm) ms.push([ym, m, dm.livros.length]); }
         if (D || ms.length) { const w = document.createElement('section'); w.className = 'v2rt-st'; w.dataset.y = Y;
@@ -668,11 +668,14 @@ app.addEventListener('click', (ev) => { const el = ev.target.closest && ev.targe
           yr.after(w); } } }
     // Hoje: a retrospectiva só em dezembro (do ano) e janeiro (do ano que passou). Entra como o "destaque do dia" do Hoje
     // (classe v2rs-card: o Hoje mostra um cartão só, e este vem antes da Pergunta do dia, como o Resumo do mês)
+    if (R0) return;
     const col = TR.querySelector('#lista .v3-colA.v2h') || TR.querySelector('.v3-colA.v2h'); if (col && !col.querySelector(':scope > .v2rt-card')) { const cur = hoje(), mm = +cur.slice(5, 7); let force = false; try { force = !!localStorage.getItem('lv.rtForce'); } catch {}
       if (mm === 12 || mm === 1 || force) { const Y = mm === 1 ? String(+cur.slice(0, 4) - 1) : cur.slice(0, 4); meInfo(); RTB.clear(); const D = buildAno(Y);
         if (D) { const b = card(D, `Sua retrospectiva ${Y}`, `${D.nLivros} ${plural(D.nLivros, 'livro', 'livros')} · toque para ver seu ano`, () => window.v2RtOpen('ano', Y)); b.classList.add('v2rs-card'); const h = col.querySelector(':scope > .v2hero'); if (h) h.after(b); else col.prepend(b); } } }
   };
   new MutationObserver(() => { if (!tm) tm = setTimeout(put, 90); }).observe(TR, { childList: true, subtree: true });
+  // Estatísticas (23/11): o bloco da retrospectiva entra junto com o desenho da tela, não 90 ms depois (a tela crescia depois de pronta)
+  { const _dp = drawProgresso; drawProgresso = function (box) { const r = _dp.apply(this, arguments); try { if (box && box.querySelector) put(box); } catch {} return r; }; }
   // Estatísticas (Bia, 23/11): ao trocar o ano, a tela volta ao topo e o seletor fica à vista, acima do destaque da retrospectiva
   TR.addEventListener('click', (ev) => { const b = ev.target.closest && ev.target.closest('.sx-yr [data-sy]'); if (!b || !b.dataset.sy) return;
     setTimeout(() => { const yr = TR.querySelector('.sx-yr'); if (!yr) return; let sc = yr.parentElement; while (sc && sc !== TR && !(sc.scrollHeight > sc.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(sc).overflowY))) sc = sc.parentElement;
