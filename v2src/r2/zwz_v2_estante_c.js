@@ -6,7 +6,9 @@
 const FLN_CSS = `
 .v4ler .dkpan.flp .dtabs,.v4ler .dkpan.flp .dtabs.six{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:4px;overflow:visible;margin-bottom:6px}
 .v4ler .dkpan.flp .dtabs button{padding:0 4px!important;min-height:36px!important;font-size:12.5px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Ver em grade é outra visualização, não edição: fica no topo, ao lado do Todos (Bia 23/11) */
 .v5est .shtop.fln .shic{display:none}
+.v5est .shtop .vtog{margin-left:auto;flex:none}
 .v5est .shtop.fln{min-height:0;padding-block:2px}
 .flncol{position:fixed;top:40%;transform:translateY(-50%);z-index:9400;display:grid;gap:8px;padding:6px;border-radius:30px;background:color-mix(in srgb,var(--card) 72%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(0,0,0,.22)}
 .flncol.R{right:max(6px,env(safe-area-inset-right,0px))}.flncol.L{left:max(6px,env(safe-area-inset-left,0px))}
@@ -24,7 +26,7 @@ function flnCss(sr) { if (!sr || sr.__flnCss) return; sr.__flnCss = 1; const st 
 function flnHTML() { const side = (() => { try { return v5P().flCol === 'L' ? 'L' : 'R'; } catch { return 'R'; } })();
   const I = (a, ic, lab) => `<button type="button" class="fni" ${a} aria-label="${lab}">${ic}<span class="flbl" aria-hidden="true">${lab}</span></button>`;
   const tg = `<button type="button" class="tg" data-fn="tg" aria-expanded="${FLN_OPEN}" aria-label="${FLN_OPEN ? 'Fechar opções da estante' : 'Opções da estante'}">${FLN_OPEN ? '×' : v4ic('dots', 20)}<span class="flbl" aria-hidden="true">${FLN_OPEN ? 'Fechar' : 'Opções'}</span></button>`;
-  const items = [I('data-a="shxview" data-v="grade"', v4ic('grid', 19), 'Ver em grade'), I('data-a="shmode" data-v="org"', v4ic('sort', 19), 'Organizar'), I('data-a="shmode" data-v="deco"', v4ic('lua', 19), 'Decorar'),
+  const items = [I('data-a="shmode" data-v="org"', v4ic('sort', 19), 'Organizar'), I('data-a="shmode" data-v="deco"', v4ic('lua', 19), 'Decorar'),
     I('data-a="sheet" data-s="v5add"', v4ic('plus', 19), 'Adicionar livro'), I('data-a="shxsheet" data-s="shxleg"', '?', 'Ajuda')];
   return `<div class="flncol ${side}${FLN_OPEN ? ' open' : ''}" role="toolbar" aria-orientation="vertical" aria-label="Opções da estante">${tg}${items.join('')}</div>`; }
 function flnMount() { try { const sr = shBibRoot(); if (!sr) return; flnCss(sr); const R = sr.querySelector('.v5est'); if (!R) return;

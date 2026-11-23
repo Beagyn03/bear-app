@@ -166,8 +166,8 @@ function ljMenu(x) {
   else items.push({ label: 'Adicionar de volta à Biblioteca', sub: 'o livro saiu da Biblioteca', fn: () => ljGone(x) });
   if (end) {
     items.push(0, { label: 'Remover da lista', sub: 'só some daqui', fn: () => {
-      ljHideSet([...ljHideGet(), x.id]); ljDraw(); ljPaintSummary();
-      toast('“' + x.title + '” saiu da lista', { label: 'Desfazer', fn: () => { ljHideSet(ljHideGet().filter((i) => i !== x.id)); ljDraw(); ljPaintSummary(); } });
+      ljHideSet([...ljHideGet(), x.id]); ljDraw(); ljPaintSummary();; try { if (S.tab === 'comunidade' && typeof v6Paint === 'function') v6Paint(); } catch {}
+      toast('“' + x.title + '” saiu da lista', { label: 'Desfazer', fn: () => { ljHideSet(ljHideGet().filter((i) => i !== x.id)); ljDraw(); ljPaintSummary();; try { if (S.tab === 'comunidade' && typeof v6Paint === 'function') v6Paint(); } catch {} } });
     }, danger: true });
     return sheetList(esc(x.title), items);
   }

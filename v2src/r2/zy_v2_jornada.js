@@ -237,7 +237,8 @@ let jnLast = ''; const jnTick = () => {
   const onHome = S.tab === 'inicio' && !open, onBib = S.tab === 'estante' && (!open || (v.classList.contains('tabroot') && !v.classList.contains('v4inner')));
   let ses = null; try { ses = typeof v4Ses === 'function' ? v4Ses() : null; } catch {}
   const pill = !!ses && !jnSesView() && !typing;
-  const planet = !ses && (onHome || onBib) && !typing && !jnCovered();
+  const planet = !ses && onHome && !typing && !jnCovered(); // Bia 23/11: o Ler não fica na Biblioteca (cobre a estante); só no Hoje
+  void onBib;
   // espaço no fim das listas (só pela aba, para não mexer no layout a cada folha que abre)
   const padL = S.tab === 'inicio' || S.tab === 'estante' || (pill && !open), padV = (S.tab === 'estante' && open) || (pill && open);
   if (L && L.classList.contains('v5pad') !== !!padL) L.classList.toggle('v5pad', !!padL);

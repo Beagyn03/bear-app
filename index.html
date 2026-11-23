@@ -10019,6 +10019,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 00_v2_capa_canvas.js ---
 // Capa para canvas (Bia, 22/11): o Google Livros não manda CORS, então o canvas não pode ler os pixels dessas capas
@@ -25807,8 +25808,8 @@ function ljMenu(x) {
   else items.push({ label: 'Adicionar de volta à Biblioteca', sub: 'o livro saiu da Biblioteca', fn: () => ljGone(x) });
   if (end) {
     items.push(0, { label: 'Remover da lista', sub: 'só some daqui', fn: () => {
-      ljHideSet([...ljHideGet(), x.id]); ljDraw(); ljPaintSummary();
-      toast('“' + x.title + '” saiu da lista', { label: 'Desfazer', fn: () => { ljHideSet(ljHideGet().filter((i) => i !== x.id)); ljDraw(); ljPaintSummary(); } });
+      ljHideSet([...ljHideGet(), x.id]); ljDraw(); ljPaintSummary();; try { if (S.tab === 'comunidade' && typeof v6Paint === 'function') v6Paint(); } catch {}
+      toast('“' + x.title + '” saiu da lista', { label: 'Desfazer', fn: () => { ljHideSet(ljHideGet().filter((i) => i !== x.id)); ljDraw(); ljPaintSummary();; try { if (S.tab === 'comunidade' && typeof v6Paint === 'function') v6Paint(); } catch {} } });
     }, danger: true });
     return sheetList(esc(x.title), items);
   }
@@ -26878,7 +26879,7 @@ function shDraw(box) {
   if (S5.tab !== 'livros' || S5.sub || shView() !== 'prat' || !R.querySelector('.shxph')) { SHX_MODE = null; return; }
   const t0 = performance.now(), seg = R.querySelector(':scope > .seg'), segH = seg ? seg.outerHTML : '', f = shF(), list = shList(f), md = SHX_MODE, n = list.length;
   const top = `<div class="shtop">${md ? '' : `<button type="button" class="shsel" data-a="shxsheet" data-s="shxfilt" aria-label="Mostrar: ${esc(shFName())}"><b>${esc(f === 'todos' ? 'Todos' : shFName())}</b><i>▾</i><small>${n} livro${n === 1 ? '' : 's'}</small></button>
-      <button type="button" class="shic" data-a="shxview" data-v="grade" aria-label="Ver em grade" title="Grade">${v4ic('grid', 19)}</button>
+      <div class="vtog" role="group" aria-label="Ver como"><button type="button" data-a="shxview" data-v="grade" aria-pressed="false">${v4ic('grid', 16)}Grade</button><button type="button" class="on" data-a="shxview" data-v="prat" aria-pressed="true">${v4ic('prat', 16)}Prateleira</button></div>
       <button type="button" class="shic" data-a="shmode" data-v="org" aria-label="Organizar" title="Organizar">${v4ic('sort', 19)}</button>
       <button type="button" class="shic" data-a="shmode" data-v="deco" aria-label="Decorar" title="Decorar">${v4ic('lua', 19)}</button>
       <button type="button" class="shic" data-a="sheet" data-s="v5add" aria-label="Adicionar livro" title="Adicionar">${v4ic('plus', 19)}</button>
@@ -31033,7 +31034,9 @@ try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-shxfl]
 const FLN_CSS = `
 .v4ler .dkpan.flp .dtabs,.v4ler .dkpan.flp .dtabs.six{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:4px;overflow:visible;margin-bottom:6px}
 .v4ler .dkpan.flp .dtabs button{padding:0 4px!important;min-height:36px!important;font-size:12.5px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Ver em grade é outra visualização, não edição: fica no topo, ao lado do Todos (Bia 23/11) */
 .v5est .shtop.fln .shic{display:none}
+.v5est .shtop .vtog{margin-left:auto;flex:none}
 .v5est .shtop.fln{min-height:0;padding-block:2px}
 .flncol{position:fixed;top:40%;transform:translateY(-50%);z-index:9400;display:grid;gap:8px;padding:6px;border-radius:30px;background:color-mix(in srgb,var(--card) 72%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(0,0,0,.22)}
 .flncol.R{right:max(6px,env(safe-area-inset-right,0px))}.flncol.L{left:max(6px,env(safe-area-inset-left,0px))}
@@ -31051,7 +31054,7 @@ function flnCss(sr) { if (!sr || sr.__flnCss) return; sr.__flnCss = 1; const st 
 function flnHTML() { const side = (() => { try { return v5P().flCol === 'L' ? 'L' : 'R'; } catch { return 'R'; } })();
   const I = (a, ic, lab) => `<button type="button" class="fni" ${a} aria-label="${lab}">${ic}<span class="flbl" aria-hidden="true">${lab}</span></button>`;
   const tg = `<button type="button" class="tg" data-fn="tg" aria-expanded="${FLN_OPEN}" aria-label="${FLN_OPEN ? 'Fechar opções da estante' : 'Opções da estante'}">${FLN_OPEN ? '×' : v4ic('dots', 20)}<span class="flbl" aria-hidden="true">${FLN_OPEN ? 'Fechar' : 'Opções'}</span></button>`;
-  const items = [I('data-a="shxview" data-v="grade"', v4ic('grid', 19), 'Ver em grade'), I('data-a="shmode" data-v="org"', v4ic('sort', 19), 'Organizar'), I('data-a="shmode" data-v="deco"', v4ic('lua', 19), 'Decorar'),
+  const items = [I('data-a="shmode" data-v="org"', v4ic('sort', 19), 'Organizar'), I('data-a="shmode" data-v="deco"', v4ic('lua', 19), 'Decorar'),
     I('data-a="sheet" data-s="v5add"', v4ic('plus', 19), 'Adicionar livro'), I('data-a="shxsheet" data-s="shxleg"', '?', 'Ajuda')];
   return `<div class="flncol ${side}${FLN_OPEN ? ' open' : ''}" role="toolbar" aria-orientation="vertical" aria-label="Opções da estante">${tg}${items.join('')}</div>`; }
 function flnMount() { try { const sr = shBibRoot(); if (!sr) return; flnCss(sr); const R = sr.querySelector('.v5est'); if (!R) return;
@@ -31639,9 +31642,12 @@ let TZ_H = null;
     try { navigator.vibrate && navigator.vibrate(6); } catch {}
     // tocar: na capa abre; fora devolve (e se for outra lombada, troca)
     let pd = null;
-    box.addEventListener('pointerdown', (e) => { pd = { x: e.clientX, y: e.clientY }; });
-    box.addEventListener('pointermove', (e) => { if (pd && Math.hypot(e.clientX - pd.x, e.clientY - pd.y) > 12) { pd = null; cleanup(true); } });
-    box.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const onCv = (l.cv && l.cv.contains(e.target)) || (l.hit && l.hit.contains(e.target));
+    // segurar a capa levantada: a capa volta e abre o menu do livro (Bia 23/11), nunca os dois juntos
+    let hold = 0, held = false; const menu = () => { clearTimeout(hold); if (L !== l) return; held = true; cleanup(false); setTimeout(() => { try { if (el.dataset.long === 'bm' && typeof v5Menu === 'function' && typeof v5Book === 'function') { try { navigator.vibrate && navigator.vibrate(12); } catch {} v5Menu(v5Book(el.dataset.id)); } else el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, composed: true, cancelable: true })); } catch (err) { console.warn('segurar capa', err); } }, 180); };
+    box.addEventListener('pointerdown', (e) => { pd = { x: e.clientX, y: e.clientY }; held = false; clearTimeout(hold); const onCv = (l.cv && l.cv.contains(e.target)) || (l.hit && l.hit.contains(e.target)); if (onCv) hold = setTimeout(menu, 450); });
+    const stop = () => clearTimeout(hold); box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
+    box.addEventListener('pointermove', (e) => { if (pd && Math.hypot(e.clientX - pd.x, e.clientY - pd.y) > 12) { pd = null; stop(); cleanup(true); } });
+    box.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (held) return; const onCv = (l.cv && l.cv.contains(e.target)) || (l.hit && l.hit.contains(e.target));
       if (onCv) { cleanup(false); try { el.dataset.lvlGo = '1'; el.click(); } finally { delete el.dataset.lvlGo; } return; }
       const x = e.clientX, y = e.clientY; cleanup(true);
       // outra lombada embaixo do dedo? levanta ela
@@ -31649,7 +31655,11 @@ let TZ_H = null;
     l.onScroll = () => cleanup(false); addEventListener('scroll', l.onScroll, true);
     l.onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); cleanup(true); } }; addEventListener('keydown', l.onKey, true);
     // o Voltar do celular (01_voltar) e o closePop removem o ".pop": devolve o livro
-    l.mo = new MutationObserver(() => { if (!box.isConnected && L === l) cleanup(false); }); l.mo.observe(TR, { childList: true }); }
+    // abriu outra coisa por cima (menu do livro ao segurar, folha, página): a capa levantada sai junto (Bia 23/11)
+    l.mo = new MutationObserver((ms) => { if (L !== l) return; if (!box.isConnected) return cleanup(false);
+      for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n !== box && n.tagName !== 'STYLE' && n.tagName !== 'SCRIPT' && !/toast|snack/i.test(n.className || '')) return cleanup(false); });
+    l.mo.observe(TR, { childList: true });
+    box.addEventListener('contextmenu', (e) => { e.preventDefault(); if (!held) menu(); }); }
   function deepAt(x, y) { let e = document.elementFromPoint(x, y); for (let i = 0; i < 6 && e && e.shadowRoot; i++) { const n = e.shadowRoot.elementFromPoint(x, y); if (!n || n === e) break; e = n; } return e; }
   function pick(t) { const el = t.closest && t.closest('[data-a]'); if (!el || !ACTS.has(el.dataset.a)) return null; if (!el.closest('.bsh') || el.closest('.dec')) return null;
     if (typeof shMode === 'function' && shMode()) return null; if (!(el.classList.contains('sp') || el.classList.contains('face') || el.classList.contains('pb'))) return null; return { el, a: el.dataset.a }; }
@@ -31899,7 +31909,8 @@ let jnLast = ''; const jnTick = () => {
   const onHome = S.tab === 'inicio' && !open, onBib = S.tab === 'estante' && (!open || (v.classList.contains('tabroot') && !v.classList.contains('v4inner')));
   let ses = null; try { ses = typeof v4Ses === 'function' ? v4Ses() : null; } catch {}
   const pill = !!ses && !jnSesView() && !typing;
-  const planet = !ses && (onHome || onBib) && !typing && !jnCovered();
+  const planet = !ses && onHome && !typing && !jnCovered(); // Bia 23/11: o Ler não fica na Biblioteca (cobre a estante); só no Hoje
+  void onBib;
   // espaço no fim das listas (só pela aba, para não mexer no layout a cada folha que abre)
   const padL = S.tab === 'inicio' || S.tab === 'estante' || (pill && !open), padV = (S.tab === 'estante' && open) || (pill && open);
   if (L && L.classList.contains('v5pad') !== !!padL) L.classList.toggle('v5pad', !!padL);

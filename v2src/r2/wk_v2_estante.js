@@ -368,7 +368,7 @@ function shDraw(box) {
   if (S5.tab !== 'livros' || S5.sub || shView() !== 'prat' || !R.querySelector('.shxph')) { SHX_MODE = null; return; }
   const t0 = performance.now(), seg = R.querySelector(':scope > .seg'), segH = seg ? seg.outerHTML : '', f = shF(), list = shList(f), md = SHX_MODE, n = list.length;
   const top = `<div class="shtop">${md ? '' : `<button type="button" class="shsel" data-a="shxsheet" data-s="shxfilt" aria-label="Mostrar: ${esc(shFName())}"><b>${esc(f === 'todos' ? 'Todos' : shFName())}</b><i>▾</i><small>${n} livro${n === 1 ? '' : 's'}</small></button>
-      <button type="button" class="shic" data-a="shxview" data-v="grade" aria-label="Ver em grade" title="Grade">${v4ic('grid', 19)}</button>
+      <div class="vtog" role="group" aria-label="Ver como"><button type="button" data-a="shxview" data-v="grade" aria-pressed="false">${v4ic('grid', 16)}Grade</button><button type="button" class="on" data-a="shxview" data-v="prat" aria-pressed="true">${v4ic('prat', 16)}Prateleira</button></div>
       <button type="button" class="shic" data-a="shmode" data-v="org" aria-label="Organizar" title="Organizar">${v4ic('sort', 19)}</button>
       <button type="button" class="shic" data-a="shmode" data-v="deco" aria-label="Decorar" title="Decorar">${v4ic('lua', 19)}</button>
       <button type="button" class="shic" data-a="sheet" data-s="v5add" aria-label="Adicionar livro" title="Adicionar">${v4ic('plus', 19)}</button>

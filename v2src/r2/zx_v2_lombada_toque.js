@@ -59,9 +59,12 @@
     try { navigator.vibrate && navigator.vibrate(6); } catch {}
     // tocar: na capa abre; fora devolve (e se for outra lombada, troca)
     let pd = null;
-    box.addEventListener('pointerdown', (e) => { pd = { x: e.clientX, y: e.clientY }; });
-    box.addEventListener('pointermove', (e) => { if (pd && Math.hypot(e.clientX - pd.x, e.clientY - pd.y) > 12) { pd = null; cleanup(true); } });
-    box.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const onCv = (l.cv && l.cv.contains(e.target)) || (l.hit && l.hit.contains(e.target));
+    // segurar a capa levantada: a capa volta e abre o menu do livro (Bia 23/11), nunca os dois juntos
+    let hold = 0, held = false; const menu = () => { clearTimeout(hold); if (L !== l) return; held = true; cleanup(false); setTimeout(() => { try { if (el.dataset.long === 'bm' && typeof v5Menu === 'function' && typeof v5Book === 'function') { try { navigator.vibrate && navigator.vibrate(12); } catch {} v5Menu(v5Book(el.dataset.id)); } else el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, composed: true, cancelable: true })); } catch (err) { console.warn('segurar capa', err); } }, 180); };
+    box.addEventListener('pointerdown', (e) => { pd = { x: e.clientX, y: e.clientY }; held = false; clearTimeout(hold); const onCv = (l.cv && l.cv.contains(e.target)) || (l.hit && l.hit.contains(e.target)); if (onCv) hold = setTimeout(menu, 450); });
+    const stop = () => clearTimeout(hold); box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
+    box.addEventListener('pointermove', (e) => { if (pd && Math.hypot(e.clientX - pd.x, e.clientY - pd.y) > 12) { pd = null; stop(); cleanup(true); } });
+    box.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (held) return; const onCv = (l.cv && l.cv.contains(e.target)) || (l.hit && l.hit.contains(e.target));
       if (onCv) { cleanup(false); try { el.dataset.lvlGo = '1'; el.click(); } finally { delete el.dataset.lvlGo; } return; }
       const x = e.clientX, y = e.clientY; cleanup(true);
       // outra lombada embaixo do dedo? levanta ela
@@ -69,7 +72,11 @@
     l.onScroll = () => cleanup(false); addEventListener('scroll', l.onScroll, true);
     l.onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); cleanup(true); } }; addEventListener('keydown', l.onKey, true);
     // o Voltar do celular (01_voltar) e o closePop removem o ".pop": devolve o livro
-    l.mo = new MutationObserver(() => { if (!box.isConnected && L === l) cleanup(false); }); l.mo.observe(TR, { childList: true }); }
+    // abriu outra coisa por cima (menu do livro ao segurar, folha, página): a capa levantada sai junto (Bia 23/11)
+    l.mo = new MutationObserver((ms) => { if (L !== l) return; if (!box.isConnected) return cleanup(false);
+      for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && n !== box && n.tagName !== 'STYLE' && n.tagName !== 'SCRIPT' && !/toast|snack/i.test(n.className || '')) return cleanup(false); });
+    l.mo.observe(TR, { childList: true });
+    box.addEventListener('contextmenu', (e) => { e.preventDefault(); if (!held) menu(); }); }
   function deepAt(x, y) { let e = document.elementFromPoint(x, y); for (let i = 0; i < 6 && e && e.shadowRoot; i++) { const n = e.shadowRoot.elementFromPoint(x, y); if (!n || n === e) break; e = n; } return e; }
   function pick(t) { const el = t.closest && t.closest('[data-a]'); if (!el || !ACTS.has(el.dataset.a)) return null; if (!el.closest('.bsh') || el.closest('.dec')) return null;
     if (typeof shMode === 'function' && shMode()) return null; if (!(el.classList.contains('sp') || el.classList.contains('face') || el.classList.contains('pb'))) return null; return { el, a: el.dataset.a }; }
