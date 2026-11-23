@@ -197,8 +197,8 @@ function shV4Click(ev) { const t = ev.target.closest && ev.target.closest('[data
   if (a === 'shxsp') { const e = v5Book(id); return shOpen('shxsp', { e }); }
   if (a === 'shedt') { SHX_EDT = { ...(SHX_EDT || {}), t: d.k }; if (!SHX_EDT.e) SHX_EDT.e = '#b3283f'; return v4Draw(); }
   if (a === 'shedc') { SHX_EDT = { ...(SHX_EDT || {}), e: d.k }; return v4Draw(); }
-  if (a === 'shedok') { if (id && SHX_EDT) { C0.ed[id] = { t: SHX_EDT.t, ...(SHX_EDT.t === 'bp' ? { e: SHX_EDT.e } : {}) }; shSave(); } const nm = C0.ed[id] ? SH_EDN[C0.ed[id].t] : ''; SHX_EDT = null; v5SheetClose(); v5Redraw(); return toast('Edição salva: ' + nm); }
-  if (a === 'shedauto') { if (id) { delete C0.ed[id]; shSave(); } SHX_EDT = null; v5SheetClose(); v5Redraw(); return toast('Edição automática, pelo formato do livro'); }
+  if (a === 'shedok') { const bk = shBk(); if (id && SHX_EDT) { C0.ed[id] = { t: SHX_EDT.t, ...(SHX_EDT.t === 'bp' ? { e: SHX_EDT.e } : {}) }; shSave(); } const nm = C0.ed[id] ? SH_EDN[C0.ed[id].t] : ''; SHX_EDT = null; v5SheetClose(); v5Redraw(); return toast('Edição salva: ' + nm, shUndo(bk)); }
+  if (a === 'shedauto') { const bk = shBk(); if (id) { delete C0.ed[id]; shSave(); } SHX_EDT = null; v5SheetClose(); v5Redraw(); return toast('Edição automática, pelo formato do livro', shUndo(bk)); }
   if (a === 'shspex') { const b = shById(d.id); if (b) shCrop(shSamplePhoto(b), d.id); return; }
   if (a === 'shsprm') { delete C0.sp[d.id]; shSave(); v4Draw(); v5Redraw(); return toast('A lombada voltou a sair da capa'); } }
 function shV4Change(ev) { const id = ev.target.dataset && ev.target.dataset.shin; if (!id) return; ev.stopImmediatePropagation(); const f = ev.target.files && ev.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => shCrop(rd.result, id); rd.readAsDataURL(f); }

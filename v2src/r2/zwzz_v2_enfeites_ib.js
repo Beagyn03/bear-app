@@ -20,8 +20,8 @@ const FLP_I = { pe: FLP_IC('<rect x="9" y="3" width="6" height="18" rx="1"/>'), 
       let top = E.top - ph - 12, below = false; if (top < 64) { top = Math.min(E.bottom + 12, innerHeight - ph - 8); below = true; }
       const left = Math.max(L0, Math.min(W - pw - 8, E.left + E.width / 2 - pw / 2)); p.style.top = top + 'px'; p.style.left = left + 'px'; p.style.setProperty('--ax', Math.max(16, Math.min(pw - 16, E.left + E.width / 2 - left)) + 'px'); p.classList.toggle('below', below); }
   } catch (e) { console.warn('painel', e); } return r; }; }
-window.addEventListener('click', (ev) => { try { const p = ev.composedPath ? ev.composedPath() : [], b = p.find((n) => n && n.dataset && n.dataset.flp === 'ver'); if (!b) return; ev.stopImmediatePropagation(); ev.preventDefault();
-  const f = flFind(FLX.pos), id = f ? (f.o.t === 'b' ? f.o.id : f.o.ids && f.o.ids[0]) : null; FLX.pos = null; flRender(); if (id) { const e = v5Book(id); if (e) shOpen('v5book', { e }); } } catch (e) { console.warn('ver livro', e); } }, true);
+// Ver livro: abre a página do livro (tratado na ação do painel, que roda antes de qualquer outro toque)
+{ const _pa = flPosAct; flPosAct = function (k) { if (k !== 'ver') return _pa.apply(this, arguments); try { const f = flFind(FLX.pos), id = f ? (f.o.t === 'b' ? f.o.id : f.o.ids && f.o.ids[0]) : null; FLX.pos = null; FLX.posG = null; flRender(); if (id) { const e = v5Book(id); if (e) openBookPage(e); } } catch (e) { console.warn('ver livro', e); } }; }
 // leque da pilha: tocar num livro tira ele da pilha (em pé, ao lado) e abre o painel dele, em vez de pôr na mão
 let FLF_LAST = null;
 { const _fr = flRender; flRender = function () { try { if (FLF_LAST && !FLX.fan && FLX.pk && FLX.pk.from === 'shelf' && FLX.pk.pb && FLX.pk.u === FLF_LAST && !FLX.sel && !FLX.D) { const pk = FLX.pk, F = shc().free, f = flFind(pk.u);

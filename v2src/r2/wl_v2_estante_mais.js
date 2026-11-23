@@ -326,7 +326,7 @@ function shLbHTML() { const id = String(v4State().sheetE || ''), b = shById(id);
 { const _vc = shV4Click; shV4Click = function (ev) { const t = ev.target.closest && ev.target.closest('[data-a]'); if (t && (t.dataset.a === 'shxlb' || t.dataset.a === 'shlbst')) { ev.stopImmediatePropagation(); ev.preventDefault();
       const id = String(v4State().sheetE || ''), C0 = shc();
       if (t.dataset.a === 'shxlb') { const e = v5Book(id); return shOpen('shxlb', { e }); }
-      C0.spb = C0.spb || {}; if (t.dataset.k === 'def') delete C0.spb[id]; else C0.spb[id] = t.dataset.k; shSave(); v4Draw(); v5Redraw(); return toast(t.dataset.k === 'def' ? 'Lombada no padrão da estante' : t.dataset.k === 'capa' ? 'Lombada da capa' : 'Lombada desenhada'); }
+      const bk = shBk(); C0.spb = C0.spb || {}; if (t.dataset.k === 'def') delete C0.spb[id]; else C0.spb[id] = t.dataset.k; shSave(); v4Draw(); v5Redraw(); return toast(t.dataset.k === 'def' ? 'Lombada no padrão da estante' : t.dataset.k === 'capa' ? 'Lombada da capa' : 'Lombada desenhada', { label: 'Desfazer', fn: () => { shRestore(bk); try { if (v4State().sheet === 'shxlb') v4Draw(); } catch {} } }); }
     return _vc.apply(this, arguments); }; }
 // menu do livro › Mais: "Lombada e edição" no topo (substitui as duas linhas antigas)
 { const _bm = v5BmHTML; v5BmHTML = function () { let h = _bm.apply(this, arguments);

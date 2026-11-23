@@ -1,10 +1,13 @@
 // ---------- estante livre D (Bia, 22/11): desfazer/refazer sempre à mão, pilha em leque, enfeite na frente ----------
 // histórico: cada gravação no Organizar/Decorar guarda o estado anterior (até 40 passos); ↶ ↷ na coluna lateral
 let FLH_U = [], FLH_R = [], FLH_CUR = null, FLH_LOCK = 0, FLH_MD = null, FLH_T = 0;
+// o passo do Desfazer guarda a estante como estava no toque que começou a ação (o redesenho recalcula posições sem salvar)
+let FLH_PRE = null;
+window.addEventListener('pointerdown', () => { try { if (flhOn() && !FLH_LOCK) { const b = shBk(); FLH_PRE = { bk: b, js: JSON.stringify(b) }; } } catch {} }, true);
 const flhOn = () => { try { return flActive() && (SHX_MODE === 'org' || SHX_MODE === 'deco'); } catch { return false; } };
 { const _s = shSave; shSave = function () { const r = _s.apply(this, arguments);
     try { if (flhOn() && !FLH_LOCK && !FL_PV) { const cur = shBk(), js = JSON.stringify(cur); // gravações em sequência (a mesma ação salva 2-3 vezes) viram um passo só
-      if (FLH_CUR && FLH_CUR.js !== js) { const now = Date.now(); if (now - FLH_T > 600 || !FLH_U.length) { FLH_U.push(FLH_CUR.bk); if (FLH_U.length > 40) FLH_U.shift(); } FLH_T = now; FLH_R = []; FLH_CUR = { bk: cur, js }; } else if (!FLH_CUR) FLH_CUR = { bk: cur, js }; flhPaint(); } } catch (err) { console.warn('estante: histórico', err); }
+      if (FLH_CUR && FLH_CUR.js !== js) { const now = Date.now(); if (now - FLH_T > 600 || !FLH_U.length) { FLH_U.push(FLH_PRE && FLH_PRE.js !== js ? FLH_PRE.bk : FLH_CUR.bk); if (FLH_U.length > 40) FLH_U.shift(); } FLH_PRE = null; FLH_T = now; FLH_R = []; FLH_CUR = { bk: cur, js }; } else if (!FLH_CUR) FLH_CUR = { bk: cur, js }; flhPaint(); } } catch (err) { console.warn('estante: histórico', err); }
     return r; }; }
 function flhReset() { FLH_U = []; FLH_R = []; try { const b = shBk(); FLH_CUR = { bk: b, js: JSON.stringify(b) }; } catch { FLH_CUR = null; } }
 function flhGo(dir) { const from = dir < 0 ? FLH_U : FLH_R, to = dir < 0 ? FLH_R : FLH_U; if (!from.length) return toast(dir < 0 ? 'Nada para desfazer' : 'Nada para refazer');
