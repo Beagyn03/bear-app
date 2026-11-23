@@ -152,6 +152,8 @@ function spnGeo(b, sm) { const h0 = spnHash(b.t + '|' + (b.a || '')); let r = h0
   const pages = b.tot || 300, ov = shEdOf(b), hc0 = f[0] === 'h' || (f[0] === 'g' && h0 % 2 === 0), hc = ov.t === 'hc' || ov.t === 'ep' ? true : (ov.t === 'pb' || ov.t === 'bp') ? false : hc0;
   let h = Math.round(f[1] * 6.15 + ((h0 >>> 3) % 5) - 2) + (hc && !hc0 ? 5 : 0), w = Math.round(Math.max(8, Math.min(70, 10 + (pages - 100) * 0.06 + (ov.t === 'hc' || ov.t === 'ep' ? 2 : 0))));
   if (sm) { h = Math.round(h * 0.6); w = Math.max(8, Math.round(w * 0.6)); } return { h, w, hc, pages, h0 }; }
+// livro deitado: espessura pelas páginas, na mesma escala da lombada em pé (Bia 23/11); pilha alta demais encolhe por igual
+function shPileHts(bs, room) { const hs = bs.map((x) => spnGeo(x, false).w), t = hs.reduce((a, h) => a + h, 0), R = room || 150; const k = t > R ? R / t : 1; return hs.map((h) => Math.max(7, Math.round(h * k))); }
 function spnColors(b) { const g = spnHash(b.t + '|' + (b.a || '')); const p = SH_PAL[g % SH_PAL.length], q = SH_PAL[(g >>> 5) % SH_PAL.length]; return [p[0], p[1], q[0]]; }
 // ação de tocar num livro: na sua estante abre o livro (segurar abre o menu); na estante de outra pessoa abre a página do livro
 const shAct = (b, long) => SHX_VIS ? ` data-a="shxvb" data-id="${esc(b.id)}"` : ` data-a="v5book" data-id="${esc(b.id)}"${long ? ' data-long="bm"' : ''}`;
@@ -280,10 +282,10 @@ function pratHTML(list0, sm, wBsh) {
   while (rows.length < minR) rows.push([]);
   // o último livro de algumas fileiras cheias encosta no vizinho, inclinado (só na arrumação automática)
   // livro inclinado só quando a pessoa escolhe (Organizar › Inclinado)
-  const pileHTML = (bs, top) => `<span class="pile">${top ? `<span class="dec" style="margin:0 0 0 18px">${SH_DEC[top](0.9)}</span>` : ''}${bs.map((x, j) => { const G = spnGeo(x, false), [c, k] = spnColors(x), ov = shEdOf(x), wv = Math.round(G.h * 0.86 * sc) - j * 3, ht = Math.max(13, Math.min(26, Math.round(G.w * 0.8)));
+  const pileHTML = (bs, top) => { const PH = shPileHts(bs, top ? 112 : 150); return `<span class="pile">${top ? `<span class="dec" style="margin:0 0 0 18px">${SH_DEC[top](0.9)}</span>` : ''}${bs.map((x, j) => { const G = spnGeo(x, false), [c, k] = spnColors(x), ov = shEdOf(x), wv = Math.round(G.h * 0.86 * sc) - j * 3, ht = PH[j];
     const fe = ov.t === 'bp' || ov.t === 'ep', act = md ? '' : shAct(x, true);
     // bordas pintadas (ou douradas): o livro deitado mostra o corte das páginas, não a lombada
-    return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}${fe ? ', bordas ' + (ov.t === 'ep' ? 'douradas' : 'pintadas') : ''}"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (ov.e || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : `<span>${esc(x.t)}</span>`}</span>`; }).join('')}</span>`;
+    return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}${fe ? ', bordas ' + (ov.t === 'ep' ? 'douradas' : 'pintadas') : ''}"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (ov.e || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : `<span>${esc(x.t)}</span>`}</span>`; }).join('')}</span>`; };
   const decHTML = (d) => { const edit = md === 'deco' && d.i != null, lb = !edit && !md && !sm && d.k === 'leitor' && typeof shLeitorBook === 'function' ? shLeitorBook(d) : null; return `<span class="dec${edit ? ' u' : ''}${lb ? ' lk' : ''}"${edit ? ` data-dk="${d.i}" role="button" tabindex="0" aria-label="${esc(SH_DN[d.k] || d.k)}: trocar, tirar ou arrastar"` : lb ? `${shAct(lb, false)} role="button" tabindex="0" aria-label="Leitor digital: ${esc(lb.t)}"` : ''}>${SH_DEC[d.k](sc, d)}</span>`; };
   const itemHTML = (it) => it.k === 'sp' ? spnHTML(it.b, sm) : it.k === 'pile' ? pileHTML(it.bs, it.top) : `<button type="button" class="face" data-bid="${esc(it.b.id)}"${md ? '' : shAct(it.b, true)} aria-label="${esc(it.b.t)}, de frente">${v4cv({ title: it.b.t, cover: it.b.img })}</button>`;
   // toque para pegar (Organizar): marcadores grandes onde o livro pode entrar; por cima das pilhas, deitar nela

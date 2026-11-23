@@ -111,7 +111,7 @@ function flFreeze() { const C0 = shc(), sh = flQ('.bsh:not(.sm)'); if (!sh) retu
   C0.free = F; if (C0.freePend) { const p = C0.freePend; delete C0.freePend; flReflow(F, p.st, p.rows); } else flNormalize(F); return true; }
 
 // ---------- desenho ----------
-function flPileHTML(ids, md, o) { return `<span class="pile">${ids.map((id, j) => { const on = o && flPbOn(o, id), num = o ? flSelNum(o, id) : 0; const x = shById(id); if (!x) return ''; const G = spnGeo(x, false), [c, k] = spnColors(x), ov = shEdOf(x), wv = Math.round(G.h * 0.86) - j * 3, ht = Math.max(13, Math.min(26, Math.round(G.w * 0.8)));
+function flPileHTML(ids, md, o) { const PH = shPileHts(ids.map((id) => shById(id)).filter(Boolean), o && o.top ? 112 : 150); let jj = -1; return `<span class="pile">${ids.map((id, j) => { const on = o && flPbOn(o, id), num = o ? flSelNum(o, id) : 0; const x = shById(id); if (!x) return ''; const G = spnGeo(x, false), [c, k] = spnColors(x), ov = shEdOf(x), wv = Math.round(G.h * 0.86) - j * 3, ht = PH[++jj] || 13;
   const fe = ov.t === 'bp' || ov.t === 'ep', act = md ? '' : shAct(x, true);
   return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}${on ? ' flpbsel' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}, deitado"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (ov.e || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : `<span>${esc(x.t)}</span>`}${num ? `<i class="flnum">${num}</i>` : ''}</span>`; }).join('')}</span>`; }
 // chave de seleção: 'u' (peça inteira) ou 'u|livro' (um livro de dentro da pilha)
