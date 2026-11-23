@@ -3,6 +3,12 @@
 // Os desenhos antigos com equivalente passam a usar a ilustração (as chaves salvas continuam as mesmas: nada a migrar).
 // Altura fixa por tipo (fração da altura da prateleira), luz ajustada ao tema e sombra de contato no pé.
 // Guirlandas: peça nova, pendurada no alto do vão de uma prateleira (uma por prateleira).
+// Desfazer/Refazer da coluna e os toasts com Desfazer também voltam escolhas de decoração (parede, madeira, lombadas, luzes, guirlanda, enfeites)
+['deco', 'wood', 'wall', 'lt', 'spMode', 'spb', 'sp', 'ed', 'mk', 'lights', 'grl', 'freePend'].forEach((k) => { if (!SHX_BKK.includes(k)) SHX_BKK.push(k); });
+// congelar a estante ao entrar no Organizar/Decorar não vira passo do Desfazer
+{ const _fz = flFreeze; flFreeze = function () { const r = _fz.apply(this, arguments); if (r) { FLH_LOCK++; queueMicrotask(() => { FLH_LOCK--; try { const b = shBk(); FLH_CUR = { bk: b, js: JSON.stringify(b) }; flhPaint(); } catch {} }); } return r; }; }
+// faixa Lombadas: o botão de um livro só cabe no cartão
+{ const _dl = dkPanel; dkPanel = function () { let h = _dl.apply(this, arguments); try { h = h.replace('>Editar a lombada de um livro<', '><b>Só um livro</b><small>editar a lombada</small><').replace('>Toque no livro na estante…<', '><b>Toque no livro</b><small>na estante</small><'); } catch {} return h; }; }
 const EIA_HB = 132; // altura útil de referência de uma prateleira (px, escala 1)
 const EIA = {
   basicos: { planta: [0.8, 'Planta', 253, 256], suculenta: [0.5, 'Suculenta', 232, 256], pendente: [0.62, 'Planta pendente', 219, 256], vela: [0.42, 'Vela', 212, 256],
@@ -97,11 +103,13 @@ window.addEventListener('click', (ev) => { try { if (typeof SHX_MODE === 'undefi
   shSave(); grlPaint(); if (a === 'rm') toast('Guirlanda tirada', { label: 'Desfazer', fn: () => { shc().grl = bk; shSave(); grlPaint(); } }); } catch (e) { console.warn('guirlanda', e); } }, true);
 // botões de guirlanda no carrossel de Temas e de Luzinhas
 const grlBtns = () => Object.entries(EIA_GRL).map(([k, [l, t]]) => `<button type="button" class="tzi grlbtn" data-grlk="${k}" aria-label="Pôr ${l}"><span class="tzv th"><span class="eia" style="width:56px;height:18px"><img alt="" loading="lazy" src="${eiaSrc(t, 'guirlanda')}"></span></span><small>${l}</small></button>`).join('');
-{ const _dp = dkPanel; dkPanel = function () { let h = _dp.apply(this, arguments); try { if (typeof FLX !== 'undefined' && FLX && (FLX.car === 'temas' || FLX.car === 'luz') && h && h.includes('class="dbody')) h = h.replace(/(<div class="dbody[^"]*"[^>]*>)/, `$1${grlBtns()}`); } catch {} return h; }; }
+{ const _dp = dkPanel; dkPanel = function () { let h = _dp.apply(this, arguments); try { if (typeof FLX !== 'undefined' && FLX && FLX.car === 'temas' && h && h.includes('class="dbody')) h = h.replace(/(<div class="dbody[^"]*"[^>]*>)/, `$1${grlBtns()}`); } catch {} return h; }; }
 document.addEventListener('click', (ev) => { const p = ev.composedPath ? ev.composedPath() : [], b = p.find((n) => n && n.dataset && n.dataset.grlk); if (!b) return; ev.stopImmediatePropagation(); ev.preventDefault(); grlAdd(b.dataset.grlk); }, true);
 { const _sd = shDraw; shDraw = function () { const r = _sd.apply(this, arguments); try { grlPaint(); requestAnimationFrame(grlPaint); } catch {} return r; }; }
 { const _fr = flRender; flRender = function () { const r = _fr.apply(this, arguments); try { grlPaint(); } catch {} return r; }; }
-const EIA_CSS = `.eia{display:block;position:relative;line-height:0}.eia>img{width:100%;height:100%;object-fit:contain;display:block;filter:brightness(.86) saturate(.86) contrast(.94) drop-shadow(-2px 2px 3px rgba(0,0,0,.45))}
+const EIA_CSS = `
+.v4ler .dkpan.flcar .dbody [data-a=dkpqok],.v4ler .dkpan.flcar .dbody [data-a=dkpqrm],.v4ler .dkpan.flcar .dbody [data-a=dkpqnew]{order:1}.v4ler .dkpan.flcar .dbody .pqsw>button{order:2}.v4ler .dkpan.flcar .dbody .dchips>button{order:3}.v4ler .dkpan.flcar .dbody .pqin{order:0;display:flex!important;flex:0 0 168px;height:96px;margin:0;box-sizing:border-box;flex-direction:column;align-items:stretch;justify-content:center;gap:2px;border-radius:14px;background:color-mix(in srgb,var(--card) 70%,transparent)}.v4ler .dkpan.flcar .dbody .pqin input{min-height:40px;font-size:15px;border-bottom:1.5px solid var(--line)}.v4ler .dkpan.flcar .dbody .pqin .cnt{align-self:flex-end}
+.v4ler .dkpan.flcar .dbody button.btn{white-space:normal;line-height:1.15;text-align:center;gap:4px}.v4ler .dkpan.flcar .dbody button.btn small{font-size:11px;font-weight:600;color:var(--ink2)}.v4ler .dkpan.flcar .dbody button.btn.p small{color:inherit;opacity:.85}.eia{display:block;position:relative;line-height:0}.eia>img{width:100%;height:100%;object-fit:contain;display:block;filter:brightness(.86) saturate(.86) contrast(.94) drop-shadow(-2px 2px 3px rgba(0,0,0,.45))}
 :host(.eiaL) .eia>img{filter:brightness(.96) saturate(.9) contrast(.96) drop-shadow(-2px 2px 2px rgba(60,40,20,.25))}
 .eia::after{content:"";position:absolute;left:12%;right:12%;bottom:-2px;height:6px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.42),transparent);pointer-events:none}
 .th .eia,.tzv .eia,.dkpan .eia{max-width:56px;max-height:54px;width:auto!important;height:54px!important}.th .eia>img,.tzv .eia>img,.dkpan .eia>img{filter:none}.th .eia::after,.tzv .eia::after,.dkpan .eia::after{display:none}
