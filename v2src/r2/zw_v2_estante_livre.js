@@ -286,13 +286,13 @@ function flAct(k, el) { const C0 = shc();
   if (k === 'grip') return;
   if (k === 'sel') { FLX.pk = null; FLX.pos = null; FLX.posG = null; FLX.sel = { src: Array.isArray(C0.tray) && C0.tray.length && !FLX.trayHide ? 'tray' : 'shelf', ids: [] }; return flRender(); }
   if (k === 'selx') { FLX.sel = null; return flRender(); }
-  if (k === 'more') { const tr = Array.isArray(C0.tray) && C0.tray.length; return shX('Organizar', [['Arrumar por (cor, autor, título…)', () => shArrMenu()], tr ? ['Desfazer tudo: a estante volta como estava', () => { FLX.open = false; shTrayUndo(); }] : ['Esvaziar e arrumar um por um', () => flEmpty()], ['Fechar os espaços entre os livros', () => flCloseGaps()], ['Voltar à arrumação automática', () => flAuto()]]); }
+  if (k === 'more') { const tr = Array.isArray(C0.tray) && C0.tray.length; return shX('Organizar', [tr ? ['Desfazer o esvaziar', () => { FLX.open = false; shTrayUndo(); }] : ['Esvaziar a estante', () => flEmpty()], ['Juntar os livros', () => flCloseGaps()], ['Arrumação automática', () => flAuto()]]); }
   if (k === 'st') return flTpl(el.dataset.k);
   if (k === 'nbg' || k === 'nlt') { const [r, n] = String(FLX.ns || '').split(':').map(Number), row = C0.free.rows[r]; if (!row) return; row.nb = row.nb || []; const nb = row.nb[n] = { ...(row.nb[n] || {}) };
     if (k === 'nbg') { if (el.dataset.k) nb.bg = el.dataset.k; else delete nb.bg; } else { if (+el.dataset.k) nb.lt = +el.dataset.k; else delete nb.lt; } shSave(); return flRender(); }
   if (k === 'nsx') { FLX.ns = null; return flRender(); }
   if (k === 'dkx') { FLX.dkx = !FLX.dkx; return flRender(); }
-  if (k === 'dkmore') return shX('Decorar', [['Restaurar a decoração padrão', () => flDkReset()], ['Voltar à estante aberta, sem nichos', () => flTpl('aberta')]]); }
+  if (k === 'dkmore') return shX('Decorar', [['Decoração padrão', () => flDkReset()], ['Estante sem nichos', () => flTpl('aberta')]]); }
 
 
 // ---------- coluna flutuante (Bia, 22/11): Concluir, Bandeja, Selecionar, Arrumar por, Decorar, ••• — na lateral, sem barra embaixo ----------
@@ -536,7 +536,7 @@ function flArrSheet() { const sr = shBibRoot(), R = sr && sr.querySelector('.v5e
   const can = () => free && K && !['cor', 'altura', 'mine'].includes(K);
   const paint = () => { w.innerHTML = `<div><div class="sxh"><b>Arrumar por</b><button type="button" class="sxx" data-k="x" aria-label="Fechar e desfazer a prévia">×</button></div>
       <div class="arg" role="radiogroup" aria-label="Critério">${opts.map(([k, l]) => `<button type="button" role="radio" aria-checked="${K === k}" class="${K === k ? 'on' : ''}" data-k="${k}">${C0.arr === k ? '✓ ' : ''}${l}${K === k ? (FL_REV ? ' ↑' : ' ↓') : ''}</button>`).join('')}</div>
-      <div class="arft"><label class="arsw${can() ? '' : ' off'}"><input type="checkbox" role="switch" ${pq && can() ? 'checked' : ''} ${can() ? '' : 'disabled'} data-k="pq"><span>Plaquinhas</span></label><button type="button" class="btn p argo" data-k="go" ${K ? '' : 'disabled'}>Arrumar</button></div></div>`; };
+      <div class="arft"><label class="arsw${can() ? '' : ' off'}"><input type="checkbox" role="switch" ${pq && can() ? 'checked' : ''} ${can() ? '' : 'disabled'} data-k="pq"><span>Com plaquinhas</span></label><button type="button" class="btn p argo" data-k="go" ${K ? '' : 'disabled'}>Arrumar</button></div></div>`; };
   const close = (keep) => { document.removeEventListener('pointerdown', outD, true); document.removeEventListener('pointerup', outU, true); FL_ARRW = null; w.remove(); if (!keep) flPvCancel(); };
   const preview = async () => { if (!free || !K || K === 'mine') { flPvCancel(); return; } const t = ++tok; if (K === 'cor') await flColorsReady(shAllIds().map(shById).filter(Boolean)); if (t !== tok || !w.isConnected) return;
     const t0 = performance.now(), pv = flArrBuild(K, pq && can()); pv.k = K; flPvShow(pv); window.__flPvMs = Math.round(performance.now() - t0); };

@@ -128,7 +128,7 @@ const flRaw = (id) => { try { return v5Book(id) || {}; } catch { return {}; } };
 const flSerOf = (b) => { const e = flRaw(b.id), m = e.meta || {}; const s = e.series || m.series || m.serie || ''; if (s) return { s: String(s), v: +(e.seriesIndex || m.seriesIndex || m.volume || 0) || 0 };
   const t = String(b.t || ''), mm = t.match(/\(([^()#]+?),?\s*#\s*(\d+(?:[.,]\d+)?)\)\s*$/); return mm ? { s: mm[1].trim(), v: parseFloat(mm[2].replace(',', '.')) } : null; };
 function flArrOpts() { const ids = shAllIds(), hasFmt = ids.some((id) => flRaw(id).format), hasSer = ids.some((id) => { const b = shById(id); return b && flSerOf(b); });
-  return [['sit', 'Situação'], ['data', 'Data de conclusão'], ['genero', 'Gênero'], ['autor', 'Autor'], ['cor', 'Cor'], ['titulo', 'Título'], ['nota', 'Nota'], ['pag', 'Páginas'], ['entrada', 'Entrada na Biblioteca']]
+  return [['sit', 'Situação'], ['data', 'Data de conclusão'], ['genero', 'Gênero'], ['autor', 'Autor'], ['cor', 'Cor'], ['titulo', 'Título'], ['nota', 'Nota'], ['pag', 'Páginas'], ['entrada', 'Data de entrada']]
     .concat(hasFmt ? [['formato', 'Formato']] : []).concat(hasSer ? [['serie', 'Série']] : []).concat([['altura', 'Altura']]); }
 { const _s = flSortArr; flSortArr = function (k) { const col = (x, y) => String(x).localeCompare(String(y), 'pt', { sensitivity: 'base' }), art = (t) => String(t || '').replace(/^(o|a|os|as|um|uma|the)\s+/i, '');
     let out = null; const B = () => shAllIds().map((id, i) => ({ ...shById(id), i })).filter((b) => b.id), tt = (x, y) => col(art(x.t), art(y.t));
