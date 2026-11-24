@@ -398,7 +398,7 @@ function v5V4Click(ev) {
   if (a === 'v5edbusca') return ext(() => changeEdition(e));
   if (a === 'v5edfmt') { V4.querySelectorAll('[data-a=v5edfmt]').forEach((x) => x.classList.toggle('on', x === b)); const w = V4.querySelector('#v5edaud'); if (w) w.hidden = d.k !== 'AUDIO'; st.v5fmt = d.k; return; }
   if (a === 'v5edok') { const n = Math.round(Number((V4.querySelector('#v5edpg') || {}).value)); const f = st.v5fmt || e.format || 'FISICO';
-    if (n > 0) { if (libProgress(e) > n) return toast(`Essa edição tem ${n} páginas e você já está na ${libProgress(e)}`); e.totalPages = n; }
+    if (n > 0) { if (libProgress(e) > n) return toast(`Essa edição tem ${n} páginas e você já está na ${libProgress(e)}`); if (Number(e.totalPages) !== n) { e.pagesOwn = 1; delete e.pagesAuto; } e.totalPages = n; }
     e.format = f; if (f === 'AUDIO') { const h = Number((V4.querySelector('#v5edh') || {}).value) || 0, m = Number((V4.querySelector('#v5edm') || {}).value) || 0; const t = h * 60 + m; if (t > 0) e.audioMin = t; } st.v5fmt = null;
     v5Save(); return done('Edição salva'); }
   if (a === 'v5indicar') return ext(() => recommendToFriend(e));

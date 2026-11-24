@@ -58,7 +58,7 @@ function v2Ler() {
   sheetList('Você não está lendo nenhum livro. Qual começa agora?', fila.map((e) => ({ label: esc(e.title), sub: e.author ? esc(e.author) : '', fn: () => { setLibStatus(e, 'LENDO'); if (e.status === 'LENDO') v2SesStart(e); } })));
 }
 function v2SesStart(e) {
-  if (!readingInfo(e).total) return askPages(e, (n) => { e.totalPages = n; save(); v2SesStart(e); });
+  if (!readingInfo(e).total) return askPages(e, (n) => { e.pagesOwn = 1; delete e.pagesAuto; e.totalPages = n; save(); v2SesStart(e); });
   const now = readingInfo(e).now, s = { libId: e.id, start: Date.now(), pg0: now, pg: now };
   v2SesPut(s); v2SesOpen(e, s);
 }

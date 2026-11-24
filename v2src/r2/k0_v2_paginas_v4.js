@@ -195,7 +195,7 @@ openFixReads = function (filter) {
       const inp = row.querySelector('input'); if (!inp) return;
       const setDate = (k, val, approx) => { if (k === 'ini') { e.startedAt = val; if (approx) e.startApprox = true; else delete e.startApprox; } else { e.finishedAt = val; delete e.noDate; if (approx) e.dateApprox = true; else delete e.dateApprox; } };
       inp.addEventListener('change', () => { const k = inp.dataset.k, val = inp.value.trim(); if (!val) return;
-        if (k === 'pag') { const n = Math.round(Number(val)); if (!(n > 0 && n < 100000)) { inp.value = ''; inp.setAttribute('aria-invalid', 'true'); return toast('Use só números, ex.: 320'); } e.totalPages = n; return done(); }
+        if (k === 'pag') { const n = Math.round(Number(val)); if (!(n > 0 && n < 100000)) { inp.value = ''; inp.setAttribute('aria-invalid', 'true'); return toast('Use só números, ex.: 320'); } if (Number(e.totalPages) !== n) { e.pagesOwn = 1; delete e.pagesAuto; } e.totalPages = n; return done(); }
         if (inp.type === 'text' && !/^\d{4}$/.test(val)) { inp.setAttribute('aria-invalid', 'true'); return toast('Digite o ano com 4 números'); }
         let d = val; if (/^\d{4}$/.test(val)) d = k === 'ini' ? val + '-01-01' : val + '-06-30';
         if (d > todayISO()) { inp.value = ''; return toast('A data não pode ser no futuro'); }

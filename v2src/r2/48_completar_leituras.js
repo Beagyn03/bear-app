@@ -58,7 +58,7 @@ function openFixReads(filter) {
           const ini = k === 'ini' ? val : e.startedAt, fim = k === 'fim' ? val : e.finishedAt;
           if (ini && fim && ini > fim) { toast('O início precisa ser antes do fim'); inp.value = (k === 'ini' ? e.startedAt : e.finishedAt) || ''; return; }
           if (k === 'ini') { if (val) e.startedAt = val; else delete e.startedAt; } else if (val) { e.finishedAt = val; delete e.noDate; delete e.dateApprox; }
-        } else { const n = Math.round(Number(val)); if (n > 0 && n < 100000) e.totalPages = n; else if (!val) delete e.totalPages; else { inp.value = e.totalPages || ''; return; } }
+        } else { const n = Math.round(Number(val)); if (n > 0 && n < 100000) { if (Number(e.totalPages) !== n) { e.pagesOwn = 1; delete e.pagesAuto; } e.totalPages = n; } else if (!val) delete e.totalPages; else { inp.value = e.totalPages || ''; return; } }
         inp.classList.toggle('miss', !val); save(); flash();
       }));
       row.querySelector('[data-rate]').addEventListener('click', () => rateForm(e, { logs: [] }, () => { draw(); try { renderHome(todayISO()); } catch {} }));
