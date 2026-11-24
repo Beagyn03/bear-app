@@ -31271,7 +31271,8 @@ function dsfApply(el, v) { if (!v) return; let s = el.querySelector(':scope > .d
 // ---------- v2: enfeites temáticos (Bia, 22/11) ----------
 // Pacotes Natal · Terror · Romance · Fantasia · Mistério · Aconchego. Cada peça é um enfeite normal (posição livre,
 // ocupa espaço, editável, apagável). "Ver o tema na estante" põe as peças e sugere luz e parede; a pessoa confirma com
-// "Manter" ou volta com "Desfazer" (prévia ao vivo). Em dezembro, o Natal é sugerido uma vez.
+// "Concluir" ou volta com "Desfazer" (prévia ao vivo). Em dezembro, o Natal é sugerido uma vez.
+// 23/11 (Bia): o tema muda a estante toda (enfeites, parede, luzinhas e a cor da estante, 6º campo); a faixa mostra só os temas.
 const TZ = (w, h, body) => (s) => `<svg width="${w * s}" height="${h * s}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${body}</svg>`;
 const TZD = {
   arvore: [44, 78, '<defs><linearGradient id="tza1" x1="0" x2="1"><stop offset="0" stop-color="#1f5a36"/><stop offset=".55" stop-color="#3f8a52"/><stop offset="1" stop-color="#1c4f30"/></linearGradient></defs><rect x="18" y="64" width="8" height="8" fill="#6b4423"/><path d="M8 72h28l-3 6H11z" fill="#9c2f3a"/><path d="M22 4L6 30h8L3 48h9L1 66h42L32 48h9L30 30h8z" fill="url(#tza1)"/><path d="M22 0l1.6 3.6 3.9.3-3 2.5.9 3.8L22 8.2l-3.4 2 .9-3.8-3-2.5 3.9-.3z" fill="#f2c85b"/><g fill="#e8463f"><circle cx="15" cy="40" r="2"/><circle cx="29" cy="54" r="2"/><circle cx="12" cy="58" r="1.8"/></g><g fill="#f4d77a"><circle cx="27" cy="34" r="1.8"/><circle cx="20" cy="50" r="1.8"/><circle cx="33" cy="61" r="1.6"/></g>'],
@@ -31299,20 +31300,21 @@ const TZD = {
 };
 const TZN = { arvore: 'Árvore de Natal', guirlanda: 'Guirlanda', presentes: 'Presentes', bengala: 'Bengala doce', abobora: 'Abóbora', caveira: 'Caveira', velaD: 'Vela derretendo', corvo: 'Corvo', rosas: 'Rosas', coracao: 'Coração', cartas: 'Cartas com laço', dragao: 'Dragãozinho', pocao: 'Poção', espada: 'Espada', mapa: 'Mapa', lupa: 'Lupa', lamparina: 'Lamparina', chave: 'Chave antiga', envelope: 'Envelope lacrado', gato: 'Gato dormindo', manta: 'Manta', pendente: 'Planta pendente' };
 Object.entries(TZD).forEach(([k, [w, h, b]]) => { const key = 'tz_' + k; SH_DEC[key] = TZ(w, h, b); SH_DW[key] = w; SH_DH[key] = h; SH_DN[key] = TZN[k]; });
-const TZ_PACKS = [['natal', 'Natal', ['arvore', 'guirlanda', 'presentes', 'bengala'], 'cor', 'madeira'], ['terror', 'Terror', ['abobora', 'caveira', 'velaD', 'corvo'], 'ambar', 'ceu'], ['romance', 'Romance', ['rosas', 'coracao', 'cartas', '=vela'], 'rosa', 'linho'],
-  ['fantasia', 'Fantasia', ['dragao', 'pocao', 'espada', 'mapa', '=cristal'], 'fria', 'ceu'], ['misterio', 'Mistério', ['lupa', 'lamparina', 'chave', 'envelope'], 'ambar', 'madeira'], ['aconchego', 'Aconchego', ['gato', 'manta', '=xicara', 'pendente'], 'quente', 'madeira']];
+const TZ_PACKS = [['natal', 'Natal', ['arvore', 'guirlanda', 'presentes', 'bengala'], 'cor', 'madeira', 'escura'], ['terror', 'Terror', ['abobora', 'caveira', 'velaD', 'corvo'], 'ambar', 'ceu', 'escura'], ['romance', 'Romance', ['rosas', 'coracao', 'cartas', '=vela'], 'rosa', 'linho', 'branca'],
+  ['fantasia', 'Fantasia', ['dragao', 'pocao', 'espada', 'mapa', '=cristal'], 'fria', 'ceu', 'tema'], ['misterio', 'Mistério', ['lupa', 'lamparina', 'chave', 'envelope'], 'ambar', 'madeira', 'escura'], ['aconchego', 'Aconchego', ['gato', 'manta', '=xicara', 'pendente'], 'quente', 'madeira', 'clara']];
 const tzKey = (x) => x[0] === '=' ? x.slice(1) : 'tz_' + x;
 let TZ_OPEN = null, TZ_PV = null; // pacote aberto; prévia aplicada { pack, bk, added }
-function tzBk() { const C0 = shc(); return JSON.parse(JSON.stringify({ free: C0.free, lights: C0.lights, lt: C0.lt, wall: C0.wall })); }
-function tzRestore(bk) { const C0 = shc(); ['free', 'lights', 'lt', 'wall'].forEach((k) => { if (bk[k] === undefined) delete C0[k]; else C0[k] = bk[k]; }); shSave(); try { flRender(); } catch {} try { v5Redraw(); } catch {} }
+function tzBk() { const C0 = shc(); return JSON.parse(JSON.stringify({ free: C0.free, lights: C0.lights, lt: C0.lt, wall: C0.wall, wood: C0.wood })); }
+function tzRestore(bk) { const C0 = shc(); ['free', 'lights', 'lt', 'wall', 'wood'].forEach((k) => { if (bk[k] === undefined) delete C0[k]; else C0[k] = bk[k]; }); shSave(); try { flRender(); } catch {} try { v5Redraw(); } catch {} }
 const tzCount = () => ((shc().free && shc().free.rows) || []).reduce((a, r) => a + r.it.filter((o) => o.t === 'd').length, 0);
 function tzApply(id) { const P = TZ_PACKS.find((x) => x[0] === id); if (!P) return; if (TZ_PV) tzRestore(TZ_PV.bk); const bk = tzBk(); TZ_PV = { pack: id, bk, added: 0 };
   const n0 = tzCount(), q = P[2].map(tzKey); let sw = 0;
   // primeiro troca os enfeites que já estão na estante (estante cheia não perde o tema); depois tenta lugares livres
   try { const F = shc().free; (F && F.rows || []).forEach((row) => row.it.forEach((o) => { if (q.length && o.t === 'd' && !/^tz_/.test(o.k) && !['leitor', 'aparador', 'aparadorD'].includes(o.k)) { o.k = q.shift(); delete o.o; sw++; } })); if (sw) { flNormalize(F); shSave(); } } catch (e) { console.warn('tema troca', e); }
   q.forEach((k) => { try { flDecoAdd(k); } catch (e) { console.warn('tema', e); } }); TZ_PV.added = sw + tzCount() - n0;
-  shc().wall = P[4]; shLtSave((Ls) => { if (!Ls.length) Ls.push({ m: 'bol', c: P[3], w: 'f', r: 'alt', b: 1 }); else Ls.forEach((L) => { L.c = P[3]; }); });
-  try { flRender(); } catch {} setTimeout(tzRepaint, 60); }
+  shc().wall = P[4]; if (P[5]) shc().wood = P[5]; shSave(); shLtSave((Ls) => { if (!Ls.length) Ls.push({ m: 'bol', c: P[3], w: 'f', r: 'alt', b: 1 }); else Ls.forEach((L) => { L.c = P[3]; }); });
+  try { flRender(); } catch {} { const q = () => { try { (typeof shToasts === 'function' ? shToasts() : [$('#toast')]).forEach((t) => t && t.classList.add('hidden')); } catch {} }; q(); [60, 200, 450].forEach((ms) => setTimeout(() => { if (TZ_PV) q(); }, ms)); } // a prévia fala pela linha Prévia, não por um aviso por peça
+  setTimeout(tzRepaint, 60); }
 function tzKeep() { if (!TZ_PV) return; const bk = TZ_PV.bk, nm = (TZ_PACKS.find((x) => x[0] === TZ_PV.pack) || [])[1]; TZ_PV = null; tzRepaint(); toast('Tema ' + nm + ' na estante', { label: 'Desfazer', fn: () => tzRestore(bk) }); }
 function tzCancel() { if (!TZ_PV) return; const bk = TZ_PV.bk; TZ_PV = null; tzRestore(bk); setTimeout(tzRepaint, 60); }
 function tzRepaint() { try { const sr = shBibRoot(), p = sr && sr.querySelector('.dkpan .tzsec'); if (p) p.outerHTML = tzHTML(); } catch {} }
@@ -31320,8 +31322,7 @@ function tzHTML() { const P = TZ_OPEN && TZ_PACKS.find((x) => x[0] === TZ_OPEN);
   const chips = TZ_PACKS.map(([k, l]) => `<button type="button" class="tzc${TZ_OPEN === k ? ' on' : ''}" data-tz="open" data-k="${k}" aria-pressed="${TZ_OPEN === k}">${l}</button>`).join('');
   let body = '';
   if (P) { const pv = TZ_PV && TZ_PV.pack === P[0];
-    body = `<div class="tzits">${P[2].map((x) => { const k = tzKey(x); return SH_DEC[k] ? `<button type="button" class="tzi" data-a="dkadd" data-k="${k}" aria-label="Pôr ${esc(SH_DN[k] || k)}"><span class="tzv">${SH_DEC[k](Math.min(1, 44 / (SH_DH[k] || 50)))}</span><small>${esc(SH_DN[k] || k)}</small></button>` : ''; }).join('')}</div>
-      <div class="tzact">${pv ? `<span class="tzmsg">Prévia na estante${TZ_PV.added < P[2].length ? ` · ${TZ_PV.added} de ${P[2].length} enfeites couberam` : ''}</span><button type="button" class="btn s" data-tz="cancel">Desfazer</button><button type="button" class="btn p" data-tz="keep">Manter</button>` : `<button type="button" class="btn p" data-tz="apply" data-k="${P[0]}">Ver o tema na estante</button>`}</div>`; }
+    body = pv ? `<div class="tzact"><span class="tzmsg"><small style="display:block;font-size:11px;font-weight:700;opacity:.75;line-height:1.1">Prévia</small>${esc(P[1])}</span><button type="button" class="btn s" data-tz="cancel">Desfazer</button><button type="button" class="btn p" data-tz="keep">Concluir</button></div>` : ''; }
   return `<div class="tzsec"><div class="dsec">Temas</div><div class="tzchips" role="group" aria-label="Temas">${chips}</div>${body}</div>`; }
 const TZ_CSS = `.tzsec{margin-top:10px}.tzchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.tzchips::-webkit-scrollbar{display:none}
 .dkpan .tzsec .tzc{flex:none;min-height:38px!important;padding:0 14px!important;border-radius:999px!important;border:1px solid var(--line,rgba(127,127,127,.35))!important;background:var(--soft,rgba(127,127,127,.14))!important;color:var(--ink,inherit);font:inherit;font-weight:800;font-size:13px;cursor:pointer}.dkpan .tzsec .tzc.on{background:var(--ink)!important;color:var(--bg)!important;border-color:var(--ink)!important}
@@ -31339,7 +31340,7 @@ window.addEventListener('click', (ev) => { const T = ev.composedPath()[0], b = T
   if (k === 'open') { try { localStorage.setItem('lv.tznatal', '1'); } catch {} TZ_OPEN = TZ_OPEN === b.dataset.k && !TZ_PV ? null : b.dataset.k; const sr = shBibRoot(), h = sr && sr.querySelector('.dkpan .tzhint'); if (h) h.remove(); return tzRepaint(); }
   if (k === 'nohint') { try { localStorage.setItem('lv.tznatal', '1'); } catch {} const h = b.closest('.tzhint'); if (h) h.remove(); return; }
   if (k === 'apply') return tzApply(b.dataset.k); if (k === 'keep') return tzKeep(); if (k === 'cancel') return tzCancel(); }, true);
-// sair do Decorar com prévia pendente desfaz a prévia (nada fica sem "Manter")
+// sair do Decorar com prévia pendente desfaz a prévia (nada fica sem "Concluir")
 { const _x = shExitEdit; shExitEdit = function () { if (TZ_PV) { const bk = TZ_PV.bk; TZ_PV = null; tzRestore(bk); } TZ_OPEN = null; return _x.apply(this, arguments); }; }
 window.addEventListener('click', (ev) => { if (!TZ_PV) return; const T = ev.composedPath()[0], b = T && T.closest && T.closest('[data-a="shdone"]'); if (b) tzKeep(); }, true);
 // --- zwzy_v2_estante_livre_d.js ---
@@ -31426,6 +31427,7 @@ const SHX_CSSFLC = `
 .v4ler .dkpan.flcar .dbody button .th,.v4ler .dkpan.flcar .dbody button .sw,.v4ler .dkpan.flcar .dbody button .tzth{display:block;width:56px!important;height:54px!important;max-height:54px;flex:none;overflow:hidden}.v4ler .dkpan.flcar .dbody button .th svg{max-width:56px;max-height:54px}
 .v4ler .v5est .dkpan.flcar .dtabs,.v4ler .v5est .dkpan.flcar .dtabs.six,.v4ler .v5est .dkpan.flcar .dkfoot{display:none!important}
 .v4ler .dkpan.flcar.fc-temas .dbody button.tzc{width:auto;height:40px;min-height:0;max-height:40px;padding:0 14px!important;border-radius:20px;justify-content:center;align-self:center;font-size:13px;font-weight:700}.v4ler .dkpan.flcar.fc-temas .tzact{display:flex!important;flex:none;gap:6px;align-items:center}.v4ler .dkpan.flcar.fc-temas .tzact button{width:auto;height:40px;min-height:0;padding:0 12px!important;align-self:center}
+.v4ler .dkpan.flcar.fc-temas .tzact{position:absolute!important;left:6px;right:6px;bottom:calc(100% + 6px);display:flex!important;flex-wrap:nowrap!important;gap:6px;align-items:center;padding:6px 6px 6px 12px;border-radius:14px;background:var(--card,#1f1a2b);border:1px solid var(--line);box-shadow:0 8px 22px rgba(0,0,0,.35);z-index:2}.v4ler .dkpan.flcar.fc-temas .tzact .tzmsg{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;font-weight:800;color:var(--ink)}.v4ler .dkpan.flcar.fc-temas .tzact button,.v4ler .dkpan.flcar.fc-temas .dbody .tzact button{flex:none!important;display:inline-flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;width:auto!important;min-width:0!important;height:40px!important;min-height:40px!important;max-height:40px!important;padding:0 12px!important;border-radius:12px!important;font-size:13px!important;font-weight:800!important;white-space:nowrap}@media (max-width:370px){.v4ler .dkpan.flcar.fc-temas .tzact button{padding:0 10px!important}}
 @keyframes flcarin{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.v4ler .dkpan.flcar{animation:none}}`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-shxflc]')) { const st = document.createElement('style'); st.dataset.shxflc = 1; st.textContent = SHX_CSSFLC; sr.append(st); } } catch {} }; }
@@ -31549,7 +31551,7 @@ const EIA_PK = { natal: ['natal', ['redoma', 'presentes', 'quebra_nozes', 'globo
   misterio: ['fantasia', ['lamparina', 'pergaminho', 'ampulheta', 'bola_cristal', 'globo_mapa']],
   aconchego: ['basicos', ['gato', 'cha', 'pendente', 'vela', 'suculenta']] };
 try { Object.entries(EIA_PK).forEach(([id, [t, ns]]) => { const P = TZ_PACKS.find((x) => x[0] === id); if (P) P[2] = ns.map((n) => '=' + eiaKey(t, n)); });
-  if (!TZ_PACKS.find((x) => x[0] === 'encantado')) TZ_PACKS.push(['encantado', 'Encantado', ['dragao', 'lanterna', 'bonsai', 'relogio', 'terrario', 'esfera', 'xicara', 'retrato', 'aparador_esq', 'aparador_dir'].map((n) => '=' + eiaKey('encantado', n)), 'rosa', 'ceu']);
+  if (!TZ_PACKS.find((x) => x[0] === 'encantado')) TZ_PACKS.push(['encantado', 'Encantado', ['dragao', 'lanterna', 'bonsai', 'relogio', 'terrario', 'esfera', 'xicara', 'retrato', 'aparador_esq', 'aparador_dir'].map((n) => '=' + eiaKey('encantado', n)), 'rosa', 'ceu', 'branca']);
 } catch (e) { console.warn('enfeites ia: temas', e); }
 // aplicar um tema põe só as 5 primeiras peças (as outras ficam no carrossel para pôr uma a uma)
 { const _ap = tzApply; tzApply = function (id) { const P = TZ_PACKS.find((x) => x[0] === id); if (!P || P[2].length <= 5) return _ap.apply(this, arguments); const all = P[2]; P[2] = all.slice(0, 5); try { return _ap.apply(this, arguments); } finally { P[2] = all; } }; }

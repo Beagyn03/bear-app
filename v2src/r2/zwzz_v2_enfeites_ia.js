@@ -51,7 +51,7 @@ const EIA_PK = { natal: ['natal', ['redoma', 'presentes', 'quebra_nozes', 'globo
   misterio: ['fantasia', ['lamparina', 'pergaminho', 'ampulheta', 'bola_cristal', 'globo_mapa']],
   aconchego: ['basicos', ['gato', 'cha', 'pendente', 'vela', 'suculenta']] };
 try { Object.entries(EIA_PK).forEach(([id, [t, ns]]) => { const P = TZ_PACKS.find((x) => x[0] === id); if (P) P[2] = ns.map((n) => '=' + eiaKey(t, n)); });
-  if (!TZ_PACKS.find((x) => x[0] === 'encantado')) TZ_PACKS.push(['encantado', 'Encantado', ['dragao', 'lanterna', 'bonsai', 'relogio', 'terrario', 'esfera', 'xicara', 'retrato', 'aparador_esq', 'aparador_dir'].map((n) => '=' + eiaKey('encantado', n)), 'rosa', 'ceu']);
+  if (!TZ_PACKS.find((x) => x[0] === 'encantado')) TZ_PACKS.push(['encantado', 'Encantado', ['dragao', 'lanterna', 'bonsai', 'relogio', 'terrario', 'esfera', 'xicara', 'retrato', 'aparador_esq', 'aparador_dir'].map((n) => '=' + eiaKey('encantado', n)), 'rosa', 'ceu', 'branca']);
 } catch (e) { console.warn('enfeites ia: temas', e); }
 // aplicar um tema põe só as 5 primeiras peças (as outras ficam no carrossel para pôr uma a uma)
 { const _ap = tzApply; tzApply = function (id) { const P = TZ_PACKS.find((x) => x[0] === id); if (!P || P[2].length <= 5) return _ap.apply(this, arguments); const all = P[2]; P[2] = all.slice(0, 5); try { return _ap.apply(this, arguments); } finally { P[2] = all; } }; }
