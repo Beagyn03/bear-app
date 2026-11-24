@@ -5,7 +5,7 @@
 // sem "Salvar") é desfeito. Texto digitado numa folha não se perde: vira rascunho e volta quando a mesma folha abrir de novo.
 // Só o que já estava aberto ANTES do toque é fechado: uma ação que liga um modo e navega (ex.: "Organizar" no perfil) continua valendo.
 {
-  const OV = '.sheet, .esn-sheet, .lvpl-modal, .v10dlg, .rt';
+  const OV = '.sheet, .esn-sheet, .lvpl-modal, .v10dlg, .rt, .scn';
   const top = () => [...document.body.children, ...TR.children].filter((n) => n.matches && n.matches(OV));
   const v4st = () => { try { return S.v4 || null; } catch { return null; } };
   const modes = () => { let m = null, ed = null; try { m = SHX_MODE; } catch {} try { ed = SHX_EDT; } catch {} const S5 = (S.v5 || {});

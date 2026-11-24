@@ -10092,10 +10092,12 @@ const rrUndo = (recs) => { for (let i = recs.length - 1; i >= 0; i--) { const m 
     if (v4Sh()) n++;
     if (TR.querySelector('.v2-pk')) n++; // folha "Qual leio agora?" do Hoje // folha da camada de leitura (ex.: Ler › Entrar no silêncio / Atualizar página): o voltar fecha a folha
     if (document.querySelector('body > .sheet')) n++;
+    if (document.querySelector('body > .scn')) n++; // câmera do código de barras (24/11: o voltar não fechava)
     if (TR.querySelector('.bd-page:not([hidden]), .gp-page:not([hidden])')) n++;
     return n;
   };
   const closeTop = () => {
+    { const sc = document.querySelector('body > .scn'); if (sc) { const x = sc.querySelector('header button'); return x ? x.click() : sc.remove(); } }
     if (TR.querySelector('.pop')) return closePop();
     { const pk = TR.querySelector('.v2-pk'); if (pk) return pk.remove(); }
     { const rt = [...TR.children].find((n) => n.classList && n.classList.contains('rt')); if (rt) return rt.remove(); }
@@ -14854,6 +14856,9 @@ async function scanIsbn(onFound) {
   const stop = () => { done = true; clearInterval(timer); try { reader && reader.reset(); } catch {} try { stream && stream.getTracks().forEach((t) => t.stop()); } catch {} wrap.remove(); };
   const found = (raw) => { const isbn = isbnOf(raw); if (!isbn || done) return; try { navigator.vibrate && navigator.vibrate(60); } catch {} stop(); onFound(isbn); };
   wrap.querySelector('header button').addEventListener('click', stop);
+  // fecha também com Esc e quando sai da tela por outro caminho (a câmera não fica ligada por trás) (Bia 24/11)
+  const esc = (ev) => { if (ev.key === 'Escape' && !done) { ev.preventDefault(); ev.stopImmediatePropagation(); stop(); } }; window.addEventListener('keydown', esc, true);
+  const gone = new MutationObserver(() => { if (!wrap.isConnected) { gone.disconnect(); window.removeEventListener('keydown', esc, true); if (!done) stop(); } }); gone.observe(document.body, { childList: true });
   try {
     if ('BarcodeDetector' in window && (await BarcodeDetector.getSupportedFormats()).includes('ean_13')) {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false }); video.srcObject = stream; await video.play();
@@ -29186,7 +29191,7 @@ searchSheet = function (opts) {
 // sem "Salvar") é desfeito. Texto digitado numa folha não se perde: vira rascunho e volta quando a mesma folha abrir de novo.
 // Só o que já estava aberto ANTES do toque é fechado: uma ação que liga um modo e navega (ex.: "Organizar" no perfil) continua valendo.
 {
-  const OV = '.sheet, .esn-sheet, .lvpl-modal, .v10dlg, .rt';
+  const OV = '.sheet, .esn-sheet, .lvpl-modal, .v10dlg, .rt, .scn';
   const top = () => [...document.body.children, ...TR.children].filter((n) => n.matches && n.matches(OV));
   const v4st = () => { try { return S.v4 || null; } catch { return null; } };
   const modes = () => { let m = null, ed = null; try { m = SHX_MODE; } catch {} try { ed = SHX_EDT; } catch {} const S5 = (S.v5 || {});

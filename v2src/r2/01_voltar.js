@@ -20,10 +20,12 @@
     if (v4Sh()) n++;
     if (TR.querySelector('.v2-pk')) n++; // folha "Qual leio agora?" do Hoje // folha da camada de leitura (ex.: Ler › Entrar no silêncio / Atualizar página): o voltar fecha a folha
     if (document.querySelector('body > .sheet')) n++;
+    if (document.querySelector('body > .scn')) n++; // câmera do código de barras (24/11: o voltar não fechava)
     if (TR.querySelector('.bd-page:not([hidden]), .gp-page:not([hidden])')) n++;
     return n;
   };
   const closeTop = () => {
+    { const sc = document.querySelector('body > .scn'); if (sc) { const x = sc.querySelector('header button'); return x ? x.click() : sc.remove(); } }
     if (TR.querySelector('.pop')) return closePop();
     { const pk = TR.querySelector('.v2-pk'); if (pk) return pk.remove(); }
     { const rt = [...TR.children].find((n) => n.classList && n.classList.contains('rt')); if (rt) return rt.remove(); }

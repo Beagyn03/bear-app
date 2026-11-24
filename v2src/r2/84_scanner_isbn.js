@@ -23,6 +23,9 @@ async function scanIsbn(onFound) {
   const stop = () => { done = true; clearInterval(timer); try { reader && reader.reset(); } catch {} try { stream && stream.getTracks().forEach((t) => t.stop()); } catch {} wrap.remove(); };
   const found = (raw) => { const isbn = isbnOf(raw); if (!isbn || done) return; try { navigator.vibrate && navigator.vibrate(60); } catch {} stop(); onFound(isbn); };
   wrap.querySelector('header button').addEventListener('click', stop);
+  // fecha também com Esc e quando sai da tela por outro caminho (a câmera não fica ligada por trás) (Bia 24/11)
+  const esc = (ev) => { if (ev.key === 'Escape' && !done) { ev.preventDefault(); ev.stopImmediatePropagation(); stop(); } }; window.addEventListener('keydown', esc, true);
+  const gone = new MutationObserver(() => { if (!wrap.isConnected) { gone.disconnect(); window.removeEventListener('keydown', esc, true); if (!done) stop(); } }); gone.observe(document.body, { childList: true });
   try {
     if ('BarcodeDetector' in window && (await BarcodeDetector.getSupportedFormats()).includes('ean_13')) {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false }); video.srcObject = stream; await video.play();
