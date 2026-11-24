@@ -225,13 +225,13 @@ function flPlace(r, n, x, mv) { const C0 = shc(), F = C0.free, BW = flBW(), row 
   res.forEach((q) => { if (q.u === '__m') blk.forEach((o, i) => { o.x = Math.round(q.x + offs[i]); o.n = n; row.it.push(o); }); else q.o.x = Math.round(q.x); });
   const gone = mv.ids ? new Set(mv.ids) : mv.id ? new Set([mv.id]) : null;
   if (gone) { C0.tray = (C0.tray || []).filter((t) => !gone.has(t)); if (!C0.tray.length) { delete C0.tray; delete C0.trayBk; } }
-  if (res.over) flNormalize(F); C0.manual = 1; C0.arr = null; shSave(); return { bk, u: blk[0].u, us: blk.map((o) => o.u), n: blk.length, over: !!res.over }; }
+  if (res.over) flNormalize(F); C0.manual = 1; C0.arr = null; shSave(); return { bk, u: blk[0].u, us: blk.map((o) => o.u), n: blk.length, nb: blk.reduce((t, o) => t + (o.t === 'p' ? (o.ids || []).length : o.t === 'b' ? 1 : 0), 0), over: !!res.over }; }
 // vários de uma vez: se não cabem todos, põe os que couberem (na ordem) e avisa quantos ficaram
 function flPlaceMany(r, n, x, mv) { const all = mv.ids || mv.items; for (let k = all.length; k >= 1; k--) { const part = mv.ids ? { ids: all.slice(0, k) } : { items: all.slice(0, k), seq: 1 }; const res = flPlace(r, n, x, part); if (res) { res.left = all.length - k; res.part = part; return res; } } return null; }
 function flAfterPlace(res, mv, r) { try { navigator.vibrate && navigator.vibrate(10); } catch {} if (res.part) mv = res.part;
   const many = !!(mv.ids || mv.seq), single = !!mv.id || (!many && mv.items.length === 1 && mv.items[0].t === 'b'); FLX.pk = null; FLX.sel = null; FLX.open = false;
   FLX.pos = single || many ? res.u : null; FLX.posG = many ? res.us : null;
-  const fromTray = !!(mv.id || mv.ids), left = (shc().tray || []).length, t = mv.id ? shTitle(mv.id) : many ? res.n + ' livros' : mv.items.length > 1 ? 'Grupo de ' + mv.items.length : mv.items[0].t === 'd' ? (SH_DN[mv.items[0].k] || 'Enfeite') : 'Livro';
+  const fromTray = !!(mv.id || mv.ids), left = (shc().tray || []).length, t = mv.id ? shTitle(mv.id) : many ? (res.nb === 1 ? '1 livro' : (res.nb || res.n) + ' livros') : mv.items.length > 1 ? 'Grupo de ' + mv.items.length : mv.items[0].t === 'd' ? (SH_DN[mv.items[0].k] || 'Enfeite') : 'Livro';
   const sobra = res.left ? ` · ${res.left} não couberam${mv.ids ? ', ficaram na bandeja' : ''}` : '';
   toast(`${t.length > 34 ? t.slice(0, 33) + '…' : t} na ${r + 1}ª prateleira${sobra}${fromTray && left && !res.left ? ' · faltam ' + left : ''}${fromTray && !left ? ' · todos guardados' : ''}`, shUndo(res.bk)); flRender(); }
 function flSelMv() { const S0 = FLX.sel; if (!S0 || !S0.ids.length) return null; if (S0.src === 'tray') return { ids: S0.ids.slice() }; const its = S0.ids.map((u) => flFind(u)).filter(Boolean).map((f) => f.o); return its.length ? { items: its, seq: 1 } : null; }
