@@ -107,9 +107,13 @@
 }
 // Aviso "Instale o Livroverso": enquanto aparece, reserva o espaço no fim da lista (não cobre o último cartão);
 // e se a pessoa não responder em 20 s, sai sozinho até a próxima abertura do app (sem contar como "Agora não").
+// Toast (24/11): sobe para cima do aviso enquanto ele aparece (não se mistura com o cartão) e ocupa a largura do texto
+// (com left:50% ele encolhia para metade da tela e quebrava em várias linhas).
 { const st = document.createElement('style'); st.textContent = ':host([data-inst]) #lista{padding-bottom:calc(var(--inst-h, 0px) + 12px)!important}'; TR.append(st);
-  const host = document.getElementById('toca-host');
-  const sync = () => { const w = document.querySelector('.inst-pop'); if (w) { host.style.setProperty('--inst-h', Math.round(w.getBoundingClientRect().height) + 'px'); host.setAttribute('data-inst', ''); } else host.removeAttribute('data-inst'); };
+  { const s2 = document.createElement('style'); s2.textContent = '#toast.toast{width:max-content!important;max-width:calc(100vw - 32px)!important}'
+      + 'html[data-inst] #toast.toast{bottom:calc(78px + env(safe-area-inset-bottom, 0px) + var(--inst-h, 0px) + 10px)!important}'; document.head.append(s2); }
+  const host = document.getElementById('toca-host'), H = document.documentElement;
+  const sync = () => { const w = document.querySelector('.inst-pop'); if (w) { const ih = Math.round(w.getBoundingClientRect().height) + 'px'; host.style.setProperty('--inst-h', ih); host.setAttribute('data-inst', ''); H.style.setProperty('--inst-h', ih); H.setAttribute('data-inst', ''); } else { host.removeAttribute('data-inst'); H.removeAttribute('data-inst'); } };
   let seen = null;
   new MutationObserver(() => { sync(); const w = document.querySelector('.inst-pop'); if (w && w !== seen) { seen = w; setTimeout(() => { if (w.isConnected) { w.style.transition = 'transform .3s ease, opacity .3s ease'; w.style.transform = 'translateY(30px)'; w.style.opacity = '0'; setTimeout(() => { w.remove(); }, 320); } }, 20000); } }).observe(document.body, { childList: true }); }
 // Telas por cima (#shelflist: página do livro, listas, Você em tela cheia etc.): o refresh() de fundo chamava S.listRedraw() e a

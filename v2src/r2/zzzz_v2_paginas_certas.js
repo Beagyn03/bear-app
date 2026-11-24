@@ -108,7 +108,7 @@ const pgMarkOwn = (e, n) => { if (e && Number(n) > 0) { e.pagesOwn = 1; delete e
     let b = null; try { b = await lookup(e); } catch {} if (!b || !eligible(e)) return false;
     const undo = apply(e, b); if (!undo) return false;
     try { refresh(); } catch {} redraw();
-    if (onPage && pageOpenFor(e)) toast(`Total de páginas atualizado: ${e.totalPages}`, { label: 'Desfazer', fn: undo });
+    if (onPage && pageOpenFor(e)) toast(`Páginas atualizadas: ${e.totalPages}`, { label: 'Desfazer', fn: undo });
     return true;
   };
   // ao abrir a página do livro: só aquele livro
