@@ -35,14 +35,24 @@
   function cleanup(back) { const l = L; if (!l) return; L = null; l.box.style.pointerEvents = 'none';
     try { resetSt(l.el); } catch {}
     try { l.mo && l.mo.disconnect(); } catch {} removeEventListener('scroll', l.onScroll, true); removeEventListener('keydown', l.onKey, true);
-    if (l.box.isConnected) { if (back && l.cv && !RM() && l.cv.animate) { const a = l.cv.animate([{ transform: 'translateY(0) rotateY(0)', opacity: 1 }, { transform: `translateY(${l.dy}px) rotateY(80deg)`, opacity: .2 }], { duration: 180, easing: 'ease-in' }); a.onfinish = () => l.box.remove(); } else l.box.remove(); } }
+    if (l.box.isConnected) { if (back && l.cv && !RM() && l.cv.animate) { const a = l.cv.animate([{ transform: l.t1 || 'translateY(0) rotateY(0)', opacity: 1 }, { transform: l.t0 || `translateY(${l.dy}px) rotateY(80deg)`, opacity: .2 }], { duration: 180, easing: 'ease-in' }); a.onfinish = () => l.box.remove(); } else l.box.remove(); } }
   function lift(el, a, ev) { if (L && L.el === el) return; cleanup(false);
     const id = el.dataset.id || el.dataset.bid; if (!id) return; const kind = el.closest('.pile') ? 'pile' : el.classList.contains('face') ? 'face' : 'spine'; // .pb também é a lombada brochura: pilha é quem está dentro de .pile
     const r = el.getBoundingClientRect(); if (!r.width) return; const I = info(id);
     const box = document.createElement('div'); box.className = 'pop lvlift'; ensureCss(); box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', (I.t || 'Livro') + ': toque de novo para abrir');
     const l = L = { el, a, id, box, dy: 0 };
     let cvEl = null, top = r.top, h = r.height, cx = r.left + r.width / 2;
-    if (kind === 'spine') { // capa no tamanho do livro, levantada ~30% e girando no lugar
+    if (kind === 'pile') { // deitado (Bia 24/11): a capa sai do livro deitado, em pé, no tamanho do livro, logo acima da pilha
+      const bk = shById(id) || {}; let H = 0; try { H = spnGeo(bk, false).h; } catch {} H = Math.max(80, H || Math.round(r.width / 0.86)); const w = Math.round(H * 0.66), lft = Math.max(6, Math.min(innerWidth - w - 6, cx - w / 2));
+      top = Math.max(64, Math.min(r.top - H - 6, innerHeight - H - 90)); h = H;
+      cvEl = document.createElement('div'); cvEl.className = 'lvl-cv'; cvEl.style.cssText = `left:${lft}px;top:${top}px;width:${w}px;height:${H}px;transform-origin:50% 100%`;
+      let html = ''; try { html = typeof v4cv === 'function' ? v4cv({ title: I.t, author: I.a, cover: I.img }) : ''; } catch {}
+      cvEl.innerHTML = html || (I.img ? `<img alt="" src="${esc(I.img)}">` : `<span class="lvl-gen" style="background:${getComputedStyle(el).getPropertyValue('--c') || '#4b3f66'}">${esc(I.t)}</span>`);
+      box.append(cvEl); l.cv = cvEl; cx = lft + w / 2;
+      { const gen = () => { try { cvEl.innerHTML = typeof v4cv === 'function' ? v4cv({ title: I.t, author: I.a, cover: null }) : `<span class="lvl-gen">${esc(I.t)}</span>`; } catch {} }; const im = cvEl.querySelector('img'); if (im) { im.addEventListener('error', gen, { once: true }); if (im.complete && !im.naturalWidth) gen(); } }
+      l.t0 = `translate(${Math.round(r.left + r.width / 2 - cx)}px,${Math.round(r.bottom - (top + H))}px) scale(${(r.width / w).toFixed(3)},${(r.height / H).toFixed(3)})`; l.t1 = 'translate(0,0) scale(1,1)'; setSt(el, { visibility: 'hidden' });
+      if (!RM() && cvEl.animate) cvEl.animate([{ transform: l.t0, opacity: .7 }, { transform: l.t1, opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.2,1.2,.4,1)' }); }
+    else if (kind === 'spine') { // capa no tamanho do livro, levantada ~30% e girando no lugar
       const w = Math.round(h * 0.66), lft = Math.max(6, Math.min(innerWidth - w - 6, cx - w / 2)); l.dy = Math.round(h * 0.3); top = Math.max(r.top - l.dy, Math.min(r.top, 64)); l.dy = Math.round(r.top - top);
       cvEl = document.createElement('div'); cvEl.className = 'lvl-cv'; cvEl.style.cssText = `left:${lft}px;top:${top}px;width:${w}px;height:${h}px`;
       let html = ''; try { html = typeof v4cv === 'function' ? v4cv({ title: I.t, author: I.a, cover: I.img }) : ''; } catch {}
