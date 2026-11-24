@@ -14,7 +14,7 @@ const FLP_I = { pe: FLP_IC('<rect x="9" y="3" width="6" height="18" rx="1"/>'), 
     p.innerHTML = `<div class="fph2"><span class="fpn">${esc(nm)}</span><button type="button" class="fpok" data-flp="ok" aria-label="Pronto">${FLP_I.ok}</button></div>` + (o.t === 'd'
       ? `<div class="fpg">${B(o.z ? 'dtras' : 'dfrente', o.z ? 'tr' : 'fr', o.z ? 'Atrás' : 'Frente')}${B('mv', 'mv', 'Mover')}${B(o.k === 'leitor' ? 'dvisor' : 'dtroca', 'tc', o.k === 'leitor' ? 'Visor' : 'Trocar')}${B('drem', 'tirar', 'Remover', 'red')}</div>`
       : `<div class="fpg" role="radiogroup" aria-label="Posição">${B('pe', 'pe', 'Em pé', '', cur === 'pe')}${B('dei', 'dei', 'Deitado', '', cur === 'dei')}${B('fre', 'fre', 'De frente', '', cur === 'fre')}${B('inc', P[id] === 'leanR' ? 'incR' : 'inc', 'Inclinado', '', cur === 'inc')}</div>`
-        + `<div class="fpg">${B('mv', 'mv', 'Mover')}${G ? '' : B('lomb', 'lomb', 'Lombada')}${G ? '' : B('ver', 'ver', 'Ver livro')}${B('tirar', 'tirar', 'Tirar', 'red')}</div>`);
+        + `<div class="fpg">${B('mv', 'mv', 'Mover')}${G ? '' : B('lomb', 'lomb', 'Lombada')}${B('tirar', 'tirar', 'Tirar', 'red')}</div>`);
     p.classList.add('fpc3');
     const el = sr.querySelector(`.bsh.flx .fli[data-u="${o.u}"]`); if (el) { const E = el.getBoundingClientRect(), ph = p.offsetHeight, pw = p.offsetWidth, cSide = flColSide(), W = innerWidth - (cSide === 'R' ? 60 : 0), L0 = cSide === 'L' ? 68 : 8;
       let top = E.top - ph - 12, below = false; if (top < 64) { top = Math.min(E.bottom + 12, innerHeight - ph - 8); below = true; }
