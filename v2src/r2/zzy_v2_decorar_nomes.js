@@ -8,7 +8,9 @@ const FLN1_CSS = `.v4ler .flcol.fldk{gap:2px;padding:5px;border-radius:22px;max-
 .v4ler .flcol.fldk .flcb svg{width:19px;height:19px;flex:none}
 .v4ler .flcol.fldk .flcb .flbl.fln1{position:static!important;transform:none!important;opacity:1!important;background:none!important;color:inherit!important;padding:0!important;margin:0!important;box-shadow:none!important;border-radius:0!important;font-size:9.5px!important;font-weight:800!important;line-height:1.05!important;letter-spacing:0;white-space:nowrap;max-width:54px;overflow:hidden;pointer-events:none}
 .v4ler .flcol.fldk .flgrip{width:56px!important}
-.v5est.flmode.flcolR.fldeco .bsh.flx{margin-right:62px!important}.v5est.flmode.flcolL.fldeco .bsh.flx{margin-left:62px!important}`;
+.v5est.flmode.flcolR.fldeco .bsh.flx{margin-right:62px!important}.v5est.flmode.flcolL.fldeco .bsh.flx{margin-left:62px!important}
+.v5est.fldeco .flpop.cR{right:calc(80px + env(safe-area-inset-right,0px))}.v5est.fldeco .flpop.cL{left:calc(80px + env(safe-area-inset-left,0px))}
+.v4ler.v5est.fldeco .dkpan.flcar.cR{right:calc(80px + env(safe-area-inset-right,0px))!important;left:auto!important}.v4ler.v5est.fldeco .dkpan.flcar.cL{left:calc(80px + env(safe-area-inset-left,0px))!important;right:auto!important}`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-fln1]')) { const st = document.createElement('style'); st.dataset.fln1 = 1; st.textContent = FLN1_CSS; sr.append(st); } } catch {} }; }
 try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-fln1]')) { const st = document.createElement('style'); st.dataset.fln1 = 1; st.textContent = FLN1_CSS; sr.append(st); } }); } catch {}
 // a estante sabe que no Decorar a coluna é mais larga (marca a raiz antes de medir)
