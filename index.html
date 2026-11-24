@@ -33216,6 +33216,8 @@ em.up{color:var(--tx-ok)!important}
 // (b) Corrige o que já foi gravado: total suspeito (redondo ou até 120), sem pagesOwn, sem progresso, e a API traz edição
 //     brasileira (ISBN 97865/97885) com pelo menos 1,5x as páginas. Uma varredura por dia, poucos livros; ao abrir a página
 //     do livro, confere só aquele (uma vez por dia) e mostra um toast discreto com Desfazer. Meta ligada muda junto.
+//     Lido sem progresso registrado também entra (melhora as estatísticas).
+// "Trocar edição" é escolha da pessoa: marca pagesOwn e pagesSrc 'edicao'.
 const PG_BR = (isbn) => /^(97865|97885)/.test(String(isbn || '').replace(/\D/g, ''));
 // livro com total digitado pela pessoa (marcado, ou mudado depois do número automático)
 const pgOwn = (e) => !!(e && (e.pagesOwn || (e.pagesAuto != null && Number(e.totalPages) !== Number(e.pagesAuto))));
@@ -33264,6 +33266,13 @@ const pgMarkOwn = (e, n) => { if (e && Number(n) > 0) { e.pagesOwn = 1; delete e
 { const after = (e, was) => setTimeout(() => { if (e && Number(e.totalPages) > 0 && Number(e.totalPages) !== Number(was)) { pgMarkOwn(e, e.totalPages); save(); } }, 0);
   const _fp = fixPages; fixPages = function (e) { const r = _fp.apply(this, arguments); const b = $('#fp-s', $('#editor')); if (b) b.addEventListener('click', () => after(e, e.totalPages), { capture: true }); return r; };
   const _el = editLibSheet; editLibSheet = function (e) { const r = _el.apply(this, arguments); const f = [...document.querySelectorAll('.sheet form')].pop(); if (f) f.addEventListener('submit', () => after(e, e.totalPages), { capture: true }); return r; }; }
+// "Trocar edição": a edição escolhida pela pessoa vale (pagesOwn, pagesSrc 'edicao')
+{ const _ce = changeEdition; changeEdition = function (e) {
+  const ed = $('#editor');
+  if (e && ed) { const on = (ev) => { const b = ev.target && ev.target.closest && ev.target.closest('.pk-it[data-i]'); if (!b) return; ed.removeEventListener('click', on, true);
+      const was = [e.totalPages, e.isbn, e.cover]; setTimeout(() => { if (e.totalPages !== was[0] || e.isbn !== was[1] || e.cover !== was[2]) { if (Number(e.totalPages) > 0) { e.pagesOwn = 1; delete e.pagesAuto; } e.pagesSrc = 'edicao'; save(); } }, 0); };
+    ed.addEventListener('click', on, true); setTimeout(() => ed.removeEventListener('click', on, true), 10 * 60000); }
+  return _ce.apply(this, arguments); }; }
 // ---------- (b) correção dos livros já gravados ----------
 { const DAYK = 'lv.pgscan', CHK = 'lv.pgchk', LOG = [];
   const today = () => { try { return todayISO(); } catch { return new Date().toISOString().slice(0, 10); } };
@@ -33275,8 +33284,8 @@ const pgMarkOwn = (e, n) => { if (e && Number(n) > 0) { e.pagesOwn = 1; delete e
   const suspect = (e) => { const t = Number(e && e.totalPages) || 0; return t > 0 && (t <= 120 || t % 50 === 0); };
   const eligible = (e) => {
     if (!e || !e.title || !suspect(e) || pgOwn(e)) return false;
-    const t = Number(e.totalPages), p = progress(e);
-    if (p > 0 || (e.readLog && e.readLog.length)) return false; // com progresso não mexe (pág. 200 de 100 inclusive)
+    const t = Number(e.totalPages), p = progress(e), lidoCheio = e.status === 'LIDO' && Number(e.currentPage) === t && !goalOf(e); // lido: "pág. = total" não é progresso registrado
+    if ((p > 0 && !lidoCheio) || (e.readLog && e.readLog.length)) return false; // com progresso não mexe (pág. 200 de 100 inclusive); lido sem registro entra
     const L = goalOf(e); if (L && Number(L.gb.totalPages) !== t) return false; // meta com outro total: a pessoa ajustou lá
     return true;
   };
@@ -33293,11 +33302,12 @@ const pgMarkOwn = (e, n) => { if (e && Number(n) > 0) { e.pagesOwn = 1; delete e
   const apply = (e, b) => {
     const old = Number(e.totalPages), nw = Number(b.page_count);
     if (!(nw >= old * 1.5) || progress(e) > nw) return false;
-    const L = goalOf(e), S2 = shelfGbs(e).filter((x) => Number(x.gb.totalPages) === old);
+    const L = goalOf(e), S2 = shelfGbs(e).filter((x) => Number(x.gb.totalPages) === old), cp = e.currentPage;
+    if (e.status === 'LIDO' && Number(cp) === old) e.currentPage = nw;
     e.totalPages = nw; e.pagesAuto = nw; e.pagesSrc = 'catálogo (corrigido)'; e.pagesFixed = { from: old, at: today() };
     if (L) L.gb.totalPages = nw; S2.forEach((x) => { x.gb.totalPages = nw; });
     save(); LOG.push({ id: e.id, old, nw });
-    const undo = () => { e.totalPages = old; e.pagesOwn = 1; delete e.pagesAuto; delete e.pagesFixed; if (L) L.gb.totalPages = old; S2.forEach((x) => { x.gb.totalPages = old; }); save(); try { refresh(); } catch {} redraw(); toast('Desfeito'); };
+    const undo = () => { e.totalPages = old; if (cp === undefined) delete e.currentPage; else e.currentPage = cp; e.pagesOwn = 1; delete e.pagesAuto; delete e.pagesFixed; if (L) L.gb.totalPages = old; S2.forEach((x) => { x.gb.totalPages = old; }); save(); try { refresh(); } catch {} redraw(); toast('Desfeito'); };
     return undo;
   };
   const redraw = () => { try { const v = $('#shelflist'); if (v && !v.hidden && S.listRedraw) S.listRedraw(); } catch {} };
