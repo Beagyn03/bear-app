@@ -352,7 +352,8 @@ function flColMount(R) { R.querySelectorAll(':scope > .flcol').forEach((e) => e.
   window.addEventListener('pointermove', (ev) => { if (!H || ev.pointerId !== H.pid) return; if (Math.hypot(ev.clientX - H.x, ev.clientY - H.y) > 8) { H.mv = true; clearTimeout(H.t); }
     if (H.grip && H.mv) { ev.preventDefault(); const c = H.b.closest('.flcol'); if (c) { c.style.transition = 'none'; c.style.left = Math.max(4, Math.min(innerWidth - 56, ev.clientX - 26)) + 'px'; c.style.right = 'auto'; } } }, { capture: true, passive: false });
   const up = (ev) => { if (!H || ev.pointerId !== H.pid) return; const h = H; H = null; clearTimeout(h.t); if (h.long) { FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); }
-    if (h.grip && h.mv) { FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); const P = v5P(), sd = ev.clientX < innerWidth / 2 ? 'L' : 'R'; P.flCol = sd; v5Save(); flRender(); toast(sd === 'L' ? 'Coluna na esquerda' : 'Coluna na direita'); } };
+    if (h.grip && h.mv) { FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); const P = v5P(), sd = ev.clientX < innerWidth / 2 ? 'L' : 'R'; P.flCol = sd; v5Save(); flRender(); toast(sd === 'L' ? 'Coluna na esquerda' : 'Coluna na direita'); }
+    else if (h.grip && ev.type === 'pointerup') { FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); FLX.colMin = true; flRender(); } }; // tocar na alça recolhe a coluna (Bia 24/11)
   window.addEventListener('pointerup', up, true); window.addEventListener('pointercancel', up, true); }
 
 // ---------- Decorar › Estrutura ----------

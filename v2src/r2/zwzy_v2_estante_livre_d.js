@@ -120,11 +120,11 @@ const SHX_CSSFLA = `
 .v4ler .flpop.cR{right:calc(64px + env(safe-area-inset-right,0px))}.v4ler .flpop.cL{left:calc(64px + env(safe-area-inset-left,0px))}
 .v4ler .flpop b{font-size:12px;color:var(--ink2);padding:4px 8px 2px;font-weight:800}
 .v4ler .flpop button{text-align:left;min-height:44px;padding:8px 10px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:14px;cursor:pointer}.v4ler .flpop button:hover,.v4ler .flpop button:focus-visible{background:color-mix(in srgb,var(--acc) 16%,transparent)}
-.v5est.flmode.flcolR .bsh.flx{margin-right:44px!important}.v5est.flmode.flcolL .bsh.flx{margin-left:44px!important}`;
+/* 24/11 (Bia): na edição a estante tem a mesma largura da visualização; a coluna flutua por cima */`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-shxfla]')) { const st = document.createElement('style'); st.dataset.shxfla = 1; st.textContent = SHX_CSSFLA; sr.append(st); } } catch {} }; }
 try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-shxfla]')) { const st = document.createElement('style'); st.dataset.shxfla = 1; st.textContent = SHX_CSSFLA; sr.append(st); } }); } catch {}
 // a margem da coluna entra na largura já no 1º desenho do modo (senão os livros da borda ficam atrás da coluna)
-{ const _bw = flBW; flBW = function () { let w = _bw.apply(this, arguments); try { const R = flQ('.v5est'), ed = (SHX_MODE === 'org' || SHX_MODE === 'deco') && flActive(), has = R && R.classList.contains('flmode') && (R.classList.contains('flcolR') || R.classList.contains('flcolL')); if (ed && !has) w -= 44; else if (!ed && has) w += 44; } catch {} return Math.max(200, w); }; }
+{ const _bw = flBW; flBW = function () { let w = _bw.apply(this, arguments); try { const R = flQ('.v5est'), ed = (SHX_MODE === 'org' || SHX_MODE === 'deco') && flActive(), has = R && R.classList.contains('flmode') && (R.classList.contains('flcolR') || R.classList.contains('flcolL')); void ed; void has; /* sem margem da coluna: mesma largura nos dois modos (Bia 24/11) */ } catch {} return Math.max(200, w); }; }
 
 // ---------- Arrumar por: mais critérios, ordem invertível (tocar de novo no chip), desempate pelo título (Bia, 22/11) ----------
 let FL_REV = false;
