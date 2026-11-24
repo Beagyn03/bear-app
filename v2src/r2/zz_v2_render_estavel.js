@@ -36,7 +36,7 @@
   const releaseFast = () => { const h = held || []; held = null; window.setTimeout = prevST || realST; window.requestAnimationFrame = prevRAF || realRAF;
     for (const x of h) { if (!fmap.has(x.id)) continue; const r = x.k === 't' ? window.setTimeout(taint(x.fn), 0, ...x.a) : window.requestAnimationFrame(taint(x.fn)); fmap.set(x.id, r); } };
   const editing = (box) => { const a = (TR.activeElement || document.activeElement); return !!(a && box.contains(a) && (a.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]), textarea, [contenteditable=true], [contenteditable=""]'))); };
-  const scrollers = (box) => { const out = []; const walk = (p) => { for (const c of p.children) { if (c.scrollTop || c.scrollLeft) out.push([c, c.scrollTop, c.scrollLeft]); if (c.children.length) walk(c); } }; walk(box); return out; };
+  const scrollers = (box) => { const out = []; const walk = (p) => { for (const c of p.children) { if (c.scrollTop || c.scrollLeft) out.push([c, c.scrollTop, c.scrollLeft]); if (c.shadowRoot) walk(c.shadowRoot); if (c.children.length) walk(c); } }; walk(box); return out; }; // entra nas raízes sombra (estante, faixas)
   let pend = false, P = null; // P: tela nova montando por trás (invisível) até assentar
   const L = () => TR.querySelector('#lista:not(.lista-snap):not(.rr-tmp)');
   const _dt = drawTab;
@@ -50,8 +50,9 @@
     if (!p || P !== p) return; P = null; clearTimeout(p.hard); p.mo.disconnect();
     const { old, tmp } = p; if (!tmp.isConnected || !old.isConnected) { tmp.remove(); return; }
     const wy = window.scrollY, oy = old.scrollTop, inner = scrollers(old);
+    const innerT = scrollers(tmp); // rolagem que a tela nova já tinha (ex.: faixa do Decorar): mover os nós zera, então volta depois (Bia 23/11)
     shadowStyles(old, tmp); keepCls(old, tmp); old.replaceChildren(...tmp.childNodes); tmp.remove();
-    if (old.scrollTop !== oy) old.scrollTop = oy; for (const [n, t, l] of inner) if (n.isConnected) { n.scrollTop = t; n.scrollLeft = l; }
+    if (old.scrollTop !== oy) old.scrollTop = oy; for (const [n, t, l] of inner) if (n.isConnected) { n.scrollTop = t; n.scrollLeft = l; } for (const [n, t, l] of innerT) if (n.isConnected && (n.scrollTop !== t || n.scrollLeft !== l)) { n.scrollTop = t; n.scrollLeft = l; }
     if (Math.abs(window.scrollY - wy) > 1) window.scrollTo(0, wy);
     SIG.set(old, p.sig); };
   const abort = () => { const p = P; if (!p) return; P = null; clearTimeout(p.hard); p.mo.disconnect(); p.tmp.remove(); if (p.v6keep && p.v6keep.isConnected) S.__v6host = p.v6keep; // a pessoa tocou: a tela atual fica e o redesenho volta depois
