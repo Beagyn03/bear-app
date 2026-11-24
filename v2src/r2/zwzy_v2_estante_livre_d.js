@@ -31,7 +31,7 @@ const SHX_CSSFLD = `
 .v4ler .bsh.flx .fli.fl-p.flfan{z-index:6}
 .v4ler .bsh.flx .fli.fl-p.flfan .pile{display:flex;flex-direction:column;gap:9px;padding:10px 8px;border-radius:12px;background:color-mix(in srgb,var(--card) 82%,transparent);box-shadow:0 10px 26px rgba(0,0,0,.45);transform:translateY(-6px);transition:transform .18s ease}
 .v4ler .bsh.flx .fli.fl-p.flfan .pb{min-height:30px;margin-left:0!important;border-radius:4px;outline:1.5px solid color-mix(in srgb,var(--acc) 55%,transparent)}
-.v4ler .bsh.flx .fli.fl-p.flfan .pb>span{font-size:11px}
+.v4ler .bsh.flx .fli.fl-p.flfan .pb>span:where(:not(.pbsp)){font-size:11px}
 @media (prefers-reduced-motion:reduce){.v4ler .bsh.flx .fli.fl-p.flfan .pile{transition:none}}`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-shxfld]')) { const st = document.createElement('style'); st.dataset.shxfld = 1; st.textContent = SHX_CSSFLD; sr.append(st); } } catch {} }; }
 try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-shxfld]')) { const st = document.createElement('style'); st.dataset.shxfld = 1; st.textContent = SHX_CSSFLD; sr.append(st); } }); } catch {}

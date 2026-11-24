@@ -63,10 +63,10 @@ const SHX_CSS1 = `.v4ler .bsh{--bk-wall:#efe7da;--bk-back:#e4d8c5;--bk-w1:#d6aa7
 .v4ler .bsh .pile{flex:none;position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;margin:0 5px 0 4px}
 .v4ler .bsh .pb{position:relative;display:flex;align-items:center;box-sizing:border-box;padding:0 7px;border-radius:1.5px;font-size:7px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;cursor:pointer;background:var(--c);color:var(--k);box-shadow:0 0 0 .5px rgba(0,0,0,.25)}
 .v4ler .bsh .pb::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 30%,rgba(0,0,0,0) 65%,rgba(0,0,0,.3))}
-.v4ler .bsh .pb span{position:relative;overflow:hidden;text-overflow:ellipsis}
-.v4ler .bsh .pb.pbm{background:none;padding:0;box-shadow:none;overflow:visible}.v4ler .bsh .pb.pbm::before{display:none}
+.v4ler .bsh .pb span:where(:not(.pbsp):not(.pbsp *)){position:relative;overflow:hidden;text-overflow:ellipsis}
+.v4ler .bsh .pb.pbm{background:none;padding:0;box-shadow:none;overflow:visible;white-space:normal;letter-spacing:normal;text-transform:none;font:inherit} /* a lombada girada usa o próprio layout (quebra em linhas, fonte mínima) — 24/11 */.v4ler .bsh .pb.pbm::before{display:none}
 .v4ler .bsh .pb .pbsp{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;overflow:visible}.v4ler .bsh .pb .pbsp>.sp{margin:0!important;transform:none!important;flex:none}
-.v4ler .bsh .pb.sf span{font-family:var(--f-disp,Georgia,serif);font-style:italic;text-transform:none;letter-spacing:.02em;font-size:8.5px}
+.v4ler .bsh .pb.sf span:where(:not(.pbsp):not(.pbsp *)){font-family:var(--f-disp,Georgia,serif);font-style:italic;text-transform:none;letter-spacing:.02em;font-size:8.5px}
 .v4ler .bsh .face{flex:none;position:relative;align-self:flex-end;margin:0 7px 0 5px;padding:0;border:0;background:none;cursor:pointer;transform:rotate(-4deg);transform-origin:50% 100%}
 .v4ler .bsh .face .cv{width:84px;height:126px;font-size:8.5px;border-radius:2px;box-shadow:4px 3px 8px rgba(0,0,0,.35),inset -2px 0 3px rgba(0,0,0,.25)}
 .v4ler .bsh .dec{flex:none;align-self:flex-end;position:relative;margin:0 5px;pointer-events:none}
@@ -160,7 +160,7 @@ function spnGeo(b, sm) { const h0 = spnHash(b.t + '|' + (b.a || '')); let r = h0
 function shPileHts(bs, room) { const hs = bs.map((x) => spnGeo(x, false).w), t = hs.reduce((a, h) => a + h, 0), R = room || 150; const k = t > R ? R / t : 1; return hs.map((h) => Math.max(7, Math.round(h * k))); }
 // livro deitado = a mesma lombada do livro em pé (modelo, arte, fonte, cor, enfeites), só girada (Bia 24/11)
 function shPbInner(x, wv, ht) { const m0 = SHX_MODE; try { SHX_MODE = null; const G = spnGeo(x, false);
-    const s = spnHTML({ ...x, lean: 0 }, false).replace(/ data-a="[^"]*"| data-id="[^"]*"| data-long="[^"]*"| data-bid="[^"]*"| role="button"| tabindex="[^"]*"| aria-label="[^"]*"/g, '').replace('<button type="button"', '<span').replace(/<\/button>\s*$/, '</span>');
+    const s = spnHTML({ ...x, lean: 0 }, false).replace(/ data-bid="/, ' data-pbid="').replace(/ data-a="[^"]*"| data-id="[^"]*"| data-long="[^"]*"| role="button"| tabindex="[^"]*"| aria-label="[^"]*"/g, '').replace('<button type="button"', '<span').replace(/<\/button>\s*$/, '</span>');
     return `<span class="pbsp" aria-hidden="true" style="width:${G.w}px;height:${G.h}px;transform:translate(0,${ht}px) rotate(-90deg) scale(${(ht / G.w).toFixed(4)},${(wv / G.h).toFixed(4)})">${s}</span>`; } catch { return null; } finally { SHX_MODE = m0; } }
 function spnColors(b) { const g = spnHash(b.t + '|' + (b.a || '')); const p = SH_PAL[g % SH_PAL.length], q = SH_PAL[(g >>> 5) % SH_PAL.length]; return [p[0], p[1], q[0]]; }
 // ação de tocar num livro: na sua estante abre o livro (segurar abre o menu); na estante de outra pessoa abre a página do livro
@@ -322,11 +322,12 @@ function pratHTML(list0, sm, wBsh) {
 // ajusta o título na lombada depois de desenhar: diminui a letra até caber (e corta com reticências só no limite).
 // O resultado fica guardado por livro/tamanho: redesenhar a estante não mede de novo (estante grande abre rápido).
 const SH_FIT = new Map();
-function shFit(root) { const rg = document.createRange();
+function shFit(root) { const PBS = root && root.querySelectorAll ? [...root.querySelectorAll('.bsh .pbsp')].map((e) => [e, e.style.transform]) : []; PBS.forEach(([e]) => { e.style.transform = 'none'; }); try { shFit0(root); } finally { PBS.forEach(([e, t]) => { e.style.transform = t; }); } } // o deitado mede sem o giro (24/11)
+function shFit0(root) { const rg = document.createRange();
   // 22/11 (Bia): mede de verdade. Não coube numa linha: quebra em 2 (3 na lombada larga) pela largura real da lombada;
   // só diminui até ~8 px; reticências só se nem assim couber (no fim da última linha).
   root.querySelectorAll('.bsh .sp .tt, .bsh .sp .au').forEach((el) => { if (el.dataset.fit) return; el.dataset.fit = 1; const tn = el.firstChild; if (!tn) return;
-    const sp = el.parentElement, au = el.classList.contains('au'), key = (au ? 'a|' : 't|') + sp.dataset.bid + '|' + sp.style.width + '|' + el.style.height + '|' + el.style.fontSize + '|' + sp.className;
+    const sp = el.parentElement, au = el.classList.contains('au'), key = (au ? 'a|' : 't|') + (sp.closest('.pbsp') ? 'pb|' : '') + (sp.dataset.bid || sp.dataset.pbid) + '|' + sp.style.width + '|' + el.style.height + '|' + el.style.fontSize + '|' + sp.className;
     const got = SH_FIT.get(key); if (got) { el.style.fontSize = got[0]; el.classList.toggle('w2', !!got[1]); if (got[2] != null) tn.textContent = got[2]; return; }
     const room = el.clientHeight - 3; if (room <= 0) return; const full = tn.textContent, spW = sp.clientWidth || parseFloat(sp.style.width) || 20, lineW = Math.max(6, spW - 5);
     const len = () => { rg.selectNodeContents(tn); const b = rg.getBoundingClientRect(); return { h: b.height, w: b.width }; };
@@ -348,7 +349,7 @@ function shFit(root) { const rg = document.createRange();
       // medida feita cedo demais (fonte/estilo ainda chegando) deixava reticências para sempre: confere de novo uma vez, sem guardar
       if (!el.dataset.retry) { el.dataset.retry = 1; setTimeout(() => { if (!el.isConnected) return; tn.textContent = full; delete el.dataset.fit; SH_FIT.delete(key); shFit(root); }, 1500); } el.style.textOverflow = ''; return; }
     el.style.textOverflow = ''; SH_FIT.set(key, [el.style.fontSize, el.classList.contains('w2'), txt]); });
-  root.querySelectorAll('.bsh .pb span').forEach((el) => { if (el.dataset.fit) return; el.dataset.fit = 1; let fs = parseFloat(getComputedStyle(el).fontSize), n = 0; const room = el.parentElement.clientWidth - 14;
+  root.querySelectorAll('.bsh .pb span').forEach((el) => { if (el.dataset.fit || el.closest('.pbsp')) return; el.dataset.fit = 1; let fs = parseFloat(getComputedStyle(el).fontSize), n = 0; const room = el.parentElement.clientWidth - 14;
     while (el.scrollWidth > room && fs > 5.4 && n++ < 12) { fs -= 0.4; el.style.fontSize = fs.toFixed(1) + 'px'; } }); }
 
 // ---------- CSS nas raízes (Biblioteca, perfil, folhas) ----------
