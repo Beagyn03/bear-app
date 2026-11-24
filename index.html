@@ -30772,7 +30772,8 @@ function flColMount(R) { R.querySelectorAll(':scope > .flcol').forEach((e) => e.
   window.addEventListener('pointermove', (ev) => { if (!H || ev.pointerId !== H.pid) return; if (Math.hypot(ev.clientX - H.x, ev.clientY - H.y) > 8) { H.mv = true; clearTimeout(H.t); }
     if (H.grip && H.mv) { ev.preventDefault(); const c = H.b.closest('.flcol'); if (c) { c.style.transition = 'none'; c.style.left = Math.max(4, Math.min(innerWidth - 56, ev.clientX - 26)) + 'px'; c.style.right = 'auto'; } } }, { capture: true, passive: false });
   const up = (ev) => { if (!H || ev.pointerId !== H.pid) return; const h = H; H = null; clearTimeout(h.t); if (h.long) { FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); }
-    if (h.grip && h.mv) { FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); const P = v5P(), sd = ev.clientX < innerWidth / 2 ? 'L' : 'R'; P.flCol = sd; v5Save(); flRender(); toast(sd === 'L' ? 'Coluna na esquerda' : 'Coluna na direita'); } };
+    if (h.grip && h.mv) { FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); const P = v5P(), sd = ev.clientX < innerWidth / 2 ? 'L' : 'R'; P.flCol = sd; v5Save(); flRender(); toast(sd === 'L' ? 'Coluna na esquerda' : 'Coluna na direita'); }
+    else if (h.grip && ev.type === 'pointerup') { FLX.swallow = 1; setTimeout(() => { FLX.swallow = 0; }, 400); FLX.colMin = true; flRender(); } }; // tocar na alça recolhe a coluna (Bia 24/11)
   window.addEventListener('pointerup', up, true); window.addEventListener('pointercancel', up, true); }
 
 // ---------- Decorar › Estrutura ----------
@@ -31475,11 +31476,11 @@ const SHX_CSSFLA = `
 .v4ler .flpop.cR{right:calc(64px + env(safe-area-inset-right,0px))}.v4ler .flpop.cL{left:calc(64px + env(safe-area-inset-left,0px))}
 .v4ler .flpop b{font-size:12px;color:var(--ink2);padding:4px 8px 2px;font-weight:800}
 .v4ler .flpop button{text-align:left;min-height:44px;padding:8px 10px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:14px;cursor:pointer}.v4ler .flpop button:hover,.v4ler .flpop button:focus-visible{background:color-mix(in srgb,var(--acc) 16%,transparent)}
-.v5est.flmode.flcolR .bsh.flx{margin-right:44px!important}.v5est.flmode.flcolL .bsh.flx{margin-left:44px!important}`;
+/* 24/11 (Bia): na edição a estante tem a mesma largura da visualização; a coluna flutua por cima */`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-shxfla]')) { const st = document.createElement('style'); st.dataset.shxfla = 1; st.textContent = SHX_CSSFLA; sr.append(st); } } catch {} }; }
 try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-shxfla]')) { const st = document.createElement('style'); st.dataset.shxfla = 1; st.textContent = SHX_CSSFLA; sr.append(st); } }); } catch {}
 // a margem da coluna entra na largura já no 1º desenho do modo (senão os livros da borda ficam atrás da coluna)
-{ const _bw = flBW; flBW = function () { let w = _bw.apply(this, arguments); try { const R = flQ('.v5est'), ed = (SHX_MODE === 'org' || SHX_MODE === 'deco') && flActive(), has = R && R.classList.contains('flmode') && (R.classList.contains('flcolR') || R.classList.contains('flcolL')); if (ed && !has) w -= 44; else if (!ed && has) w += 44; } catch {} return Math.max(200, w); }; }
+{ const _bw = flBW; flBW = function () { let w = _bw.apply(this, arguments); try { const R = flQ('.v5est'), ed = (SHX_MODE === 'org' || SHX_MODE === 'deco') && flActive(), has = R && R.classList.contains('flmode') && (R.classList.contains('flcolR') || R.classList.contains('flcolL')); void ed; void has; /* sem margem da coluna: mesma largura nos dois modos (Bia 24/11) */ } catch {} return Math.max(200, w); }; }
 
 // ---------- Arrumar por: mais critérios, ordem invertível (tocar de novo no chip), desempate pelo título (Bia, 22/11) ----------
 let FL_REV = false;
@@ -33089,25 +33090,52 @@ app.addEventListener('click', (ev) => { const el = ev.target.closest && ev.targe
   addEventListener('scroll', onScr, true); TR.addEventListener('scroll', onScr, true); addEventListener('touchmove', onScr, { capture: true, passive: true }); addEventListener('wheel', onScr, { capture: true, passive: true });
   addEventListener('visibilitychange', () => { if (document.hidden) hide(); });
 }
+// --- zzy_v2_coluna_editar.js ---
+// ---------- Estante: "Editar" no lugar do •••, ferramentas só na edição, coluna recolhível (Bia, 24/11) ----------
+// Na visualização da Prateleira fica um botão só, "Editar", que entra direto no Organizar (a coluna de ferramentas é a da
+// edição). Adicionar livro e Ajuda, que moravam no ••• da visualização, entram na coluna do Organizar; Decorar já está lá.
+// Tocar na alça "—" recolhe a coluna num botão pequeno ("Abrir"); a estante não encolhe na edição (a coluna flutua por cima).
+const FLE_PEN = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>';
+const FLE_TOOLS = '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+const FLE_ADD = '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+// visualização: só "Editar"
+flnHTML = function () { const side = (() => { try { return v5P().flCol === 'L' ? 'L' : 'R'; } catch { return 'R'; } })();
+  return `<div class="flncol ${side} fled1" role="toolbar" aria-label="Estante"><button type="button" class="tg fled" data-a="shmode" data-v="org" aria-label="Editar a estante">${FLE_PEN}<span class="fledl">Editar</span></button></div>`; };
+// edição: Adicionar e Ajuda na coluna do Organizar; coluna recolhida vira um botão
+{ const _c = flColHTML; flColHTML = function () { const md = SHX_MODE;
+    if ((md === 'org' || md === 'deco') && FLX.colMin) return `<div class="flcol ${flColSide()} flmin" role="toolbar" aria-label="Ferramentas"><button type="button" class="flcb" data-fl="colmax" aria-label="Mostrar as ferramentas">${FLE_TOOLS}<span class="flbl" aria-hidden="true">Mostrar as ferramentas</span></button></div>`;
+    let h = _c.apply(this, arguments); try { if (md !== 'org') return h;
+      const B = (a, ic, lab) => `<button type="button" class="flcb" ${a} aria-label="${lab}">${ic}<span class="flbl" aria-hidden="true">${lab}</span></button>`;
+      const extra = B('data-a="sheet" data-s="v5add"', FLE_ADD, 'Adicionar livro') + B('data-a="shxsheet" data-s="shxleg"', '<b style="font-size:17px;font-weight:900;line-height:1">?</b>', 'Como ler a estante');
+      h = h.replace(/(<button[^>]*data-fl="more"[\s\S]*?<\/button>)/, `${extra}$1`); } catch (err) { console.warn('coluna: extras', err); } return h; }; }
+{ const _a = flAct; flAct = function (k, el) { if (k === 'colmax') { FLX.colMin = false; return flRender(); } return _a.apply(this, arguments); }; }
+{ const _x = shExitEdit; shExitEdit = function () { FLX.colMin = false; return _x.apply(this, arguments); }; }
+window.addEventListener('click', (ev) => { try { const T = ev.composedPath()[0], b = T && T.closest && T.closest('[data-a="shdone"]'); if (b) FLX.colMin = false; } catch {} }, true);
+const FLE_CSS = `.v4ler .flncol.fled1{padding:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.v4ler .flncol .tg.fled{width:auto!important;height:44px!important;padding:0 16px 0 13px!important;border-radius:22px!important;display:inline-flex!important;align-items:center;gap:7px;font:inherit;font-weight:800;font-size:14px;background:var(--card)!important;color:var(--ink)!important;border:1px solid var(--line)!important;box-shadow:0 4px 14px rgba(0,0,0,.28)!important}
+.v4ler .flncol .tg.fled .fledl{position:static;opacity:1;pointer-events:none}
+.v4ler .flcol.flmin{padding:4px}
+.v4ler .flcol{background:color-mix(in srgb,var(--card) 80%,transparent);box-shadow:0 8px 24px rgba(0,0,0,.3)}`;
+{ const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-fle]')) { const st = document.createElement('style'); st.dataset.fle = 1; st.textContent = FLE_CSS; sr.append(st); } } catch {} }; }
+try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-fle]')) { const st = document.createElement('style'); st.dataset.fle = 1; st.textContent = FLE_CSS; sr.append(st); } }); } catch {}
 // --- zzy_v2_decorar_nomes.js ---
 // ---------- Decorar: nome curto embaixo de cada ícone da coluna (Bia, 23/11: "pode ajustar") ----------
 // Uma palavra por botão. A coluna fica um pouco mais larga só no Decorar; a estante reserva o espaço dela.
-const FLN1_SHORT = { 'Leitor digital': 'Leitor', 'Mais opções': 'Mais', 'Arraste para mudar a coluna de lado': '' };
-{ const _c = flColHTML; flColHTML = function () { let h = _c.apply(this, arguments); try { if (SHX_MODE !== 'deco') return h;
+const FLN1_SHORT = { 'Leitor digital': 'Leitor', 'Mais opções': 'Mais', 'Arraste para mudar a coluna de lado': '', 'Mostrar a bandeja': 'Bandeja', 'Esconder a bandeja': 'Bandeja', 'Selecionar vários': 'Selecionar', 'Parar de selecionar': 'Selecionar', 'Arrumar por': 'Arrumar', 'Adicionar livro': 'Adicionar', 'Como ler a estante': 'Ajuda', 'Mostrar as ferramentas': 'Abrir' };
+{ const _c = flColHTML; flColHTML = function () { let h = _c.apply(this, arguments); try { if (SHX_MODE !== 'deco' && SHX_MODE !== 'org') return h; h = h.replace('class="flcol ', 'class="flcol flnm ');
     h = h.replace(/<span class="flbl" aria-hidden="true">([^<]*)<\/span>/g, (m, l) => { const s = FLN1_SHORT[l] != null ? FLN1_SHORT[l] : l; return s ? `<span class="flbl fln1" aria-hidden="true">${s}</span>` : ''; }); } catch (err) { console.warn('decorar: nomes', err); } return h; }; }
-const FLN1_CSS = `.v4ler .flcol.fldk{gap:2px;padding:5px;border-radius:22px;max-height:calc(100vh - 150px)}
-.v4ler .flcol.fldk .flcb{width:56px!important;height:44px!important;min-height:44px;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:3px 2px!important}
-.v4ler .flcol.fldk .flcb svg{width:19px;height:19px;flex:none}
-.v4ler .flcol.fldk .flcb .flbl.fln1{position:static!important;transform:none!important;opacity:1!important;background:none!important;color:inherit!important;padding:0!important;margin:0!important;box-shadow:none!important;border-radius:0!important;font-size:9.5px!important;font-weight:800!important;line-height:1.05!important;letter-spacing:0;white-space:nowrap;max-width:54px;overflow:hidden;pointer-events:none}
-.v4ler .flcol.fldk .flgrip{width:56px!important}
-.v5est.flmode.flcolR.fldeco .bsh.flx{margin-right:62px!important}.v5est.flmode.flcolL.fldeco .bsh.flx{margin-left:62px!important}
+const FLN1_CSS = `.v4ler .flcol.flnm{gap:2px;padding:5px;border-radius:22px;max-height:calc(100vh - 150px);overflow-y:auto;scrollbar-width:none}
+.v4ler .flcol.flnm .flcb{width:56px!important;height:44px!important;min-height:44px;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:3px 2px!important}
+.v4ler .flcol.flnm .flcb svg{width:19px;height:19px;flex:none}
+.v4ler .flcol.flnm .flcb .flbl.fln1{position:static!important;transform:none!important;opacity:1!important;background:none!important;color:inherit!important;padding:0!important;margin:0!important;box-shadow:none!important;border-radius:0!important;font-size:9.5px!important;font-weight:800!important;line-height:1.05!important;letter-spacing:0;white-space:nowrap;max-width:54px;overflow:hidden;pointer-events:none}
+.v4ler .flcol.flnm .flgrip{width:56px!important}
 .v5est.fldeco .flpop.cR{right:calc(80px + env(safe-area-inset-right,0px))}.v5est.fldeco .flpop.cL{left:calc(80px + env(safe-area-inset-left,0px))}
 .v4ler.v5est.fldeco .dkpan.flcar.cR{right:calc(80px + env(safe-area-inset-right,0px))!important;left:auto!important}.v4ler.v5est.fldeco .dkpan.flcar.cL{left:calc(80px + env(safe-area-inset-left,0px))!important;right:auto!important}`;
 { const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-fln1]')) { const st = document.createElement('style'); st.dataset.fln1 = 1; st.textContent = FLN1_CSS; sr.append(st); } } catch {} }; }
 try { SHX_ROOTS.forEach((sr) => { if (sr && !sr.querySelector('style[data-fln1]')) { const st = document.createElement('style'); st.dataset.fln1 = 1; st.textContent = FLN1_CSS; sr.append(st); } }); } catch {}
 // a estante sabe que no Decorar a coluna é mais larga (marca a raiz antes de medir)
 { const _sd = shDraw; shDraw = function () { const r = _sd.apply(this, arguments); try { const R = flQ('.v5est'); if (R) R.classList.toggle('fldeco', SHX_MODE === 'deco' && flActive()); } catch {} return r; }; }
-{ const _bw = flBW; flBW = function () { let w = _bw.apply(this, arguments); try { const R = flQ('.v5est'), dk = SHX_MODE === 'deco' && flActive(), has = R && R.classList.contains('fldeco') && R.classList.contains('flmode'); if (dk && !has) w -= 18; else if (!dk && has) w += 18; } catch {} return Math.max(200, w); }; }
+// (24/11) a estante não encolhe mais na edição: a coluna flutua por cima
 // --- zzy_v2_luzinhas_passos.js ---
 // ---------- Decorar › Luzinhas em dois passos (Bia, 23/11: "pode ajustar") ----------
 // Passo 1: os cordões (cada um pelo modelo, com cor e lugar embaixo), "+ Cordão" e "Apagar todas"; sem cordão nenhum,
