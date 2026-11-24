@@ -33111,8 +33111,8 @@ flnHTML = function () { const side = (() => { try { return v5P().flCol === 'L' ?
     if ((md === 'org' || md === 'deco') && FLX.colMin) return `<div class="flcol ${flColSide()} flmin" role="toolbar" aria-label="Ferramentas"><button type="button" class="flcb" data-fl="colmax" aria-label="Mostrar as ferramentas">${FLE_TOOLS}<span class="flbl" aria-hidden="true">Mostrar as ferramentas</span></button></div>`;
     let h = _c.apply(this, arguments); try { if (md !== 'org') return h;
       const B = (a, ic, lab) => `<button type="button" class="flcb" ${a} aria-label="${lab}">${ic}<span class="flbl" aria-hidden="true">${lab}</span></button>`;
-      const extra = B('data-a="sheet" data-s="v5add"', FLE_ADD, 'Adicionar livro') + B('data-a="shxsheet" data-s="shxleg"', '<b style="font-size:17px;font-weight:900;line-height:1">?</b>', 'Como ler a estante');
-      h = h.replace(/(<button[^>]*data-fl="more"[\s\S]*?<\/button>)/, `${extra}$1`); } catch (err) { console.warn('coluna: extras', err); } return h; }; }
+      const add = B('data-a="sheet" data-s="v5add"', FLE_ADD, 'Adicionar livro'), help = B('data-a="shxsheet" data-s="shxleg"', '<b style="font-size:17px;font-weight:900;line-height:1">?</b>', 'Como ler a estante');
+      h = h.replace(/(<button[^>]*data-fl="redo"[\s\S]*?<\/button>)/, `$1${add}`).replace(/(<button[^>]*data-fl="more"[\s\S]*?<\/button>)/, `${help}$1`); } catch (err) { console.warn('coluna: extras', err); } return h; }; }
 { const _a = flAct; flAct = function (k, el) { if (k === 'colmax') { FLX.colMin = false; return flRender(); } return _a.apply(this, arguments); }; }
 { const _x = shExitEdit; shExitEdit = function () { FLX.colMin = false; return _x.apply(this, arguments); }; }
 window.addEventListener('click', (ev) => { try { const T = ev.composedPath()[0], b = T && T.closest && T.closest('[data-a="shdone"]'); if (b) FLX.colMin = false; } catch {} }, true);
