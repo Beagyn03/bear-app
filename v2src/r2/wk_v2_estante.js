@@ -64,6 +64,8 @@ const SHX_CSS1 = `.v4ler .bsh{--bk-wall:#efe7da;--bk-back:#e4d8c5;--bk-w1:#d6aa7
 .v4ler .bsh .pb{position:relative;display:flex;align-items:center;box-sizing:border-box;padding:0 7px;border-radius:1.5px;font-size:7px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;cursor:pointer;background:var(--c);color:var(--k);box-shadow:0 0 0 .5px rgba(0,0,0,.25)}
 .v4ler .bsh .pb::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 30%,rgba(0,0,0,0) 65%,rgba(0,0,0,.3))}
 .v4ler .bsh .pb span{position:relative;overflow:hidden;text-overflow:ellipsis}
+.v4ler .bsh .pb.pbm{background:none;padding:0;box-shadow:none;overflow:visible}.v4ler .bsh .pb.pbm::before{display:none}
+.v4ler .bsh .pb .pbsp{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;overflow:visible}.v4ler .bsh .pb .pbsp>.sp{margin:0!important;transform:none!important;flex:none}
 .v4ler .bsh .pb.sf span{font-family:var(--f-disp,Georgia,serif);font-style:italic;text-transform:none;letter-spacing:.02em;font-size:8.5px}
 .v4ler .bsh .face{flex:none;position:relative;align-self:flex-end;margin:0 7px 0 5px;padding:0;border:0;background:none;cursor:pointer;transform:rotate(-4deg);transform-origin:50% 100%}
 .v4ler .bsh .face .cv{width:84px;height:126px;font-size:8.5px;border-radius:2px;box-shadow:4px 3px 8px rgba(0,0,0,.35),inset -2px 0 3px rgba(0,0,0,.25)}
@@ -156,6 +158,10 @@ function spnGeo(b, sm) { const h0 = spnHash(b.t + '|' + (b.a || '')); let r = h0
   if (sm) { h = Math.round(h * 0.6); w = Math.max(8, Math.round(w * 0.6)); } return { h, w, hc, pages, h0 }; }
 // livro deitado: espessura pelas páginas, na mesma escala da lombada em pé (Bia 23/11); pilha alta demais encolhe por igual
 function shPileHts(bs, room) { const hs = bs.map((x) => spnGeo(x, false).w), t = hs.reduce((a, h) => a + h, 0), R = room || 150; const k = t > R ? R / t : 1; return hs.map((h) => Math.max(7, Math.round(h * k))); }
+// livro deitado = a mesma lombada do livro em pé (modelo, arte, fonte, cor, enfeites), só girada (Bia 24/11)
+function shPbInner(x, wv, ht) { const m0 = SHX_MODE; try { SHX_MODE = null; const G = spnGeo(x, false);
+    const s = spnHTML({ ...x, lean: 0 }, false).replace(/ data-a="[^"]*"| data-id="[^"]*"| data-long="[^"]*"| data-bid="[^"]*"| role="button"| tabindex="[^"]*"| aria-label="[^"]*"/g, '').replace('<button type="button"', '<span').replace(/<\/button>\s*$/, '</span>');
+    return `<span class="pbsp" aria-hidden="true" style="width:${G.w}px;height:${G.h}px;transform:translate(0,${ht}px) rotate(-90deg) scale(${(ht / G.w).toFixed(4)},${(wv / G.h).toFixed(4)})">${s}</span>`; } catch { return null; } finally { SHX_MODE = m0; } }
 function spnColors(b) { const g = spnHash(b.t + '|' + (b.a || '')); const p = SH_PAL[g % SH_PAL.length], q = SH_PAL[(g >>> 5) % SH_PAL.length]; return [p[0], p[1], q[0]]; }
 // ação de tocar num livro: na sua estante abre o livro (segurar abre o menu); na estante de outra pessoa abre a página do livro
 const shAct = (b, long) => SHX_VIS ? ` data-a="shxvb" data-id="${esc(b.id)}"` : ` data-a="v5book" data-id="${esc(b.id)}"${long ? ' data-long="bm"' : ''}`;
@@ -285,9 +291,9 @@ function pratHTML(list0, sm, wBsh) {
   // o último livro de algumas fileiras cheias encosta no vizinho, inclinado (só na arrumação automática)
   // livro inclinado só quando a pessoa escolhe (Organizar › Inclinado)
   const pileHTML = (bs, top) => { const PH = shPileHts(bs, top ? 112 : 150); return `<span class="pile">${top ? `<span class="dec" style="margin:0 0 0 18px">${SH_DEC[top](0.9)}</span>` : ''}${bs.map((x, j) => { const G = spnGeo(x, false), [c, k] = spnColors(x), ov = shEdOf(x), wv = Math.round(G.h * 0.86 * sc) - j * 3, ht = PH[j];
-    const fe = ov.t === 'bp' || ov.t === 'ep', act = md ? '' : shAct(x, true);
+    const fe = ov.t === 'bp' || ov.t === 'ep', act = md ? '' : shAct(x, true), PBI = fe ? null : shPbInner(x, wv, ht);
     // bordas pintadas (ou douradas): o livro deitado mostra o corte das páginas, não a lombada
-    return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}${fe ? ', bordas ' + (ov.t === 'ep' ? 'douradas' : 'pintadas') : ''}"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (ov.e || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : `<span>${esc(x.t)}</span>`}</span>`; }).join('')}</span>`; };
+    return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}${PBI ? ' pbm' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}${fe ? ', bordas ' + (ov.t === 'ep' ? 'douradas' : 'pintadas') : ''}"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (ov.e || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : (PBI || `<span>${esc(x.t)}</span>`)}</span>`; }).join('')}</span>`; };
   const decHTML = (d) => { const edit = md === 'deco' && d.i != null, lb = !edit && !md && !sm && d.k === 'leitor' && typeof shLeitorBook === 'function' ? shLeitorBook(d) : null; return `<span class="dec${edit ? ' u' : ''}${lb ? ' lk' : ''}"${edit ? ` data-dk="${d.i}" role="button" tabindex="0" aria-label="${esc(SH_DN[d.k] || d.k)}: trocar, tirar ou arrastar"` : lb ? `${shAct(lb, false)} role="button" tabindex="0" aria-label="Leitor digital: ${esc(lb.t)}"` : ''}>${SH_DEC[d.k](sc, d)}</span>`; };
   const itemHTML = (it) => it.k === 'sp' ? spnHTML(it.b, sm) : it.k === 'pile' ? pileHTML(it.bs, it.top) : `<button type="button" class="face" data-bid="${esc(it.b.id)}"${md ? '' : shAct(it.b, true)} aria-label="${esc(it.b.t)}, de frente">${v4cv({ title: it.b.t, cover: it.b.img })}</button>`;
   // toque para pegar (Organizar): marcadores grandes onde o livro pode entrar; por cima das pilhas, deitar nela
