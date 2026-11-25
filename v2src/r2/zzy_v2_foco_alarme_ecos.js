@@ -58,10 +58,10 @@ const FA_CSS = `.v4ler .sky .faeco{position:absolute;width:var(--sz);height:var(
 @keyframes faTw{0%,100%{opacity:var(--op);scale:1}50%{opacity:calc(var(--op) * .55);scale:.82}}
 @media (prefers-reduced-motion:reduce){.v4ler .sky .faeco{animation:none}}
 .v4ler .sky{pointer-events:none}
-.v4ler .fa-ring{animation:faPulse 1.1s ease-in-out infinite;border-radius:50%}
-.v4ler .fa-ring #v4clk{color:#ffd27a;text-shadow:0 0 18px rgba(255,210,122,.75)}
-@keyframes faPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,210,122,0)}50%{box-shadow:0 0 0 14px rgba(255,210,122,.28)}}
-@media (prefers-reduced-motion:reduce){.v4ler .fa-ring{animation:none;box-shadow:0 0 0 6px rgba(255,210,122,.35)}}
+.v4ler .fa-ring{animation:none!important;box-shadow:none!important;outline:0!important}
+.v4ler .fa-ring #v4clk{color:#ffd27a;animation:faGlow 1.6s ease-in-out infinite}
+@keyframes faGlow{0%,100%{text-shadow:0 0 6px rgba(255,210,122,.25)}50%{text-shadow:0 0 16px rgba(255,210,122,.7)}}
+@media (prefers-reduced-motion:reduce){.v4ler .fa-ring #v4clk{animation:none;text-shadow:0 0 10px rgba(255,210,122,.5)}}
 .v4ler .fa-hint{display:block;margin:4px 2px 0;font-size:12px;opacity:.75}`;
 { const put = () => { try { const sr = V4 && V4.getRootNode(); const host = sr && (sr.head || sr); if (host && !host.querySelector('style[data-fa]')) { const st = document.createElement('style'); st.dataset.fa = 1; st.textContent = FA_CSS; (sr === document ? document.head : sr).append(st); } } catch {} };
   const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments); put(); if (FA_RING) { try { const c = V4.querySelector('#v4clk'); const w = c && (c.closest('.orbw') || c.parentElement); if (w) w.classList.add('fa-ring'); } catch {} } return r; }; }
