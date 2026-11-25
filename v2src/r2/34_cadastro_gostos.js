@@ -271,7 +271,7 @@ function paintForYou(box) {
   if (!box || box.querySelector('#pv-host')) return;
   const t = tasteOf(), host = document.createElement('div'); host.id = 'pv-host';
   const at = box.querySelector('.v3-colA') || box; at.append(host);
-  if (!t || !((t.genres || []).length || (t.books || []).length)) {
+  if (!t || !((t.genres || []).length || (t.books || []).length)) { if (typeof v3Pending === 'function' && v3Pending()) return; // 1ª sincronização ainda voltando: os gostos podem estar na conta (25/11)
     host.innerHTML = `<button type="button" class="pv-ask" id="pv-ask"><span><b>Receba indicações de leitura</b><small>Conte seus gêneros e livros favoritos</small></span>›</button>`;
     $('#pv-ask', host).addEventListener('click', () => openTaste()); return;
   }

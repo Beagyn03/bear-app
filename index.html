@@ -10024,6 +10024,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 00_v2_capa_canvas.js ---
 // Capa para canvas (Bia, 22/11): o Google Livros não manda CORS, então o canvas não pode ler os pixels dessas capas
@@ -11739,7 +11740,7 @@ function paintForYou(box) {
   if (!box || box.querySelector('#pv-host')) return;
   const t = tasteOf(), host = document.createElement('div'); host.id = 'pv-host';
   const at = box.querySelector('.v3-colA') || box; at.append(host);
-  if (!t || !((t.genres || []).length || (t.books || []).length)) {
+  if (!t || !((t.genres || []).length || (t.books || []).length)) { if (typeof v3Pending === 'function' && v3Pending()) return; // 1ª sincronização ainda voltando: os gostos podem estar na conta (25/11)
     host.innerHTML = `<button type="button" class="pv-ask" id="pv-ask"><span><b>Receba indicações de leitura</b><small>Conte seus gêneros e livros favoritos</small></span>›</button>`;
     $('#pv-ask', host).addEventListener('click', () => openTaste()); return;
   }
@@ -12677,7 +12678,7 @@ function inSemana() {
     <div class="in-nums"><span><b>${tot}</b> páginas</span><span><b>${nd}</b> de 7 dias</span><span><b>${streak}</b> ${streak === 1 ? 'dia seguido' : 'dias seguidos'}</span></div>
     ${tot ? '' : '<p class="in-empty" style="margin-top:.4rem">Atualize a página em que parou e o app monta sua semana.</p>'}</div></section>`;
 }
-function inComece() {
+function inComece() { try { if (typeof v3Pending === 'function' && v3Pending()) return ''; } catch {}
   return `<section class="in-sec" data-in="comece"><div class="in-h"><b>Comece por aqui</b></div><div class="in-go">
     <button type="button" data-go="hist"><b>Trazer meu histórico</b><small>de outro app de leitura, pelo arquivo</small></button>
     <button type="button" data-go="meta"><b>Meta do ano</b><small>Quantos livros em ${todayISO().slice(0, 4)}?</small></button>
@@ -18751,6 +18752,7 @@ Object.assign(V2I, { qt: '<path class="d" d="M5 17c-1.5-1-2-2.5-2-4.5C3 9 5 7 8 
 .v3hero .eta.due b{color:var(--acc);font-weight:900}.v3hero .eta.due.ok .dt{color:var(--acc)}
 .v3hero .eta.due small{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--ink-2)}.v3hero .eta.due small svg{width:12px;height:12px;flex:none}
 .v3herow{position:relative}
+.h3sk{display:inline-block;width:3.2em;height:.9em;border-radius:6px;vertical-align:middle;background:linear-gradient(90deg,color-mix(in srgb,var(--ink) 8%,transparent),color-mix(in srgb,var(--ink) 16%,transparent),color-mix(in srgb,var(--ink) 8%,transparent));background-size:200% 100%;animation:h3sk 1.2s linear infinite}@keyframes h3sk{to{background-position:-200% 0}}@media (prefers-reduced-motion:reduce){.h3sk{animation:none}}
 .v3herow.multi::after{content:"";position:absolute;z-index:0;right:-7px;top:16px;bottom:16px;width:14px;border-radius:0 var(--v2-r) var(--v2-r) 0;background:var(--panel);border:1px solid var(--line);border-left:0;opacity:.55}
 .v3hero.sl-l{animation:v3slL .28s ease-out}.v3hero.sl-r{animation:v3slR .28s ease-out}
 @keyframes v3slL{from{transform:translateX(26px);opacity:.4}to{transform:none;opacity:1}}@keyframes v3slR{from{transform:translateX(-26px);opacity:.4}to{transform:none;opacity:1}}
@@ -18785,7 +18787,10 @@ Object.assign(V2I, { qt: '<path class="d" d="M5 17c-1.5-1-2-2.5-2-4.5C3 9 5 7 8 
 .v3empty button{margin-top:.4rem;border:0;border-radius:14px;background:linear-gradient(135deg,#e9a35c,#c46f2e);color:#fff;font:inherit;font-weight:900;padding:.7rem 1.2rem}
 `; TR.append(st); }
 function v3Year() { return String(new Date().getFullYear()); }
-function v3Meta(col) { const m = col.querySelector('#ini-meta'), t = m ? m.textContent.replace(/\s+/g, ' ').replace(/Meta de \d{4}/, ' ') : ''; const x = t.match(/(\d+) de (\d+) livros/); return x ? { n: +x[1], goal: +x[2] } : null; }
+// 25/11 (Bia): a meta vem do dado guardado no aparelho (yearInfo, que já conta a estante da meta), não do texto de outro cartão.
+// Sem meta e sem a 1ª sincronização deste aparelho ainda: esqueleto (não sabe ainda), nunca "Definir" provisório.
+function v3Meta() { try { const r = yearInfo(); if (r && r.target) return { n: r.done, goal: r.target }; } catch {} return null; }
+function v3Pending() { try { return connected() && typeof syncMeta !== 'undefined' && !syncMeta.version && !Object.keys(db.yearGoals || {}).length && !lib().length; } catch { return false; } }
 function v3Buddy(e) { const bm = (SOC.buddyMap || {})[e.id] || (T().buddy || {})[e.id]; if (!bm) return null;
   if (Array.isArray(bm.people) && bm.people.length) { const tot = readingInfo(e).total || 0;
     const ppl = bm.people.map((p) => ({ n: String(p.displayName || p.handle || '?').trim(), pct: +p.pct || 0 })).sort((a, b) => b.pct - a.pct);
@@ -18795,6 +18800,7 @@ function v3HeroHTML(col) {
   const R = reading(), off = (() => { try { return homePrefs().off; } catch { return []; } })(), H = TR.host || document.body;
   // abertura do dia (bloco r0) no lugar de data + saudação
   const head = typeof v8DiaHTML === 'function' ? (() => { try { return v8DiaHTML(); } catch { return ''; } })() : `<div class="hello"><small>${esc(v2hDate())}</small><b>${v2hGreet()}${v2hName() ? ', ' + esc(v2hName()) : ''}</b></div>`;
+  if (!R && v3Pending()) return head + `<div class="v3empty v3skel" aria-busy="true" aria-label="Carregando sua leitura"><i class="h3sk" style="width:9rem;height:1.1rem"></i><i class="h3sk" style="width:13rem;height:.8rem;margin-top:.6rem"></i><i class="h3sk" style="width:7rem;height:2.4rem;margin-top:1rem;border-radius:99px"></i></div>`; // 1ª sincronização deste aparelho ainda voltando
   if (!R) return head + `<div class="v3empty"><b>Escolha sua próxima leitura</b><p>Nenhum livro em leitura agora.</p><button type="button" data-h3="pick">${lib().some((x) => x.status === 'QUERO') ? 'Qual leio agora?' : 'Buscar um livro'}</button></div>`;
   const { e, now, total } = R, pct = total ? Math.min(100, Math.round((now / total) * 100)) : 0, p = pct / 100, a = p * 2 * Math.PI - Math.PI / 2;
   const left = total ? Math.max(0, total - now) : 0, near = total && pct >= 90;
@@ -18821,8 +18827,8 @@ function v3HeroHTML(col) {
   }
   if (!H.classList.contains('v2off-orbita')) { let s = { cur: 0, best: 0, today: false }; try { s = orbStats(); } catch {}
     tiles.push(`<button type="button" data-h3="orb" class="${s.today ? '' : 'off'}"><small>Órbita</small><b>${s.cur} ${s.cur === 1 ? 'dia' : 'dias'}</b><span>${s.today ? 'hoje já conta' : s.cur ? 'leia hoje' : 'leia 1 página'}</span></button>`); }
-  if (!H.classList.contains('v2off-metas') && !off.includes('meta')) { const m = v3Meta(col);
-    tiles.push(`<button type="button" data-h3="meta"><small>Meta ${v3Year()}</small><b>${m ? m.n + '/' + m.goal : 'Definir'}</b><span>${m ? (m.n >= m.goal ? 'meta batida' : 'faltam ' + (m.goal - m.n)) : 'livros no ano'}</span></button>`); }
+  if (!H.classList.contains('v2off-metas') && !off.includes('meta')) { const m = v3Meta(col), pend = !m && v3Pending();
+    tiles.push(`<button type="button" data-h3="meta"${pend ? ' class="loading" aria-busy="true"' : ''}><small>Meta ${v3Year()}</small><b>${m ? m.n + '/' + m.goal : pend ? '<i class="h3sk" aria-label="Carregando"></i>' : 'Definir'}</b><span>${m ? (m.n >= m.goal ? 'meta batida' : 'faltam ' + (m.goal - m.n)) : pend ? '&nbsp;' : 'livros no ano'}</span></button>`); }
   return head + `<div class="v3herow${L.length > 1 ? ' multi' : ''}"><section class="v3hero">
     <button type="button" class="v3ring" data-h3="book" aria-label="Abrir a página de ${esc(e.title)}. Segure para o menu do livro"><svg viewBox="0 0 176 176" aria-hidden="true"><circle cx="88" cy="88" r="72" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="88" cy="88" r="72" fill="none" stroke="#c46f2e" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(p * 452.4).toFixed(1)} 453" transform="rotate(-90 88 88)"/>${goalArc}</svg>${cvh(e.title, e.cover, 'v3cv')}<span class="moon" style="left:${((88 + 72 * Math.cos(a)) / 1.76).toFixed(2)}%;top:${((88 + 72 * Math.sin(a)) / 1.76).toFixed(2)}%"></span></button>
     <div class="inf">${total ? `<b class="pct">${pct}%</b><span class="pg">pág. ${now} de ${total}</span>` : `<b class="pct" style="font-size:1.3rem">pág. ${now}</b><span class="pg">total de páginas a definir</span>`}${dueBox || (eta ? `<span class="eta">${esc(eta)}</span>` : '')}</div>

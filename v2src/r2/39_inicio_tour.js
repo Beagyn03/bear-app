@@ -49,7 +49,7 @@ function inSemana() {
     <div class="in-nums"><span><b>${tot}</b> páginas</span><span><b>${nd}</b> de 7 dias</span><span><b>${streak}</b> ${streak === 1 ? 'dia seguido' : 'dias seguidos'}</span></div>
     ${tot ? '' : '<p class="in-empty" style="margin-top:.4rem">Atualize a página em que parou e o app monta sua semana.</p>'}</div></section>`;
 }
-function inComece() {
+function inComece() { try { if (typeof v3Pending === 'function' && v3Pending()) return ''; } catch {}
   return `<section class="in-sec" data-in="comece"><div class="in-h"><b>Comece por aqui</b></div><div class="in-go">
     <button type="button" data-go="hist"><b>Trazer meu histórico</b><small>de outro app de leitura, pelo arquivo</small></button>
     <button type="button" data-go="meta"><b>Meta do ano</b><small>Quantos livros em ${todayISO().slice(0, 4)}?</small></button>
