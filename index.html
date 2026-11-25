@@ -10023,6 +10023,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 00_v2_capa_canvas.js ---
 // Capa para canvas (Bia, 22/11): o Google Livros não manda CORS, então o canvas não pode ler os pixels dessas capas
@@ -33176,7 +33177,7 @@ function faCheck(fromBack) { try { const s = v4Ses(); if (!s || !s.dur || s.pz) 
     s.faDone = s.start; try { v2SesPut(s); } catch {} const late = Date.now() - end; const onScreen = V4 && V4.isConnected && document.visibilityState === 'visible';
     if (!onScreen) { faNotify(); s.faDone = 0; try { v2SesPut(s); } catch {} return; } // avisa de novo ao voltar
     void fromBack; faRing(late < 60000); } catch (e) { console.warn('alarme', e); } }
-function faNotify() { try { if (!FA_ON() || !('Notification' in window) || Notification.permission !== 'granted') return; navigator.serviceWorker && navigator.serviceWorker.ready.then((r) => r.showNotification('Tempo cumprido', { body: 'Sua sessão de leitura terminou. Continue se quiser.', tag: 'lv-foco', renotify: true, vibrate: [220, 120, 220] })).catch(() => {}); } catch {} }
+function faNotify() { try { if (!FA_ON() || !('Notification' in window) || Notification.permission !== 'granted') return; navigator.serviceWorker && navigator.serviceWorker.ready.then((r) => r.showNotification('Tempo cumprido', { body: 'Sua sessão de leitura terminou. Continue se quiser.', tag: 'bear-foco', renotify: true, vibrate: [220, 120, 220] })).catch(() => {}); } catch {} }
 setInterval(() => faCheck(false), 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(() => faCheck(true), 150); });
 // destrava o áudio no toque de Começar (o navegador só deixa tocar depois de um gesto)
@@ -33219,6 +33220,42 @@ const FA_CSS = `.v4ler .sky .faeco{position:absolute;width:var(--sz);height:var(
 .v4ler .fa-hint{display:block;margin:4px 2px 0;font-size:12px;opacity:.75}`;
 { const put = () => { try { const sr = V4 && V4.getRootNode(); const host = sr && (sr.head || sr); if (host && !host.querySelector('style[data-fa]')) { const st = document.createElement('style'); st.dataset.fa = 1; st.textContent = FA_CSS; (sr === document ? document.head : sr).append(st); } } catch {} };
   const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments); put(); if (FA_RING) { try { const c = V4.querySelector('#v4clk'); const w = c && (c.closest('.orbw') || c.parentElement); if (w) w.classList.add('fa-ring'); } catch {} } return r; }; }
+// --- zzy_v2_foco_push.js ---
+// ---------- Foco: aviso por push agendado no servidor (Bia, 25/11) ----------
+// Com a tela bloqueada o navegador para os timers e o alarme do app não toca. Ao começar ou retomar uma sessão com tempo,
+// o app agenda na API um push para o fim (POST /v1/push/schedule, tag "foco"); ao pausar, encerrar ou concluir antes,
+// cancela (DELETE /v1/push/schedule/foco). Funciona pelo estado da sessão, não por botão: confere logo depois de cada
+// toque, a cada 2 s e ao esconder o app. Só agenda com o alarme ligado, login e notificação permitida.
+const FP_K = 'lv.focoPush';
+const FP = (() => { try { return JSON.parse(localStorage.getItem(FP_K) || 'null') || { at: 0 }; } catch { return { at: 0 }; } })();
+const fpSave = () => { try { localStorage.setItem(FP_K, JSON.stringify({ at: FP.at })); } catch {} };
+let FP_BUSY = false, FP_FAIL = 0, FP_SUBBED = false;
+const fpCan = () => { try { return connected() && 'Notification' in window && Notification.permission === 'granted' && 'serviceWorker' in navigator && 'PushManager' in window; } catch { return false; } };
+function fpWant() { // fim da sessão que precisa de aviso (ms) ou 0
+  try { if (!FA_ON()) return 0; const s = v4Ses(); if (!s || !s.dur || s.pz || s.faDone === s.start) return 0; const end = faEnd(s), left = end - Date.now();
+    return left > 5000 && left <= 3 * 3600e3 ? end : 0; } catch { return 0; }
+}
+async function fpSync() {
+  if (FP_BUSY || Date.now() < FP_FAIL) return; const want = fpWant();
+  if (Math.abs(want - FP.at) < 1500) return; // mesmo fim (arredonda o relógio)
+  FP_BUSY = true;
+  try {
+    if (want) {
+      if (!fpCan()) return;
+      if (!FP_SUBBED) { try { await pushSubscribe(); FP_SUBBED = true; } catch { FP_FAIL = Date.now() + 60000; return; } } // garante o aparelho inscrito
+      const r = await sapi('POST', '/v1/push/schedule', { at: new Date(want).toISOString(), title: 'Tempo cumprido', body: 'Sua sessão de leitura terminou. Continue se quiser.', url: './', tag: 'foco' });
+      if (r && r.status === 200) { FP.at = want; fpSave(); } else FP_FAIL = Date.now() + 30000;
+    } else if (FP.at) {
+      const ended = FP.at <= Date.now() + 1000; // terminou no tempo: o servidor já mandou; nada a cancelar
+      if (!ended) { if (!connected()) return; const r = await sapi('DELETE', '/v1/push/schedule/foco'); if (!r || r.status !== 200) { FP_FAIL = Date.now() + 30000; return; } }
+      FP.at = 0; fpSave();
+    }
+  } catch { FP_FAIL = Date.now() + 30000; } finally { FP_BUSY = false; }
+}
+setInterval(() => { fpSync(); }, 2000);
+window.addEventListener('click', () => setTimeout(() => fpSync(), 60), true); // depois do clique de Começar, pausar, retomar, encerrar
+document.addEventListener('visibilitychange', () => fpSync());
+window.addEventListener('pagehide', () => fpSync());
 // --- zzy_v2_luzinhas_passos.js ---
 // ---------- Decorar › Luzinhas em dois passos (Bia, 23/11: "pode ajustar") ----------
 // Passo 1: os cordões (cada um pelo modelo, com cor e lugar embaixo), "+ Cordão" e "Apagar todas"; sem cordão nenhum,

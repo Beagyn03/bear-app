@@ -22,7 +22,7 @@ function faCheck(fromBack) { try { const s = v4Ses(); if (!s || !s.dur || s.pz) 
     s.faDone = s.start; try { v2SesPut(s); } catch {} const late = Date.now() - end; const onScreen = V4 && V4.isConnected && document.visibilityState === 'visible';
     if (!onScreen) { faNotify(); s.faDone = 0; try { v2SesPut(s); } catch {} return; } // avisa de novo ao voltar
     void fromBack; faRing(late < 60000); } catch (e) { console.warn('alarme', e); } }
-function faNotify() { try { if (!FA_ON() || !('Notification' in window) || Notification.permission !== 'granted') return; navigator.serviceWorker && navigator.serviceWorker.ready.then((r) => r.showNotification('Tempo cumprido', { body: 'Sua sessão de leitura terminou. Continue se quiser.', tag: 'lv-foco', renotify: true, vibrate: [220, 120, 220] })).catch(() => {}); } catch {} }
+function faNotify() { try { if (!FA_ON() || !('Notification' in window) || Notification.permission !== 'granted') return; navigator.serviceWorker && navigator.serviceWorker.ready.then((r) => r.showNotification('Tempo cumprido', { body: 'Sua sessão de leitura terminou. Continue se quiser.', tag: 'bear-foco', renotify: true, vibrate: [220, 120, 220] })).catch(() => {}); } catch {} }
 setInterval(() => faCheck(false), 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(() => faCheck(true), 150); });
 // destrava o áudio no toque de Começar (o navegador só deixa tocar depois de um gesto)
