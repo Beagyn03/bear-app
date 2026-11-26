@@ -27029,7 +27029,7 @@ function shDraw(box) {
   const t0 = performance.now(), seg = R.querySelector(':scope > .seg'), segH = seg ? seg.outerHTML : '', f = shF(), list = shList(f), md = SHX_MODE, n = list.length;
   const top = `<div class="shtop">${md ? '' : `<button type="button" class="shsel" data-a="shxsheet" data-s="shxfilt" aria-label="Mostrar: ${esc(shFName())}"><b>${esc(f === 'todos' ? 'Todos' : shFName())}</b><i>▾</i><small>${n} livro${n === 1 ? '' : 's'}</small></button>
       <div class="vtog" role="group" aria-label="Ver como"><button type="button" data-a="shxview" data-v="grade" aria-pressed="false">${v4ic('grid', 16)}Grade</button><button type="button" class="on" data-a="shxview" data-v="prat" aria-pressed="true">${v4ic('prat', 16)}Prateleira</button></div>
-      <button type="button" class="shic" data-a="shmode" data-v="org" aria-label="Organizar" title="Organizar">${v4ic('sort', 19)}</button>
+      <button type="button" class="shic" data-a="shmode" data-v="org" aria-label="Editar a estante" title="Editar">${v4ic('sort', 19)}<span class="shedl">Editar</span></button>
       <button type="button" class="shic" data-a="shmode" data-v="deco" aria-label="Decorar" title="Decorar">${v4ic('lua', 19)}</button>
       <button type="button" class="shic" data-a="sheet" data-s="v5add" aria-label="Adicionar livro" title="Adicionar">${v4ic('plus', 19)}</button>
       <button type="button" class="shic q" data-a="shxsheet" data-s="shxleg" aria-label="Como ler a estante" title="Legenda">?</button>`}</div>`;
@@ -33646,12 +33646,17 @@ function shProfFreeHTML(list, w) {
 { let tm = 0;
   const mount = () => {
     const H = TR.host || document.body; if (H.classList && H.classList.contains('v2off-orbita')) { TR.querySelectorAll('.h3cal').forEach((c) => c.remove()); return; }
-    const day = TR.querySelector('.v3day'); if (!day || !day.offsetParent) return;
+    // fica DEPOIS do bloco do livro (.v3x-a), que o Hoje reescreve quando chegam dados: dentro dele o calendário era
+    // apagado e recolocado a cada redesenho e a tela tremia (portão de QA 26/11)
+    // só com o Hoje na frente: com o perfil (ou outra tela) por cima, o Hoje escondido redesenhava e o calendário entrava e
+    // saía sem parar, fazendo o perfil redesenhar 7 vezes por segundo (portão de QA 26/11)
+    if (S.tab !== 'inicio') return; const sl = $('#shelflist'); if (sl && !sl.hidden) return;
+    const day = TR.querySelector('.v3day'), blk = day && (day.closest('.v3x') || day); if (!day || !blk.offsetParent) return;
     S.h3calYM = S.h3calYM || todayISO().slice(0, 7);
     let html = ''; try { html = orbCalHTML(S.h3calYM); } catch { html = ''; }
-    let c = day.nextElementSibling && day.nextElementSibling.classList.contains('h3cal') ? day.nextElementSibling : null;
+    let c = blk.nextElementSibling && blk.nextElementSibling.classList.contains('h3cal') ? blk.nextElementSibling : null;
     if (!html) { if (c) c.remove(); return; }
-    if (!c) { TR.querySelectorAll('.h3cal').forEach((x) => x.remove()); c = document.createElement('section'); c.className = 'h3cal'; c.setAttribute('aria-label', 'Calendário de leitura'); day.after(c); }
+    if (!c) { TR.querySelectorAll('.h3cal').forEach((x) => x.remove()); c = document.createElement('section'); c.className = 'h3cal'; c.setAttribute('aria-label', 'Calendário de leitura'); blk.after(c); }
     if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; try { paintCv(c); } catch {}
       orbCalWire(c, () => S.h3calYM, (ym) => { S.h3calYM = ym; c.dataset.h = ''; mount(); }); }
   };
@@ -33715,7 +33720,7 @@ function v3EuData() {
 .v5est .shtop.fln .shic[data-a=shmode][data-v=org]{display:inline-flex!important;align-items:center;gap:6px;width:auto;min-width:0;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink);font:inherit;font-weight:800;font-size:.9rem;order:1}
 .v5est .shtop.fln .shic[data-a=shmode][data-v=org] > svg{display:none}
 .v5est .shtop.fln .shic[data-a=shmode][data-v=org]::before{content:'';width:16px;height:16px;background:currentColor;-webkit-mask:${PEN} center/contain no-repeat;mask:${PEN} center/contain no-repeat}
-.v5est .shtop.fln .shic[data-a=shmode][data-v=org]::after{content:'Editar'}
+.v5est .shic .shedl{display:none}.v5est .shtop.fln .shic[data-a=shmode][data-v=org] .shedl{display:inline}
 .v5est .shtop.fln .shsel{order:0}.v5est .shtop.fln .vtog{order:2;margin-left:auto}
 @media (max-width:440px){.v5est .shtop.fln .vtog button{font-size:0;gap:0;padding:0 10px}.v5est .shtop.fln .vtog button svg{margin:0}}`;
   const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-edtopo]')) { const st = document.createElement('style'); st.dataset.edtopo = 1; st.textContent = CSS; sr.append(st); } } catch {} };
@@ -33777,7 +33782,7 @@ function v3EuData() {
 // Links de texto pequenos (menos de 40 px de altura) ficavam difíceis de acertar no celular. O padding vertical aumenta a
 // área do toque e a margem negativa do mesmo tamanho devolve o espaço: nada muda de lugar na tela.
 { const st = document.createElement('style'); st.textContent = `
-.v3lag button,[data-v3=amz],.v3sh [data-h3=qual],.v3dots .nx{padding-top:10px!important;padding-bottom:10px!important;margin-top:-10px!important;margin-bottom:-10px!important}
+[data-v3=amz],.v3sh [data-h3=qual],.v3dots .nx{padding-top:10px!important;padding-bottom:10px!important;margin-top:-10px!important;margin-bottom:-10px!important}
 `; TR.append(st); }
 // --- zzzzi_v2_orelha.js ---
 // ---------- v2: botão Ler vira "orelha de página" (Bia, 26/11: "amei a orelha de página") ----------

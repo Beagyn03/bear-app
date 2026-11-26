@@ -6,12 +6,17 @@
 { let tm = 0;
   const mount = () => {
     const H = TR.host || document.body; if (H.classList && H.classList.contains('v2off-orbita')) { TR.querySelectorAll('.h3cal').forEach((c) => c.remove()); return; }
-    const day = TR.querySelector('.v3day'); if (!day || !day.offsetParent) return;
+    // fica DEPOIS do bloco do livro (.v3x-a), que o Hoje reescreve quando chegam dados: dentro dele o calendário era
+    // apagado e recolocado a cada redesenho e a tela tremia (portão de QA 26/11)
+    // só com o Hoje na frente: com o perfil (ou outra tela) por cima, o Hoje escondido redesenhava e o calendário entrava e
+    // saía sem parar, fazendo o perfil redesenhar 7 vezes por segundo (portão de QA 26/11)
+    if (S.tab !== 'inicio') return; const sl = $('#shelflist'); if (sl && !sl.hidden) return;
+    const day = TR.querySelector('.v3day'), blk = day && (day.closest('.v3x') || day); if (!day || !blk.offsetParent) return;
     S.h3calYM = S.h3calYM || todayISO().slice(0, 7);
     let html = ''; try { html = orbCalHTML(S.h3calYM); } catch { html = ''; }
-    let c = day.nextElementSibling && day.nextElementSibling.classList.contains('h3cal') ? day.nextElementSibling : null;
+    let c = blk.nextElementSibling && blk.nextElementSibling.classList.contains('h3cal') ? blk.nextElementSibling : null;
     if (!html) { if (c) c.remove(); return; }
-    if (!c) { TR.querySelectorAll('.h3cal').forEach((x) => x.remove()); c = document.createElement('section'); c.className = 'h3cal'; c.setAttribute('aria-label', 'Calendário de leitura'); day.after(c); }
+    if (!c) { TR.querySelectorAll('.h3cal').forEach((x) => x.remove()); c = document.createElement('section'); c.className = 'h3cal'; c.setAttribute('aria-label', 'Calendário de leitura'); blk.after(c); }
     if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; try { paintCv(c); } catch {}
       orbCalWire(c, () => S.h3calYM, (ym) => { S.h3calYM = ym; c.dataset.h = ''; mount(); }); }
   };

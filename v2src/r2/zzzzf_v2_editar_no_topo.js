@@ -9,7 +9,7 @@
 .v5est .shtop.fln .shic[data-a=shmode][data-v=org]{display:inline-flex!important;align-items:center;gap:6px;width:auto;min-width:0;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink);font:inherit;font-weight:800;font-size:.9rem;order:1}
 .v5est .shtop.fln .shic[data-a=shmode][data-v=org] > svg{display:none}
 .v5est .shtop.fln .shic[data-a=shmode][data-v=org]::before{content:'';width:16px;height:16px;background:currentColor;-webkit-mask:${PEN} center/contain no-repeat;mask:${PEN} center/contain no-repeat}
-.v5est .shtop.fln .shic[data-a=shmode][data-v=org]::after{content:'Editar'}
+.v5est .shic .shedl{display:none}.v5est .shtop.fln .shic[data-a=shmode][data-v=org] .shedl{display:inline}
 .v5est .shtop.fln .shsel{order:0}.v5est .shtop.fln .vtog{order:2;margin-left:auto}
 @media (max-width:440px){.v5est .shtop.fln .vtog button{font-size:0;gap:0;padding:0 10px}.v5est .shtop.fln .vtog button svg{margin:0}}`;
   const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-edtopo]')) { const st = document.createElement('style'); st.dataset.edtopo = 1; st.textContent = CSS; sr.append(st); } } catch {} };
