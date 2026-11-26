@@ -170,7 +170,7 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   let sty = G.hc ? (hh % 3 === 0 ? 'cl' : 'hc') : (hh % 5 === 0 ? 'dt' : 'pb');
   if (ov.t === 'hc' && sty === 'cl') sty = 'hc'; if (ov.t === 'ep') sty = 'ep'; if (ov.t === 'pb' && sty === 'dt') sty = 'pb';
   // lombada: foto da pessoa > tirada da capa (faixa da borda esquerda + cor amostrada) > desenhada
-  const photo = (C0.sp && C0.sp[b.id]) || null, spM = (C0.spb && C0.spb[b.id]) || C0.spMode, cvUrl = !photo && spM !== 'desenho' && b.img ? cssUrl(b.img) : '';
+  const photo = shSafeUrl(C0.sp && C0.sp[b.id]) || null, spM = (C0.spb && C0.spb[b.id]) || C0.spMode, cvUrl = !photo && spM !== 'desenho' && b.img ? cssUrl(b.img) : '';
   // lombada da capa: cor sólida + faixa da arte; sem etiqueta escura nem tarja (nada de caixa por trás do título)
   if (cvUrl && (sty === 'cl' || sty === 'dt')) sty = G.hc ? 'hc' : 'pb';
   let fi = sty === 'cl' ? 4 : sty === 'ep' ? 0 : (hh >>> 9) % 4; if (String(b.t).length > 13 && fi === 2) fi = hh % 2 ? 3 : 0;
@@ -195,7 +195,7 @@ function spnHTML(b, sm) { const G = spnGeo(b, sm), hh = G.h0, [c, k, c2] = spnCo
   if (sty === 'hc') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px;opacity:.3"></span><span class="fb" style="bottom:${hasAu ? botR - 3 : Math.round(h * 0.27)}px"></span><span class="fb" style="bottom:2px"></span>`;
   if (sty === 'ep') deco += `<span class="fb" style="top:5px"></span><span class="fb" style="top:8px"></span><span class="orn" style="top:${Math.max(12, topR - 9)}px"></span><span class="orn" style="bottom:${Math.max(9, botR - 4)}px"></span><span class="fb" style="bottom:3px"></span><span class="fb" style="bottom:1px"></span>`;
   if (sty === 'cl') deco += `<span class="lb" style="top:${topR - 3}px;height:${L + 6}px"></span><span class="fb" style="top:4px;opacity:.6"></span><span class="fb" style="bottom:4px;opacity:.6"></span>`;
-  const edge = ov.t === 'bp' ? `<span class="eg" style="--eg:${ov.e || '#b3283f'}"></span>` : sty === 'ep' ? '<span class="eg" style="--eg:linear-gradient(90deg,#8a6a22,#f4dd8e 45%,#8a6a22)"></span>' : '';
+  const edge = ov.t === 'bp' ? `<span class="eg" style="--eg:${shSafeTok(ov.e) || '#b3283f'}"></span>` : sty === 'ep' ? '<span class="eg" style="--eg:linear-gradient(90deg,#8a6a22,#f4dd8e 45%,#8a6a22)"></span>' : '';
   if (cvUrl && SH_SPN_TEX === 'fatia') deco += `<span class="cs" style="background-image:${cvUrl}"></span>`;
   const mk = b.st === 'lendo' ? '<span class="rb" aria-hidden="true"></span>' : b.st === 'lido' ? `<span class="sr" aria-hidden="true" style="bottom:${sm ? 2 : 4}px">✦</span>` : '';
   const lab = `${t}${b.a ? ', ' + b.a : ''}${b.st === 'lendo' ? ', lendo' : b.st === 'lido' ? ', lido' : b.st === 'quero' ? ', quero ler' : b.st === 'pausado' ? ', pausado' : b.st === 'abandonado' ? ', abandonado' : ''}`;
@@ -293,7 +293,7 @@ function pratHTML(list0, sm, wBsh) {
   const pileHTML = (bs, top) => { const PH = shPileHts(bs, top ? 112 : 150); return `<span class="pile">${top ? `<span class="dec" style="margin:0 0 0 18px">${SH_DEC[top](0.9)}</span>` : ''}${bs.map((x, j) => { const G = spnGeo(x, false), [c, k] = spnColors(x), ov = shEdOf(x), wv = Math.round(G.h * 0.86 * sc) - j * 3, ht = PH[j];
     const fe = ov.t === 'bp' || ov.t === 'ep', act = md ? '' : shAct(x, true), PBI = fe ? null : shPbInner(x, wv, ht);
     // bordas pintadas (ou douradas): o livro deitado mostra o corte das páginas, não a lombada
-    return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}${PBI ? ' pbm' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}${fe ? ', bordas ' + (ov.t === 'ep' ? 'douradas' : 'pintadas') : ''}"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (ov.e || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : (PBI || `<span>${esc(x.t)}</span>`)}</span>`; }).join('')}</span>`; };
+    return `<span class="pb${(G.h0 >>> 4) % 2 ? ' sf' : ''}${fe ? ' fe' : ''}${PBI ? ' pbm' : ''}" role="button" tabindex="0" data-bid="${esc(x.id)}" aria-label="${esc(x.t)}${fe ? ', bordas ' + (ov.t === 'ep' ? 'douradas' : 'pintadas') : ''}"${act} style="width:${wv}px;height:${ht}px;--c:${c};--k:${k}${fe ? `;--eg:${ov.t === 'ep' ? '#d9b45a' : (shSafeTok(ov.e) || '#b3283f')}` : ''};margin-left:${(G.h0 % 9) - 2}px">${fe ? '' : (PBI || `<span>${esc(x.t)}</span>`)}</span>`; }).join('')}</span>`; };
   const decHTML = (d) => { const edit = md === 'deco' && d.i != null, lb = !edit && !md && !sm && d.k === 'leitor' && typeof shLeitorBook === 'function' ? shLeitorBook(d) : null; return `<span class="dec${edit ? ' u' : ''}${lb ? ' lk' : ''}"${edit ? ` data-dk="${d.i}" role="button" tabindex="0" aria-label="${esc(SH_DN[d.k] || d.k)}: trocar, tirar ou arrastar"` : lb ? `${shAct(lb, false)} role="button" tabindex="0" aria-label="Leitor digital: ${esc(lb.t)}"` : ''}>${SH_DEC[d.k](sc, d)}</span>`; };
   const itemHTML = (it) => it.k === 'sp' ? spnHTML(it.b, sm) : it.k === 'pile' ? pileHTML(it.bs, it.top) : `<button type="button" class="face" data-bid="${esc(it.b.id)}"${md ? '' : shAct(it.b, true)} aria-label="${esc(it.b.t)}, de frente">${v4cv({ title: it.b.t, cover: it.b.img })}</button>`;
   // toque para pegar (Organizar): marcadores grandes onde o livro pode entrar; por cima das pilhas, deitar nela
@@ -317,7 +317,7 @@ function pratHTML(list0, sm, wBsh) {
     const pq = mkq + (C0.plq || []).map((q, i) => ({ ...q, i })).filter((q) => q.r === k && q.t).map((q) => `<span class="plq s-${esc(q.s || 'mad')}${md === 'deco' ? ' u' : ''}" style="left:${Math.max(4, Math.min(96, (q.p == null ? 0.5 : q.p) * 100)).toFixed(1)}%"${md === 'deco' ? ` data-pq="${q.i}" role="button" tabindex="0"` : ''}>${esc(String(q.t).slice(0, 24))}</span>`).join('');
     return `<div class="bay" data-r="${k}">${typeof shLtRow === 'function' ? shLtRow(k, sm, 'b') : ''}<div class="brow">${items}</div></div><div class="bpl"${pq ? '' : ' aria-hidden="true"'} data-r="${k}">${wire}${pq}</div>`; };
   const hint = sm || md ? '' : `<div class="hint"><span><i class="k1"></i>lendo</span><span><i class="k2">✦</i>lido</span><span class="r">${man ? 'Minha ordem · ' : ''}toque abre · segure para opções</span></div>`;
-  const cls = `bsh${sm ? ' sm' : ''}${md ? ' ' + md : ''}${shDark() ? ' dk' : ''} w-${C0.wall || 'linho'} lt-${ltOff ? 'off' : (C0.lt && C0.lt.c) || 'quente'}`;
+  const cls = `bsh${sm ? ' sm' : ''}${md ? ' ' + md : ''}${shDark() ? ' dk' : ''} w-${shSafeTok(C0.wall) || 'linho'} lt-${ltOff ? 'off' : shSafeTok(C0.lt && C0.lt.c) || 'quente'}`;
   return `<div class="${cls}" style="${shWoodVars(C0.wood)}">${hint}<div class="case">${typeof shLtFrame === 'function' ? shLtFrame(sm) : ''}<div class="crown"></div>${rows.map(rowHTML).join('')}</div></div>`; }
 // ajusta o título na lombada depois de desenhar: diminui a letra até caber (e corta com reticências só no limite).
 // O resultado fica guardado por livro/tamanho: redesenhar a estante não mede de novo (estante grande abre rápido).

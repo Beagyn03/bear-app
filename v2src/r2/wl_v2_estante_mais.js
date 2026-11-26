@@ -457,7 +457,7 @@ function shYearShelf(sec, row, list, y, own) {
     ids.push(id); const m = Number(String(x.d).slice(5, 7)); if (m && m !== lastM) { mk[id] = SHX_YM[m - 1]; lastM = m; } });
   const box = document.createElement('div'); box.className = 'yv-est yv-est2'; row.after(box);
   if (!ids.length) { box.innerHTML = '<p class="mut" style="margin:10px 2px">Nenhum livro lido neste ano ainda.</p>'; return; }
-  const fp = !own && S.fpData && S.fpData.shelf && S.fpData.shelf.prat && S.fpData.shelf.prat.C, base = own ? shc() : (fp || {});
+  const fp = !own && S.fpData && S.fpData.shelf && S.fpData.shelf.prat && S.fpData.shelf.prat.C, base = own ? shc() : shSafeC(fp || {});
   const C = shDefaults({ ed: {}, sp: {}, wood: base.wood, wall: base.wall, lt: base.lt, lights: base.lights, spMode: base.spMode, ord: null, lay: {}, pos: {}, manual: 1, deco: [], plq: [], mk, mkS: 'latao', minR: 1 });
   if (own) { ids.forEach((id) => { const r = eid[id]; if (r && base.ed && base.ed[r]) C.ed[id] = base.ed[r]; if (r && base.sp && base.sp[r]) C.sp[id] = base.sp[r]; }); }
   const dk = (base.deco || []).map((d) => d.k).find((k) => SH_DEC[k] && k !== 'leitor' && k !== 'planta'); if (dk) C.deco = [{ k: dk, r: 0, p: 99 }];
