@@ -2,7 +2,10 @@
 // "No Sobre não faz sentido mostrar o calendário. Coloca no início." O calendário do mês da Órbita (capa do que leu em cada
 // dia, setas para os meses) sai da aba Sobre do perfil e fica no Hoje, logo abaixo dos cartões Órbita e Meta.
 // Some junto com a Órbita quando ela está desligada em Funções do app.
-{ const st = document.createElement('style'); st.textContent = `.h3cal{margin:.9rem 0 .4rem}.h3cal .orb-cal{margin:0}`; TR.append(st); }
+{ const st = document.createElement('style'); st.textContent = `.h3cal{margin:.9rem 0 .4rem}.h3cal .orb-cal{margin:0}
+/* o Hoje esconde (left:-9999px) o que não está na lista dele e ordena os blocos por order: o calendário entra logo depois
+   do bloco do livro (.v3x-a tem order 1) e fica visível (Bia 26/11: tinha sumido) */
+#lista .v3-colA.v3h > #h3cal:not(#x1):not(#x2){position:static!important;left:auto!important;width:auto!important;align-self:stretch!important;visibility:visible!important;pointer-events:auto!important;order:1}`; TR.append(st); }
 { let tm = 0;
   const mount = () => {
     const H = TR.host || document.body; if (H.classList && H.classList.contains('v2off-orbita')) { TR.querySelectorAll('.h3cal').forEach((c) => c.remove()); return; }
@@ -16,7 +19,7 @@
     let html = ''; try { html = orbCalHTML(S.h3calYM); } catch { html = ''; }
     let c = blk.nextElementSibling && blk.nextElementSibling.classList.contains('h3cal') ? blk.nextElementSibling : null;
     if (!html) { if (c) c.remove(); return; }
-    if (!c) { TR.querySelectorAll('.h3cal').forEach((x) => x.remove()); c = document.createElement('section'); c.className = 'h3cal'; c.setAttribute('aria-label', 'Calendário de leitura'); blk.after(c); }
+    if (!c) { TR.querySelectorAll('.h3cal').forEach((x) => x.remove()); c = document.createElement('section'); c.className = 'h3cal'; c.id = 'h3cal'; c.setAttribute('aria-label', 'Calendário de leitura'); blk.after(c); }
     if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; try { paintCv(c); } catch {}
       orbCalWire(c, () => S.h3calYM, (ym) => { S.h3calYM = ym; c.dataset.h = ''; mount(); }); }
   };

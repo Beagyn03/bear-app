@@ -15678,18 +15678,23 @@ function orbCalHTML(ym) { const t = todayISO();
     const mName = first.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
     // meta do prazo batida por dia (mesma conta do histórico do diário)
     const ok = new Set(); lib().forEach((e) => { if (!e.dueAt || !e.dueSince) return; try { tlEvents(e).forEach((x) => { if (x.ok) ok.add(x.d); }); } catch {} });
+    // (Bia 26/11) dia em que terminou cada livro, inclusive os do CSV (que não têm os dias de leitura): capa + selo "terminei";
+    // não conta como dia lido nem para a Órbita
+    const fin = new Map(); lib().forEach((e) => { if (e.status !== 'LIDO' || !e.finishedAt || e.noDate) return; const d = String(e.finishedAt).slice(0, 10); if (!fin.has(d)) fin.set(d, e); });
+    let nFin = 0;
     let cells = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map((d) => '<span class="h">' + d + '</span>').join('') + '<span class="d empty"></span>'.repeat(lead);
     let nRead = 0, pages = 0, nStar = 0;
     for (let d = 1; d <= nDays; d++) {
       const iso = Y + '-' + String(M).padStart(2, '0') + '-' + String(d).padStart(2, '0'), x = s.days.get(iso);
       let cv = ''; if (x) { nRead++; pages += x.pages; const top = [...x.books.entries()].sort((a, b) => b[1] - a[1])[0]; const e = top && byId(top[0]); if (e) cv = cvh(e.title, e.cover, ''); }
+      const fe = fin.get(iso); if (fe) { nFin++; if (!cv) cv = cvh(fe.title, fe.cover, ''); }
       if (ok.has(iso)) nStar++;
-      cells += '<span class="d' + (x ? ' rd' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + '"' + (iso === t ? ' aria-current="date"' : '') + '><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u aria-label="meta do prazo batida">★</u>' : '') + '</span>';
+      cells += '<span class="d' + (x ? ' rd' : '') + (fe && !x ? ' fn' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + (fe ? (x ? ' · ' : '') + 'terminou ' + esc(fe.title) : '') + '"' + (iso === t ? ' aria-current="date"' : '') + '><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u aria-label="meta do prazo batida">★</u>' : '') + (fe ? '<em class="orb-fin" aria-label="terminou ' + esc(fe.title) + '">✓</em>' : '') + '</span>';
     }
-    const minYM = ([...s.days.keys()].sort()[0] || t).slice(0, 7);
+    const minYM = ([...s.days.keys(), ...fin.keys()].sort()[0] || t).slice(0, 7);
     return '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (ym <= minYM ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (ym >= t.slice(0, 7) ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>'
-      + '<p class="orb-sum">' + (nRead ? nRead + (nRead === 1 ? ' dia lido' : ' dias lidos') + ' · ' + pages.toLocaleString('pt-BR') + ' páginas' : 'Nenhuma leitura registrada neste mês') + '</p><div class="orb-g">' + cells + '</div>'
-      + '<div class="orb-leg">' + (ym === t.slice(0, 7) ? '<span class="lk"><i class="lk-hj"></i>hoje</span>' : '') + (nStar ? '<span class="lk"><i class="lk-st">★</i>meta do prazo batida</span>' : '') + '</div></div>';
+      + '<p class="orb-sum">' + ((nRead ? nRead + (nRead === 1 ? ' dia lido' : ' dias lidos') + ' · ' + pages.toLocaleString('pt-BR') + ' páginas' : (nFin ? '' : 'Nenhuma leitura registrada neste mês')) + (nFin ? (nRead ? ' · ' : '') + nFin + (nFin === 1 ? ' livro terminado' : ' livros terminados') : '')) + '</p><div class="orb-g">' + cells + '</div>'
+      + '<div class="orb-leg">' + (ym === t.slice(0, 7) ? '<span class="lk"><i class="lk-hj"></i>hoje</span>' : '') + (nStar ? '<span class="lk"><i class="lk-st">★</i>meta do prazo batida</span>' : '') + (nFin ? '<span class="lk"><i class="lk-fin">✓</i>terminou o livro</span>' : '') + '</div></div>';
 }
 // setas de mês: quem monta passa o estado e o redesenho
 function orbCalWire(root, get, set) { root.querySelectorAll('.orb-mn [data-m]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); const [y, m] = get().split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.m), 1); set(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')); })); }
@@ -15714,6 +15719,8 @@ function openOrbita(ym) {
 }
 // Topo sem o círculo de fundo nos ícones (Bia, 17/11): planeta, mensagens e notificações só com o desenho.
 { const st = document.createElement('style'); st.textContent = '.gtop .g-b,.gtop .g-orb{background:none!important;border:0!important;box-shadow:none!important}.gtop .g-b svg{width:28px!important;height:28px!important}.gtop .g-orb{padding:0 .3rem!important;gap:.15rem}.gtop .g-orb img{width:30px;height:30px}'; TR.append(st); }
+
+{ const st = document.createElement('style'); st.textContent = `.orb-g .d{position:relative}.orb-g .d .orb-fin{position:absolute;right:3px;bottom:3px;z-index:2;width:18px;height:18px;display:grid;place-items:center;font-style:normal;font-size:.7rem;font-weight:900;border-radius:50%;background:#f3c56b;color:#1b1426;box-shadow:0 1px 3px rgba(0,0,0,.5)}.orb-g .d.fn .cv,.orb-g .d.fn img{opacity:.8}.orb-leg .lk-fin{font-style:normal;font-weight:900;color:#f3c56b}`; TR.append(st); }
 // --- 98_popup_instalar.js ---
 // Popup para instalar o app (Bia, 17/11): quem abre o link no navegador (sem o app instalado) vê, depois de alguns segundos,
 // um cartão no rodapé com "Instalar". Usa o installApp() que já existia (pedido nativo no Android; passo a passo no iPhone).
@@ -33649,7 +33656,10 @@ function shProfFreeHTML(list, w) {
 // "No Sobre não faz sentido mostrar o calendário. Coloca no início." O calendário do mês da Órbita (capa do que leu em cada
 // dia, setas para os meses) sai da aba Sobre do perfil e fica no Hoje, logo abaixo dos cartões Órbita e Meta.
 // Some junto com a Órbita quando ela está desligada em Funções do app.
-{ const st = document.createElement('style'); st.textContent = `.h3cal{margin:.9rem 0 .4rem}.h3cal .orb-cal{margin:0}`; TR.append(st); }
+{ const st = document.createElement('style'); st.textContent = `.h3cal{margin:.9rem 0 .4rem}.h3cal .orb-cal{margin:0}
+/* o Hoje esconde (left:-9999px) o que não está na lista dele e ordena os blocos por order: o calendário entra logo depois
+   do bloco do livro (.v3x-a tem order 1) e fica visível (Bia 26/11: tinha sumido) */
+#lista .v3-colA.v3h > #h3cal:not(#x1):not(#x2){position:static!important;left:auto!important;width:auto!important;align-self:stretch!important;visibility:visible!important;pointer-events:auto!important;order:1}`; TR.append(st); }
 { let tm = 0;
   const mount = () => {
     const H = TR.host || document.body; if (H.classList && H.classList.contains('v2off-orbita')) { TR.querySelectorAll('.h3cal').forEach((c) => c.remove()); return; }
@@ -33663,7 +33673,7 @@ function shProfFreeHTML(list, w) {
     let html = ''; try { html = orbCalHTML(S.h3calYM); } catch { html = ''; }
     let c = blk.nextElementSibling && blk.nextElementSibling.classList.contains('h3cal') ? blk.nextElementSibling : null;
     if (!html) { if (c) c.remove(); return; }
-    if (!c) { TR.querySelectorAll('.h3cal').forEach((x) => x.remove()); c = document.createElement('section'); c.className = 'h3cal'; c.setAttribute('aria-label', 'Calendário de leitura'); blk.after(c); }
+    if (!c) { TR.querySelectorAll('.h3cal').forEach((x) => x.remove()); c = document.createElement('section'); c.className = 'h3cal'; c.id = 'h3cal'; c.setAttribute('aria-label', 'Calendário de leitura'); blk.after(c); }
     if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; try { paintCv(c); } catch {}
       orbCalWire(c, () => S.h3calYM, (ym) => { S.h3calYM = ym; c.dataset.h = ''; mount(); }); }
   };
@@ -33706,6 +33716,25 @@ function v3EuData() {
   const pg = lidos.map((e) => Number(e.totalPages) || 0).filter((n) => n > 0); if (pg.length >= 3) out.push(['Tamanho médio', Math.round(pg.reduce((s, n) => s + n, 0) / pg.length) + ' páginas', pg.length + ' livros com páginas']);
   const dd = lidos.map((e) => { const s = Date.parse(String(e.startedAt || '').slice(0, 10)), f = Date.parse(String(e.finishedAt || '').slice(0, 10)); return s && f && f >= s ? Math.round((f - s) / 864e5) + 1 : 0; }).filter((n) => n > 0 && n < 400).sort((p, q) => p - q);
   if (dd.length >= 3) { const m = dd[dd.length >> 1]; out.push(['Para terminar', m + (m === 1 ? ' dia' : ' dias'), 'na média de ' + dd.length + ' livros']); }
+  // (Bia 26/11: "faltou editora preferida e mais coisas sobre mim")
+  // editora favorita
+  const P = new Map(); lidos.forEach((e) => { const pb = String(e.publisher || (e.meta && e.meta.pub) || '').replace(/s*(editora|ltda.?|s.?a.?)s*/gi, ' ').trim(); if (!pb) return; const k = pb.toLowerCase(); const x = P.get(k) || { n: 0, s: 0, nome: pb }; x.n++; x.s += paws(e); P.set(k, x); });
+  const pbt = [...P.values()].sort((a, b) => b.n - a.n || b.s - a.s)[0]; if (pbt && pbt.n >= 2) out.splice(2, 0, ['Editora favorita', pbt.nome, pbt.n + ' livros lidos']);
+  // nota média
+  const notas = lidos.map(paws).filter((n) => n > 0); if (notas.length >= 3) out.push(['Nota média', (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(1).replace('.', ','), 'em ' + notas.length + ' avaliações']);
+  // sentimento que mais aparece (diário e trechos)
+  const FE = new Map(); L.forEach((e) => { (e.diary || []).forEach((x) => (x && x.fe || []).forEach((k) => FE.set(k, (FE.get(k) || 0) + 1))); (e.quotes || []).forEach((q) => (q && q.f || []).forEach((k) => FE.set(k, (FE.get(k) || 0) + 1))); });
+  const fe = [...FE.entries()].sort((a, b) => b[1] - a[1])[0]; if (fe && fe[1] >= 2) { let nome = fe[0]; try { const f = QT_FEELS.find((y) => y[0] === fe[0]); if (f) nome = f[1]; } catch {} out.push(['Sente mais', nome, fe[1] + ' vezes nas anotações']); }
+  // mês em que mais termina livros
+  const MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'], M = new Array(12).fill(0);
+  lidos.forEach((e) => { const m = Number(String(e.finishedAt || '').slice(5, 7)); if (m >= 1 && m <= 12 && !e.noDate) M[m - 1]++; });
+  const mx = Math.max(...M); if (mx >= 2) { const i = M.indexOf(mx); out.push(['Mês que mais lê', MES[i], mx + ' livros terminados']); }
+  // mais rápido
+  const rap = lidos.map((e) => { const a = Date.parse(String(e.startedAt || '').slice(0, 10)), f = Date.parse(String(e.finishedAt || '').slice(0, 10)); return { e, d: a && f && f >= a ? Math.round((f - a) / 864e5) + 1 : 0 }; }).filter((x) => x.d > 0 && (Number(x.e.totalPages) || 0) >= 150).sort((a, b) => a.d - b.d)[0];
+  if (rap) out.push(['Mais rápido', rap.e.title, rap.d === 1 ? 'em 1 dia' : 'em ' + rap.d + ' dias']);
+  // ressaca e releituras
+  const res = lidos.filter((e) => { try { return (reviewOfLib(e) || {}).ressaca === 'deu'; } catch { return false; } }); if (res.length) out.push(['Deram ressaca', res.length === 1 ? res[0].title : res.length + ' livros', res.length === 1 ? 'o único até agora' : 'o último: ' + res[res.length - 1].title]);
+  const rel = L.filter((e) => (Number(e.rereading) || 0) > 0); if (rel.length) out.push(['Releituras', rel.length === 1 ? rel[0].title : rel.length + ' livros', rel.length === 1 ? 'relido' : 'que você leu de novo']);
   return out;
 }
 { const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments);
@@ -33714,7 +33743,7 @@ function v3EuData() {
       const mine = !!d.self && !S.v3prev, dest = body.querySelector(':scope > .v3pane[data-k=' + (mine ? 'sobre' : 'top') + ']'); if (!dest) return r;
       body.querySelectorAll('.v3pane > .v3eu').forEach((x) => { if (x.parentElement !== dest) x.remove(); });
       let c = dest.querySelector(':scope > .v3eu');
-      const it = d.self ? v3EuData() : (d.shelf && Array.isArray(d.shelf.eu) ? d.shelf.eu.filter((x) => Array.isArray(x) && x.length === 3).slice(0, 6) : []);
+      const it = d.self ? v3EuData() : (d.shelf && Array.isArray(d.shelf.eu) ? d.shelf.eu.filter((x) => Array.isArray(x) && x.length === 3).slice(0, 14) : []);
       if (!it.length) { if (c) c.remove(); return r; }
       const html = '<h4>' + (mine ? 'Seu jeito de ler' : 'Jeito de ler') + '</h4><div class="g">' + it.map(([k, b, s]) => '<div class="i"><small>' + esc(k) + '</small><b>' + esc(b) + '</b><span>' + esc(s) + '</span></div>').join('') + '</div>';
       if (!c) { c = document.createElement('section'); c.className = 'v3eu'; c.setAttribute('aria-label', 'Seu jeito de ler'); }
@@ -33827,10 +33856,25 @@ function v3EuData() {
 #v5ler.ear:focus-visible{outline:3px solid var(--acc);outline-offset:-3px}
 .v5shade{position:fixed;inset:0;z-index:39;pointer-events:none;background:radial-gradient(circle at 100% 100%,rgba(0,0,0,.4),transparent 60%);opacity:0}
 @media (prefers-reduced-motion:reduce){#v5ler.ear.lift,#v5ler.ear.go{transition:none}}
+/* (Bia 26/11) a orelha mudou para o canto SUPERIOR ESQUERDO, logo abaixo do topo: lá embaixo, perto da barra, quase não
+   aparecia. Tudo espelhado: a capa aparece no triângulo de cima à esquerda, a dobra de papel embaixo à direita, e
+   arrastar para baixo/direita vira a página. */
+#v5ler.ear.tl{left:0!important;right:auto!important;top:var(--eartop,57px)!important;bottom:auto!important;translate:none}
+#v5ler.ear.tl .eu{clip-path:polygon(0 0,100% 0,0 100%);background-position:left top}
+#v5ler.ear.tl .eu::after{background:linear-gradient(135deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.6))}
+#v5ler.ear.tl.big .eu::after{background:linear-gradient(135deg,rgba(0,0,0,0) 70%,rgba(0,0,0,.35))}
+#v5ler.ear.tl .eu b{right:auto;bottom:auto;left:6px;top:5px}
+#v5ler.ear.tl .ef{clip-path:polygon(100% 0,100% 100%,0 100%);background:linear-gradient(315deg,#e9dcc0,#f6eedc 55%,#fffaf0);filter:drop-shadow(3px 3px 6px rgba(0,0,0,.45))}
+#v5ler.ear.tl .ef span{left:auto;top:auto;right:7px;bottom:6px}
+.v5shade.tl{background:radial-gradient(circle at 0 0,rgba(0,0,0,.4),transparent 60%)}
+
 `; TR.append(st); }
 { const ear = jnPl_, S0 = 64, OPEN = 150, RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-  ear.classList.add('ear'); ear.insertAdjacentHTML('beforeend', '<span class="eu"><b></b></span><span class="ef"><span></span></span>');
-  const shade = document.createElement('div'); shade.className = 'v5shade'; TR.append(shade);
+  ear.classList.add('ear', 'tl'); ear.insertAdjacentHTML('beforeend', '<span class="eu"><b></b></span><span class="ef"><span></span></span>');
+  const shade = document.createElement('div'); shade.className = 'v5shade tl'; TR.append(shade);
+  // altura do topo do app: a orelha fica colada embaixo dele
+  const topY = () => { const g = TR.querySelector('.gtop'); const r = g && g.getBoundingClientRect(); const y = r && r.height ? Math.round(r.bottom) : 57; if (ear.style.getPropertyValue('--eartop') !== y + 'px') ear.style.setProperty('--eartop', y + 'px'); };
+  setInterval(topY, 1000); setTimeout(topY, 200);
   const set = (s) => { ear.classList.toggle('big', s > S0 + 8); ear.style.setProperty('--s', s + 'px'); shade.style.opacity = String(Math.max(0, Math.min(1, (s - S0) / 220))); };
   let d = null, busy = false, skipClick = false;
   // conteúdo: capa, % e página do livro atual (atualiza só quando muda)
@@ -33851,7 +33895,7 @@ function v3EuData() {
   const openNow = () => { try { S.lerFull = 1; v2Ler(); } catch (err) { console.error('ler', err); } setTimeout(reset, RM() ? 0 : 500); };
   const finish = () => { if (busy) return; busy = true; ear.classList.remove('lift'); ear.classList.add('go'); set(Math.max(innerWidth, innerHeight) * 1.6); setTimeout(openNow, RM() ? 0 : 380); };
   ear.addEventListener('pointerdown', (e) => { if (busy) return; d = { x: e.clientX, y: e.clientY, moved: false }; try { ear.setPointerCapture(e.pointerId); } catch {} ear.classList.remove('lift'); });
-  ear.addEventListener('pointermove', (e) => { if (!d) return; const m = Math.max(d.x - e.clientX, d.y - e.clientY, 0); if (m > 6) d.moved = true; if (!RM()) set(S0 + m * 1.1); });
+  ear.addEventListener('pointermove', (e) => { if (!d) return; const m = Math.max(e.clientX - d.x, e.clientY - d.y, 0); if (m > 6) d.moved = true; if (!RM()) set(S0 + m * 1.1); });
   const up = () => { if (!d) return; const s = parseFloat(ear.style.getPropertyValue('--s')) || S0, moved = d.moved; d = null;
     if (moved) { skipClick = true; setTimeout(() => { skipClick = false; }, 400); if (s > OPEN) return finish(); ear.classList.add('lift'); set(S0); } };
   ear.addEventListener('pointerup', up); ear.addEventListener('pointercancel', () => { d = null; ear.classList.add('lift'); set(S0); });
@@ -33872,7 +33916,7 @@ const LERFULL_CSS = `.v4ler .sheet.lerfull{top:0;bottom:0;max-height:none;border
 .v4ler .sheet.lerfull .sh-bk h3{font-size:1.45rem}
 .v4ler .sheet.lerfull .lerq{margin-bottom:auto}
 .v4ler .sheet.lerfull .lerback{margin-top:14px;width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;background:none;color:var(--ink);font:inherit;font-weight:800}
-@keyframes lerfin{from{clip-path:circle(0 at 100% 100%)}to{clip-path:circle(150% at 100% 100%)}}
+@keyframes lerfin{from{clip-path:circle(0 at 0 0)}to{clip-path:circle(150% at 0 0)}}
 @media (prefers-reduced-motion:reduce){.v4ler .sheet.lerfull{animation:none}}`;
 { const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments);
     try { const st = v4State(), R = V4; if (!R) return r;

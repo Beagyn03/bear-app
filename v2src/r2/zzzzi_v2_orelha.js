@@ -20,10 +20,25 @@
 #v5ler.ear:focus-visible{outline:3px solid var(--acc);outline-offset:-3px}
 .v5shade{position:fixed;inset:0;z-index:39;pointer-events:none;background:radial-gradient(circle at 100% 100%,rgba(0,0,0,.4),transparent 60%);opacity:0}
 @media (prefers-reduced-motion:reduce){#v5ler.ear.lift,#v5ler.ear.go{transition:none}}
+/* (Bia 26/11) a orelha mudou para o canto SUPERIOR ESQUERDO, logo abaixo do topo: lá embaixo, perto da barra, quase não
+   aparecia. Tudo espelhado: a capa aparece no triângulo de cima à esquerda, a dobra de papel embaixo à direita, e
+   arrastar para baixo/direita vira a página. */
+#v5ler.ear.tl{left:0!important;right:auto!important;top:var(--eartop,57px)!important;bottom:auto!important;translate:none}
+#v5ler.ear.tl .eu{clip-path:polygon(0 0,100% 0,0 100%);background-position:left top}
+#v5ler.ear.tl .eu::after{background:linear-gradient(135deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.6))}
+#v5ler.ear.tl.big .eu::after{background:linear-gradient(135deg,rgba(0,0,0,0) 70%,rgba(0,0,0,.35))}
+#v5ler.ear.tl .eu b{right:auto;bottom:auto;left:6px;top:5px}
+#v5ler.ear.tl .ef{clip-path:polygon(100% 0,100% 100%,0 100%);background:linear-gradient(315deg,#e9dcc0,#f6eedc 55%,#fffaf0);filter:drop-shadow(3px 3px 6px rgba(0,0,0,.45))}
+#v5ler.ear.tl .ef span{left:auto;top:auto;right:7px;bottom:6px}
+.v5shade.tl{background:radial-gradient(circle at 0 0,rgba(0,0,0,.4),transparent 60%)}
+
 `; TR.append(st); }
 { const ear = jnPl_, S0 = 64, OPEN = 150, RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-  ear.classList.add('ear'); ear.insertAdjacentHTML('beforeend', '<span class="eu"><b></b></span><span class="ef"><span></span></span>');
-  const shade = document.createElement('div'); shade.className = 'v5shade'; TR.append(shade);
+  ear.classList.add('ear', 'tl'); ear.insertAdjacentHTML('beforeend', '<span class="eu"><b></b></span><span class="ef"><span></span></span>');
+  const shade = document.createElement('div'); shade.className = 'v5shade tl'; TR.append(shade);
+  // altura do topo do app: a orelha fica colada embaixo dele
+  const topY = () => { const g = TR.querySelector('.gtop'); const r = g && g.getBoundingClientRect(); const y = r && r.height ? Math.round(r.bottom) : 57; if (ear.style.getPropertyValue('--eartop') !== y + 'px') ear.style.setProperty('--eartop', y + 'px'); };
+  setInterval(topY, 1000); setTimeout(topY, 200);
   const set = (s) => { ear.classList.toggle('big', s > S0 + 8); ear.style.setProperty('--s', s + 'px'); shade.style.opacity = String(Math.max(0, Math.min(1, (s - S0) / 220))); };
   let d = null, busy = false, skipClick = false;
   // conteúdo: capa, % e página do livro atual (atualiza só quando muda)
@@ -44,7 +59,7 @@
   const openNow = () => { try { S.lerFull = 1; v2Ler(); } catch (err) { console.error('ler', err); } setTimeout(reset, RM() ? 0 : 500); };
   const finish = () => { if (busy) return; busy = true; ear.classList.remove('lift'); ear.classList.add('go'); set(Math.max(innerWidth, innerHeight) * 1.6); setTimeout(openNow, RM() ? 0 : 380); };
   ear.addEventListener('pointerdown', (e) => { if (busy) return; d = { x: e.clientX, y: e.clientY, moved: false }; try { ear.setPointerCapture(e.pointerId); } catch {} ear.classList.remove('lift'); });
-  ear.addEventListener('pointermove', (e) => { if (!d) return; const m = Math.max(d.x - e.clientX, d.y - e.clientY, 0); if (m > 6) d.moved = true; if (!RM()) set(S0 + m * 1.1); });
+  ear.addEventListener('pointermove', (e) => { if (!d) return; const m = Math.max(e.clientX - d.x, e.clientY - d.y, 0); if (m > 6) d.moved = true; if (!RM()) set(S0 + m * 1.1); });
   const up = () => { if (!d) return; const s = parseFloat(ear.style.getPropertyValue('--s')) || S0, moved = d.moved; d = null;
     if (moved) { skipClick = true; setTimeout(() => { skipClick = false; }, 400); if (s > OPEN) return finish(); ear.classList.add('lift'); set(S0); } };
   ear.addEventListener('pointerup', up); ear.addEventListener('pointercancel', () => { d = null; ear.classList.add('lift'); set(S0); });
@@ -65,7 +80,7 @@ const LERFULL_CSS = `.v4ler .sheet.lerfull{top:0;bottom:0;max-height:none;border
 .v4ler .sheet.lerfull .sh-bk h3{font-size:1.45rem}
 .v4ler .sheet.lerfull .lerq{margin-bottom:auto}
 .v4ler .sheet.lerfull .lerback{margin-top:14px;width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;background:none;color:var(--ink);font:inherit;font-weight:800}
-@keyframes lerfin{from{clip-path:circle(0 at 100% 100%)}to{clip-path:circle(150% at 100% 100%)}}
+@keyframes lerfin{from{clip-path:circle(0 at 0 0)}to{clip-path:circle(150% at 0 0)}}
 @media (prefers-reduced-motion:reduce){.v4ler .sheet.lerfull{animation:none}}`;
 { const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments);
     try { const st = v4State(), R = V4; if (!R) return r;

@@ -32,6 +32,25 @@ function v3EuData() {
   const pg = lidos.map((e) => Number(e.totalPages) || 0).filter((n) => n > 0); if (pg.length >= 3) out.push(['Tamanho médio', Math.round(pg.reduce((s, n) => s + n, 0) / pg.length) + ' páginas', pg.length + ' livros com páginas']);
   const dd = lidos.map((e) => { const s = Date.parse(String(e.startedAt || '').slice(0, 10)), f = Date.parse(String(e.finishedAt || '').slice(0, 10)); return s && f && f >= s ? Math.round((f - s) / 864e5) + 1 : 0; }).filter((n) => n > 0 && n < 400).sort((p, q) => p - q);
   if (dd.length >= 3) { const m = dd[dd.length >> 1]; out.push(['Para terminar', m + (m === 1 ? ' dia' : ' dias'), 'na média de ' + dd.length + ' livros']); }
+  // (Bia 26/11: "faltou editora preferida e mais coisas sobre mim")
+  // editora favorita
+  const P = new Map(); lidos.forEach((e) => { const pb = String(e.publisher || (e.meta && e.meta.pub) || '').replace(/s*(editora|ltda.?|s.?a.?)s*/gi, ' ').trim(); if (!pb) return; const k = pb.toLowerCase(); const x = P.get(k) || { n: 0, s: 0, nome: pb }; x.n++; x.s += paws(e); P.set(k, x); });
+  const pbt = [...P.values()].sort((a, b) => b.n - a.n || b.s - a.s)[0]; if (pbt && pbt.n >= 2) out.splice(2, 0, ['Editora favorita', pbt.nome, pbt.n + ' livros lidos']);
+  // nota média
+  const notas = lidos.map(paws).filter((n) => n > 0); if (notas.length >= 3) out.push(['Nota média', (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(1).replace('.', ','), 'em ' + notas.length + ' avaliações']);
+  // sentimento que mais aparece (diário e trechos)
+  const FE = new Map(); L.forEach((e) => { (e.diary || []).forEach((x) => (x && x.fe || []).forEach((k) => FE.set(k, (FE.get(k) || 0) + 1))); (e.quotes || []).forEach((q) => (q && q.f || []).forEach((k) => FE.set(k, (FE.get(k) || 0) + 1))); });
+  const fe = [...FE.entries()].sort((a, b) => b[1] - a[1])[0]; if (fe && fe[1] >= 2) { let nome = fe[0]; try { const f = QT_FEELS.find((y) => y[0] === fe[0]); if (f) nome = f[1]; } catch {} out.push(['Sente mais', nome, fe[1] + ' vezes nas anotações']); }
+  // mês em que mais termina livros
+  const MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'], M = new Array(12).fill(0);
+  lidos.forEach((e) => { const m = Number(String(e.finishedAt || '').slice(5, 7)); if (m >= 1 && m <= 12 && !e.noDate) M[m - 1]++; });
+  const mx = Math.max(...M); if (mx >= 2) { const i = M.indexOf(mx); out.push(['Mês que mais lê', MES[i], mx + ' livros terminados']); }
+  // mais rápido
+  const rap = lidos.map((e) => { const a = Date.parse(String(e.startedAt || '').slice(0, 10)), f = Date.parse(String(e.finishedAt || '').slice(0, 10)); return { e, d: a && f && f >= a ? Math.round((f - a) / 864e5) + 1 : 0 }; }).filter((x) => x.d > 0 && (Number(x.e.totalPages) || 0) >= 150).sort((a, b) => a.d - b.d)[0];
+  if (rap) out.push(['Mais rápido', rap.e.title, rap.d === 1 ? 'em 1 dia' : 'em ' + rap.d + ' dias']);
+  // ressaca e releituras
+  const res = lidos.filter((e) => { try { return (reviewOfLib(e) || {}).ressaca === 'deu'; } catch { return false; } }); if (res.length) out.push(['Deram ressaca', res.length === 1 ? res[0].title : res.length + ' livros', res.length === 1 ? 'o único até agora' : 'o último: ' + res[res.length - 1].title]);
+  const rel = L.filter((e) => (Number(e.rereading) || 0) > 0); if (rel.length) out.push(['Releituras', rel.length === 1 ? rel[0].title : rel.length + ' livros', rel.length === 1 ? 'relido' : 'que você leu de novo']);
   return out;
 }
 { const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments);
@@ -40,7 +59,7 @@ function v3EuData() {
       const mine = !!d.self && !S.v3prev, dest = body.querySelector(':scope > .v3pane[data-k=' + (mine ? 'sobre' : 'top') + ']'); if (!dest) return r;
       body.querySelectorAll('.v3pane > .v3eu').forEach((x) => { if (x.parentElement !== dest) x.remove(); });
       let c = dest.querySelector(':scope > .v3eu');
-      const it = d.self ? v3EuData() : (d.shelf && Array.isArray(d.shelf.eu) ? d.shelf.eu.filter((x) => Array.isArray(x) && x.length === 3).slice(0, 6) : []);
+      const it = d.self ? v3EuData() : (d.shelf && Array.isArray(d.shelf.eu) ? d.shelf.eu.filter((x) => Array.isArray(x) && x.length === 3).slice(0, 14) : []);
       if (!it.length) { if (c) c.remove(); return r; }
       const html = '<h4>' + (mine ? 'Seu jeito de ler' : 'Jeito de ler') + '</h4><div class="g">' + it.map(([k, b, s]) => '<div class="i"><small>' + esc(k) + '</small><b>' + esc(b) + '</b><span>' + esc(s) + '</span></div>').join('') + '</div>';
       if (!c) { c = document.createElement('section'); c.className = 'v3eu'; c.setAttribute('aria-label', 'Seu jeito de ler'); }
