@@ -49,9 +49,15 @@ async function refreshApp(cached) {
   } catch (e) { return null; }
 }
 
+const FOCO_VIBRA = [300, 120, 300, 120, 900]; // o mesmo padrão do aviso local do app
 // lembrete do prazo de leitura (16/11): a API manda {title, body, tag, url}; tocar abre o app já no "Atualizar leitura"
 self.addEventListener('push', (event) => {
   let d = {}; try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : '' }; }
+  // fim do Foco (26/11): vibração própria (dois toques curtos e um longo), fica na tela até ser tocado e abre o app no próprio Foco
+  if (d.tag === 'bear-foco') return event.waitUntil(self.registration.showNotification(d.title || 'Tempo cumprido', {
+    body: d.body || 'Sua sessão de leitura terminou.', tag: 'bear-foco', renotify: true, requireInteraction: true,
+    vibrate: FOCO_VIBRA, icon: 'notif-icon.png', badge: 'notif-badge.png', data: { url: './', foco: true },
+  }));
   event.waitUntil(self.registration.showNotification(d.title || 'Livroverso', {
     body: d.body || 'Hora de ler um pouquinho.', tag: d.tag || 'bear', renotify: true, icon: 'notif-icon.png', badge: 'notif-badge.png',
     data: { url: d.url || './?upd=1' }, actions: [{ action: 'upd', title: 'Atualizar leitura' }, { action: 'foco', title: 'Focar' }],
@@ -59,6 +65,12 @@ self.addEventListener('push', (event) => {
 });
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  // aviso do fim do Foco: só traz o app para a frente (a tela do Foco já mostra o fim); não abre Atualizar leitura nem começa outro Foco
+  if (event.notification.data && event.notification.data.foco) return event.waitUntil((async () => {
+    const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of list) { if ('focus' in c) { await c.focus(); return; } }
+    await self.clients.openWindow(new URL('./', self.registration.scope).href);
+  })());
   const foco = event.action === 'foco', url = new URL(foco ? './?foco=1' : ((event.notification.data && event.notification.data.url) || './?upd=1'), self.registration.scope).href;
   event.waitUntil((async () => {
     const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });

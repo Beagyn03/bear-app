@@ -1325,7 +1325,7 @@ body.at-home > main,body.at-home > #htabs{display:none!important}
 // ============ armazenamento ============
 const KEY = 'bear.v1';
 function pawTxt(n) { n = Math.round((Number(n) || 0) * 2) / 2; return '★ ' + String(n).replace('.', ','); } // patas saíram (17/11): nota com estrela
-const APP_VERSION = '4.4.0', APP_BUILD = '2026-11-14'; // atualizar a cada publicação
+const APP_VERSION = '5.0.0', APP_BUILD = '2026-11-26'; // atualizar a cada publicação
 var Toca = null; // tela inicial (definida no fim do arquivo)
 let db = { goals: [] };
 try { const raw = localStorage.getItem(KEY); if (raw) db = JSON.parse(raw); } catch {}
@@ -33233,7 +33233,7 @@ function faCheck(fromBack) { try { const s = v4Ses(); if (!s || !s.dur || s.pz) 
     s.faDone = s.start; try { v2SesPut(s); } catch {} const late = Date.now() - end; const onScreen = V4 && V4.isConnected && document.visibilityState === 'visible';
     if (!onScreen) { faNotify(); s.faDone = 0; try { v2SesPut(s); } catch {} return; } // avisa de novo ao voltar
     void fromBack; faRing(late < 60000); } catch (e) { console.warn('alarme', e); } }
-function faNotify() { try { if (!FA_ON() || !('Notification' in window) || Notification.permission !== 'granted') return; navigator.serviceWorker && navigator.serviceWorker.ready.then((r) => r.showNotification('Tempo cumprido', { body: 'Sua sessão de leitura terminou. Continue se quiser.', tag: 'bear-foco', renotify: true, vibrate: [220, 120, 220] })).catch(() => {}); } catch {} }
+function faNotify() { try { if (!FA_ON() || !('Notification' in window) || Notification.permission !== 'granted') return; navigator.serviceWorker && navigator.serviceWorker.ready.then((r) => r.showNotification('Tempo cumprido', { body: 'Sua sessão de leitura terminou. Continue se quiser.', tag: 'bear-foco', renotify: true, requireInteraction: true, vibrate: [300, 120, 300, 120, 900], icon: 'notif-icon.png', badge: 'notif-badge.png', data: { url: './', foco: true } })).catch(() => {}); } catch {} }
 setInterval(() => faCheck(false), 1000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(() => faCheck(true), 150); });
 // destrava o áudio no toque de Começar (o navegador só deixa tocar depois de um gesto)
