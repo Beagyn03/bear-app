@@ -16,10 +16,13 @@ function shProfFreeHTML(list, w) {
   const C = shc(); if (!C || !C.free || !Array.isArray(C.free.rows) || !C.free.rows.length) return null;
   const ok = new Set(list.map((b) => String(b.id)));
   const cp = JSON.parse(JSON.stringify(C)); cp.free = shFreeOnly(C.free, ok);
+  // a arrumação foi feita na largura da Biblioteca (a tela toda); no perfil a caixa é mais estreita e os livros vazavam
+  // pela borda. Desenha na largura da Biblioteca e reduz o desenho inteiro (zoom) para caber na caixa (Bia 26/11).
+  const LW = Math.max(w, Math.min(innerWidth, 560)), Z = w / LW;
   const keep = { ctx: SHX_CTX, main: FL_MAIN, sr: FL_SR, wb: FL_WB, pv: FL_PV, hbw: FL_HBW, pos: FLX.pos, posG: FLX.posG, pk: FLX.pk, sel: FLX.sel, fan: FLX.fan };
-  SHX_CTX = cp; FL_MAIN = 1; FL_SR = document.createElement('div'); FL_WB = w; FL_PV = { free: cp.free, plq: cp.plq || [] }; // como prévia: o flSync nunca salva
+  SHX_CTX = cp; FL_MAIN = 1; FL_SR = document.createElement('div'); FL_WB = LW; FL_PV = { free: cp.free, plq: cp.plq || [] }; // como prévia: o flSync nunca salva
   FLX.pos = null; FLX.posG = null; FLX.pk = null; FLX.sel = null; FLX.fan = null;
-  try { return String(flHTML(list)).replace(/<div class="hint">[\s\S]*?<\/div>/, ''); }
+  try { let h = String(flHTML(list)).replace(/<div class="hint">[\s\S]*?<\/div>/, ''); if (Z < 0.999) h = h.replace(/style="/, `style="zoom:${Z.toFixed(4)};`); return h; }
   catch (err) { console.warn('arrumação no perfil', err); return null; }
   finally { SHX_CTX = keep.ctx; FL_MAIN = keep.main; FL_SR = keep.sr; FL_WB = keep.wb; FL_PV = keep.pv; FL_HBW = keep.hbw;
     FLX.pos = keep.pos; FLX.posG = keep.posG; FLX.pk = keep.pk; FLX.sel = keep.sel; FLX.fan = keep.fan; }

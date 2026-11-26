@@ -9,6 +9,7 @@
 //  - nada que já está na Biblioteca; nada repetido; só com capa.
 //  - o conjunto vale 3 dias; a vitrine do dia é um recorte que gira todo dia (dia do ano), então muda mesmo sem buscar.
 { const _old = tasteRecs;
+  const tk = (t) => normT(String(t || '').split(/s[-–]s|[:([]/)[0]);
   const W = (e) => { let p = 0; try { p = Number((reviewOfLib(e) || {}).paws) || 0; } catch {} return (e.status === 'LENDO' ? 2 : 1) * (p >= 4.5 ? 3 : p >= 4 ? 2 : p && p < 3 ? -1 : 1); };
   const first = (a) => String(a || '').split(/[,;&]| e /)[0].trim();
   function pvSignals() {
@@ -21,19 +22,21 @@
   }
   const dayN = () => Math.floor(Date.parse(todayISO()) / 864e5);
   async function pvPool(sig) {
-    const cacheKey = 'bear.pv3';
+    const cacheKey = 'bear.pv4'; // pv4: só português (26/11)
     try { const c = JSON.parse(localStorage.getItem(cacheKey) || 'null'); if (c && c.key === sig.key && dayN() - c.day < 3 && Array.isArray(c.items) && c.items.length >= 8) return c.items; } catch {}
     const lists = await Promise.all(sig.authors.map(async (a) => { try {
       const r = await sapi('GET', '/v1/books/search?q=' + encodeURIComponent(a)); const it = (r && r.status === 200 && r.data && r.data.items) || [];
       const sur = normT(a.split(' ').slice(-1)[0] || a);
-      return it.filter((b) => b && b.title && b.cover_url && (b.authors || []).some((x) => normT(x).includes(sur))).map((b) => ({ title: String(b.title).split(':')[0].trim(), author: (b.authors || [])[0] || a, coverUrl: b.cover_url, isbn: b.isbn || null }));
+      return it.filter((b) => b && b.title && b.cover_url && /^pt/i.test(String(b.language || '')) && (b.authors || []).some((x) => normT(x).includes(sur))).map((b) => ({ title: String(b.title).split(':')[0].trim(), author: (b.authors || [])[0] || a, coverUrl: b.cover_url, isbn: b.isbn || null }));
     } catch { return []; } }));
     let old = []; try { old = (await _old.apply(this, [])) || []; } catch {}
-    lists.push(old.map((x) => ({ ...x })));
-    const mine = new Set((lib() || []).map((e) => normT(e.title || ''))), seen = new Set(), out = [];
+    // a lista antiga não traz idioma: fora títulos com palavras típicas de inglês, alemão ou espanhol (Bia 26/11: só português)
+    const FORA = /(the|of|and|every|your|my|with|for|from|this|that|der|die|das|und|el|los|las|del|y)/i;
+    lists.push(old.filter((x) => x && x.title && !FORA.test(x.title)).map((x) => ({ ...x })));
+    const mine = new Set((lib() || []).flatMap((e) => [tk(e.title), tk(e.meta && (e.meta.origTitle || e.meta.title))]).filter(Boolean)), seen = new Set(), out = [];
     const side = /\b(box|kit|colecao|resumo|guia|edicao comentada|livro de colorir|box set)\b/;
     // intercala as listas (uma de cada autoria por vez) para a vitrine não ficar com um autor só
-    for (let i = 0; out.length < 60 && i < 25; i++) for (const L of lists) { const it = L[i]; if (!it || !it.title || !it.coverUrl) continue; const n = normT(it.title); if (!n || seen.has(n) || mine.has(n) || side.test(n)) continue; seen.add(n); out.push(it); }
+    for (let i = 0; out.length < 60 && i < 25; i++) for (const L of lists) { const it = L[i]; if (!it || !it.title || !it.coverUrl) continue; const n = tk(it.title); if (!n || seen.has(n) || mine.has(n) || side.test(normT(it.title))) continue; seen.add(n); out.push(it); }
     if (out.length) { try { localStorage.setItem(cacheKey, JSON.stringify({ key: sig.key, day: dayN(), items: out })); } catch {} }
     return out;
   }
@@ -41,7 +44,7 @@
     try {
       const sig = pvSignals(); if (!sig.authors.length) return await _old.apply(this, arguments);
       const pool = await pvPool(sig); if (!pool.length) return await _old.apply(this, arguments);
-      const mine = new Set((lib() || []).map((e) => normT(e.title || ''))), ok = pool.filter((x) => !mine.has(normT(x.title)));
+      const mine = new Set((lib() || []).flatMap((e) => [tk(e.title), tk(e.meta && (e.meta.origTitle || e.meta.title))]).filter(Boolean)), ok = pool.filter((x) => !mine.has(tk(x.title)));
       const n = ok.length, start = n ? (dayN() * 7) % n : 0; // gira todo dia
       return ok.slice(start).concat(ok.slice(0, start)).slice(0, 40);
     } catch (err) { console.warn('para você', err); return _old.apply(this, arguments); }

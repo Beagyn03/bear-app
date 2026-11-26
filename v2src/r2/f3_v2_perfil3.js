@@ -144,10 +144,10 @@ function v3Build(v, d) {
   if (S.v3pfH !== d.handle) { S.v3pfH = d.handle; S.v3tab = self ? 'sobre' : 'est'; S.v3prev = false; }
   // perfil de outra pessoa (protótipo perfilx): Estantes · Top 3 · Desejos · Atividade; o seu: Sobre · Estantes · Desejos · Atividade
   const ro = self && !!S.v3prev; // prévia "como as amizades veem": igual ao perfil de outra pessoa, só leitura
-  const tabsOk = (self && !ro ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
+  const tabsOk = (self && !ro ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['top', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
   // (Bia, 21/11) aba Desejos some para quem não recebe a estante (privacidade só amizades) e não é amizade
   if (!self && !d.isFriend && !(d.shelf && Array.isArray(d.shelf.wish))) { const k = tabsOk.findIndex(([x]) => x === 'des'); if (k >= 0) tabsOk.splice(k, 1); if (S.v3tab === 'des') S.v3tab = 'est'; }
-  if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self && !ro ? 'sobre' : 'est';
+  if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self && !ro ? 'sobre' : 'top'; // (Bia 26/11) visita e prévia abrem no Sobre, como o seu perfil
   body.classList.toggle('v6prev', ro); const pv0 = ro ? ((socialProfile && socialProfile.privacy) || {}) : {}; body.classList.toggle('v6noread', ro && pv0.reading === false);
   v.classList.add('v3pf-on');
   // cabeçalho
@@ -186,7 +186,7 @@ function v3Build(v, d) {
   let t3 = body.querySelector('.v3pane .v3t3w'); if (!t3) { t3 = document.createElement('div'); t3.className = 'v3t3w'; } if (t3.parentElement !== pTop) pTop.append(t3);
   const t3s = JSON.stringify([x.top, self, S.v3prev, ro]); if (t3.dataset.sig !== t3s) { t3.dataset.sig = t3s;
     // título só na aba Sobre do seu perfil; no perfil de outra pessoa (e na prévia) a aba já se chama Top 3 (teste 20/11 item 31)
-    t3.innerHTML = (self && !ro ? '<div class="v3h2"><b>Top 3</b>' + (!S.v3prev && x.top.length ? '<button type="button" data-v3="top5">Editar</button>' : '') + '</div>' : '') + v3Top3(x, self);
+    t3.innerHTML = (self && !ro ? '<div class="v3h2"><b>Top 3</b>' + (!S.v3prev && x.top.length ? '<button type="button" data-v3="top5">Editar</button>' : '') + '</div>' : (x.top.length ? '<div class="v3h2"><b>Top 3</b></div>' : '')) + v3Top3(x, self);
     try { paintCv(t3); } catch {}
     t3.querySelectorAll('[data-top]').forEach((b) => b.addEventListener('click', () => { const t = x.top[+b.dataset.top]; if (!t) return; const e = self && lib().find((y) => normT(y.title) === normT(t.title)); if (e) openBookPage(e); else openAnyBook(t.title, t.author, t.cover); }));
     t3.querySelectorAll('[data-v3=top5]').forEach((b) => b.addEventListener('click', () => { try { editTop5(); } catch { try { openTaste(); } catch {} } })); }

@@ -9,16 +9,20 @@
 #editor .cs-n .tl-c .tlx-b{display:inline-block;margin-top:.3rem;border:0;background:none;padding:.2rem 0;font:inherit;font-size:.82rem;font-weight:800;color:var(--acc);cursor:pointer}
 `; TR.append(st); }
 function tlxFit(root) {
-  if (!root) return;
+  if (!root) return; const redo = new Set();
   root.querySelectorAll('.cs-n .tl-c p:not([data-tlx])').forEach((p) => {
     if (!p.offsetParent) return; // ainda invisível: mede depois
     p.dataset.tlx = '1'; p.classList.add('tlx');
     if (p.scrollHeight <= p.clientHeight + 2) { p.classList.remove('tlx'); return; } // cabe: fica como estava
+    const tl = p.closest('.tl'); if (tl) redo.add(tl);
     const b = document.createElement('button'); b.type = 'button'; b.className = 'tlx-b'; b.textContent = 'Ver mais';
     b.addEventListener('click', (ev) => { ev.stopPropagation(); const open = p.classList.toggle('open'); b.textContent = open ? 'Ver menos' : 'Ver mais';
       try { csLines(p.closest('.tl')); } catch {} });
     p.after(b);
   });
+  // o texto encolheu: as linhas da constelação (svg absoluto com a altura antiga) precisam ser refeitas, senão a página fica
+  // com um trecho vazio embaixo e a linha desce até ele (Bia 26/11)
+  redo.forEach((tl) => { try { csLines(tl); } catch {} });
 }
 // #editor antigo (raiz TR)
 { let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; const ed = TR.querySelector('#editor'); if (ed && !ed.hidden) tlxFit(ed); }, 60); }).observe(TR, { childList: true, subtree: true }); }

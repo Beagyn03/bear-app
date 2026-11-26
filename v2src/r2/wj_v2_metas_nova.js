@@ -56,7 +56,7 @@ function mtnToday() { const t = todayISO(); let pages = 0, minutes = 0;
   for (const f of db.focus || []) if (String(f.date || '').slice(0, 10) === t) minutes += Number(f.minutes) || 0;
   return { pages, minutes }; }
 function mtnRing(v, n, sub) { const r = 84, c = 2 * Math.PI * r, p = Math.max(0, Math.min(1, n ? v / n : 0));
-  return `<div class="mring" role="img" aria-label="${v} de ${n || 'sem meta'} ${esc(sub)}"><svg viewBox="0 0 196 196" aria-hidden="true"><circle class="bgc" cx="98" cy="98" r="${r}"/><circle class="fgc" cx="98" cy="98" r="${r}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - p)).toFixed(1)}"/></svg><div class="mc"><b>${v}<i>/${n || '–'}</i></b><small>${esc(sub)}</small></div></div>`; }
+  return `<div class="mring" role="img" aria-label="${v} de ${n || 'sem meta'} ${esc(sub)}"><svg viewBox="0 0 196 196" aria-hidden="true"><circle class="bgc" cx="98" cy="98" r="${r}"/><circle class="fgc" cx="98" cy="98" r="${r}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - p)).toFixed(1)}"/></svg><div class="mc"><b>${v}${n ? `<i>/${n}</i>` : ''}</b><small>${esc(sub)}</small></div></div>`; }
 const mtnCv = (e) => { try { return cvh(e.title, e.cover, 'mt-cv'); } catch { return ''; } };
 function mtnEdit(k, val, unit) {
   if (S.mtnEd !== k) return `<button type="button" class="mlink" data-mt="edit" data-k="${k}">${val ? 'Editar meta' : 'Definir meta'}</button>`;

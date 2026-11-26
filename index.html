@@ -19534,10 +19534,10 @@ function v3Build(v, d) {
   if (S.v3pfH !== d.handle) { S.v3pfH = d.handle; S.v3tab = self ? 'sobre' : 'est'; S.v3prev = false; }
   // perfil de outra pessoa (protótipo perfilx): Estantes · Top 3 · Desejos · Atividade; o seu: Sobre · Estantes · Desejos · Atividade
   const ro = self && !!S.v3prev; // prévia "como as amizades veem": igual ao perfil de outra pessoa, só leitura
-  const tabsOk = (self && !ro ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['est', 'Estantes'], ['top', 'Top 3'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
+  const tabsOk = (self && !ro ? [['sobre', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']] : [['top', 'Sobre'], ['est', 'Estantes'], ['des', 'Desejos'], ['ativ', 'Atividade']]).filter(([k]) => k !== 'des' || v4Mod('presentes'));
   // (Bia, 21/11) aba Desejos some para quem não recebe a estante (privacidade só amizades) e não é amizade
   if (!self && !d.isFriend && !(d.shelf && Array.isArray(d.shelf.wish))) { const k = tabsOk.findIndex(([x]) => x === 'des'); if (k >= 0) tabsOk.splice(k, 1); if (S.v3tab === 'des') S.v3tab = 'est'; }
-  if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self && !ro ? 'sobre' : 'est';
+  if (!tabsOk.some(([k]) => k === S.v3tab)) S.v3tab = self && !ro ? 'sobre' : 'top'; // (Bia 26/11) visita e prévia abrem no Sobre, como o seu perfil
   body.classList.toggle('v6prev', ro); const pv0 = ro ? ((socialProfile && socialProfile.privacy) || {}) : {}; body.classList.toggle('v6noread', ro && pv0.reading === false);
   v.classList.add('v3pf-on');
   // cabeçalho
@@ -19576,7 +19576,7 @@ function v3Build(v, d) {
   let t3 = body.querySelector('.v3pane .v3t3w'); if (!t3) { t3 = document.createElement('div'); t3.className = 'v3t3w'; } if (t3.parentElement !== pTop) pTop.append(t3);
   const t3s = JSON.stringify([x.top, self, S.v3prev, ro]); if (t3.dataset.sig !== t3s) { t3.dataset.sig = t3s;
     // título só na aba Sobre do seu perfil; no perfil de outra pessoa (e na prévia) a aba já se chama Top 3 (teste 20/11 item 31)
-    t3.innerHTML = (self && !ro ? '<div class="v3h2"><b>Top 3</b>' + (!S.v3prev && x.top.length ? '<button type="button" data-v3="top5">Editar</button>' : '') + '</div>' : '') + v3Top3(x, self);
+    t3.innerHTML = (self && !ro ? '<div class="v3h2"><b>Top 3</b>' + (!S.v3prev && x.top.length ? '<button type="button" data-v3="top5">Editar</button>' : '') + '</div>' : (x.top.length ? '<div class="v3h2"><b>Top 3</b></div>' : '')) + v3Top3(x, self);
     try { paintCv(t3); } catch {}
     t3.querySelectorAll('[data-top]').forEach((b) => b.addEventListener('click', () => { const t = x.top[+b.dataset.top]; if (!t) return; const e = self && lib().find((y) => normT(y.title) === normT(t.title)); if (e) openBookPage(e); else openAnyBook(t.title, t.author, t.cover); }));
     t3.querySelectorAll('[data-v3=top5]').forEach((b) => b.addEventListener('click', () => { try { editTop5(); } catch { try { openTaste(); } catch {} } })); }
@@ -26528,7 +26528,7 @@ function mtnToday() { const t = todayISO(); let pages = 0, minutes = 0;
   for (const f of db.focus || []) if (String(f.date || '').slice(0, 10) === t) minutes += Number(f.minutes) || 0;
   return { pages, minutes }; }
 function mtnRing(v, n, sub) { const r = 84, c = 2 * Math.PI * r, p = Math.max(0, Math.min(1, n ? v / n : 0));
-  return `<div class="mring" role="img" aria-label="${v} de ${n || 'sem meta'} ${esc(sub)}"><svg viewBox="0 0 196 196" aria-hidden="true"><circle class="bgc" cx="98" cy="98" r="${r}"/><circle class="fgc" cx="98" cy="98" r="${r}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - p)).toFixed(1)}"/></svg><div class="mc"><b>${v}<i>/${n || '–'}</i></b><small>${esc(sub)}</small></div></div>`; }
+  return `<div class="mring" role="img" aria-label="${v} de ${n || 'sem meta'} ${esc(sub)}"><svg viewBox="0 0 196 196" aria-hidden="true"><circle class="bgc" cx="98" cy="98" r="${r}"/><circle class="fgc" cx="98" cy="98" r="${r}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - p)).toFixed(1)}"/></svg><div class="mc"><b>${v}${n ? `<i>/${n}</i>` : ''}</b><small>${esc(sub)}</small></div></div>`; }
 const mtnCv = (e) => { try { return cvh(e.title, e.cover, 'mt-cv'); } catch { return ''; } };
 function mtnEdit(k, val, unit) {
   if (S.mtnEd !== k) return `<button type="button" class="mlink" data-mt="edit" data-k="${k}">${val ? 'Editar meta' : 'Definir meta'}</button>`;
@@ -33578,16 +33578,20 @@ const pgMarkOwn = (e, n) => { if (e && Number(n) > 0) { e.pagesOwn = 1; delete e
 #editor .cs-n .tl-c .tlx-b{display:inline-block;margin-top:.3rem;border:0;background:none;padding:.2rem 0;font:inherit;font-size:.82rem;font-weight:800;color:var(--acc);cursor:pointer}
 `; TR.append(st); }
 function tlxFit(root) {
-  if (!root) return;
+  if (!root) return; const redo = new Set();
   root.querySelectorAll('.cs-n .tl-c p:not([data-tlx])').forEach((p) => {
     if (!p.offsetParent) return; // ainda invisível: mede depois
     p.dataset.tlx = '1'; p.classList.add('tlx');
     if (p.scrollHeight <= p.clientHeight + 2) { p.classList.remove('tlx'); return; } // cabe: fica como estava
+    const tl = p.closest('.tl'); if (tl) redo.add(tl);
     const b = document.createElement('button'); b.type = 'button'; b.className = 'tlx-b'; b.textContent = 'Ver mais';
     b.addEventListener('click', (ev) => { ev.stopPropagation(); const open = p.classList.toggle('open'); b.textContent = open ? 'Ver menos' : 'Ver mais';
       try { csLines(p.closest('.tl')); } catch {} });
     p.after(b);
   });
+  // o texto encolheu: as linhas da constelação (svg absoluto com a altura antiga) precisam ser refeitas, senão a página fica
+  // com um trecho vazio embaixo e a linha desce até ele (Bia 26/11)
+  redo.forEach((tl) => { try { csLines(tl); } catch {} });
 }
 // #editor antigo (raiz TR)
 { let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; const ed = TR.querySelector('#editor'); if (ed && !ed.hidden) tlxFit(ed); }, 60); }).observe(TR, { childList: true, subtree: true }); }
@@ -33616,10 +33620,13 @@ function shProfFreeHTML(list, w) {
   const C = shc(); if (!C || !C.free || !Array.isArray(C.free.rows) || !C.free.rows.length) return null;
   const ok = new Set(list.map((b) => String(b.id)));
   const cp = JSON.parse(JSON.stringify(C)); cp.free = shFreeOnly(C.free, ok);
+  // a arrumação foi feita na largura da Biblioteca (a tela toda); no perfil a caixa é mais estreita e os livros vazavam
+  // pela borda. Desenha na largura da Biblioteca e reduz o desenho inteiro (zoom) para caber na caixa (Bia 26/11).
+  const LW = Math.max(w, Math.min(innerWidth, 560)), Z = w / LW;
   const keep = { ctx: SHX_CTX, main: FL_MAIN, sr: FL_SR, wb: FL_WB, pv: FL_PV, hbw: FL_HBW, pos: FLX.pos, posG: FLX.posG, pk: FLX.pk, sel: FLX.sel, fan: FLX.fan };
-  SHX_CTX = cp; FL_MAIN = 1; FL_SR = document.createElement('div'); FL_WB = w; FL_PV = { free: cp.free, plq: cp.plq || [] }; // como prévia: o flSync nunca salva
+  SHX_CTX = cp; FL_MAIN = 1; FL_SR = document.createElement('div'); FL_WB = LW; FL_PV = { free: cp.free, plq: cp.plq || [] }; // como prévia: o flSync nunca salva
   FLX.pos = null; FLX.posG = null; FLX.pk = null; FLX.sel = null; FLX.fan = null;
-  try { return String(flHTML(list)).replace(/<div class="hint">[\s\S]*?<\/div>/, ''); }
+  try { let h = String(flHTML(list)).replace(/<div class="hint">[\s\S]*?<\/div>/, ''); if (Z < 0.999) h = h.replace(/style="/, `style="zoom:${Z.toFixed(4)};`); return h; }
   catch (err) { console.warn('arrumação no perfil', err); return null; }
   finally { SHX_CTX = keep.ctx; FL_MAIN = keep.main; FL_SR = keep.sr; FL_WB = keep.wb; FL_PV = keep.pv; FL_HBW = keep.hbw;
     FLX.pos = keep.pos; FLX.posG = keep.posG; FLX.pk = keep.pk; FLX.sel = keep.sel; FLX.fan = keep.fan; }
@@ -33660,6 +33667,8 @@ function shProfFreeHTML(list, w) {
     if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; try { paintCv(c); } catch {}
       orbCalWire(c, () => S.h3calYM, (ym) => { S.h3calYM = ym; c.dataset.h = ''; mount(); }); }
   };
+  // ao voltar para o Hoje sem nada mudar na página o observador não disparava e o calendário não voltava: confere a cada 1 s
+  setInterval(() => { try { if (S.tab === 'inicio' && !TR.querySelector('.h3cal')) mount(); } catch {} }, 1000);
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { mount(); } catch (err) { console.warn('calendário no Hoje', err); } }, 120); }).observe(TR, { childList: true, subtree: true });
 }
 // --- zzzze_v2_sobre_voce.js ---
@@ -33700,14 +33709,22 @@ function v3EuData() {
   return out;
 }
 { const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments);
-    try { const body = v && v.querySelector('.sl-body'), dest = body && body.querySelector(':scope > .v3pane[data-k=sobre]'); if (!dest) return r;
-      let c = dest.querySelector(':scope > .v3eu'); if (!(d && d.self) || S.v3prev) { if (c) c.remove(); return r; }
-      const it = v3EuData(); if (!it.length) { if (c) c.remove(); return r; }
-      const html = '<h4>Seu jeito de ler</h4><div class="g">' + it.map(([k, b, s]) => '<div class="i"><small>' + esc(k) + '</small><b>' + esc(b) + '</b><span>' + esc(s) + '</span></div>').join('') + '</div>';
+    try { const body = v && v.querySelector('.sl-body'); if (!body || !d) return r;
+      // (Bia 26/11) visita e "como as amizades veem" também têm o Sobre (aba top): lá o cartão vem do resumo publicado
+      const mine = !!d.self && !S.v3prev, dest = body.querySelector(':scope > .v3pane[data-k=' + (mine ? 'sobre' : 'top') + ']'); if (!dest) return r;
+      body.querySelectorAll('.v3pane > .v3eu').forEach((x) => { if (x.parentElement !== dest) x.remove(); });
+      let c = dest.querySelector(':scope > .v3eu');
+      const it = d.self ? v3EuData() : (d.shelf && Array.isArray(d.shelf.eu) ? d.shelf.eu.filter((x) => Array.isArray(x) && x.length === 3).slice(0, 6) : []);
+      if (!it.length) { if (c) c.remove(); return r; }
+      const html = '<h4>' + (mine ? 'Seu jeito de ler' : 'Jeito de ler') + '</h4><div class="g">' + it.map(([k, b, s]) => '<div class="i"><small>' + esc(k) + '</small><b>' + esc(b) + '</b><span>' + esc(s) + '</span></div>').join('') + '</div>';
       if (!c) { c = document.createElement('section'); c.className = 'v3eu'; c.setAttribute('aria-label', 'Seu jeito de ler'); }
       if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; }
       const n = dest.querySelector(':scope > .v3num'); const want = n ? n.nextElementSibling : dest.firstElementChild; if (want !== c) (n ? n.after(c) : dest.prepend(c));
     } catch (err) { console.warn('Seu jeito de ler', err); } return r; }; }
+// o resumo publicado leva o cartão (só textos curtos), salvo se a pessoa escondeu a leitura do perfil
+{ const _ps = profShelvesSnap; profShelvesSnap = function (snapshot) { const r = _ps.apply(this, arguments);
+    try { const pv = (socialProfile && socialProfile.privacy) || {}; if (snapshot && snapshot.shelf) { if (pv.reading === false) delete snapshot.shelf.eu; else snapshot.shelf.eu = v3EuData().map((x) => x.map((t) => String(t).slice(0, 80))); } } catch (err) { console.warn('jeito de ler no resumo', err); }
+    return r; }; }
 // --- zzzzf_v2_editar_no_topo.js ---
 // ---------- v2: "Editar" da estante no topo, ao lado de "Todos" (Bia, 26/11) ----------
 // O botão flutuante "Editar" ficava por cima dos livros. Agora ele é uma opção da linha de cima (Todos · Editar · Grade|
@@ -33739,6 +33756,7 @@ function v3EuData() {
 //  - nada que já está na Biblioteca; nada repetido; só com capa.
 //  - o conjunto vale 3 dias; a vitrine do dia é um recorte que gira todo dia (dia do ano), então muda mesmo sem buscar.
 { const _old = tasteRecs;
+  const tk = (t) => normT(String(t || '').split(/s[-–]s|[:([]/)[0]);
   const W = (e) => { let p = 0; try { p = Number((reviewOfLib(e) || {}).paws) || 0; } catch {} return (e.status === 'LENDO' ? 2 : 1) * (p >= 4.5 ? 3 : p >= 4 ? 2 : p && p < 3 ? -1 : 1); };
   const first = (a) => String(a || '').split(/[,;&]| e /)[0].trim();
   function pvSignals() {
@@ -33751,19 +33769,21 @@ function v3EuData() {
   }
   const dayN = () => Math.floor(Date.parse(todayISO()) / 864e5);
   async function pvPool(sig) {
-    const cacheKey = 'bear.pv3';
+    const cacheKey = 'bear.pv4'; // pv4: só português (26/11)
     try { const c = JSON.parse(localStorage.getItem(cacheKey) || 'null'); if (c && c.key === sig.key && dayN() - c.day < 3 && Array.isArray(c.items) && c.items.length >= 8) return c.items; } catch {}
     const lists = await Promise.all(sig.authors.map(async (a) => { try {
       const r = await sapi('GET', '/v1/books/search?q=' + encodeURIComponent(a)); const it = (r && r.status === 200 && r.data && r.data.items) || [];
       const sur = normT(a.split(' ').slice(-1)[0] || a);
-      return it.filter((b) => b && b.title && b.cover_url && (b.authors || []).some((x) => normT(x).includes(sur))).map((b) => ({ title: String(b.title).split(':')[0].trim(), author: (b.authors || [])[0] || a, coverUrl: b.cover_url, isbn: b.isbn || null }));
+      return it.filter((b) => b && b.title && b.cover_url && /^pt/i.test(String(b.language || '')) && (b.authors || []).some((x) => normT(x).includes(sur))).map((b) => ({ title: String(b.title).split(':')[0].trim(), author: (b.authors || [])[0] || a, coverUrl: b.cover_url, isbn: b.isbn || null }));
     } catch { return []; } }));
     let old = []; try { old = (await _old.apply(this, [])) || []; } catch {}
-    lists.push(old.map((x) => ({ ...x })));
-    const mine = new Set((lib() || []).map((e) => normT(e.title || ''))), seen = new Set(), out = [];
+    // a lista antiga não traz idioma: fora títulos com palavras típicas de inglês, alemão ou espanhol (Bia 26/11: só português)
+    const FORA = /(the|of|and|every|your|my|with|for|from|this|that|der|die|das|und|el|los|las|del|y)/i;
+    lists.push(old.filter((x) => x && x.title && !FORA.test(x.title)).map((x) => ({ ...x })));
+    const mine = new Set((lib() || []).flatMap((e) => [tk(e.title), tk(e.meta && (e.meta.origTitle || e.meta.title))]).filter(Boolean)), seen = new Set(), out = [];
     const side = /\b(box|kit|colecao|resumo|guia|edicao comentada|livro de colorir|box set)\b/;
     // intercala as listas (uma de cada autoria por vez) para a vitrine não ficar com um autor só
-    for (let i = 0; out.length < 60 && i < 25; i++) for (const L of lists) { const it = L[i]; if (!it || !it.title || !it.coverUrl) continue; const n = normT(it.title); if (!n || seen.has(n) || mine.has(n) || side.test(n)) continue; seen.add(n); out.push(it); }
+    for (let i = 0; out.length < 60 && i < 25; i++) for (const L of lists) { const it = L[i]; if (!it || !it.title || !it.coverUrl) continue; const n = tk(it.title); if (!n || seen.has(n) || mine.has(n) || side.test(normT(it.title))) continue; seen.add(n); out.push(it); }
     if (out.length) { try { localStorage.setItem(cacheKey, JSON.stringify({ key: sig.key, day: dayN(), items: out })); } catch {} }
     return out;
   }
@@ -33771,7 +33791,7 @@ function v3EuData() {
     try {
       const sig = pvSignals(); if (!sig.authors.length) return await _old.apply(this, arguments);
       const pool = await pvPool(sig); if (!pool.length) return await _old.apply(this, arguments);
-      const mine = new Set((lib() || []).map((e) => normT(e.title || ''))), ok = pool.filter((x) => !mine.has(normT(x.title)));
+      const mine = new Set((lib() || []).flatMap((e) => [tk(e.title), tk(e.meta && (e.meta.origTitle || e.meta.title))]).filter(Boolean)), ok = pool.filter((x) => !mine.has(tk(x.title)));
       const n = ok.length, start = n ? (dayN() * 7) % n : 0; // gira todo dia
       return ok.slice(start).concat(ok.slice(0, start)).slice(0, 40);
     } catch (err) { console.warn('para você', err); return _old.apply(this, arguments); }
@@ -33822,7 +33842,7 @@ function v3EuData() {
     ear.setAttribute('aria-label', e ? `Continuar leitura de ${e.title}, ${pct}%` : 'Ler: abrir a sessão de leitura'); };
   setInterval(fill, 1500); setTimeout(fill, 300);
   const reset = () => { busy = false; ear.classList.remove('go'); ear.classList.add('lift'); set(S0); };
-  const openNow = () => { try { v2Ler(); } catch (err) { console.error('ler', err); } setTimeout(reset, RM() ? 0 : 500); };
+  const openNow = () => { try { S.lerFull = 1; v2Ler(); } catch (err) { console.error('ler', err); } setTimeout(reset, RM() ? 0 : 500); };
   const finish = () => { if (busy) return; busy = true; ear.classList.remove('lift'); ear.classList.add('go'); set(Math.max(innerWidth, innerHeight) * 1.6); setTimeout(openNow, RM() ? 0 : 380); };
   ear.addEventListener('pointerdown', (e) => { if (busy) return; d = { x: e.clientX, y: e.clientY, moved: false }; try { ear.setPointerCapture(e.pointerId); } catch {} ear.classList.remove('lift'); });
   ear.addEventListener('pointermove', (e) => { if (!d) return; const m = Math.max(d.x - e.clientX, d.y - e.clientY, 0); if (m > 6) d.moved = true; if (!RM()) set(S0 + m * 1.1); });
@@ -33833,6 +33853,80 @@ function v3EuData() {
   ear.addEventListener('click', (e) => { e.stopImmediatePropagation(); e.preventDefault(); if (skipClick || busy) return;
     if (RM()) return openNow(); ear.classList.add('lift'); set(100); setTimeout(finish, 240); }, true);
   set(S0);
+}
+// ---------- a orelha abre a leitura em página inteira (Bia 26/11: "não deveria abrir as opções na página inteira como
+// propõe o protótipo?"). Pela orelha, a folha "Ler" (lerq) vira página: capa grande, Entrar no silêncio, Atualizar página
+// e Voltar ao Hoje. Aberta por outros caminhos, continua sendo a folha de baixo.
+const LERFULL_CSS = `.v4ler .sheet.lerfull{top:0;bottom:0;max-height:none;border-radius:0;padding:0 20px max(20px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;animation:lerfin .32s ease-out}
+.v4ler .sheet.lerfull .grab{display:none}
+.v4ler .sheet.lerfull .lerfh{display:flex;align-items:center;gap:8px;min-height:56px;margin:0 -6px}
+.v4ler .sheet.lerfull .lerfh h2{margin:0;font-family:var(--f-disp,Georgia,serif);font-size:1.15rem}
+.v4ler .sheet.lerfull .sh-bk{flex-direction:column;align-items:center;text-align:center;gap:14px;margin:auto 0 22px}
+.v4ler .sheet.lerfull .sh-bk > :first-child{width:132px!important;height:198px!important;font-size:13px!important;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.v4ler .sheet.lerfull .sh-bk h3{font-size:1.45rem}
+.v4ler .sheet.lerfull .lerq{margin-bottom:auto}
+.v4ler .sheet.lerfull .lerback{margin-top:14px;width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;background:none;color:var(--ink);font:inherit;font-weight:800}
+@keyframes lerfin{from{clip-path:circle(0 at 100% 100%)}to{clip-path:circle(150% at 100% 100%)}}
+@media (prefers-reduced-motion:reduce){.v4ler .sheet.lerfull{animation:none}}`;
+{ const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments);
+    try { const st = v4State(), R = V4; if (!R) return r;
+      if (st.sheet !== 'lerq') { S.lerFull = 0; return r; }
+      if (!S.lerFull) return r;
+      const root = R.getRootNode(); if (root && root !== document && !root.querySelector('style.lerfullcss')) { const s2 = document.createElement('style'); s2.className = 'lerfullcss'; s2.textContent = LERFULL_CSS; root.append(s2); }
+      const sh = R.querySelector('.sheet'); if (!sh) return r; sh.classList.add('lerfull');
+      if (!sh.querySelector('.lerfh')) sh.insertAdjacentHTML('afterbegin', `<header class="lerfh"><button class="ib" data-a="close" aria-label="Voltar ao Hoje">${v4ic('back', 22)}</button><h2>Ler</h2></header>`);
+      const q = sh.querySelector('.lerq'); if (q && !sh.querySelector('.lerback')) q.insertAdjacentHTML('afterend', '<button class="lerback" data-a="close">Voltar ao Hoje</button>');
+    } catch (err) { console.warn('ler em página', err); } return r; }; }
+// --- zzzzj_v2_prazo_passado.js ---
+// ---------- v2: dias que já passaram no plano do prazo (Bia, 26/11: "os dias do prazo vão sumindo; não sei se ontem
+// bati a meta") ----------
+// O plano (dueRow) só mostra de hoje em diante. Acima dele entra "Dias anteriores": cada dia desde que o prazo foi
+// marcado até ontem, com as páginas lidas, a meta daquele dia e se bateu (estrela) ou não. Folga aparece como folga.
+// A meta de cada dia passado é a mesma conta do histórico (tlEvents): o total dividido pelos dias de leitura do prazo.
+{ const st = document.createElement('style'); st.textContent = `
+.dpp{margin:.2rem 0 .7rem}.dpp > small{display:block;font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin:0 0 .35rem}
+.dpp .r{display:flex;gap:.35rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.2rem}
+.dpp .c{flex:0 0 auto;min-width:64px;display:grid;justify-items:center;gap:.1rem;padding:.45rem .5rem;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:.72rem;color:var(--ink-2)}
+.dpp .c b{font-size:.82rem;color:var(--ink)}.dpp .c.ok{border-color:color-mix(in srgb,var(--acc) 60%,var(--line))}.dpp .c.ok i{color:var(--acc)}
+.dpp .c.no i{color:var(--ink-2)}.dpp .c.off{border-style:dashed;opacity:.7}.dpp .c i{font-style:normal;font-weight:900}
+`; document.head.append(st); try { TR.append(st.cloneNode(true)); } catch {} }
+function duePastHTML(e) {
+  if (!e || !e.dueAt || !e.dueSince) return '';
+  const t = todayISO(), since = String(e.dueSince).slice(0, 10); if (since >= t) return '';
+  let L = []; try { L = tlEvents(e) || []; } catch {}
+  const byD = new Map(L.map((x) => [x.d, x])), off = e.dueOff || [];
+  // meta base, igual ao tlEvents
+  let total = 0; try { total = readingInfo(e).total || Number(e.totalPages) || 0; } catch {}
+  let work = 0; for (let d = since; d <= e.dueAt; d = new Date(Date.parse(d) + 864e5).toISOString().slice(0, 10)) if (!off.includes(new Date(d + 'T12:00:00Z').getUTCDay())) work++;
+  const base = total && work ? Math.ceil(Math.max(0, total - (e.dueStartPage || 0)) / work) : 0;
+  const DOW = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'], out = [];
+  for (let d = since; d < t && out.length < 31; d = new Date(Date.parse(d) + 864e5).toISOString().slice(0, 10)) {
+    const w = new Date(d + 'T12:00:00Z').getUTCDay(), x = byD.get(d), pages = x ? x.pages : 0, isOff = off.includes(w) && work > 0, per = isOff ? 0 : (x && x.per) || base;
+    const ok = !isOff && per > 0 && pages >= per, lab = `${DOW[w]} ${d.slice(8, 10)}/${d.slice(5, 7)}`;
+    out.push(`<div class="c ${isOff ? 'off' : ok ? 'ok' : 'no'}" aria-label="${lab}: ${isOff ? 'folga' : `${pages} de ${per} páginas, ${ok ? 'meta batida' : 'meta não batida'}`}"><span>${lab}</span>${isOff ? '<b>folga</b>' : `<b>${pages} de ${per}</b><i>${ok ? '★ bateu' : 'não bateu'}</i>`}</div>`);
+  }
+  return out.length ? `<div class="dpp"><small>Dias anteriores</small><div class="r">${out.join('')}</div></div>` : '';
+}
+{ const _dr = dueRow; dueRow = function (p, e) { const r = _dr.apply(this, arguments); try { return duePastHTML(e) + r; } catch (err) { console.warn('dias anteriores', err); return r; } }; }
+// --- zzzzk_v2_chat_topo.js ---
+// ---------- v2: conversa com "‹ Nome" no topo, sem o botão redondo (Bia, 26/11: "por que dessa seta?") ----------
+// A conversa tinha um botão redondo "‹" solto abaixo do topo, além do nome no topo. Agora o Voltar fica no topo, ao lado do
+// nome (como nas outras telas internas), e o botão redondo some. A hora da mensagem não quebra mais em duas linhas.
+{ const st = document.createElement('style'); st.textContent = `
+#shelflist .sl-body:has(> .cht) > .sl-top,#shelflist .sl-body:has(.cht) .sl-top{display:none!important}
+.bub small{white-space:nowrap;flex:none}
+.gtop .chtback{display:inline-grid;place-items:center;width:36px;height:36px;border:0;background:none;color:var(--ink);margin-right:.15rem;cursor:pointer}
+.gtop .chtback svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+`; TR.append(st); }
+{ let tm = 0;
+  const sync = () => { const top = TR.querySelector('.gtop'); if (!top) return; const v = TR.querySelector('#shelflist');
+    const on = !!(v && !v.hidden && v.querySelector('.cht')); let b = top.querySelector('.chtback');
+    if (on && !b) { b = document.createElement('button'); b.type = 'button'; b.className = 'chtback'; b.setAttribute('aria-label', 'Voltar');
+      b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+      b.addEventListener('click', () => { const sb = TR.querySelector('#shelflist .sl-back'); if (sb) sb.click(); else { try { history.back(); } catch {} } });
+      (top.querySelector('#g-t') || top.firstElementChild).before(b); }
+    if (b && b.hidden === on) b.hidden = !on; };
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; sync(); }, 80); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
 }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }

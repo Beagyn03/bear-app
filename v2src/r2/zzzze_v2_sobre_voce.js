@@ -35,11 +35,19 @@ function v3EuData() {
   return out;
 }
 { const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments);
-    try { const body = v && v.querySelector('.sl-body'), dest = body && body.querySelector(':scope > .v3pane[data-k=sobre]'); if (!dest) return r;
-      let c = dest.querySelector(':scope > .v3eu'); if (!(d && d.self) || S.v3prev) { if (c) c.remove(); return r; }
-      const it = v3EuData(); if (!it.length) { if (c) c.remove(); return r; }
-      const html = '<h4>Seu jeito de ler</h4><div class="g">' + it.map(([k, b, s]) => '<div class="i"><small>' + esc(k) + '</small><b>' + esc(b) + '</b><span>' + esc(s) + '</span></div>').join('') + '</div>';
+    try { const body = v && v.querySelector('.sl-body'); if (!body || !d) return r;
+      // (Bia 26/11) visita e "como as amizades veem" também têm o Sobre (aba top): lá o cartão vem do resumo publicado
+      const mine = !!d.self && !S.v3prev, dest = body.querySelector(':scope > .v3pane[data-k=' + (mine ? 'sobre' : 'top') + ']'); if (!dest) return r;
+      body.querySelectorAll('.v3pane > .v3eu').forEach((x) => { if (x.parentElement !== dest) x.remove(); });
+      let c = dest.querySelector(':scope > .v3eu');
+      const it = d.self ? v3EuData() : (d.shelf && Array.isArray(d.shelf.eu) ? d.shelf.eu.filter((x) => Array.isArray(x) && x.length === 3).slice(0, 6) : []);
+      if (!it.length) { if (c) c.remove(); return r; }
+      const html = '<h4>' + (mine ? 'Seu jeito de ler' : 'Jeito de ler') + '</h4><div class="g">' + it.map(([k, b, s]) => '<div class="i"><small>' + esc(k) + '</small><b>' + esc(b) + '</b><span>' + esc(s) + '</span></div>').join('') + '</div>';
       if (!c) { c = document.createElement('section'); c.className = 'v3eu'; c.setAttribute('aria-label', 'Seu jeito de ler'); }
       if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; }
       const n = dest.querySelector(':scope > .v3num'); const want = n ? n.nextElementSibling : dest.firstElementChild; if (want !== c) (n ? n.after(c) : dest.prepend(c));
     } catch (err) { console.warn('Seu jeito de ler', err); } return r; }; }
+// o resumo publicado leva o cartão (só textos curtos), salvo se a pessoa escondeu a leitura do perfil
+{ const _ps = profShelvesSnap; profShelvesSnap = function (snapshot) { const r = _ps.apply(this, arguments);
+    try { const pv = (socialProfile && socialProfile.privacy) || {}; if (snapshot && snapshot.shelf) { if (pv.reading === false) delete snapshot.shelf.eu; else snapshot.shelf.eu = v3EuData().map((x) => x.map((t) => String(t).slice(0, 80))); } } catch (err) { console.warn('jeito de ler no resumo', err); }
+    return r; }; }

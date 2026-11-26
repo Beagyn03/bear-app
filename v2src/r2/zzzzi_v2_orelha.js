@@ -35,7 +35,7 @@
     ear.setAttribute('aria-label', e ? `Continuar leitura de ${e.title}, ${pct}%` : 'Ler: abrir a sessão de leitura'); };
   setInterval(fill, 1500); setTimeout(fill, 300);
   const reset = () => { busy = false; ear.classList.remove('go'); ear.classList.add('lift'); set(S0); };
-  const openNow = () => { try { v2Ler(); } catch (err) { console.error('ler', err); } setTimeout(reset, RM() ? 0 : 500); };
+  const openNow = () => { try { S.lerFull = 1; v2Ler(); } catch (err) { console.error('ler', err); } setTimeout(reset, RM() ? 0 : 500); };
   const finish = () => { if (busy) return; busy = true; ear.classList.remove('lift'); ear.classList.add('go'); set(Math.max(innerWidth, innerHeight) * 1.6); setTimeout(openNow, RM() ? 0 : 380); };
   ear.addEventListener('pointerdown', (e) => { if (busy) return; d = { x: e.clientX, y: e.clientY, moved: false }; try { ear.setPointerCapture(e.pointerId); } catch {} ear.classList.remove('lift'); });
   ear.addEventListener('pointermove', (e) => { if (!d) return; const m = Math.max(d.x - e.clientX, d.y - e.clientY, 0); if (m > 6) d.moved = true; if (!RM()) set(S0 + m * 1.1); });
@@ -47,3 +47,26 @@
     if (RM()) return openNow(); ear.classList.add('lift'); set(100); setTimeout(finish, 240); }, true);
   set(S0);
 }
+// ---------- a orelha abre a leitura em página inteira (Bia 26/11: "não deveria abrir as opções na página inteira como
+// propõe o protótipo?"). Pela orelha, a folha "Ler" (lerq) vira página: capa grande, Entrar no silêncio, Atualizar página
+// e Voltar ao Hoje. Aberta por outros caminhos, continua sendo a folha de baixo.
+const LERFULL_CSS = `.v4ler .sheet.lerfull{top:0;bottom:0;max-height:none;border-radius:0;padding:0 20px max(20px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;animation:lerfin .32s ease-out}
+.v4ler .sheet.lerfull .grab{display:none}
+.v4ler .sheet.lerfull .lerfh{display:flex;align-items:center;gap:8px;min-height:56px;margin:0 -6px}
+.v4ler .sheet.lerfull .lerfh h2{margin:0;font-family:var(--f-disp,Georgia,serif);font-size:1.15rem}
+.v4ler .sheet.lerfull .sh-bk{flex-direction:column;align-items:center;text-align:center;gap:14px;margin:auto 0 22px}
+.v4ler .sheet.lerfull .sh-bk > :first-child{width:132px!important;height:198px!important;font-size:13px!important;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.v4ler .sheet.lerfull .sh-bk h3{font-size:1.45rem}
+.v4ler .sheet.lerfull .lerq{margin-bottom:auto}
+.v4ler .sheet.lerfull .lerback{margin-top:14px;width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;background:none;color:var(--ink);font:inherit;font-weight:800}
+@keyframes lerfin{from{clip-path:circle(0 at 100% 100%)}to{clip-path:circle(150% at 100% 100%)}}
+@media (prefers-reduced-motion:reduce){.v4ler .sheet.lerfull{animation:none}}`;
+{ const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments);
+    try { const st = v4State(), R = V4; if (!R) return r;
+      if (st.sheet !== 'lerq') { S.lerFull = 0; return r; }
+      if (!S.lerFull) return r;
+      const root = R.getRootNode(); if (root && root !== document && !root.querySelector('style.lerfullcss')) { const s2 = document.createElement('style'); s2.className = 'lerfullcss'; s2.textContent = LERFULL_CSS; root.append(s2); }
+      const sh = R.querySelector('.sheet'); if (!sh) return r; sh.classList.add('lerfull');
+      if (!sh.querySelector('.lerfh')) sh.insertAdjacentHTML('afterbegin', `<header class="lerfh"><button class="ib" data-a="close" aria-label="Voltar ao Hoje">${v4ic('back', 22)}</button><h2>Ler</h2></header>`);
+      const q = sh.querySelector('.lerq'); if (q && !sh.querySelector('.lerback')) q.insertAdjacentHTML('afterend', '<button class="lerback" data-a="close">Voltar ao Hoje</button>');
+    } catch (err) { console.warn('ler em página', err); } return r; }; }

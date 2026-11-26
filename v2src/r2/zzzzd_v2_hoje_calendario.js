@@ -20,5 +20,7 @@
     if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; try { paintCv(c); } catch {}
       orbCalWire(c, () => S.h3calYM, (ym) => { S.h3calYM = ym; c.dataset.h = ''; mount(); }); }
   };
+  // ao voltar para o Hoje sem nada mudar na página o observador não disparava e o calendário não voltava: confere a cada 1 s
+  setInterval(() => { try { if (S.tab === 'inicio' && !TR.querySelector('.h3cal')) mount(); } catch {} }, 1000);
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { mount(); } catch (err) { console.warn('calendário no Hoje', err); } }, 120); }).observe(TR, { childList: true, subtree: true });
 }
