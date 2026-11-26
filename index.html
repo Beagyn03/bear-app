@@ -33815,7 +33815,9 @@ function v3EuData() {
 #v5ler.ear{right:0!important;left:auto!important;translate:0 16px;width:var(--s,64px);height:var(--s,64px);min-width:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible;touch-action:none;cursor:grab;transform:none!important}
 #v5ler.ear > .pl,#v5ler.ear > .lb{display:none}
 #v5ler.ear::after{display:none}
-#v5ler.ear .eu{position:absolute;inset:0;clip-path:polygon(100% 0,100% 100%,0 100%);background:#2a2433 center/cover no-repeat;background-image:var(--cv,linear-gradient(160deg,#6b5a8e,#2a2140 55%,#15111e))}
+#v5ler.ear .eu{position:absolute;inset:0;clip-path:polygon(100% 0,100% 100%,0 100%);background-color:var(--panel,#1a1524);background-image:var(--cv,linear-gradient(160deg,#6b5a8e,#2a2140 55%,#15111e));background-repeat:no-repeat;background-position:right bottom;background-size:64px 64px}
+/* (Bia 26/11 "ficou feio") ao virar a página a capa não estica: fica do tamanho da orelha, no canto, e o resto é o fundo do app */
+#v5ler.ear.big .eu{background-size:64px auto}#v5ler.ear.big .eu::after{background:linear-gradient(315deg,rgba(0,0,0,0) 70%,rgba(0,0,0,.35))}
 #v5ler.ear .eu::after{content:"";position:absolute;inset:0;background:linear-gradient(315deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.6))}
 #v5ler.ear .eu b{position:absolute;right:6px;bottom:5px;z-index:1;font-family:var(--f-disp,Georgia,serif);font-size:11px;font-weight:700;color:#f3c56b;text-shadow:0 1px 2px rgba(0,0,0,.7)}
 #v5ler.ear .ef{position:absolute;inset:0;clip-path:polygon(0 0,100% 0,0 100%);background:linear-gradient(135deg,#e9dcc0,#f6eedc 55%,#fffaf0);filter:drop-shadow(-3px -3px 6px rgba(0,0,0,.45))}
@@ -33829,7 +33831,7 @@ function v3EuData() {
 { const ear = jnPl_, S0 = 64, OPEN = 150, RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   ear.classList.add('ear'); ear.insertAdjacentHTML('beforeend', '<span class="eu"><b></b></span><span class="ef"><span></span></span>');
   const shade = document.createElement('div'); shade.className = 'v5shade'; TR.append(shade);
-  const set = (s) => { ear.style.setProperty('--s', s + 'px'); shade.style.opacity = String(Math.max(0, Math.min(1, (s - S0) / 220))); };
+  const set = (s) => { ear.classList.toggle('big', s > S0 + 8); ear.style.setProperty('--s', s + 'px'); shade.style.opacity = String(Math.max(0, Math.min(1, (s - S0) / 220))); };
   let d = null, busy = false, skipClick = false;
   // conteúdo: capa, % e página do livro atual (atualiza só quando muda)
   let sig = '';
@@ -33841,6 +33843,10 @@ function v3EuData() {
     ear.querySelector('.ef span').textContent = e && now ? 'pág. ' + now : 'Ler';
     ear.setAttribute('aria-label', e ? `Continuar leitura de ${e.title}, ${pct}%` : 'Ler: abrir a sessão de leitura'); };
   setInterval(fill, 1500); setTimeout(fill, 300);
+  // nunca fica aberta sozinha: se a página virou e ninguém está arrastando (o celular pausou a animação, a leitura não
+  // abriu), a orelha volta ao canto (Bia 26/11: ficou travada cobrindo a tela)
+  let since = 0; setInterval(() => { const sz = parseFloat(ear.style.getPropertyValue('--s')) || 64; if (d || sz <= 64.5) { since = 0; return; } if (!since) since = Date.now(); else if (Date.now() - since > 1800) { since = 0; busy = false; ear.classList.remove('go'); ear.classList.add('lift'); set(64); } }, 600);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !d) { busy = false; ear.classList.remove('go'); set(64); } });
   const reset = () => { busy = false; ear.classList.remove('go'); ear.classList.add('lift'); set(S0); };
   const openNow = () => { try { S.lerFull = 1; v2Ler(); } catch (err) { console.error('ler', err); } setTimeout(reset, RM() ? 0 : 500); };
   const finish = () => { if (busy) return; busy = true; ear.classList.remove('lift'); ear.classList.add('go'); set(Math.max(innerWidth, innerHeight) * 1.6); setTimeout(openNow, RM() ? 0 : 380); };
