@@ -10025,6 +10025,7 @@ composeMarker = function () { toast('Marcadores saíram do app. Para guardar uma
 
 
 
+
 // ==== 4.4 rodada 2 (início) ====
 // --- 00_v2_capa_canvas.js ---
 // Capa para canvas (Bia, 22/11): o Google Livros não manda CORS, então o canvas não pode ler os pixels dessas capas
@@ -33126,6 +33127,9 @@ app.addEventListener('click', (ev) => { const el = ev.target.closest && ev.targe
 // nesse meio tempo, o celular corta a requisição e a atividade some. Agora: fila guardada no aparelho (lv.actq), envio com
 // keepalive (sobrevive à saída da tela) e novas tentativas ao voltar ao app, ao ficar online e a cada minuto. O servidor já
 // guarda uma atividade por livro, tipo e dia (o reenvio só atualiza a mesma linha), então repetir é seguro.
+// 26/11 (API, migração 045): cada atividade leva `at`, o momento em que aconteceu, gravado aqui e mandado igual no envio e
+// em todo reenvio. O servidor tira o dia de São Paulo desse `at` (aceita até 48 h atrás), então um reenvio atrasado
+// cai no dia certo e não passa por cima de uma atualização mais nova.
 const AQ_K = 'lv.actq', AQ_MAX_AGE = 36 * 3600e3;
 const aqLoad = () => { try { const q = JSON.parse(localStorage.getItem(AQ_K) || '[]'); return Array.isArray(q) ? q : []; } catch { return []; } };
 const aqSave = (q) => { try { localStorage.setItem(AQ_K, JSON.stringify(q.slice(-40))); } catch {} };
@@ -33149,9 +33153,10 @@ async function aqFlush() {
 }
 publishActivity = async function (e, kind) {
   try { if (!e) return; if (!connected()) return; const info = readingInfo(e) || {};
-    const b = { kind, libId: e.id, title: e.title, author: e.author || null, cover: smallCover(e.cover), pct: info.total ? Math.min(100, info.pct) : null, pages: info.now || null };
+    const now = Date.now();
+    const b = { kind, libId: e.id, title: e.title, author: e.author || null, cover: smallCover(e.cover), pct: info.total ? Math.min(100, info.pct) : null, pages: info.now || null, at: new Date(now).toISOString() };
     const day = todayISO(); const q = aqLoad().filter((x) => !(x.b.libId === b.libId && x.b.kind === b.kind && x.day === day)); // a mais nova do dia substitui a anterior
-    q.push({ id: uid(), b, day, at: Date.now(), n: 0 }); aqSave(q); await aqFlush();
+    q.push({ id: uid(), b, day, at: now, n: 0 }); aqSave(q); await aqFlush();
   } catch (err) { console.warn('atividade', err); } };
 setInterval(() => { if (aqLoad().length) aqFlush(); }, 60000);
 window.addEventListener('online', () => aqFlush());
