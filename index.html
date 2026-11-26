@@ -19624,10 +19624,17 @@ function v3Wire(v, d, hd, x) {
   on('add', async () => { const r = await sapi('POST', '/v1/friends/requests', { handle: d.handle }).catch(() => null); toast(r && r.status < 300 ? 'Pedido de amizade enviado' : 'Não consegui agora'); });
 }
 // liga o perfil novo sempre que o perfil (seu ou de outra pessoa) está na tela
-{ let tm = 0; const put = () => { const v = $('#shelflist'), d = S.fpData;
-    if (!v || v.hidden || !d || !d.handle) { v && v.classList.remove('v3pf-on'); return; }
+// (Bia, 26/11) ao abrir o perfil aparecia por um instante a tela antiga (Lendo agora, Conquistas, Melhores avaliados):
+// o perfil novo só liga 90 ms depois. Agora o conteúdo antigo fica invisível até o novo ligar; se o novo não puder ser
+// montado (sem dados, erro), o antigo volta a aparecer (v3pf-old) em vez de a tela ficar vazia.
+{ const st = document.createElement('style'); st.textContent = `#shelflist:not(.v3pf-on):not(.v3pf-old) > .sl-body:has(> .yo-top, > .v2pv) > :not(.sl-top){visibility:hidden}`; TR.append(st); }
+{ let tm = 0, fb = 0;
+  const put = () => { const v = $('#shelflist'), d = S.fpData;
+    if (!v || v.hidden) { if (v) v.classList.remove('v3pf-on', 'v3pf-old'); clearTimeout(fb); fb = 0; return; }
     const body = v.querySelector('.sl-body'); if (!body || !(body.querySelector(':scope > .yo-top') || body.querySelector(':scope > .v2pv'))) { v.classList.remove('v3pf-on'); return; }
-    try { v3Build(v, d); } catch (err) { console.warn('perfil v3', err); } };
+    if (!d || !d.handle) { v.classList.remove('v3pf-on'); if (!fb && !v.classList.contains('v3pf-old')) fb = setTimeout(() => { fb = 0; const w = $('#shelflist'); if (w && !w.hidden && !w.classList.contains('v3pf-on')) w.classList.add('v3pf-old'); }, 2500); return; }
+    clearTimeout(fb); fb = 0;
+    try { v3Build(v, d); v.classList.remove('v3pf-old'); } catch (err) { console.warn('perfil v3', err); v.classList.remove('v3pf-on'); v.classList.add('v3pf-old'); } };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 90); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 // Estatísticas › Na comunidade (só a própria pessoa vê; some sem Comunidade)
 { let tm = 0, cache = null, at = 0; const put = async () => { if (S.tab !== 'progresso') return; const box = TR.querySelector('#lista'); if (!box || box.querySelector('.v3com') || !v2Mods().comunidade) return;
@@ -30356,7 +30363,7 @@ document.addEventListener('input', (ev) => { const t = ev.composedPath && ev.com
       // calendário do mês da Órbita (um quadrado por dia com a capa do que leu). Visitante e prévia seguem como estavam:
       // o calendário usa o registro de leitura do aparelho, que não é publicado.
       body.classList.toggle('v3nys', self && !ro);
-      if (self && !ro) { body.dataset.ysDest = ''; v3CalMount(body); return r; }
+      if (self && !ro) { body.dataset.ysDest = ''; body.querySelectorAll(':scope > .v3pane[data-k=sobre] > .v3cal').forEach((c) => c.remove()); return r; } // (Bia, 26/11) o calendário mudou para o Hoje
       body.dataset.ysDest = 'top'; setTimeout(() => moveYs(body), 400);
       const dest = body.querySelector(':scope > .v3pane[data-k=top]'); if (!dest) return r;
       const ys = body.querySelector(':scope > .v3pane[data-k=est] > section.ys') || body.querySelector(':scope > section.ys') || [...body.querySelectorAll('.v3pane > section.ys')].find((x) => x.parentElement !== dest);
@@ -33559,6 +33566,219 @@ const pgMarkOwn = (e, n) => { if (e && Number(n) > 0) { e.pagesOwn = 1; delete e
   setTimeout(() => { sweep().catch(() => {}); }, 20000);
   try { window.__lvPg = { log: LOG, checkOne: (id, onPage) => checkOne(byId(id), onPage), sweep, eligible: (id) => eligible(byId(id)), own: (id) => pgOwn(byId(id)) }; } catch {}
 }
+// --- zzzzb_v2_tl_ver_mais.js ---
+// ---------- v2: anotação longa recolhida com "Ver mais" (Bia, 26/11) ----------
+// No histórico do Atualizar leitura (constelação), anotação, trecho ou comentário longo ocupava a tela inteira.
+// Agora o texto mostra até 6 linhas; "Ver mais" abre tudo e "Ver menos" recolhe. As linhas da constelação são refeitas.
+// Vale nos dois lugares onde o histórico aparece: a página Atualizar da v2 (#v6hist, dentro da raiz do v4; o v6Css copia
+// para lá as regras "#editor .cs…") e o #editor antigo.
+{ const st = document.createElement('style'); st.textContent = `
+#editor .cs-n .tl-c p.tlx{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:6;line-clamp:6;overflow:hidden}
+#editor .cs-n .tl-c p.tlx.open{display:block;-webkit-line-clamp:unset;line-clamp:unset;overflow:visible}
+#editor .cs-n .tl-c .tlx-b{display:inline-block;margin-top:.3rem;border:0;background:none;padding:.2rem 0;font:inherit;font-size:.82rem;font-weight:800;color:var(--acc);cursor:pointer}
+`; TR.append(st); }
+function tlxFit(root) {
+  if (!root) return;
+  root.querySelectorAll('.cs-n .tl-c p:not([data-tlx])').forEach((p) => {
+    if (!p.offsetParent) return; // ainda invisível: mede depois
+    p.dataset.tlx = '1'; p.classList.add('tlx');
+    if (p.scrollHeight <= p.clientHeight + 2) { p.classList.remove('tlx'); return; } // cabe: fica como estava
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'tlx-b'; b.textContent = 'Ver mais';
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); const open = p.classList.toggle('open'); b.textContent = open ? 'Ver menos' : 'Ver mais';
+      try { csLines(p.closest('.tl')); } catch {} });
+    p.after(b);
+  });
+}
+// #editor antigo (raiz TR)
+{ let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; const ed = TR.querySelector('#editor'); if (ed && !ed.hidden) tlxFit(ed); }, 60); }).observe(TR, { childList: true, subtree: true }); }
+// página Atualizar da v2: o histórico é repintado dentro de #v6hist
+{ const _hp = v6HistPaint; const seen = new WeakSet();
+  v6HistPaint = function (H) { const r = _hp.apply(this, arguments);
+    try { requestAnimationFrame(() => tlxFit(H));
+      if (H && !seen.has(H)) { seen.add(H); let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; tlxFit(H); }, 60); }).observe(H, { childList: true, subtree: true }); }
+    } catch (err) { console.warn('ver mais', err); } return r; }; }
+// --- zzzzc_v2_perfil_arrumacao.js ---
+// ---------- v2: a estante do perfil é a mesma que você arrumou e decorou (Bia, 26/11) ----------
+// O perfil desenhava a prateleira em ordem automática (pratHTML da lista), ignorando a arrumação da Biblioteca (shc().free:
+// posições, livros deitados, de frente, pilhas, enfeites no lugar). Agora a aba "Todas" do perfil desenha a arrumação.
+// Sempre numa CÓPIA, sem modo de edição: a arrumação de verdade nunca muda por causa do perfil.
+// Só entram os livros que o perfil pode mostrar (as estantes do perfil; estante privada fica de fora para quem visita).
+// O resumo publicado leva a arrumação já filtrada, para as amizades verem igual.
+function shFreeOnly(free, ok) {
+  const F = JSON.parse(JSON.stringify(free));
+  (F.rows || []).forEach((row) => { row.it = (row.it || []).filter((o) => {
+    if (o.t === 'b') return ok.has(String(o.id));
+    if (o.t === 'p') { o.ids = (o.ids || []).filter((id) => ok.has(String(id))); return o.ids.length > 0; }
+    return true; }); });
+  return F;
+}
+function shProfFreeHTML(list, w) {
+  const C = shc(); if (!C || !C.free || !Array.isArray(C.free.rows) || !C.free.rows.length) return null;
+  const ok = new Set(list.map((b) => String(b.id)));
+  const cp = JSON.parse(JSON.stringify(C)); cp.free = shFreeOnly(C.free, ok);
+  const keep = { ctx: SHX_CTX, main: FL_MAIN, sr: FL_SR, wb: FL_WB, pv: FL_PV, hbw: FL_HBW, pos: FLX.pos, posG: FLX.posG, pk: FLX.pk, sel: FLX.sel, fan: FLX.fan };
+  SHX_CTX = cp; FL_MAIN = 1; FL_SR = document.createElement('div'); FL_WB = w; FL_PV = { free: cp.free, plq: cp.plq || [] }; // como prévia: o flSync nunca salva
+  FLX.pos = null; FLX.posG = null; FLX.pk = null; FLX.sel = null; FLX.fan = null;
+  try { return String(flHTML(list)).replace(/<div class="hint">[\s\S]*?<\/div>/, ''); }
+  catch (err) { console.warn('arrumação no perfil', err); return null; }
+  finally { SHX_CTX = keep.ctx; FL_MAIN = keep.main; FL_SR = keep.sr; FL_WB = keep.wb; FL_PV = keep.pv; FL_HBW = keep.hbw;
+    FLX.pos = keep.pos; FLX.posG = keep.posG; FLX.pk = keep.pk; FLX.sel = keep.sel; FLX.fan = keep.fan; }
+}
+{ const _ph = shProfHTML; shProfHTML = function (L, mine, key) {
+    const k = SHX_PF[key]; if (!(k == null || k >= L.length)) return _ph.apply(this, arguments); // estante escolhida: como antes
+    const _pr = pratHTML; let done = false;
+    pratHTML = function (list, sm, w) { if (!sm && !done) { done = true; const h = shProfFreeHTML(list, w); if (h) return h; } return _pr.apply(this, arguments); };
+    let h; try { h = _ph.apply(this, arguments); } finally { pratHTML = _pr; }
+    // a caixa do perfil mostra só o começo da estante: com a arrumação, "Ver estante inteira" aparece sempre que houver mais
+    // de uma prateleira (antes só passava de 14 livros, e os enfeites das prateleiras de baixo ficavam escondidos)
+    try { if (done && !/class="pfall"/.test(h) && (h.match(/class="bay fl"/g) || []).length > 1) { const all = !!SHX_PFX[key];
+      h = h.replace(/<\/div>$/,`<button type="button" class="pfall" data-a="prat-go">${mine ? 'Ver estante inteira' : all ? 'Mostrar menos' : 'Ver estante inteira'}</button></div>`); } } catch {}
+    return h; }; }
+{ const _ss = shSnap; shSnap = function () { const r = _ss.apply(this, arguments);
+    try { const C = shc(); if (r && r.C && C.free && Array.isArray(C.free.rows)) { r.C.free = shFreeOnly(C.free, new Set(Object.keys(r.b || {}))); r.C.tray = (C.tray || []).filter((id) => r.b && r.b[id]); } } catch (err) { console.warn('arrumação no resumo', err); }
+    return r; }; }
+// --- zzzzd_v2_hoje_calendario.js ---
+// ---------- v2: calendário de leitura no Hoje (Bia, 26/11) ----------
+// "No Sobre não faz sentido mostrar o calendário. Coloca no início." O calendário do mês da Órbita (capa do que leu em cada
+// dia, setas para os meses) sai da aba Sobre do perfil e fica no Hoje, logo abaixo dos cartões Órbita e Meta.
+// Some junto com a Órbita quando ela está desligada em Funções do app.
+{ const st = document.createElement('style'); st.textContent = `.h3cal{margin:.9rem 0 .4rem}.h3cal .orb-cal{margin:0}`; TR.append(st); }
+{ let tm = 0;
+  const mount = () => {
+    const H = TR.host || document.body; if (H.classList && H.classList.contains('v2off-orbita')) { TR.querySelectorAll('.h3cal').forEach((c) => c.remove()); return; }
+    const day = TR.querySelector('.v3day'); if (!day || !day.offsetParent) return;
+    S.h3calYM = S.h3calYM || todayISO().slice(0, 7);
+    let html = ''; try { html = orbCalHTML(S.h3calYM); } catch { html = ''; }
+    let c = day.nextElementSibling && day.nextElementSibling.classList.contains('h3cal') ? day.nextElementSibling : null;
+    if (!html) { if (c) c.remove(); return; }
+    if (!c) { TR.querySelectorAll('.h3cal').forEach((x) => x.remove()); c = document.createElement('section'); c.className = 'h3cal'; c.setAttribute('aria-label', 'Calendário de leitura'); day.after(c); }
+    if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; try { paintCv(c); } catch {}
+      orbCalWire(c, () => S.h3calYM, (ym) => { S.h3calYM = ym; c.dataset.h = ''; mount(); }); }
+  };
+  new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { mount(); } catch (err) { console.warn('calendário no Hoje', err); } }, 120); }).observe(TR, { childList: true, subtree: true });
+}
+// --- zzzze_v2_sobre_voce.js ---
+// ---------- v2: aba Sobre com o jeito de ler da pessoa (Bia, 26/11) ----------
+// "No Sobre a gente tem que trazer coisas interessantes sobre a pessoa: gênero favorito, quem ela mais lê…"
+// Cartão "Seu jeito de ler" logo depois dos números: gênero favorito, autoria favorita, formato, melhor leitura do ano,
+// tamanho médio e quanto tempo leva para terminar. Só aparece o que tem dado (livros lidos). Seu perfil, fora da prévia.
+{ const st = document.createElement('style'); st.textContent = `
+.v3pane > .v3eu{margin:0 0 1rem;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:.85rem .9rem}
+.v3eu h4{margin:0 0 .6rem;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.v3eu .g{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
+.v3eu .i{min-width:0;border-radius:14px;background:color-mix(in srgb,var(--ink) 5%,var(--panel));padding:.6rem .7rem}
+.v3eu .i small{display:block;font-size:.72rem;font-weight:800;color:var(--ink-2)}
+.v3eu .i b{display:block;margin-top:.15rem;font-size:1rem;line-height:1.2;color:var(--ink);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.v3eu .i span{display:block;margin-top:.15rem;font-size:.76rem;color:var(--ink-2)}
+`; TR.append(st); }
+function v3EuData() {
+  const L = lib(), lidos = L.filter((e) => e.status === 'LIDO'), y = todayISO().slice(0, 4);
+  const paws = (e) => { try { return Number((reviewOfLib(e) || {}).paws) || 0; } catch { return 0; } };
+  const top = (m) => [...m.entries()].sort((a, b) => b[1].n - a[1].n || b[1].s - a[1].s)[0];
+  const out = [];
+  // gênero favorito: o que mais aparece nos lidos (nota desempata)
+  const G = new Map(); lidos.forEach((e) => { let g = ''; try { g = v2Genre(e); } catch {} if (!g || /^outros?$/i.test(g)) return; const x = G.get(g) || { n: 0, s: 0 }; x.n++; x.s += paws(e); G.set(g, x); });
+  const g = top(G); if (g && g[1].n >= 2) out.push(['Gênero favorito', g[0], g[1].n + ' livros lidos']);
+  // autoria favorita: quem mais leu (pelo menos 2 livros); nota média junto
+  const A = new Map(); lidos.forEach((e) => { const a = String(e.author || '').split(/[,;&]| e /)[0].trim(); if (!a) return; const x = A.get(a) || { n: 0, s: 0, r: 0 }; x.n++; const p = paws(e); if (p) { x.s += p; x.r++; } A.set(a, x); });
+  const a = top(A); if (a && a[1].n >= 2) out.push(['Autoria favorita', a[0], a[1].n + ' livros' + (a[1].r ? ' · nota ' + (a[1].s / a[1].r).toFixed(1).replace('.', ',') : '')]);
+  // formato
+  const F = { FISICO: 'Livro físico', EBOOK: 'E-book', AUDIO: 'Audiolivro' }, fc = {}; lidos.forEach((e) => { const k = F[e.format] ? e.format : 'FISICO'; fc[k] = (fc[k] || 0) + 1; });
+  const fk = Object.keys(fc).sort((p, q) => fc[q] - fc[p])[0]; if (fk && lidos.length >= 3) out.push(['Formato', F[fk], Math.round((fc[fk] / lidos.length) * 100) + '% das leituras']);
+  // melhor leitura do ano
+  const best = lidos.filter((e) => String(e.finishedAt || '').slice(0, 4) === y && paws(e) > 0).sort((p, q) => paws(q) - paws(p) || String(q.finishedAt).localeCompare(String(p.finishedAt)))[0];
+  if (best) out.push(['Melhor de ' + y, best.title, 'nota ' + String(paws(best)).replace('.', ',')]);
+  // tamanho médio e tempo para terminar
+  const pg = lidos.map((e) => Number(e.totalPages) || 0).filter((n) => n > 0); if (pg.length >= 3) out.push(['Tamanho médio', Math.round(pg.reduce((s, n) => s + n, 0) / pg.length) + ' páginas', pg.length + ' livros com páginas']);
+  const dd = lidos.map((e) => { const s = Date.parse(String(e.startedAt || '').slice(0, 10)), f = Date.parse(String(e.finishedAt || '').slice(0, 10)); return s && f && f >= s ? Math.round((f - s) / 864e5) + 1 : 0; }).filter((n) => n > 0 && n < 400).sort((p, q) => p - q);
+  if (dd.length >= 3) { const m = dd[dd.length >> 1]; out.push(['Para terminar', m + (m === 1 ? ' dia' : ' dias'), 'na média de ' + dd.length + ' livros']); }
+  return out;
+}
+{ const _vb = v3Build; v3Build = function (v, d) { const r = _vb.apply(this, arguments);
+    try { const body = v && v.querySelector('.sl-body'), dest = body && body.querySelector(':scope > .v3pane[data-k=sobre]'); if (!dest) return r;
+      let c = dest.querySelector(':scope > .v3eu'); if (!(d && d.self) || S.v3prev) { if (c) c.remove(); return r; }
+      const it = v3EuData(); if (!it.length) { if (c) c.remove(); return r; }
+      const html = '<h4>Seu jeito de ler</h4><div class="g">' + it.map(([k, b, s]) => '<div class="i"><small>' + esc(k) + '</small><b>' + esc(b) + '</b><span>' + esc(s) + '</span></div>').join('') + '</div>';
+      if (!c) { c = document.createElement('section'); c.className = 'v3eu'; c.setAttribute('aria-label', 'Seu jeito de ler'); }
+      if (c.dataset.h !== html) { c.innerHTML = html; c.dataset.h = html; }
+      const n = dest.querySelector(':scope > .v3num'); const want = n ? n.nextElementSibling : dest.firstElementChild; if (want !== c) (n ? n.after(c) : dest.prepend(c));
+    } catch (err) { console.warn('Seu jeito de ler', err); } return r; }; }
+// --- zzzzf_v2_editar_no_topo.js ---
+// ---------- v2: "Editar" da estante no topo, ao lado de "Todos" (Bia, 26/11) ----------
+// O botão flutuante "Editar" ficava por cima dos livros. Agora ele é uma opção da linha de cima (Todos · Editar · Grade|
+// Prateleira) e entra no mesmo Organizar de antes (data-a="shmode" data-v="org", que já existia escondido nessa linha).
+// No celular, Grade e Prateleira ficam só com o ícone para caber (o nome continua no leitor de tela e no title).
+{ const PEN = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E\")";
+  const CSS = `
+.v5est .flncol.fled1{display:none!important}
+.v5est .shtop.fln{display:flex;align-items:center;gap:8px}
+.v5est .shtop.fln .shic[data-a=shmode][data-v=org]{display:inline-flex!important;align-items:center;gap:6px;width:auto;min-width:0;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink);font:inherit;font-weight:800;font-size:.9rem;order:1}
+.v5est .shtop.fln .shic[data-a=shmode][data-v=org] > svg{display:none}
+.v5est .shtop.fln .shic[data-a=shmode][data-v=org]::before{content:'';width:16px;height:16px;background:currentColor;-webkit-mask:${PEN} center/contain no-repeat;mask:${PEN} center/contain no-repeat}
+.v5est .shtop.fln .shic[data-a=shmode][data-v=org]::after{content:'Editar'}
+.v5est .shtop.fln .shsel{order:0}.v5est .shtop.fln .vtog{order:2;margin-left:auto}
+@media (max-width:440px){.v5est .shtop.fln .vtog button{font-size:0;gap:0;padding:0 10px}.v5est .shtop.fln .vtog button svg{margin:0}}`;
+  const _css = shCss; shCss = function (sr) { _css.apply(this, arguments); try { if (sr && !sr.querySelector('style[data-edtopo]')) { const st = document.createElement('style'); st.dataset.edtopo = 1; st.textContent = CSS; sr.append(st); } } catch {} };
+  // a estante já desenhada antes deste bloco também recebe o estilo
+  try { SHX_ROOTS.forEach((sr) => shCss(sr)); } catch {}
+}
+// --- zzzzg_v2_para_voce.js ---
+// ---------- v2: "Para você" que acompanha o que você lê e muda todo dia (Bia, 26/11) ----------
+// Antes: só os gostos do cadastro (gêneros + top 5), busca do Google feita pelo celular (que vive no limite e cai na mesma
+// reserva) e cache que só mudava se os gostos mudassem — a lista ficava igual por semanas.
+// Agora:
+//  - sinais do que a pessoa lê: autoria dos livros lidos e em andamento, com peso para nota alta (4 ou mais) e para o
+//    que é recente; nota baixa (menos de 3) tira peso. Os gostos do cadastro continuam somando.
+//  - busca pela bear-api (/v1/books/search, chave própria no servidor), um pedido por autoria (até 5), e os resultados
+//    antigos por gênero (tasteRecs de antes) entram junto.
+//  - nada que já está na Biblioteca; nada repetido; só com capa.
+//  - o conjunto vale 3 dias; a vitrine do dia é um recorte que gira todo dia (dia do ano), então muda mesmo sem buscar.
+{ const _old = tasteRecs;
+  const W = (e) => { let p = 0; try { p = Number((reviewOfLib(e) || {}).paws) || 0; } catch {} return (e.status === 'LENDO' ? 2 : 1) * (p >= 4.5 ? 3 : p >= 4 ? 2 : p && p < 3 ? -1 : 1); };
+  const first = (a) => String(a || '').split(/[,;&]| e /)[0].trim();
+  function pvSignals() {
+    const L = lib() || [], t = (typeof tasteOf === 'function' && tasteOf()) || { genres: [], books: [] };
+    const recent = L.filter((e) => e.status === 'LIDO' || e.status === 'LENDO').sort((a, b) => String(b.finishedAt || b.startedAt || b.addedAt || '').localeCompare(String(a.finishedAt || a.startedAt || a.addedAt || ''))).slice(0, 40);
+    const A = new Map(); recent.forEach((e, i) => { const a = first(e.author); if (!a) return; A.set(a, (A.get(a) || 0) + W(e) * (i < 10 ? 1.5 : 1)); });
+    (t.books || []).forEach((b) => { const a = first(b.author); if (a) A.set(a, (A.get(a) || 0) + 1); });
+    const authors = [...A.entries()].filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5).map((x) => x[0]);
+    return { authors, key: JSON.stringify(['pv3', authors, t.genres || [], (t.books || []).map((b) => b.title)]) };
+  }
+  const dayN = () => Math.floor(Date.parse(todayISO()) / 864e5);
+  async function pvPool(sig) {
+    const cacheKey = 'bear.pv3';
+    try { const c = JSON.parse(localStorage.getItem(cacheKey) || 'null'); if (c && c.key === sig.key && dayN() - c.day < 3 && Array.isArray(c.items) && c.items.length >= 8) return c.items; } catch {}
+    const lists = await Promise.all(sig.authors.map(async (a) => { try {
+      const r = await sapi('GET', '/v1/books/search?q=' + encodeURIComponent(a)); const it = (r && r.status === 200 && r.data && r.data.items) || [];
+      const sur = normT(a.split(' ').slice(-1)[0] || a);
+      return it.filter((b) => b && b.title && b.cover_url && (b.authors || []).some((x) => normT(x).includes(sur))).map((b) => ({ title: String(b.title).split(':')[0].trim(), author: (b.authors || [])[0] || a, coverUrl: b.cover_url, isbn: b.isbn || null }));
+    } catch { return []; } }));
+    let old = []; try { old = (await _old.apply(this, [])) || []; } catch {}
+    lists.push(old.map((x) => ({ ...x })));
+    const mine = new Set((lib() || []).map((e) => normT(e.title || ''))), seen = new Set(), out = [];
+    const side = /\b(box|kit|colecao|resumo|guia|edicao comentada|livro de colorir|box set)\b/;
+    // intercala as listas (uma de cada autoria por vez) para a vitrine não ficar com um autor só
+    for (let i = 0; out.length < 60 && i < 25; i++) for (const L of lists) { const it = L[i]; if (!it || !it.title || !it.coverUrl) continue; const n = normT(it.title); if (!n || seen.has(n) || mine.has(n) || side.test(n)) continue; seen.add(n); out.push(it); }
+    if (out.length) { try { localStorage.setItem(cacheKey, JSON.stringify({ key: sig.key, day: dayN(), items: out })); } catch {} }
+    return out;
+  }
+  tasteRecs = async function () {
+    try {
+      const sig = pvSignals(); if (!sig.authors.length) return await _old.apply(this, arguments);
+      const pool = await pvPool(sig); if (!pool.length) return await _old.apply(this, arguments);
+      const mine = new Set((lib() || []).map((e) => normT(e.title || ''))), ok = pool.filter((x) => !mine.has(normT(x.title)));
+      const n = ok.length, start = n ? (dayN() * 7) % n : 0; // gira todo dia
+      return ok.slice(start).concat(ok.slice(0, start)).slice(0, 40);
+    } catch (err) { console.warn('para você', err); return _old.apply(this, arguments); }
+  };
+}
+// --- zzzzh_v2_alvos_toque.js ---
+// ---------- v2: áreas de toque maiores sem mudar o desenho (portão de QA, 26/11) ----------
+// Links de texto pequenos (menos de 40 px de altura) ficavam difíceis de acertar no celular. O padding vertical aumenta a
+// área do toque e a margem negativa do mesmo tamanho devolve o espaço: nada muda de lugar na tela.
+{ const st = document.createElement('style'); st.textContent = `
+.v3lag button,[data-v3=amz],.v3sh [data-h3=qual],.v3dots .nx{padding-top:10px!important;padding-bottom:10px!important;margin-top:-10px!important;margin-bottom:-10px!important}
+`; TR.append(st); }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 

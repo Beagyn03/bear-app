@@ -234,10 +234,17 @@ function v3Wire(v, d, hd, x) {
   on('add', async () => { const r = await sapi('POST', '/v1/friends/requests', { handle: d.handle }).catch(() => null); toast(r && r.status < 300 ? 'Pedido de amizade enviado' : 'Não consegui agora'); });
 }
 // liga o perfil novo sempre que o perfil (seu ou de outra pessoa) está na tela
-{ let tm = 0; const put = () => { const v = $('#shelflist'), d = S.fpData;
-    if (!v || v.hidden || !d || !d.handle) { v && v.classList.remove('v3pf-on'); return; }
+// (Bia, 26/11) ao abrir o perfil aparecia por um instante a tela antiga (Lendo agora, Conquistas, Melhores avaliados):
+// o perfil novo só liga 90 ms depois. Agora o conteúdo antigo fica invisível até o novo ligar; se o novo não puder ser
+// montado (sem dados, erro), o antigo volta a aparecer (v3pf-old) em vez de a tela ficar vazia.
+{ const st = document.createElement('style'); st.textContent = `#shelflist:not(.v3pf-on):not(.v3pf-old) > .sl-body:has(> .yo-top, > .v2pv) > :not(.sl-top){visibility:hidden}`; TR.append(st); }
+{ let tm = 0, fb = 0;
+  const put = () => { const v = $('#shelflist'), d = S.fpData;
+    if (!v || v.hidden) { if (v) v.classList.remove('v3pf-on', 'v3pf-old'); clearTimeout(fb); fb = 0; return; }
     const body = v.querySelector('.sl-body'); if (!body || !(body.querySelector(':scope > .yo-top') || body.querySelector(':scope > .v2pv'))) { v.classList.remove('v3pf-on'); return; }
-    try { v3Build(v, d); } catch (err) { console.warn('perfil v3', err); } };
+    if (!d || !d.handle) { v.classList.remove('v3pf-on'); if (!fb && !v.classList.contains('v3pf-old')) fb = setTimeout(() => { fb = 0; const w = $('#shelflist'); if (w && !w.hidden && !w.classList.contains('v3pf-on')) w.classList.add('v3pf-old'); }, 2500); return; }
+    clearTimeout(fb); fb = 0;
+    try { v3Build(v, d); v.classList.remove('v3pf-old'); } catch (err) { console.warn('perfil v3', err); v.classList.remove('v3pf-on'); v.classList.add('v3pf-old'); } };
   new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; put(); }, 90); }).observe(TR, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] }); }
 // Estatísticas › Na comunidade (só a própria pessoa vê; some sem Comunidade)
 { let tm = 0, cache = null, at = 0; const put = async () => { if (S.tab !== 'progresso') return; const box = TR.querySelector('#lista'); if (!box || box.querySelector('.v3com') || !v2Mods().comunidade) return;

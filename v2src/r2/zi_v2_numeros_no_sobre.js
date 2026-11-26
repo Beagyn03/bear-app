@@ -75,7 +75,7 @@
       // calendário do mês da Órbita (um quadrado por dia com a capa do que leu). Visitante e prévia seguem como estavam:
       // o calendário usa o registro de leitura do aparelho, que não é publicado.
       body.classList.toggle('v3nys', self && !ro);
-      if (self && !ro) { body.dataset.ysDest = ''; v3CalMount(body); return r; }
+      if (self && !ro) { body.dataset.ysDest = ''; body.querySelectorAll(':scope > .v3pane[data-k=sobre] > .v3cal').forEach((c) => c.remove()); return r; } // (Bia, 26/11) o calendário mudou para o Hoje
       body.dataset.ysDest = 'top'; setTimeout(() => moveYs(body), 400);
       const dest = body.querySelector(':scope > .v3pane[data-k=top]'); if (!dest) return r;
       const ys = body.querySelector(':scope > .v3pane[data-k=est] > section.ys') || body.querySelector(':scope > section.ys') || [...body.querySelectorAll('.v3pane > section.ys')].find((x) => x.parentElement !== dest);
