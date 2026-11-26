@@ -5,9 +5,9 @@ let s = fs.readFileSync(file, 'utf8');
 const B = '// ==== 4.4 rodada 2 (início) ====', E = '// ==== 4.4 rodada 2 (fim) ====';
 const i = s.indexOf(B); if (i >= 0) { const j = s.indexOf(E, i); s = s.slice(0, i) + s.slice(j + E.length + 1); }
 const dir = path.join(__dirname, 'r2');
-// blocos *_v2_* só entram na branch da versão nova (livroverso-2); nunca no site atual
+// blocos *_v2_* entram na versão nova: livroverso-2, suas worktrees e, desde 26/11/2026, a main (v2 em produção)
 const branch = require('child_process').execSync('git branch --show-current', { cwd: root }).toString().trim();
-const parts = fs.readdirSync(dir).filter((f) => f.endsWith('.js') && (branch === 'livroverso-2' || !/_v2_/.test(f))).sort().map((f) => `// --- ${f} ---\n` + fs.readFileSync(path.join(dir, f), 'utf8').trim() + '\n');
+const parts = fs.readdirSync(dir).filter((f) => f.endsWith('.js') && (branch === 'livroverso-2' || branch === 'main' || branch === 'lv2-a' || branch === 'lv2-foco' || !/_v2_/.test(f))).sort().map((f) => `// --- ${f} ---\n` + fs.readFileSync(path.join(dir, f), 'utf8').trim() + '\n');
 const block = B + '\n' + parts.join('') + E + '\n';
 const M = "try { drawAll(); } catch (err) { console.error('v3g', err); }";
 if (s.split(M).length !== 2) throw new Error('marcador final não único');
