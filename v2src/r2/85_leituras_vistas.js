@@ -135,7 +135,7 @@ function yvCalendar(sec, row, list, y, own) {
 }
 function yvShelf(sec, row, list, y, own) {
   const by = new Map(list.map((x) => [yvKey(x.t), x]));
-  const fp = !own && S.fpData && S.fpData.shelf && S.fpData.shelf.estante; const stored = own ? (db.estante || {})[y] : (fp && Number(fp.y) === y ? fp : null);
+  const fp = !own && S.fpData && S.fpData.shelf && S.fpData.shelf.estante; const stored = own ? (db.estante || {})[y] : (fp && Number(fp.y) === y ? shSafeC(fp) : null); // de outra pessoa: filtrado (auditoria 26/11)
   const E = own && YV_ED.y === y ? YV_ED : { y, edit: false, sel: null, selRow: -1 }; if (own) YV_ED = E;
   let L = yvLayout(stored, list);
   const box = document.createElement('div'); box.className = 'yv-est'; row.after(box);
