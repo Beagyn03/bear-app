@@ -24233,7 +24233,9 @@ function lvOwnBook(title, author) {
 { let t = 0, x0 = 0, y0 = 0, cv = null, longAt = 0;
   const clear = () => { clearTimeout(t); t = 0; cv = null; };
   const capa = (ev) => { const p = ev.composedPath ? ev.composedPath() : [ev.target];
-    for (const n of p) { if (!n || !n.classList) continue; if (n.hasAttribute && n.hasAttribute('data-long')) return null; if (n.classList.contains('cv')) return n; if (n === TR.host) break; } return null; };
+    for (const n of p) { if (!n || !n.classList) continue; if (n.hasAttribute && n.hasAttribute('data-long')) return null; if (n.classList.contains('cv')) return dono(n) ? null : n; if (n === TR.host) break; } return null; };
+  // (Bia 27/11: "2 menus") capas que já têm o gesto de segurar do bloco f8 (Para você, Em alta, Comunidade antiga...) ficam com ele
+  const dono = (n) => { try { return !!(n.closest('.es-bk, .v3-hb, .cs-bk, .tr-bk, .fd-post .nv-cv, .rc-it .cv, .fr-read, .fl-bk, .pv-bk') && !n.closest('#editor, .bkm, .bp-tabs, .es-more, [data-h3=book]')); } catch { return false; } };
   const titulo = (n) => String(n.dataset.t || n.getAttribute('aria-label') || n.textContent || '').trim();
   const capaUrl = (n) => { const m = /url\(["']?([^"')]+)["']?\)/.exec(n.style.backgroundImage || ''); return m ? m[1] : null; };
   // perfil de outra pessoa (Bia, 20/11; protótipo v154): o menu é sobre a pessoa e o livro, não o da sua estante
