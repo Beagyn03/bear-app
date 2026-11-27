@@ -47,7 +47,7 @@
     const cv = e && e.cover && !/^data:/.test(e.cover) ? e.cover : (e && e.cover) || '';
     const s = [e && e.id, pct, now, cv.length].join('|'); if (s === sig) return; sig = s;
     if (cv) ear.style.setProperty('--cv', `url("${cv.replace(/"/g, '%22')}")`); else ear.style.removeProperty('--cv');
-    ear.querySelector('.eu b').textContent = e ? pct + '%' : '';
+    ear.querySelector('.eu b').textContent = ear.classList.contains('card') ? 'Ler' : e ? pct + '%' : '';
     ear.querySelector('.ef span').textContent = e && now ? 'pág. ' + now : 'Ler';
     ear.setAttribute('aria-label', e ? `Continuar leitura de ${e.title}, ${pct}%` : 'Ler: abrir a sessão de leitura'); };
   setInterval(fill, 1500); setTimeout(fill, 300);
@@ -57,9 +57,10 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !d) { busy = false; ear.classList.remove('go'); set(64); } });
   const reset = () => { busy = false; ear.classList.remove('go'); ear.classList.add('lift'); set(S0); };
   const openNow = () => { try { S.lerFull = 1; v2Ler(); } catch (err) { console.error('ler', err); } setTimeout(reset, RM() ? 0 : 500); };
-  const finish = () => { if (busy) return; busy = true; ear.classList.remove('lift'); ear.classList.add('go'); set(Math.max(innerWidth, innerHeight) * 1.6); setTimeout(openNow, RM() ? 0 : 380); };
+  // no cartão a página não cresce pela tela: a leitura entra em página inteira a partir do mesmo canto
+  const finish = () => { if (busy) return; busy = true; if (ear.classList.contains('card')) { ear.classList.add('lift'); set(64); return openNow(); } ear.classList.remove('lift'); ear.classList.add('go'); set(Math.max(innerWidth, innerHeight) * 1.6); setTimeout(openNow, RM() ? 0 : 380); };
   ear.addEventListener('pointerdown', (e) => { if (busy) return; d = { x: e.clientX, y: e.clientY, moved: false }; try { ear.setPointerCapture(e.pointerId); } catch {} ear.classList.remove('lift'); });
-  ear.addEventListener('pointermove', (e) => { if (!d) return; const m = Math.max(e.clientX - d.x, e.clientY - d.y, 0); if (m > 6) d.moved = true; if (!RM()) set(S0 + m * 1.1); });
+  ear.addEventListener('pointermove', (e) => { if (!d) return; const m = ear.classList.contains('card') ? Math.max(d.x - e.clientX, e.clientY - d.y, 0) : Math.max(e.clientX - d.x, e.clientY - d.y, 0); if (m > 6) d.moved = true; if (!RM()) set(S0 + m * 1.1); });
   const up = () => { if (!d) return; const s = parseFloat(ear.style.getPropertyValue('--s')) || S0, moved = d.moved; d = null;
     if (moved) { skipClick = true; setTimeout(() => { skipClick = false; }, 400); if (s > OPEN) return finish(); ear.classList.add('lift'); set(S0); } };
   ear.addEventListener('pointerup', up); ear.addEventListener('pointercancel', () => { d = null; ear.classList.add('lift'); set(S0); });
@@ -80,7 +81,7 @@ const LERFULL_CSS = `.v4ler .sheet.lerfull{top:0;bottom:0;max-height:none;border
 .v4ler .sheet.lerfull .sh-bk h3{font-size:1.45rem}
 .v4ler .sheet.lerfull .lerq{margin-bottom:auto}
 .v4ler .sheet.lerfull .lerback{margin-top:14px;width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;background:none;color:var(--ink);font:inherit;font-weight:800}
-@keyframes lerfin{from{clip-path:circle(0 at 0 0)}to{clip-path:circle(150% at 0 0)}}
+@keyframes lerfin{from{clip-path:circle(0 at 100% 0)}to{clip-path:circle(150% at 100% 0)}}
 @media (prefers-reduced-motion:reduce){.v4ler .sheet.lerfull{animation:none}}`;
 { const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments);
     try { const st = v4State(), R = V4; if (!R) return r;

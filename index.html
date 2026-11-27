@@ -15681,20 +15681,23 @@ function orbCalHTML(ym) { const t = todayISO();
     // (Bia 26/11) dia em que terminou cada livro, inclusive os do CSV (que não têm os dias de leitura): capa + selo "terminei";
     // não conta como dia lido nem para a Órbita
     const fin = new Map(); lib().forEach((e) => { if (e.status !== 'LIDO' || !e.finishedAt || e.noDate) return; const d = String(e.finishedAt).slice(0, 10); if (!fin.has(d)) fin.set(d, e); });
-    let nFin = 0;
+    // (Bia 26/11) e o dia em que começou cada livro (inclusive os do CSV): selo ▶; também não conta como dia lido
+    const ini = new Map(); lib().forEach((e) => { if (!e.startedAt || e.status === 'QUERO' || e.noDate) return; const d = String(e.startedAt).slice(0, 10); if (!ini.has(d)) ini.set(d, e); });
+    let nFin = 0, nIni = 0;
     let cells = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map((d) => '<span class="h">' + d + '</span>').join('') + '<span class="d empty"></span>'.repeat(lead);
     let nRead = 0, pages = 0, nStar = 0;
     for (let d = 1; d <= nDays; d++) {
       const iso = Y + '-' + String(M).padStart(2, '0') + '-' + String(d).padStart(2, '0'), x = s.days.get(iso);
       let cv = ''; if (x) { nRead++; pages += x.pages; const top = [...x.books.entries()].sort((a, b) => b[1] - a[1])[0]; const e = top && byId(top[0]); if (e) cv = cvh(e.title, e.cover, ''); }
       const fe = fin.get(iso); if (fe) { nFin++; if (!cv) cv = cvh(fe.title, fe.cover, ''); }
+      const ie = ini.get(iso); if (ie) { nIni++; if (!cv) cv = cvh(ie.title, ie.cover, ''); }
       if (ok.has(iso)) nStar++;
-      cells += '<span class="d' + (x ? ' rd' : '') + (fe && !x ? ' fn' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + (fe ? (x ? ' · ' : '') + 'terminou ' + esc(fe.title) : '') + '"' + (iso === t ? ' aria-current="date"' : '') + '><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u aria-label="meta do prazo batida">★</u>' : '') + (fe ? '<em class="orb-fin" aria-label="terminou ' + esc(fe.title) + '">✓</em>' : '') + '</span>';
+      cells += '<span class="d' + (x ? ' rd' : '') + ((fe || ie) && !x ? ' fn' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + (fe ? (x ? ' · ' : '') + 'terminou ' + esc(fe.title) : '') + (ie ? (x || fe ? ' · ' : '') + 'começou ' + esc(ie.title) : '') + '"' + (iso === t ? ' aria-current="date"' : '') + '><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u aria-label="meta do prazo batida">★</u>' : '') + (fe ? '<em class="orb-fin" aria-label="terminou ' + esc(fe.title) + '">✓</em>' : '') + (ie ? '<em class="orb-ini" aria-label="começou ' + esc(ie.title) + '">▶</em>' : '') + '</span>';
     }
-    const minYM = ([...s.days.keys(), ...fin.keys()].sort()[0] || t).slice(0, 7);
+    const minYM = ([...s.days.keys(), ...fin.keys(), ...ini.keys()].sort()[0] || t).slice(0, 7);
     return '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (ym <= minYM ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (ym >= t.slice(0, 7) ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>'
       + '<p class="orb-sum">' + ((nRead ? nRead + (nRead === 1 ? ' dia lido' : ' dias lidos') + ' · ' + pages.toLocaleString('pt-BR') + ' páginas' : (nFin ? '' : 'Nenhuma leitura registrada neste mês')) + (nFin ? (nRead ? ' · ' : '') + nFin + (nFin === 1 ? ' livro terminado' : ' livros terminados') : '')) + '</p><div class="orb-g">' + cells + '</div>'
-      + '<div class="orb-leg">' + (ym === t.slice(0, 7) ? '<span class="lk"><i class="lk-hj"></i>hoje</span>' : '') + (nStar ? '<span class="lk"><i class="lk-st">★</i>meta do prazo batida</span>' : '') + (nFin ? '<span class="lk"><i class="lk-fin">✓</i>terminou o livro</span>' : '') + '</div></div>';
+      + '<div class="orb-leg">' + (ym === t.slice(0, 7) ? '<span class="lk"><i class="lk-hj"></i>hoje</span>' : '') + (nStar ? '<span class="lk"><i class="lk-st">★</i>meta do prazo batida</span>' : '') + (nFin ? '<span class="lk"><i class="lk-fin">✓</i>terminou o livro</span>' : '') + (nIni ? '<span class="lk"><i class="lk-ini">▶</i>começou o livro</span>' : '') + '</div></div>';
 }
 // setas de mês: quem monta passa o estado e o redesenho
 function orbCalWire(root, get, set) { root.querySelectorAll('.orb-mn [data-m]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); const [y, m] = get().split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.m), 1); set(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')); })); }
@@ -15720,7 +15723,7 @@ function openOrbita(ym) {
 // Topo sem o círculo de fundo nos ícones (Bia, 17/11): planeta, mensagens e notificações só com o desenho.
 { const st = document.createElement('style'); st.textContent = '.gtop .g-b,.gtop .g-orb{background:none!important;border:0!important;box-shadow:none!important}.gtop .g-b svg{width:28px!important;height:28px!important}.gtop .g-orb{padding:0 .3rem!important;gap:.15rem}.gtop .g-orb img{width:30px;height:30px}'; TR.append(st); }
 
-{ const st = document.createElement('style'); st.textContent = `.orb-g .d{position:relative}.orb-g .d .orb-fin{position:absolute;right:3px;bottom:3px;z-index:2;width:18px;height:18px;display:grid;place-items:center;font-style:normal;font-size:.7rem;font-weight:900;border-radius:50%;background:#f3c56b;color:#1b1426;box-shadow:0 1px 3px rgba(0,0,0,.5)}.orb-g .d.fn .cv,.orb-g .d.fn img{opacity:.8}.orb-leg .lk-fin{font-style:normal;font-weight:900;color:#f3c56b}`; TR.append(st); }
+{ const st = document.createElement('style'); st.textContent = `.orb-g .d{position:relative}.orb-g .d .orb-fin{position:absolute;right:3px;bottom:3px;z-index:2;width:18px;height:18px;display:grid;place-items:center;font-style:normal;font-size:.7rem;font-weight:900;border-radius:50%;background:#f3c56b;color:#1b1426;box-shadow:0 1px 3px rgba(0,0,0,.5)}.orb-g .d.fn .cv,.orb-g .d.fn img{opacity:.8}.orb-leg .lk-fin{font-style:normal;font-weight:900;color:#f3c56b}.orb-g .d .orb-ini{position:absolute;left:3px;bottom:3px;z-index:2;width:18px;height:18px;display:grid;place-items:center;font-style:normal;font-size:.55rem;border-radius:50%;background:#b69cff;color:#1b1426;box-shadow:0 1px 3px rgba(0,0,0,.5)}.orb-leg .lk-ini{font-style:normal;font-size:.7rem;color:#b69cff}`; TR.append(st); }
 // --- 98_popup_instalar.js ---
 // Popup para instalar o app (Bia, 17/11): quem abre o link no navegador (sem o app instalado) vê, depois de alguns segundos,
 // um cartão no rodapé com "Instalar". Usa o installApp() que já existia (pedido nativo no Android; passo a passo no iPhone).
@@ -33870,7 +33873,7 @@ function v3EuData() {
     const cv = e && e.cover && !/^data:/.test(e.cover) ? e.cover : (e && e.cover) || '';
     const s = [e && e.id, pct, now, cv.length].join('|'); if (s === sig) return; sig = s;
     if (cv) ear.style.setProperty('--cv', `url("${cv.replace(/"/g, '%22')}")`); else ear.style.removeProperty('--cv');
-    ear.querySelector('.eu b').textContent = e ? pct + '%' : '';
+    ear.querySelector('.eu b').textContent = ear.classList.contains('card') ? 'Ler' : e ? pct + '%' : '';
     ear.querySelector('.ef span').textContent = e && now ? 'pág. ' + now : 'Ler';
     ear.setAttribute('aria-label', e ? `Continuar leitura de ${e.title}, ${pct}%` : 'Ler: abrir a sessão de leitura'); };
   setInterval(fill, 1500); setTimeout(fill, 300);
@@ -33880,9 +33883,10 @@ function v3EuData() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !d) { busy = false; ear.classList.remove('go'); set(64); } });
   const reset = () => { busy = false; ear.classList.remove('go'); ear.classList.add('lift'); set(S0); };
   const openNow = () => { try { S.lerFull = 1; v2Ler(); } catch (err) { console.error('ler', err); } setTimeout(reset, RM() ? 0 : 500); };
-  const finish = () => { if (busy) return; busy = true; ear.classList.remove('lift'); ear.classList.add('go'); set(Math.max(innerWidth, innerHeight) * 1.6); setTimeout(openNow, RM() ? 0 : 380); };
+  // no cartão a página não cresce pela tela: a leitura entra em página inteira a partir do mesmo canto
+  const finish = () => { if (busy) return; busy = true; if (ear.classList.contains('card')) { ear.classList.add('lift'); set(64); return openNow(); } ear.classList.remove('lift'); ear.classList.add('go'); set(Math.max(innerWidth, innerHeight) * 1.6); setTimeout(openNow, RM() ? 0 : 380); };
   ear.addEventListener('pointerdown', (e) => { if (busy) return; d = { x: e.clientX, y: e.clientY, moved: false }; try { ear.setPointerCapture(e.pointerId); } catch {} ear.classList.remove('lift'); });
-  ear.addEventListener('pointermove', (e) => { if (!d) return; const m = Math.max(e.clientX - d.x, e.clientY - d.y, 0); if (m > 6) d.moved = true; if (!RM()) set(S0 + m * 1.1); });
+  ear.addEventListener('pointermove', (e) => { if (!d) return; const m = ear.classList.contains('card') ? Math.max(d.x - e.clientX, e.clientY - d.y, 0) : Math.max(e.clientX - d.x, e.clientY - d.y, 0); if (m > 6) d.moved = true; if (!RM()) set(S0 + m * 1.1); });
   const up = () => { if (!d) return; const s = parseFloat(ear.style.getPropertyValue('--s')) || S0, moved = d.moved; d = null;
     if (moved) { skipClick = true; setTimeout(() => { skipClick = false; }, 400); if (s > OPEN) return finish(); ear.classList.add('lift'); set(S0); } };
   ear.addEventListener('pointerup', up); ear.addEventListener('pointercancel', () => { d = null; ear.classList.add('lift'); set(S0); });
@@ -33903,7 +33907,7 @@ const LERFULL_CSS = `.v4ler .sheet.lerfull{top:0;bottom:0;max-height:none;border
 .v4ler .sheet.lerfull .sh-bk h3{font-size:1.45rem}
 .v4ler .sheet.lerfull .lerq{margin-bottom:auto}
 .v4ler .sheet.lerfull .lerback{margin-top:14px;width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;background:none;color:var(--ink);font:inherit;font-weight:800}
-@keyframes lerfin{from{clip-path:circle(0 at 0 0)}to{clip-path:circle(150% at 0 0)}}
+@keyframes lerfin{from{clip-path:circle(0 at 100% 0)}to{clip-path:circle(150% at 100% 0)}}
 @media (prefers-reduced-motion:reduce){.v4ler .sheet.lerfull{animation:none}}`;
 { const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments);
     try { const st = v4State(), R = V4; if (!R) return r;
@@ -33997,6 +34001,31 @@ function shSafeC(C) {
 // perfil de outra pessoa: o contexto da estante passa pelo filtro antes de qualquer desenho
 { const _pd = shProfData; shProfData = function (d) { const x = _pd.apply(this, arguments);
     try { if (x && x.vis) x.C = shDefaults(shSafeC(x.C)); } catch (err) { console.warn('estante segura', err); if (x) x.C = shDefaults({}); } return x; }; }
+// --- zzzzm_v2_orelha_cartao.js ---
+// ---------- v2: a orelha mora no cartão "Lendo", canto superior direito, escrito "Ler" (Bia, 26/11) ----------
+// "A dobra de página pode ficar no card do lendo? No canto superior direito dele. E em vez de mostrar parte da capa,
+// mostrar Ler." O #v5ler (orelha) entra dentro do cartão do livro atual (.v3x-a .v3hero) e acompanha a rolagem com ele.
+// O triângulo revelado é da cor de destaque com "Ler"; a dobra de papel fica embaixo à esquerda. Tocar ou puxar o canto
+// para baixo/esquerda abre a leitura em página inteira (entra pelo mesmo canto). Quando aparece continua igual: só no
+// Hoje e sem sessão aberta. Sem cartão na tela (nenhum livro em leitura), a orelha não aparece.
+{ const st = document.createElement('style'); st.textContent = `
+.v3x-a .v3hero{position:relative}
+#v5ler.ear.card{position:absolute!important;top:0!important;right:0!important;left:auto!important;bottom:auto!important;translate:none;z-index:3}
+#v5ler.ear.card .eu{clip-path:polygon(0 0,100% 0,100% 100%);background:var(--acc,#b48cff)!important;border-top-right-radius:var(--v3r,22px)}
+#v5ler.ear.card .eu::after{background:linear-gradient(225deg,rgba(255,255,255,.18),rgba(0,0,0,0) 55%)}
+#v5ler.ear.card .eu b{left:auto;bottom:auto;right:8px;top:7px;font-family:inherit;font-size:13px;font-weight:900;color:var(--on-acc,#1b1426);text-shadow:none;letter-spacing:.02em}
+#v5ler.ear.card .ef{clip-path:polygon(0 0,100% 100%,0 100%);background:linear-gradient(45deg,#e9dcc0,#f6eedc 55%,#fffaf0);filter:drop-shadow(-3px 3px 6px rgba(0,0,0,.45))}
+#v5ler.ear.card .ef span{display:none}
+.v5shade.card{display:none}
+`; TR.append(st); }
+{ const ear = jnPl_; ear.classList.remove('tl'); ear.classList.add('card');
+  try { const sh = TR.querySelector('.v5shade'); if (sh) sh.classList.add('card'); } catch {}
+  const place = () => { const hero = TR.querySelector('.v3x-a .v3hero');
+    if (hero) { if (ear.parentElement !== hero) hero.append(ear); ear.style.visibility = ''; }
+    else { if (ear.parentElement !== TR) TR.append(ear); ear.style.visibility = 'hidden'; } };
+  let tm = 0; new MutationObserver(() => { if (tm) return; tm = setTimeout(() => { tm = 0; try { place(); } catch {} }, 80); }).observe(TR, { childList: true, subtree: true });
+  setInterval(() => { try { place(); } catch {} }, 1000); setTimeout(place, 300);
+}
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 

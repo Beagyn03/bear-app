@@ -95,20 +95,23 @@ function orbCalHTML(ym) { const t = todayISO();
     // (Bia 26/11) dia em que terminou cada livro, inclusive os do CSV (que não têm os dias de leitura): capa + selo "terminei";
     // não conta como dia lido nem para a Órbita
     const fin = new Map(); lib().forEach((e) => { if (e.status !== 'LIDO' || !e.finishedAt || e.noDate) return; const d = String(e.finishedAt).slice(0, 10); if (!fin.has(d)) fin.set(d, e); });
-    let nFin = 0;
+    // (Bia 26/11) e o dia em que começou cada livro (inclusive os do CSV): selo ▶; também não conta como dia lido
+    const ini = new Map(); lib().forEach((e) => { if (!e.startedAt || e.status === 'QUERO' || e.noDate) return; const d = String(e.startedAt).slice(0, 10); if (!ini.has(d)) ini.set(d, e); });
+    let nFin = 0, nIni = 0;
     let cells = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'].map((d) => '<span class="h">' + d + '</span>').join('') + '<span class="d empty"></span>'.repeat(lead);
     let nRead = 0, pages = 0, nStar = 0;
     for (let d = 1; d <= nDays; d++) {
       const iso = Y + '-' + String(M).padStart(2, '0') + '-' + String(d).padStart(2, '0'), x = s.days.get(iso);
       let cv = ''; if (x) { nRead++; pages += x.pages; const top = [...x.books.entries()].sort((a, b) => b[1] - a[1])[0]; const e = top && byId(top[0]); if (e) cv = cvh(e.title, e.cover, ''); }
       const fe = fin.get(iso); if (fe) { nFin++; if (!cv) cv = cvh(fe.title, fe.cover, ''); }
+      const ie = ini.get(iso); if (ie) { nIni++; if (!cv) cv = cvh(ie.title, ie.cover, ''); }
       if (ok.has(iso)) nStar++;
-      cells += '<span class="d' + (x ? ' rd' : '') + (fe && !x ? ' fn' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + (fe ? (x ? ' · ' : '') + 'terminou ' + esc(fe.title) : '') + '"' + (iso === t ? ' aria-current="date"' : '') + '><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u aria-label="meta do prazo batida">★</u>' : '') + (fe ? '<em class="orb-fin" aria-label="terminou ' + esc(fe.title) + '">✓</em>' : '') + '</span>';
+      cells += '<span class="d' + (x ? ' rd' : '') + ((fe || ie) && !x ? ' fn' : '') + (iso === t ? ' hj' : '') + (iso > t ? ' fut' : '') + '" title="' + (x ? x.pages + ' páginas' : '') + (fe ? (x ? ' · ' : '') + 'terminou ' + esc(fe.title) : '') + (ie ? (x || fe ? ' · ' : '') + 'começou ' + esc(ie.title) : '') + '"' + (iso === t ? ' aria-current="date"' : '') + '><i>' + d + '</i>' + cv + (ok.has(iso) ? '<u aria-label="meta do prazo batida">★</u>' : '') + (fe ? '<em class="orb-fin" aria-label="terminou ' + esc(fe.title) + '">✓</em>' : '') + (ie ? '<em class="orb-ini" aria-label="começou ' + esc(ie.title) + '">▶</em>' : '') + '</span>';
     }
-    const minYM = ([...s.days.keys(), ...fin.keys()].sort()[0] || t).slice(0, 7);
+    const minYM = ([...s.days.keys(), ...fin.keys(), ...ini.keys()].sort()[0] || t).slice(0, 7);
     return '<div class="orb-cal"><div class="orb-mn"><button type="button" data-m="-1" aria-label="Mês anterior"' + (ym <= minYM ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><b>' + esc(mName) + '</b><button type="button" data-m="1" aria-label="Próximo mês"' + (ym >= t.slice(0, 7) ? ' disabled' : '') + '><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>'
       + '<p class="orb-sum">' + ((nRead ? nRead + (nRead === 1 ? ' dia lido' : ' dias lidos') + ' · ' + pages.toLocaleString('pt-BR') + ' páginas' : (nFin ? '' : 'Nenhuma leitura registrada neste mês')) + (nFin ? (nRead ? ' · ' : '') + nFin + (nFin === 1 ? ' livro terminado' : ' livros terminados') : '')) + '</p><div class="orb-g">' + cells + '</div>'
-      + '<div class="orb-leg">' + (ym === t.slice(0, 7) ? '<span class="lk"><i class="lk-hj"></i>hoje</span>' : '') + (nStar ? '<span class="lk"><i class="lk-st">★</i>meta do prazo batida</span>' : '') + (nFin ? '<span class="lk"><i class="lk-fin">✓</i>terminou o livro</span>' : '') + '</div></div>';
+      + '<div class="orb-leg">' + (ym === t.slice(0, 7) ? '<span class="lk"><i class="lk-hj"></i>hoje</span>' : '') + (nStar ? '<span class="lk"><i class="lk-st">★</i>meta do prazo batida</span>' : '') + (nFin ? '<span class="lk"><i class="lk-fin">✓</i>terminou o livro</span>' : '') + (nIni ? '<span class="lk"><i class="lk-ini">▶</i>começou o livro</span>' : '') + '</div></div>';
 }
 // setas de mês: quem monta passa o estado e o redesenho
 function orbCalWire(root, get, set) { root.querySelectorAll('.orb-mn [data-m]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); const [y, m] = get().split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.m), 1); set(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')); })); }
@@ -134,4 +137,4 @@ function openOrbita(ym) {
 // Topo sem o círculo de fundo nos ícones (Bia, 17/11): planeta, mensagens e notificações só com o desenho.
 { const st = document.createElement('style'); st.textContent = '.gtop .g-b,.gtop .g-orb{background:none!important;border:0!important;box-shadow:none!important}.gtop .g-b svg{width:28px!important;height:28px!important}.gtop .g-orb{padding:0 .3rem!important;gap:.15rem}.gtop .g-orb img{width:30px;height:30px}'; TR.append(st); }
 
-{ const st = document.createElement('style'); st.textContent = `.orb-g .d{position:relative}.orb-g .d .orb-fin{position:absolute;right:3px;bottom:3px;z-index:2;width:18px;height:18px;display:grid;place-items:center;font-style:normal;font-size:.7rem;font-weight:900;border-radius:50%;background:#f3c56b;color:#1b1426;box-shadow:0 1px 3px rgba(0,0,0,.5)}.orb-g .d.fn .cv,.orb-g .d.fn img{opacity:.8}.orb-leg .lk-fin{font-style:normal;font-weight:900;color:#f3c56b}`; TR.append(st); }
+{ const st = document.createElement('style'); st.textContent = `.orb-g .d{position:relative}.orb-g .d .orb-fin{position:absolute;right:3px;bottom:3px;z-index:2;width:18px;height:18px;display:grid;place-items:center;font-style:normal;font-size:.7rem;font-weight:900;border-radius:50%;background:#f3c56b;color:#1b1426;box-shadow:0 1px 3px rgba(0,0,0,.5)}.orb-g .d.fn .cv,.orb-g .d.fn img{opacity:.8}.orb-leg .lk-fin{font-style:normal;font-weight:900;color:#f3c56b}.orb-g .d .orb-ini{position:absolute;left:3px;bottom:3px;z-index:2;width:18px;height:18px;display:grid;place-items:center;font-style:normal;font-size:.55rem;border-radius:50%;background:#b69cff;color:#1b1426;box-shadow:0 1px 3px rgba(0,0,0,.5)}.orb-leg .lk-ini{font-style:normal;font-size:.7rem;color:#b69cff}`; TR.append(st); }
