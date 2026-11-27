@@ -5,12 +5,12 @@
 // Continua sendo o mesmo #v5ler: quando aparece (só no Hoje, sem sessão aberta), a altura acima da barra e a ação
 // (v2Ler) são as de antes; muda só o desenho e o gesto. Movimento reduzido: sem animação, abre direto.
 { const st = document.createElement('style'); st.textContent = `
-#v5ler.ear{right:0!important;left:auto!important;translate:0 16px;width:var(--s,48px);height:var(--s,48px);min-width:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible;touch-action:none;cursor:grab;transform:none!important}
+#v5ler.ear{right:0!important;left:auto!important;translate:0 16px;width:var(--s,44px);height:var(--s,44px);min-width:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible;touch-action:none;cursor:grab;transform:none!important}
 #v5ler.ear > .pl,#v5ler.ear > .lb{display:none}
 #v5ler.ear::after{display:none}
-#v5ler.ear .eu{position:absolute;inset:0;clip-path:polygon(100% 0,100% 100%,0 100%);background-color:var(--panel,#1a1524);background-image:var(--cv,linear-gradient(160deg,#6b5a8e,#2a2140 55%,#15111e));background-repeat:no-repeat;background-position:right bottom;background-size:48px 48px}
+#v5ler.ear .eu{position:absolute;inset:0;clip-path:polygon(100% 0,100% 100%,0 100%);background-color:var(--panel,#1a1524);background-image:var(--cv,linear-gradient(160deg,#6b5a8e,#2a2140 55%,#15111e));background-repeat:no-repeat;background-position:right bottom;background-size:44px 44px}
 /* (Bia 26/11 "ficou feio") ao virar a página a capa não estica: fica do tamanho da orelha, no canto, e o resto é o fundo do app */
-#v5ler.ear.big .eu{background-size:48px auto}#v5ler.ear.big .eu::after{background:linear-gradient(315deg,rgba(0,0,0,0) 70%,rgba(0,0,0,.35))}
+#v5ler.ear.big .eu{background-size:44px auto}#v5ler.ear.big .eu::after{background:linear-gradient(315deg,rgba(0,0,0,0) 70%,rgba(0,0,0,.35))}
 #v5ler.ear .eu::after{content:"";position:absolute;inset:0;background:linear-gradient(315deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.6))}
 #v5ler.ear .eu b{position:absolute;right:6px;bottom:5px;z-index:1;font-family:var(--f-disp,Georgia,serif);font-size:11px;font-weight:700;color:#f3c56b;text-shadow:0 1px 2px rgba(0,0,0,.7)}
 #v5ler.ear .ef{position:absolute;inset:0;clip-path:polygon(0 0,100% 0,0 100%);background:linear-gradient(135deg,#e9dcc0,#f6eedc 55%,#fffaf0);filter:drop-shadow(-3px -3px 6px rgba(0,0,0,.45))}
@@ -33,7 +33,7 @@
 .v5shade.tl{background:radial-gradient(circle at 0 0,rgba(0,0,0,.4),transparent 60%)}
 
 `; TR.append(st); }
-{ const ear = jnPl_, S0 = 48, OPEN = 130, RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+{ const ear = jnPl_, S0 = 44, OPEN = 120, RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   ear.classList.add('ear', 'tl'); ear.insertAdjacentHTML('beforeend', '<span class="eu"><b></b></span><span class="ef"><span></span></span>');
   const shade = document.createElement('div'); shade.className = 'v5shade tl'; TR.append(shade);
   // altura do topo do app: a orelha fica colada embaixo dele
