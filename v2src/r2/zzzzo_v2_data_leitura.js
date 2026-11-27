@@ -34,6 +34,13 @@ const lvdMin = (e) => lvdStart(e) || lvdIso(new Date(Date.now() - 365 * 864e5));
 function lvdPageAt(e, D) { const now = Number(e.currentPage) || 0; return Math.max(0, now - (e.readLog || []).filter((x) => String(x.date) > D).reduce((a, x) => a + (Number(x.pages) || 0), 0)); }
 function lvdBounds(e, D) { const lo = lvdPageAt(e, D); const nx = (e.readLog || []).filter((x) => String(x.date) > D).sort((a, b) => String(a.date).localeCompare(String(b.date)))[0];
   return { lo, nx, hi: nx ? lo + (Number(nx.pages) || 0) : null }; }
+// (Bia 27/11) emoções, comentário, trecho e anotação salvos junto com a página vão para o MESMO dia da leitura
+const lvdSnap = (e) => new Set([...(e.diary || []), ...(e.quotes || []), ...(e.notes || [])]);
+function lvdMoveNew(e, before, D) { const at = D + 'T12:00:00-03:00'; let n = 0;
+  (e.diary || []).forEach((x) => { if (!before.has(x)) { x.d = D; n++; } });
+  (e.quotes || []).forEach((x) => { if (!before.has(x)) { x.at = at; n++; } });
+  (e.notes || []).forEach((x) => { if (!before.has(x)) { x.at = at; n++; } });
+  return n; }
 let LVD_RETRO = null; // { libId, day, until } enquanto a leitura de dia passado é publicada
 { // cartão da Comunidade com o dia da leitura (não sobe como "agora")
   const _pa = publishActivity; publishActivity = async function (e, kind) {
@@ -105,15 +112,20 @@ function lvdDatesSheet(e) { const R = V4; R.querySelectorAll('.lvdt-ov').forEach
     if (hi != null && pg > hi) return fail(`Na leitura seguinte (${lvdBR(String(nx.date))}) você estava na pág. ${hi}. Use uma página até ${hi}.`);
     U.lvErr = '';
     if (!nx) { // vira a leitura mais recente: fluxo normal e depois tudo passa para o dia D
-      const before = new Set((e.readLog || []).map((x) => x.id)), hadStart = !!e.startedAt, hadFin = !!e.finishedAt;
+      const before = new Set((e.readLog || []).map((x) => x.id)), hadStart = !!e.startedAt, hadFin = !!e.finishedAt, items = lvdSnap(e);
       LVD_RETRO = { libId: e.id, day: D, until: Date.now() + 5000 };
       await _s.apply(this, arguments);
       (e.readLog || []).forEach((x) => { if (!before.has(x.id) && x.date === t) x.date = D; });
       if (!hadStart && e.startedAt === t) e.startedAt = D; if (!hadFin && String(e.finishedAt) === t) e.finishedAt = D;
+      lvdMoveNew(e, items, D);
       save(); try { renderHome(todayISO()); } catch {} return; }
     // no meio do histórico: entra antes da leitura seguinte, que é ajustada; a página atual não muda
     const delta = pg - lo; if (delta > 0) { const L = e.readLog || (e.readLog = []); const x = { id: uid(), date: D, pages: delta };
       nx.pages = (Number(nx.pages) || 0) - delta; const ix = L.indexOf(nx); L.splice(ix < 0 ? L.length : ix, 0, x); save(); }
-    const keep = U.pg; U.pg = inf.now; // o resto (emoções, comentário, trecho, anotação) segue pelo fluxo normal, sem nova página
+    const keep = U.pg; U.pg = inf.now; const items = lvdSnap(e); // o resto (emoções, comentário, trecho, anotação) segue pelo fluxo normal, sem nova página
     try { await _s.apply(this, arguments); } finally { U.pg = keep; }
+    // ...e vai para o dia D, com a página daquela leitura
+    (e.diary || []).forEach((x) => { if (!items.has(x)) { x.page = pg; if (inf.total) x.pct = Math.round(pg / inf.total * 100); } });
+    (e.quotes || []).forEach((x) => { if (!items.has(x)) x.p = pg; }); (e.notes || []).forEach((x) => { if (!items.has(x)) x.p = pg; });
+    if (lvdMoveNew(e, items, D)) save();
     try { renderHome(todayISO()); } catch {} toast(delta > 0 ? `Leitura de ${lvdBR(D)} salva: pág. ${pg}` : 'Nada mudou nesse dia'); }; }

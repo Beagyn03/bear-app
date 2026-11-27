@@ -25,6 +25,9 @@ function duePastHTML(e) {
     const ok = !isOff && per > 0 && pages >= per, lab = `${DOW[w]} ${d.slice(8, 10)}/${d.slice(5, 7)}`;
     out.push(`<div class="c ${isOff ? 'off' : ok ? 'ok' : 'no'}" aria-label="${lab}: ${isOff ? 'folga' : `${pages} de ${per} páginas, ${ok ? 'meta batida' : 'meta não batida'}`}"><span>${lab}</span>${isOff ? '<b>folga</b>' : `<b>${pages} de ${per}</b><i>${ok ? '★ bateu' : 'não bateu'}</i>`}</div>`);
   }
+  // (Bia 27/11) o que foi lido antes de marcar o prazo entra num primeiro cartão: assim a soma dos dias fecha com a página atual
+  let antes = 0; try { const now = Number(e.currentPage) || 0; antes = Math.max(0, now - (e.readLog || []).filter((x) => String(x.date) >= since).reduce((a, x) => a + (Number(x.pages) || 0), 0)); } catch {}
+  if (out.length && antes > 0) out.unshift(`<div class="c" aria-label="Antes do prazo: até a página ${antes}"><span>antes do prazo</span><b>${antes} pág.</b><i>até ${lvdBR ? lvdBR(new Date(Date.parse(since + 'T12:00:00') - 864e5).toISOString().slice(0, 10)) : ''}</i></div>`);
   return out.length ? `<div class="dpp"><small>Dias anteriores</small><div class="r">${out.join('')}</div></div>` : '';
 }
 { const _dr = dueRow; dueRow = function (p, e) { const r = _dr.apply(this, arguments); try { return duePastHTML(e) + r; } catch (err) { console.warn('dias anteriores', err); return r; } }; }
