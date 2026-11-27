@@ -34014,7 +34014,13 @@ function shSafeC(C) {
   /* (Bia 26/11) nada fora do contorno do cartão: a orelha tem a mesma curva do canto de dentro do cartão (raio do cartão
      menos a borda de 1 px) e corta o que passar dela */
   overflow:hidden;border-top-right-radius:calc(var(--v2-r, 22px) - 1px)}
-#v5ler.ear.card .eu{clip-path:polygon(0 0,100% 0,100% 100%);background:var(--acc,#b48cff)!important;border-top-right-radius:inherit}
+/* (Bia 26/11: "a palavra Ler ficou perdida; que tal um universo") o triângulo revelado é um pedaço de céu: noite roxa com
+   estrelinhas e o planeta do app (o mesmo do antigo botão Ler) — tocar ali leva para a sessão de leitura/foco */
+#v5ler.ear.card .eu{clip-path:polygon(0 0,100% 0,100% 100%);background:radial-gradient(120% 120% at 80% 15%,#4a3a8a 0,#1b1640 55%,#0e0b22 100%)!important;border-top-right-radius:inherit}
+#v5ler.ear.card .eu b{display:none}
+#v5ler.ear.card .eu::before{content:"";position:absolute;inset:0;background:radial-gradient(1px 1px at 52% 12%,#fff 99%,transparent),radial-gradient(1px 1px at 90% 58%,#fff 99%,transparent),radial-gradient(1.4px 1.4px at 70% 40%,#f3c56b 99%,transparent),radial-gradient(1px 1px at 38% 6%,#cdbfff 99%,transparent);opacity:.9}
+#v5ler.ear.card .eu .euni{position:absolute;right:2px;top:2px;width:22px;height:22px;display:grid;place-items:center;filter:drop-shadow(0 0 4px rgba(243,197,107,.55))}
+@media (prefers-reduced-motion:no-preference){#v5ler.ear.card .eu .euni{animation:euni 6s ease-in-out infinite}@keyframes euni{50%{transform:translateY(-1px) rotate(-6deg)}}}
 #v5ler.ear.card .eu::after{background:linear-gradient(225deg,rgba(255,255,255,.18),rgba(0,0,0,0) 55%)}
 #v5ler.ear.card .eu b{left:auto;bottom:auto;right:5px;top:4px;font-family:inherit;font-size:13px;font-weight:700;line-height:1;color:var(--on-acc,#1b1426);text-shadow:none;letter-spacing:.02em}
 #v5ler.ear.card .ef{border-top-right-radius:inherit;clip-path:polygon(0 0,100% 100%,0 100%);background:linear-gradient(45deg,#e9dcc0,#f6eedc 55%,#fffaf0);filter:drop-shadow(-3px 3px 6px rgba(0,0,0,.45))}
@@ -34025,6 +34031,7 @@ function shSafeC(C) {
 .v3herow.multi::after{display:none!important}
 `; TR.append(st); }
 { const ear = jnPl_; ear.classList.remove('tl'); ear.classList.add('card');
+  try { const eu = ear.querySelector('.eu'); if (eu && !eu.querySelector('.euni')) eu.insertAdjacentHTML('beforeend', '<span class="euni" aria-hidden="true">' + JN_PLANET(20, 'or') + '</span>'); } catch {}
   try { const sh = TR.querySelector('.v5shade'); if (sh) sh.classList.add('card'); } catch {}
   const place = () => { const hero = TR.querySelector('.v3x-a .v3hero');
     if (hero) { if (ear.parentElement !== hero) hero.append(ear); ear.style.visibility = ''; }
