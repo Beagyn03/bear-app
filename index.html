@@ -33712,18 +33712,13 @@ function v3EuData() {
   const pbt = [...P.values()].sort((a, b) => b.n - a.n || b.s - a.s)[0]; if (pbt && pbt.n >= 2) out.splice(2, 0, ['Editora favorita', pbt.nome, pbt.n + ' livros lidos']);
   // nota média
   const notas = lidos.map(paws).filter((n) => n > 0); if (notas.length >= 3) out.push(['Nota média', (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(1).replace('.', ','), 'em ' + notas.length + ' avaliações']);
-  // sentimento que mais aparece (diário e trechos)
-  const FE = new Map(); L.forEach((e) => { (e.diary || []).forEach((x) => (x && x.fe || []).forEach((k) => FE.set(k, (FE.get(k) || 0) + 1))); (e.quotes || []).forEach((q) => (q && q.f || []).forEach((k) => FE.set(k, (FE.get(k) || 0) + 1))); });
-  const fe = [...FE.entries()].sort((a, b) => b[1] - a[1])[0]; if (fe && fe[1] >= 2) { let nome = fe[0]; try { const f = QT_FEELS.find((y) => y[0] === fe[0]); if (f) nome = f[1]; } catch {} out.push(['Sente mais', nome, fe[1] + ' vezes nas anotações']); }
-  // mês em que mais termina livros
-  const MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'], M = new Array(12).fill(0);
-  lidos.forEach((e) => { const m = Number(String(e.finishedAt || '').slice(5, 7)); if (m >= 1 && m <= 12 && !e.noDate) M[m - 1]++; });
-  const mx = Math.max(...M); if (mx >= 2) { const i = M.indexOf(mx); out.push(['Mês que mais lê', MES[i], mx + ' livros terminados']); }
+  // ritmo (Bia 26/11, no lugar de "mês que mais lê"): páginas por dia, na média dos livros terminados com começo e fim
+  const rit = lidos.map((e) => { const a = Date.parse(String(e.startedAt || '').slice(0, 10)), f = Date.parse(String(e.finishedAt || '').slice(0, 10)), pgs = Number(e.totalPages) || 0; return a && f && f >= a && pgs ? pgs / (Math.round((f - a) / 864e5) + 1) : 0; }).filter((n) => n > 0 && n < 2000);
+  if (rit.length >= 3) out.push(['Ritmo', Math.round(rit.reduce((x, y) => x + y, 0) / rit.length) + ' páginas por dia', 'na média de ' + rit.length + ' livros']);
   // mais rápido
   const rap = lidos.map((e) => { const a = Date.parse(String(e.startedAt || '').slice(0, 10)), f = Date.parse(String(e.finishedAt || '').slice(0, 10)); return { e, d: a && f && f >= a ? Math.round((f - a) / 864e5) + 1 : 0 }; }).filter((x) => x.d > 0 && (Number(x.e.totalPages) || 0) >= 150).sort((a, b) => a.d - b.d)[0];
   if (rap) out.push(['Mais rápido', rap.e.title, rap.d === 1 ? 'em 1 dia' : 'em ' + rap.d + ' dias']);
-  // ressaca e releituras
-  const res = lidos.filter((e) => { try { return (reviewOfLib(e) || {}).ressaca === 'deu'; } catch { return false; } }); if (res.length) out.push(['Deram ressaca', res.length === 1 ? res[0].title : res.length + ' livros', res.length === 1 ? 'o único até agora' : 'o último: ' + res[res.length - 1].title]);
+  // releituras
   const rel = L.filter((e) => (Number(e.rereading) || 0) > 0); if (rel.length) out.push(['Releituras', rel.length === 1 ? rel[0].title : rel.length + ' livros', rel.length === 1 ? 'relido' : 'que você leu de novo']);
   return out;
 }
