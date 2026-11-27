@@ -16,7 +16,7 @@
 #v5ler.ear.card .eu b{display:none}
 #v5ler.ear.card .eu::before{content:"";position:absolute;inset:0;background:radial-gradient(1px 1px at 52% 12%,#fff 99%,transparent),radial-gradient(1px 1px at 90% 58%,#fff 99%,transparent),radial-gradient(1.4px 1.4px at 70% 40%,#f3c56b 99%,transparent),radial-gradient(1px 1px at 38% 6%,#cdbfff 99%,transparent);opacity:.9}
 #v5ler.ear.card .eu .euni{position:absolute;right:2px;top:2px;width:22px;height:22px;display:grid;place-items:center;filter:drop-shadow(0 0 4px rgba(243,197,107,.55))}
-@media (prefers-reduced-motion:no-preference){#v5ler.ear.card .eu .euni{animation:euni 6s ease-in-out infinite}@keyframes euni{50%{transform:translateY(-1px) rotate(-6deg)}}}
+/* planeta parado (o balanço contínuo distraía e o teste o via como tela tremendo) */
 #v5ler.ear.card .eu::after{background:linear-gradient(225deg,rgba(255,255,255,.18),rgba(0,0,0,0) 55%)}
 #v5ler.ear.card .eu b{left:auto;bottom:auto;right:5px;top:4px;font-family:inherit;font-size:13px;font-weight:700;line-height:1;color:var(--on-acc,#1b1426);text-shadow:none;letter-spacing:.02em}
 #v5ler.ear.card .ef{border-top-right-radius:inherit;clip-path:polygon(0 0,100% 100%,0 100%);background:linear-gradient(45deg,#e9dcc0,#f6eedc 55%,#fffaf0);filter:drop-shadow(-3px 3px 6px rgba(0,0,0,.45))}
