@@ -53,7 +53,8 @@
     const c = S.v8atv; if (!force && c && c.me === me && Date.now() - c.t < 60000) return c;
     const out = { me, t: Date.now(), api: null, ecos: [] };
     if (me && vFn('comunidade')) { try { const r = await sapi('GET', '/v1/rede?user=' + encodeURIComponent(me)); if (r.status === 200 && r.data) out.api = (r.data.items || []).filter((x) => x && (x.type === 'post' || x.type === 'review') && (x.mine || (x.user && x.user.handle === me))); } catch {} }
-    if (vFn('ecos')) { try { const r = await sapi('GET', '/v1/me/echoes'); if (r.status === 200 && r.data) out.ecos = r.data.items || []; } catch {} }
+    if (vFn('ecos')) { try { const r = await sapi('GET', '/v1/me/echoes'); if (r.status === 200 && r.data) out.ecos = r.data.items || []; else out.eco0 = 1; } catch { out.eco0 = 1; } }
+    if ((me && vFn('comunidade') && !out.api) || (vFn('ecos') && out.eco0)) return out; // resposta falhou (servidor acordando): não guarda, tenta de novo na próxima
     S.v8atv = out; return out; }
   v3Ativ = function (d, host) {
     if (!d || !d.self) return _prev.apply(this, arguments);

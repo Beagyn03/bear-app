@@ -42,13 +42,8 @@ function lvdMoveNew(e, before, D) { const at = D + 'T12:00:00-03:00'; let n = 0;
   (e.notes || []).forEach((x) => { if (!before.has(x)) { x.at = at; n++; } });
   return n; }
 let LVD_RETRO = null; // { libId, day, until } enquanto a leitura de dia passado é publicada
-{ // cartão da Comunidade com o dia da leitura (não sobe como "agora")
-  const _pa = publishActivity; publishActivity = async function (e, kind) {
-    const R = LVD_RETRO; if (!(R && e && R.libId === e.id && Date.now() < R.until)) return _pa.apply(this, arguments);
-    try { if (!connected()) return; const info = readingInfo(e) || {}; const at = Math.min(Date.now(), Date.parse(R.day + 'T12:00:00-03:00'));
-      const b = { kind, libId: e.id, title: e.title, author: e.author || null, cover: smallCover(e.cover), pct: info.total ? Math.min(100, info.pct) : null, pages: info.now || null, at: new Date(at).toISOString() };
-      const q = aqLoad().filter((x) => !(x.b.libId === b.libId && x.b.kind === b.kind && x.day === R.day)); q.push({ id: uid(), b, day: R.day, at: Date.now(), n: 0 }); aqSave(q); await aqFlush();
-    } catch (err) { console.warn('atividade retroativa', err); } }; }
+// Comunidade (Bia, 27/11: "minhas atualizações deixaram de aparecer"): o cartão sobe com o horário do registro, como
+// qualquer atualização. Antes ia com o meio-dia do dia escolhido e ficava enterrado no feed, que é ordenado por horário.
 function lvdCss() { try { const root = V4 && V4.getRootNode(); if (root && root !== document && !root.querySelector('style.lvdcss')) { const s = document.createElement('style'); s.className = 'lvdcss'; s.textContent = LVD_CSS; root.append(s); } } catch {} }
 // chip e "estava na pág." conforme o dia escolhido; só para livro da Biblioteca (não de meta antiga) e fora de sessão
 { const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments);
