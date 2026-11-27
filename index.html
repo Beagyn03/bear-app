@@ -34108,6 +34108,8 @@ function lvdCss() { try { const root = V4 && V4.getRootNode(); if (root && root 
 { const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments);
     try { lvdCss(); const st = v4State(), U = st.upd, R = V4; if (!R || !U || st.sheet !== 'upd') return r;
       const e = lib().find((x) => x.id === (st.sheetE || st.e)); if (!e) return r; const inf = v4Info(e); if (inf.gb) return r;
+      // (Bia 27/11) a escolha do dia é do Atualizar; na aba Histórico não aparece
+      if (U.full && U.tab === 'hist') { const m = R.querySelector('.sheet .sh-bk .mut'); if (m) m.textContent = m.textContent.replace(' · estava na pág. ', ' · pág. '); return r; }
       const sh = R.querySelector('.sheet'); if (!sh || sh.querySelector('.lvday')) return r;
       const D = U.day && U.day !== todayISO() ? U.day : null;
       const lab = !D ? 'Hoje' : D === lvdYesterday() ? 'Ontem' : lvdBR(D);
@@ -34287,6 +34289,17 @@ const V4KEEP_CSS = `.v4ler.v4keep .veil,.v4ler.v4keep .sheet,.v4ler.v4keep .shee
         scr.forEach(([cls, i, top]) => { const el = all[i] && all[i].className === cls ? all[i] : all.find((x) => x.className === cls); if (el) el.scrollTop = top; }); } }
     } catch (err) { console.warn('folha sem piscar', err); }
     return r; }; }
+// --- zzzzs_v2_atualizacao_so_progresso.js ---
+// ---------- v2: atualização de página na Comunidade mostra só o progresso (Bia, 27/11) ----------
+// "Essa atualização de página aqui tem nada a ver... Não tem que ser apenas o progresso? Não tem isso de falar qual
+// página antes, qual página depois, + quantas foi lida."
+// O post automático da atualização leva a linha "Pág. 139 de 432 · +16 páginas" só porque a API não aceita post vazio.
+// Na tela, essa linha some: o cartão fica com a capa, "Lendo · 32%" e as emoções. Vale também para os posts já feitos.
+// Comentário escrito pela pessoa nunca é escondido (só a linha automática, no formato exato).
+const UPD_AUTO_RE = /^(Cap\. [^\n·]{1,40} · )?Pág\. \d+( de \d+)?( · \+\d+ páginas?)?( · última página!)?$/;
+const updAuto = (it) => !!(it && it.type === 'post' && (it.kind === 'comment' || !it.kind) && !it.quote && UPD_AUTO_RE.test(String(it.text || '').trim()));
+{ const _p = v6PostHTML; v6PostHTML = function (it, i) { return _p.call(this, updAuto(it) ? { ...it, text: '' } : it, i); }; }
+{ const _r = rdCardHTML; rdCardHTML = function (it, i, opts) { return _r.call(this, updAuto(it) ? { ...it, text: '' } : it, i, opts); }; }
 // ==== 4.4 rodada 2 (fim) ====
 try { drawAll(); } catch (err) { console.error('v3g', err); }
 

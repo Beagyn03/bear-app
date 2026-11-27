@@ -49,6 +49,8 @@ function lvdCss() { try { const root = V4 && V4.getRootNode(); if (root && root 
 { const _d = v4Draw; v4Draw = function () { const r = _d.apply(this, arguments);
     try { lvdCss(); const st = v4State(), U = st.upd, R = V4; if (!R || !U || st.sheet !== 'upd') return r;
       const e = lib().find((x) => x.id === (st.sheetE || st.e)); if (!e) return r; const inf = v4Info(e); if (inf.gb) return r;
+      // (Bia 27/11) a escolha do dia é do Atualizar; na aba Histórico não aparece
+      if (U.full && U.tab === 'hist') { const m = R.querySelector('.sheet .sh-bk .mut'); if (m) m.textContent = m.textContent.replace(' · estava na pág. ', ' · pág. '); return r; }
       const sh = R.querySelector('.sheet'); if (!sh || sh.querySelector('.lvday')) return r;
       const D = U.day && U.day !== todayISO() ? U.day : null;
       const lab = !D ? 'Hoje' : D === lvdYesterday() ? 'Ontem' : lvdBR(D);
