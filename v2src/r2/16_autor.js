@@ -49,18 +49,25 @@ function openAuthorPage(name) {
         const novos = d && Array.isArray(d.items) ? d.items.map(fromCatalogDTO).filter((it) => normT(it.author || '').includes(sur)) : [];
         const ja = new Set([...c2.items, ...(c2.extra || [])].map((x) => normT(x.title))), inedito = novos.some((x) => !ja.has(normT(x.title)));
         c2.extra = [...(c2.extra || []), ...novos]; if (d) c2.vmPage = pg + 1; c2.vmBusy = false;
-        if (d && (!d.more || pg >= 4)) c2.done = true;
+        if (d && (!d.more || pg >= 4)) c2.done = true; if (d) guarda();
         if (S.listRedraw === draw && !v.hidden) draw();
         if (!d) toast('Não deu para buscar agora. Tente de novo em alguns minutos.'); else if (!inedito) toast('Não achei outros livros em português.');
       }); });
     syncTopTitle();
   };
+  // (Bia 28/11: "para evitar buscar de novo, temos limite de busca") o resultado de cada autor fica no aparelho por 7 dias
+  // (lv.autor.<nome>, até 30 autores): abrir a página de novo não chama a API, nem o "Ver mais" já feito.
+  const LK = 'lv.autor.' + k, DIAS7 = 7 * 864e5;
+  const guarda = () => { try { const c = S.byAuthor[k]; if (!c || !c.items) return; const slim = (l) => (l || []).map((it) => ({ title: it.title, author: it.author, coverUrl: it.coverUrl || null, isbn: it.isbn || null, lang: it.lang || '', pages: it.pages || null, year: it.year || '', src: it.src, _meta: it._meta && it._meta.pub ? { pub: it._meta.pub } : null }));
+    localStorage.setItem(LK, JSON.stringify({ at: c.at || Date.now(), items: slim(c.items), extra: c.extra ? slim(c.extra) : undefined, vmPage: c.vmPage || 0, done: !!c.done }));
+    const ks = Object.keys(localStorage).filter((x) => x.startsWith('lv.autor.')); if (ks.length > 30) ks.map((x) => { try { return [x, JSON.parse(localStorage.getItem(x)).at || 0]; } catch { return [x, 0]; } }).sort((a, b) => a[1] - b[1]).slice(0, ks.length - 30).forEach(([x]) => localStorage.removeItem(x)); } catch {} };
   S.byAuthor = S.byAuthor || {};
+  if (!S.byAuthor[k]) { try { const o = JSON.parse(localStorage.getItem(LK) || 'null'); if (o && o.items && Date.now() - o.at < DIAS7) S.byAuthor[k] = o; } catch {} }
   // (Bia 28/11) a busca pelo nome traz poucas edições em português (o catálogo devolve no máximo ~25 e prefere as em inglês).
   // 1ª rodada: nome, "nome livro" e "nome edição"; 2ª rodada: nome + as 2 editoras brasileiras mais frequentes (ex.: Galera).
   if (!S.byAuthor[k] || (!S.byAuthor[k].items && !S.byAuthor[k].loading)) { S.byAuthor[k] = { loading: true };
     const sb = (q) => searchBooks(q).catch(() => []), ok = (l) => (l || []).filter((it) => normT(it.author || '').includes(sur));
-    const put = (lists) => { const fl = lists.flat(); S.byAuthor[k] = { items: ok([...fl.filter((it) => langOf(it) === 'pt'), ...fl]) }; if (S.listRedraw === draw && !v.hidden) draw(); };
+    const put = (lists) => { const fl = lists.flat(); S.byAuthor[k] = { items: ok([...fl.filter((it) => langOf(it) === 'pt'), ...fl]), at: Date.now() }; guarda(); if (S.listRedraw === draw && !v.hidden) draw(); };
     Promise.all([sb(au), sb(au + ' livro'), sb(au + ' edição')]).then((r1) => { put(r1);
       const n = {}; ok(r1.flat()).filter((it) => langOf(it) === 'pt').forEach((it) => { const p = String((it._meta && it._meta.pub) || '').trim(); if (p) n[p] = (n[p] || 0) + 1; });
       const pubs = Object.entries(n).sort((a, b) => b[1] - a[1]).slice(0, 2).map((x) => x[0]);
