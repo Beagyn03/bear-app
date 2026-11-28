@@ -31,6 +31,8 @@ openGoalPage = function (year) {
       <div class="gp-h"><b>Lidos · ${done}</b></div>
       <div class="sl-list">${lidos.map((e) => slItem(e).replace('<i>›</i>', `<i>${esc(fmt(e.finishedAt))} ›</i>`)).join('') || '<p class="sl-empty">Nenhum livro terminado neste ano ainda.</p>'}</div></div>`;
     paintCv(v);
+    // (Bia 28/11) o próprio perfil usa esta mesma tela e deixa .v3nys (esconde o Por mês); a meta aberta depois herdava a marca
+    { const sb = v.querySelector('.sl-body'); sb.classList.remove('v3nys'); delete sb.dataset.ysDest; }
     S.ysYear = y; const a = $('#gp-ys', v); mountYearShelf(v, a, ysItems(), true); a.remove();
     const ysH = v.querySelector('.ys .ys-h > b'); if (ysH) ysH.textContent = 'Por mês';
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; S.listRedraw = null; refresh(); });

@@ -10177,6 +10177,8 @@ openGoalPage = function (year) {
       <div class="gp-h"><b>Lidos · ${done}</b></div>
       <div class="sl-list">${lidos.map((e) => slItem(e).replace('<i>›</i>', `<i>${esc(fmt(e.finishedAt))} ›</i>`)).join('') || '<p class="sl-empty">Nenhum livro terminado neste ano ainda.</p>'}</div></div>`;
     paintCv(v);
+    // (Bia 28/11) o próprio perfil usa esta mesma tela e deixa .v3nys (esconde o Por mês); a meta aberta depois herdava a marca
+    { const sb = v.querySelector('.sl-body'); sb.classList.remove('v3nys'); delete sb.dataset.ysDest; }
     S.ysYear = y; const a = $('#gp-ys', v); mountYearShelf(v, a, ysItems(), true); a.remove();
     const ysH = v.querySelector('.ys .ys-h > b'); if (ysH) ysH.textContent = 'Por mês';
     v.querySelector('.sl-back').addEventListener('click', () => { v.hidden = true; S.listRedraw = null; refresh(); });
@@ -21864,7 +21866,7 @@ openFixReads = function (filter) {
     const acts = '<div class="acts">' + (f === 'fim' || f === 'ini' ? '<button type="button" class="chip" data-a="ano">Só o ano</button>' : '') + '<button type="button" class="chip" data-a="nao">Não lembro</button></div>';
     const nav = all.length > PER ? '<div class="fx-pg"><button type="button" data-pg="-1"' + (page ? '' : ' disabled') + '>‹ Anterior</button><span>' + (page * PER + 1) + '–' + Math.min(all.length, page * PER + PER) + ' de ' + all.length + '</span><button type="button" data-pg="1"' + (page < pages - 1 ? '' : ' disabled') + '>Próxima ›</button></div>' : '';
     const tabs = KS.filter((k) => c[k]);
-    const v = v4Page('Completar histórico', '<p class="v4pg-intro">Livros que vieram de outro app sem alguns dados. Completar deixa certas as estatísticas e a meta do ano.</p>'
+    const v = v4Page('Completar histórico', '<p class="v4pg-intro">Livros lidos sem data, páginas ou nota. Completar deixa certas as estatísticas e a meta do ano. Todos os seus livros ficam na Biblioteca.</p>'
       + '<button type="button" class="v4btn-w" data-a="addold"><i class=v3e data-i=plus></i>Adicionar livros que já li</button>'
       + (tot ? '<div class="v4fxtop"><b aria-live="polite">' + feitos + ' de ' + tot + ' completos</b><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="' + tot + '" aria-valuenow="' + feitos + '" aria-label="' + feitos + ' de ' + tot + ' completos"><i style="width:' + Math.round(feitos / tot * 100) + '%"></i></div></div>' : '')
       + (tabs.length ? '<div class="v4seg" role="tablist">' + tabs.map((k) => '<button type="button" role="tab" aria-selected="' + (f === k) + '" class="' + (f === k ? 'on' : '') + '" data-f="' + k + '">' + NM[k] + ' <small>' + c[k] + '</small></button>').join('') + '</div>' : '')
@@ -22651,29 +22653,44 @@ function vFn(k) { try { const m = v2Mods(); if (V6SUB[k] && m[V6SUB[k]] === fals
 // Próxima conquista, Meta do ano e Na fila (estão na Linha do dia e em A seguir). Sem duplicar Funções do app: item de função
 // desligada fica cinza ("desligado em Funções do app") e o toque leva para lá. Guardado em db.prefs.home2; as escolhas
 // antigas (db.prefs.home.off) migram uma vez: Indicações → Para você, Na fila → A seguir, Pergunta do dia → Destaque.
-var V6H = [['dia', 'Linha do dia', 'Órbita e Meta, logo abaixo do livro'], ['dest', 'Destaque do dia', DEB.nome + ', lembretes e Resumo do mês'], ['seguir', 'A seguir', 'o próximo da fila e "Qual leio agora?"'], ['pv', 'Para você', 'indicações de livros e Seus gostos']];
+// (Bia 28/11: "isso ainda faz sentido?") A lista agora espelha o Hoje de verdade, de cima para baixo. Em cima, fixos (só
+// ligar/desligar): Cartão do topo (a abertura do dia), Órbita e Meta, Calendário do mês. Embaixo, na ordem escolhida (setas):
+// Destaque do dia, A seguir, Para você. Antes o cartão do topo e o calendário não tinham chave, a Linha do dia tinha setas
+// que não faziam nada, e o Destaque dizia "Debate semanal, lembretes" quando hoje é um cartão só (empréstimo, Resumo do mês
+// ou a pergunta da semana).
+var V6H = [['abre', 'Cartão do topo', 'prazo, meta ou lembrete do dia'], ['dia', 'Órbita e Meta', 'os dois cartões logo abaixo do livro'], ['cal', 'Calendário do mês', 'o que você leu em cada dia'],
+  ['dest', 'Destaque do dia', 'um cartão: empréstimo, Resumo do mês ou ' + String(DEB.nome || 'a pergunta da semana').toLowerCase()], ['seguir', 'A seguir', 'o próximo da fila; aparece quando você não está lendo nada'], ['pv', 'Para você', 'indicações de livros e seus gostos']];
+const V6H_FIXO = ['abre', 'dia', 'cal'], V6H_MOVE = ['dest', 'seguir', 'pv'];
 { const P = () => { db.prefs = db.prefs || {}; if (!db.prefs.home2) { const old = (db.prefs.home && db.prefs.home.off) || [], off = [];
       if (old.includes('recs')) off.push('pv'); if (old.includes('fila')) off.push('seguir'); if (old.includes('qday')) off.push('dest');
       db.prefs.home2 = { order: V6H.map((x) => x[0]), off }; } const h = db.prefs.home2; V6H.forEach(([k]) => { if (!h.order.includes(k)) h.order.push(k); }); return h; };
-  const fnOff = (k) => { try { if (k === 'dia') return !vFn('metas') && !vFn('orbita'); if (k === 'pv') return !vFn('pv'); return false; } catch { return false; } };
-  // aplicar no Hoje: esconder e ordenar (o livro e a Linha do dia ficam sempre em cima)
+  const fnOff = (k) => { try { if (k === 'dia') return !vFn('metas') && !vFn('orbita'); if (k === 'cal') return !vFn('orbita'); if (k === 'pv') return !vFn('pv'); return false; } catch { return false; } };
+  // aplicar no Hoje: esconder e ordenar (o livro e os fixos ficam sempre em cima)
   const st = document.createElement('style'); st.textContent = `
-:host(.v6h-dia) .v3day,:host(.v6h-dest) .v3-colA.v3h > .v3mom,:host(.v6h-seguir) .v3-colA.v3h > .v3x-b,:host(.v6h-pv) .v3-colA.v3h > #pv-host{display:none!important}
-.v6hp .v4fn{grid-template-columns:1fr auto auto}.v6hp .v4fn .ud{display:flex;gap:2px;margin-right:6px}.v6hp .v4fn .ud button{width:28px;height:28px;border:0;background:none;color:var(--ink-2);font-size:15px}.v6hp .v4fn .ud button:disabled{opacity:.25}
+:host(.v6h-abre) .v8diaw,:host(.v6h-dia) .v3day,:host(.v6h-cal) .h3cal,:host(.v6h-dest) .v3-colA.v3h > .v3mom,:host(.v6h-seguir) .v3-colA.v3h > .v3x-b,:host(.v6h-lendo) .v3-colA.v3h > .v3x-b,:host(.v6h-pv) .v3-colA.v3h > #pv-host{display:none!important}
+.v6hp .v4fn{grid-template-columns:1fr auto auto}.v6hp .v4fn .ud{display:flex;gap:2px;margin-right:6px}.v6hp .v4fn .ud button{width:36px;height:40px;border:0;background:none;color:var(--ink-2);font-size:16px}.v6hp .v4fn .ud button:disabled{opacity:.25}
+.v6hp.fixo .v4fn{grid-template-columns:1fr auto}
 .v6hp .v4fn.dis{opacity:.5}.v6hp .v4fn.dis small::after{content:" · desligado em Funções do app"}
-.v6hp .v4pg-top{font-size:.8rem;color:var(--ink-2);margin:0 0 .6rem}`; TR.append(st);
+.v6hg{font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin:1rem 0 .45rem}
+.v4pg-top{font-size:.8rem;color:var(--ink-2);margin:0 0 .6rem}`; TR.append(st);
   const apply = () => { const h = TR.host; if (!h) return; const p = P(); V6H.forEach(([k]) => h.classList.toggle('v6h-' + k, p.off.includes(k)));
+    // (Bia 28/11) "A seguir só deveria aparecer se não estou lendo nada"
+    { let lendo = false; try { lendo = lib().some((e) => e.status === 'LENDO'); } catch {} h.classList.toggle('v6h-lendo', lendo); }
     const col = TR.querySelector('.v3-colA.v3h'); if (!col) return; const sel = { dest: ':scope > .v3mom', seguir: ':scope > .v3x-b', pv: ':scope > #pv-host' };
     let n = 3; p.order.filter((k) => sel[k]).forEach((k) => { const el = col.querySelector(sel[k]); if (el && el.style.order !== String(n)) el.style.order = String(n); n++; }); };
   let tm = 0; new MutationObserver(() => { if (!tm) tm = setTimeout(() => { tm = 0; apply(); }, 80); }).observe(TR, { childList: true, subtree: true }); setTimeout(apply, 300);
   homePrefsSheet = function () {
-    const draw = () => { const p = P(), O = p.order.filter((k) => V6H.some((x) => x[0] === k));
-      const row = (k, i) => { const it = V6H.find((x) => x[0] === k), dis = fnOff(k), on = !p.off.includes(k) && !dis;
-        return '<div class="v4fn' + (dis ? ' dis' : '') + '" data-k="' + k + '"><span><b>' + esc(it[1]) + '</b><small>' + esc(it[2]) + '</small></span><span class="ud"><button type="button" data-mv="-1" data-k="' + k + '" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>↑</button><button type="button" data-mv="1" data-k="' + k + '" aria-label="Descer"' + (i === O.length - 1 ? ' disabled' : '') + '>↓</button></span><button type="button" class="v2fn-tg' + (on ? ' on' : '') + '" data-tg="' + k + '" role="switch" aria-checked="' + on + '" aria-label="' + esc(it[1]) + '"></button></div>'; };
-      const v = v4Page('Personalizar Hoje', '<p class="v4pg-top">O livro que você está lendo fica sempre em primeiro. Escolha o que aparece embaixo dele e em que ordem.</p><div class="v4card v6hp">' + O.map(row).join('') + '</div>', () => homePrefsSheet());
+    const draw = () => { const p = P(), M = p.order.filter((k) => V6H_MOVE.includes(k));
+      const row = (k, i, setas) => { const it = V6H.find((x) => x[0] === k), dis = fnOff(k), on = !p.off.includes(k) && !dis;
+        return '<div class="v4fn' + (dis ? ' dis' : '') + '" data-k="' + k + '"><span><b>' + esc(it[1]) + '</b><small>' + esc(it[2]) + '</small></span>'
+          + (setas ? '<span class="ud"><button type="button" data-mv="-1" data-k="' + k + '" aria-label="Subir ' + esc(it[1]) + '"' + (i === 0 ? ' disabled' : '') + '>↑</button><button type="button" data-mv="1" data-k="' + k + '" aria-label="Descer ' + esc(it[1]) + '"' + (i === M.length - 1 ? ' disabled' : '') + '>↓</button></span>' : '')
+          + '<button type="button" class="v2fn-tg' + (on ? ' on' : '') + '" data-tg="' + k + '" role="switch" aria-checked="' + on + '" aria-label="' + esc(it[1]) + '"></button></div>'; };
+      const v = v4Page('Personalizar Hoje', '<p class="v4pg-top">O livro que você está lendo fica sempre em primeiro.</p>'
+        + '<div class="v6hg">Em cima</div><div class="v4card v6hp fixo">' + V6H_FIXO.map((k, i) => row(k, i, false)).join('') + '</div>'
+        + '<div class="v6hg">Embaixo, na ordem que quiser</div><div class="v4card v6hp">' + M.map((k, i) => row(k, i, true)).join('') + '</div>', () => homePrefsSheet());
       v.querySelectorAll('[data-tg]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.tg; if (fnOff(k)) { try { v2FuncoesSheet(); } catch {} return; } p.off = p.off.includes(k) ? p.off.filter((x) => x !== k) : [...p.off, k]; save(); apply(); draw(); }));
       v.querySelectorAll('.v4fn.dis span:first-child').forEach((s) => s.addEventListener('click', () => { try { v2FuncoesSheet(); } catch {} }));
-      v.querySelectorAll('[data-mv]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k, i = p.order.indexOf(k), j = i + +b.dataset.mv; if (i < 0 || j < 0 || j >= p.order.length) return; [p.order[i], p.order[j]] = [p.order[j], p.order[i]]; save(); apply(); draw(); }));
+      v.querySelectorAll('[data-mv]').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k, i = M.indexOf(k), j = i + +b.dataset.mv; if (i < 0 || j < 0 || j >= M.length) return; [M[i], M[j]] = [M[j], M[i]]; p.order = [...V6H_FIXO, ...M]; save(); apply(); draw(); }));
     };
     S.listRedraw = draw; draw();
   };
@@ -23069,7 +23086,7 @@ var v8Bust = () => {};
     const m = e.meta || {}; let pg = 0; try { pg = readingInfo(e).total || e.totalPages || 0; } catch { pg = e.totalPages || 0; }
     const lang = m.lang ? v2LangName(m.lang) : '', gen = e.genre || m.cat || '';
     const gold = box.querySelector('.bp-chip.gold');
-    const L = [m.pub, pg ? pg + ' pág.' : '', lang, gen].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean);
+    const L = [m.pub, pg ? pg + ' pág.' : '', lang, gen].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean); { const ano = (String(m.date || '').match(/\d{4}/) || [])[0]; if (ano) L.push(ano); if (e.isbn) L.push('ISBN ' + e.isbn); } // (Bia 28/11) ano e ISBN junto com editora e páginas
     const sig = L.join('|') + '|' + (gold ? gold.textContent : ''); if (box.dataset.v8 === sig) return;
     box.innerHTML = L.map((x) => '<span class="bp-chip">' + esc(x) + '</span>').join('') + (gold ? gold.outerHTML : ''); box.dataset.v8 = sig; };
   const put = () => {
@@ -23971,7 +23988,7 @@ addEventListener('click', (ev) => {
     const dl = body.querySelector('.bp-dl'); if (dl) { const o = {}; dl.querySelectorAll('dt').forEach((dt) => { const dd = dt.nextElementSibling; if (dd) o[dt.textContent.trim()] = dd.textContent.trim(); }); if (Object.keys(o).length) ficha.set(normT(title), o); }
     const box = hero.querySelector('.bp-chips');
     if (box && !box.dataset.v8 && !mine) { const o = ficha.get(normT(title)) || {}, pgs = o['Páginas'] || ((box.textContent.match(/(\d+)\s*pág/) || [])[1]);
-      const L = [o['Publicação'], pgs ? String(pgs).replace(/\D/g, '') + ' pág.' : '', (window.v2LangName ? window.v2LangName(o['Idioma']) : o['Idioma']), o['Gênero']].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean);
+      const L = [o['Publicação'], pgs ? String(pgs).replace(/\D/g, '') + ' pág.' : '', (window.v2LangName ? window.v2LangName(o['Idioma']) : o['Idioma']), o['Gênero']].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean); { const ano = (String(o['Publicado em'] || '').match(/\d{4}/) || [])[0]; if (ano) L.push(ano); if (o['ISBN']) L.push('ISBN ' + o['ISBN']); }
       const sig = L.join('|'); if (L.length && box.dataset.v9 !== sig) { box.innerHTML = L.map((x) => '<span class="bp-chip">' + esc(x) + '</span>').join(''); box.dataset.v9 = sig; } }
     body.classList.toggle('v9prev', !mine);
     let row = body.querySelector(':scope > .v9acts');
@@ -34403,6 +34420,8 @@ let V5POP = null; // retângulo da capa que abriu o menu
     dl.querySelectorAll('dt').forEach((dt) => { const dd = dt.nextElementSibling; if (!dd || dd.tagName !== 'DD') return; const k = normT(dd.textContent || '').replace(/[^a-z0-9]/g, '');
       const dup = !k || chips.some((c) => c === k || c.startsWith(k + 'pag') || c === k + 'pag'); dt.classList.toggle('lv-dup', dup); dd.classList.toggle('lv-dup', dup); dd.classList.remove('lv-last'); if (!dup) { vis++; last = dd; } });
     if (last) last.classList.add('lv-last'); dl.classList.add('lv-dl'); dl.classList.toggle('lv-vazia', !vis);
+    // (Bia 28/11) ano e ISBN viraram etiquetas no topo (q0/t1): a linha embaixo da sinopse sai de vez
+    dl.classList.toggle('lv-vazia', true);
   } catch (err) { console.warn('sobre enxuto', err); } };
   if (v) new MutationObserver(() => { if (!tm) tm = setTimeout(fix, 40); }).observe(v, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-bt', 'hidden'] }); }
 // --- zzzzw_v2_aba_comprar.js ---
@@ -34513,6 +34532,14 @@ const lvExMenuAqui = () => { try { const v = TR.querySelector('#shelflist'); if 
       w.querySelectorAll('.aj-row small').forEach((sm) => { const t = sm.textContent; if (t && /^[A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-záéíóúâêôãõç]/.test(t) && !t.includes('@')) sm.textContent = t[0].toLowerCase() + t.slice(1); });
     } catch (err) { console.warn('ajustes organizados', err); }
     return r; }; }
+// --- zzzzz_v2_orelha_limite.js ---
+// ---------- v2: orelha do cartão com limite (Bia, 28/11: "isso tá feio") ----------
+// Puxar a tela para atualizar começando no canto do cartão arrastava a orelha junto, e ela crescia sem limite até cobrir o
+// livro inteiro (triângulo gigante). Agora: a orelha do cartão cresce no máximo até 132px (o bastante para passar do ponto
+// de abrir, 120px) e o toque que começa nela não dispara o "puxar para atualizar".
+{ const st = document.createElement('style'); st.textContent = `#v5ler.ear.card{width:min(var(--s,44px),132px)!important;height:min(var(--s,44px),132px)!important}`; TR.append(st);
+  const ear = jnPl_; ['touchstart', 'touchmove'].forEach((t) => ear.addEventListener(t, (ev) => ev.stopPropagation(), { passive: true }));
+}
 // --- zzzzz_v2_temas_novos.js ---
 // ---------- v2: mais temas, na linha do app (Bia, 28/11) ----------
 // "Precisamos de mais temas que combinem melhor com o app." Antes só Papel era claro; os outros eram escuros e o Lilás fugia

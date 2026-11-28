@@ -69,7 +69,7 @@ var v8Bust = () => {};
     const m = e.meta || {}; let pg = 0; try { pg = readingInfo(e).total || e.totalPages || 0; } catch { pg = e.totalPages || 0; }
     const lang = m.lang ? v2LangName(m.lang) : '', gen = e.genre || m.cat || '';
     const gold = box.querySelector('.bp-chip.gold');
-    const L = [m.pub, pg ? pg + ' pág.' : '', lang, gen].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean);
+    const L = [m.pub, pg ? pg + ' pág.' : '', lang, gen].filter(Boolean).map((x) => String(x).split(/[,/]/)[0].trim()).filter(Boolean); { const ano = (String(m.date || '').match(/\d{4}/) || [])[0]; if (ano) L.push(ano); if (e.isbn) L.push('ISBN ' + e.isbn); } // (Bia 28/11) ano e ISBN junto com editora e páginas
     const sig = L.join('|') + '|' + (gold ? gold.textContent : ''); if (box.dataset.v8 === sig) return;
     box.innerHTML = L.map((x) => '<span class="bp-chip">' + esc(x) + '</span>').join('') + (gold ? gold.outerHTML : ''); box.dataset.v8 = sig; };
   const put = () => {

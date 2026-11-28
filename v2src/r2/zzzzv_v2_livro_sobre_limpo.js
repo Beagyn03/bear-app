@@ -32,5 +32,7 @@
     dl.querySelectorAll('dt').forEach((dt) => { const dd = dt.nextElementSibling; if (!dd || dd.tagName !== 'DD') return; const k = normT(dd.textContent || '').replace(/[^a-z0-9]/g, '');
       const dup = !k || chips.some((c) => c === k || c.startsWith(k + 'pag') || c === k + 'pag'); dt.classList.toggle('lv-dup', dup); dd.classList.toggle('lv-dup', dup); dd.classList.remove('lv-last'); if (!dup) { vis++; last = dd; } });
     if (last) last.classList.add('lv-last'); dl.classList.add('lv-dl'); dl.classList.toggle('lv-vazia', !vis);
+    // (Bia 28/11) ano e ISBN viraram etiquetas no topo (q0/t1): a linha embaixo da sinopse sai de vez
+    dl.classList.toggle('lv-vazia', true);
   } catch (err) { console.warn('sobre enxuto', err); } };
   if (v) new MutationObserver(() => { if (!tm) tm = setTimeout(fix, 40); }).observe(v, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-bt', 'hidden'] }); }
