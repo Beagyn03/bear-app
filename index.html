@@ -10722,8 +10722,11 @@ function openAuthorPage(name) {
     // (Bia 28/11: "por que não aparece Uma janela sombria?") a busca pelo nome trazia só as edições em inglês e francês.
     // Agora: busca também as edições em português; havendo alguma, elas ficam em "Outros livros" e as estrangeiras
     // (traduções que o catálogo não liga à edição brasileira) vão para "Em outros idiomas", fechado. Box, guia e brinde saem.
-    const lixo = /\b(box(ed)? set|boxed|study guide|supersummary|brindes?)\b/i;
-    const all = c && c.items ? c.items.filter((it) => !have.has(normT(it.title)) && !lixo.test(it.title || "")).filter((it, i, a) => a.findIndex((x) => normT(x.title) === normT(it.title)) === i) : null;
+    // (Bia 28/11, Colleen Hoover) fora também kit, resumo, caderno, "edição de colecionador" repetida e título com o nome da autora
+    const lixo = /\b(box(ed)?( set)?|kit|study guide|supersummary|summary|resumo|notebook|conversation starters|discussion|brindes?)\b/i;
+    const base = (t) => normT(String(t || '').split(/\s[(\[]|:|\s[–—-]\s/)[0]);
+    const haveB = new Set(mine.map((e) => base(e.title))), auN = normT(au);
+    const all = c && c.items ? c.items.filter((it) => !have.has(normT(it.title)) && !haveB.has(base(it.title)) && !lixo.test(it.title || '') && !normT(it.title || '').includes(auN)).filter((it, i, a) => a.findIndex((x) => base(x.title) === base(it.title)) === i) : null;
     const pt = all && all.filter((it) => langOf(it) === "pt"), fora = all && pt.length ? all.filter((it) => langOf(it) !== "pt") : [];
     const others = all ? (pt.length ? pt : all).slice(0, 24) : null;
     const mineHTML = mine.map((e) => { const m = es4Mark(e); return `<div class="es4-bk${m.dim ? ' es4-dim' : ''}"><button type="button" class="es-bk" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'es-cv')}${m.over}</button><small>${esc(m.label)}</small></div>`; }).join('');
@@ -10741,7 +10744,16 @@ function openAuthorPage(name) {
     syncTopTitle();
   };
   S.byAuthor = S.byAuthor || {};
-  if (!S.byAuthor[k] || (!S.byAuthor[k].items && !S.byAuthor[k].loading)) { S.byAuthor[k] = { loading: true }; Promise.all([searchBooks(au), searchBooks(au + ' livro').catch(() => [])]).then(([l1, l2]) => { const list = [...(l2 || []).filter((it) => langOf(it) === 'pt'), ...(l1 || []), ...(l2 || [])]; S.byAuthor[k] = { items: (list || []).filter((it) => normT(it.author || '').includes(sur)) }; if (S.listRedraw === draw && !v.hidden) draw(); }).catch(() => { S.byAuthor[k] = { items: [] }; if (S.listRedraw === draw) draw(); }); }
+  // (Bia 28/11) a busca pelo nome traz poucas edições em português (o catálogo devolve no máximo ~25 e prefere as em inglês).
+  // 1ª rodada: nome, "nome livro" e "nome edição"; 2ª rodada: nome + as 2 editoras brasileiras mais frequentes (ex.: Galera).
+  if (!S.byAuthor[k] || (!S.byAuthor[k].items && !S.byAuthor[k].loading)) { S.byAuthor[k] = { loading: true };
+    const sb = (q) => searchBooks(q).catch(() => []), ok = (l) => (l || []).filter((it) => normT(it.author || '').includes(sur));
+    const put = (lists) => { const fl = lists.flat(); S.byAuthor[k] = { items: ok([...fl.filter((it) => langOf(it) === 'pt'), ...fl]) }; if (S.listRedraw === draw && !v.hidden) draw(); };
+    Promise.all([sb(au), sb(au + ' livro'), sb(au + ' edição')]).then((r1) => { put(r1);
+      const n = {}; ok(r1.flat()).filter((it) => langOf(it) === 'pt').forEach((it) => { const p = String((it._meta && it._meta.pub) || '').trim(); if (p) n[p] = (n[p] || 0) + 1; });
+      const pubs = Object.entries(n).sort((a, b) => b[1] - a[1]).slice(0, 2).map((x) => x[0]);
+      if (pubs.length) Promise.all(pubs.map((p) => sb(au + ' ' + p))).then((r2) => put([...r1, ...r2]));
+    }).catch(() => { S.byAuthor[k] = { items: [] }; if (S.listRedraw === draw) draw(); }); }
   S.listRedraw = draw; S.navView = { t: 'author', a: [au] }; closeEd(); v.classList.remove('feedview', 'tabroot'); draw(); v.hidden = false; v.scrollTop = 0;
 }
 TR.addEventListener('click', (ev) => {
