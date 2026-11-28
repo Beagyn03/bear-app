@@ -99,7 +99,7 @@ function v2pvBind(h, v, d) {
       if (navigator.share) return navigator.share({ title: 'Livroverso', text, url }).catch(() => {});
       try { navigator.clipboard.writeText(text + ' ' + url); toast('Link do perfil copiado'); } catch { toast(text); } return; }
     if (k === 'more') return popMenu(b, [
-      { label: 'Ajustes', sub: 'tema, avisos, dados e conta', fn: () => { const a = v.querySelector('.v2-ajpill'); if (a) a.click(); else { v.hidden = true; S.ajMode = 'sistema'; goTab('perfil'); } } },
+      { label: 'Ajustes', sub: 'tema, privacidade, livros e conta', fn: () => { const a = v.querySelector('.v2-ajpill'); if (a) a.click(); else { v.hidden = true; S.ajMode = 'sistema'; goTab('perfil'); } } },
       { label: 'Organizar meu perfil', sub: 'o que aparece: leituras, estantes, conquistas e avaliações', fn: () => socialSettingsSheet('perfil') },
       { label: 'Moldura e selo', fn: () => flairSheet() },
     ]);
