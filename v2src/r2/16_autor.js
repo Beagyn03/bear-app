@@ -6,6 +6,7 @@
 .au-h b{display:block;font-size:1.15rem;color:var(--ink)}.au-h small{font-size:.8rem;color:var(--ink-2)}
 .au-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem .5rem}.au-grid .es4-bk small{font-size:.66rem;line-height:1.2}
 .au-grid .es-bk{display:block;width:100%}.au-grid .es-bk .cv{display:block;width:100%!important;aspect-ratio:2/3;height:auto!important;min-height:0!important;background-size:cover;background-position:center}
+.au-fora{margin-top:1rem}.au-fora summary{cursor:pointer;font-weight:800;font-size:.85rem;color:var(--ink-2);padding:.4rem 0;list-style:none}.au-fora summary::-webkit-details-marker{display:none}.au-fora summary::after{content:" ›"}.au-fora[open] summary::after{content:" ⌄"}.au-fora .au-grid{margin-top:.5rem}
 .au-more{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.8rem;margin-left:auto}
 `; TR.append(st); }
 function openAuthorPage(name) {
@@ -16,21 +17,29 @@ function openAuthorPage(name) {
     const mine = mineOf(), lidos = mine.filter((e) => e.status === 'LIDO'), pw = lidos.map((e) => (reviewOfLib(e) || {}).paws).filter(Boolean);
     const avg = pw.length ? Math.round((pw.reduce((a, b) => a + b, 0) / pw.length) * 2) / 2 : 0;
     const c = S.byAuthor && S.byAuthor[k]; const have = new Set(mine.map((e) => normT(e.title)));
-    const others = c && c.items ? c.items.filter((it) => !have.has(normT(it.title))).filter((it, i, a) => a.findIndex((x) => normT(x.title) === normT(it.title)) === i).slice(0, 24) : null;
+    // (Bia 28/11: "por que não aparece Uma janela sombria?") a busca pelo nome trazia só as edições em inglês e francês.
+    // Agora: busca também as edições em português; havendo alguma, elas ficam em "Outros livros" e as estrangeiras
+    // (traduções que o catálogo não liga à edição brasileira) vão para "Em outros idiomas", fechado. Box, guia e brinde saem.
+    const lixo = /\b(box(ed)? set|boxed|study guide|supersummary|brindes?)\b/i;
+    const all = c && c.items ? c.items.filter((it) => !have.has(normT(it.title)) && !lixo.test(it.title || "")).filter((it, i, a) => a.findIndex((x) => normT(x.title) === normT(it.title)) === i) : null;
+    const pt = all && all.filter((it) => langOf(it) === "pt"), fora = all && pt.length ? all.filter((it) => langOf(it) !== "pt") : [];
+    const others = all ? (pt.length ? pt : all).slice(0, 24) : null;
     const mineHTML = mine.map((e) => { const m = es4Mark(e); return `<div class="es4-bk${m.dim ? ' es4-dim' : ''}"><button type="button" class="es-bk" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'es-cv')}${m.over}</button><small>${esc(m.label)}</small></div>`; }).join('');
-    const othHTML = (others || []).map((it) => `<div class="es4-bk"><button type="button" class="es-bk" data-book="${esc(it.title)}" data-author="${esc(it.author || '')}" aria-label="${esc(it.title)}">${cvh(it.title, it.coverUrl, 'es-cv')}</button><small>${esc(it.title)}</small></div>`).join('');
+    const cell = (it) => `<div class="es4-bk"><button type="button" class="es-bk" data-book="${esc(it.title)}" data-author="${esc(it.author || '')}" aria-label="${esc(it.title)}">${cvh(it.title, it.coverUrl, 'es-cv')}</button><small>${esc(it.title)}</small></div>`;
+    const othHTML = (others || []).map(cell).join(''), foraHTML = fora.slice(0, 24).map(cell).join('');
     v.querySelector('.sl-body').innerHTML = `<div class="sl-top"><button type="button" class="sl-back">‹ Voltar</button><b>${esc(au)}</b><span></span></div>
       <div class="au-h"><span class="au-av" style="background:${friendColor(au)}">${esc(initial(au))}</span><div><b>${esc(au)}</b><small>${mine.length ? `${plural(mine.length, 'livro', 'livros')} na sua biblioteca${lidos.length ? ` · ${plural(lidos.length, 'lido', 'lidos')}` : ''}${avg ? ` · média ${pawTxt(avg)}` : ''}` : 'Nenhum livro na sua biblioteca ainda'}</small></div></div>
       ${mine.length ? `<div class="v3-sh"><b>Na sua biblioteca</b></div><div class="au-grid">${mineHTML}</div>` : ''}
       <div class="v3-sh" style="margin-top:1rem"><b>${mine.length ? 'Outros livros' : 'Livros'}</b></div>
-      ${others === null ? '<p class="sl-empty">Buscando no catálogo…</p>' : others.length ? `<div class="au-grid">${othHTML}</div>` : `<p class="sl-empty">${S.searchLimited ? 'Busca limitada no momento. Tente de novo em alguns minutos.' : 'Não achei outros livros no catálogo.'}</p>`}`;
+      ${others === null ? '<p class="sl-empty">Buscando no catálogo…</p>' : others.length ? `<div class="au-grid">${othHTML}</div>` : `<p class="sl-empty">${S.searchLimited ? 'Busca limitada no momento. Tente de novo em alguns minutos.' : 'Não achei outros livros no catálogo.'}</p>`}
+      ${foraHTML ? `<details class="au-fora"><summary>Em outros idiomas · ${fora.length > 24 ? 24 : fora.length}</summary><div class="au-grid">${foraHTML}</div></details>` : ''}`;
     paintCv(v);
     v.querySelector('.sl-back').addEventListener('click', () => { if (prev) { S.listRedraw = prev; S.navView = prevNav; prev(); } else { v.hidden = true; S.listRedraw = null; } });
     $$('.es-bk[data-id]', v).forEach((b) => b.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); bookMenuOpen(b, byId(b.dataset.id)); }, true));
     syncTopTitle();
   };
   S.byAuthor = S.byAuthor || {};
-  if (!S.byAuthor[k] || (!S.byAuthor[k].items && !S.byAuthor[k].loading)) { S.byAuthor[k] = { loading: true }; searchBooks(au).then((list) => { S.byAuthor[k] = { items: (list || []).filter((it) => normT(it.author || '').includes(sur)) }; if (S.listRedraw === draw && !v.hidden) draw(); }).catch(() => { S.byAuthor[k] = { items: [] }; if (S.listRedraw === draw) draw(); }); }
+  if (!S.byAuthor[k] || (!S.byAuthor[k].items && !S.byAuthor[k].loading)) { S.byAuthor[k] = { loading: true }; Promise.all([searchBooks(au), searchBooks(au + ' livro').catch(() => [])]).then(([l1, l2]) => { const list = [...(l2 || []).filter((it) => langOf(it) === 'pt'), ...(l1 || []), ...(l2 || [])]; S.byAuthor[k] = { items: (list || []).filter((it) => normT(it.author || '').includes(sur)) }; if (S.listRedraw === draw && !v.hidden) draw(); }).catch(() => { S.byAuthor[k] = { items: [] }; if (S.listRedraw === draw) draw(); }); }
   S.listRedraw = draw; S.navView = { t: 'author', a: [au] }; closeEd(); v.classList.remove('feedview', 'tabroot'); draw(); v.hidden = false; v.scrollTop = 0;
 }
 TR.addEventListener('click', (ev) => {
