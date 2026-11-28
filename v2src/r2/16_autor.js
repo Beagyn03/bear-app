@@ -7,6 +7,7 @@
 .au-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem .5rem}.au-grid .es4-bk small{font-size:.66rem;line-height:1.2}
 .au-grid .es-bk{display:block;width:100%}.au-grid .es-bk .cv{display:block;width:100%!important;aspect-ratio:2/3;height:auto!important;min-height:0!important;background-size:cover;background-position:center}
 .au-fora{margin-top:1rem}.au-fora summary{cursor:pointer;font-weight:800;font-size:.85rem;color:var(--ink-2);padding:.4rem 0;list-style:none}.au-fora summary::-webkit-details-marker{display:none}.au-fora summary::after{content:" ›"}.au-fora[open] summary::after{content:" ⌄"}.au-fora .au-grid{margin-top:.5rem}
+.au-vm{display:block;margin:1rem auto 0;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:800;font-size:.85rem;border-radius:999px;padding:.6rem 1.4rem;min-height:42px}.au-vm:disabled{opacity:.6}
 .au-more{border:0;background:none;color:var(--acc);font:inherit;font-weight:800;font-size:.8rem;margin-left:auto}
 `; TR.append(st); }
 function openAuthorPage(name) {
@@ -24,9 +25,10 @@ function openAuthorPage(name) {
     const lixo = /\b(box(ed)?( set)?|kit|study guide|supersummary|summary|resumo|notebook|conversation starters|discussion|brindes?)\b/i;
     const base = (t) => normT(String(t || '').split(/\s[(\[]|:|\s[–—-]\s/)[0]);
     const haveB = new Set(mine.map((e) => base(e.title))), auN = normT(au);
-    const all = c && c.items ? c.items.filter((it) => !have.has(normT(it.title)) && !haveB.has(base(it.title)) && !lixo.test(it.title || '') && !normT(it.title || '').includes(auN)).filter((it, i, a) => a.findIndex((x) => base(x.title) === base(it.title)) === i) : null;
+    const all = c && c.items ? [...c.items, ...(c.extra || [])].filter((it) => !have.has(normT(it.title)) && !haveB.has(base(it.title)) && !lixo.test(it.title || '') && !normT(it.title || '').includes(auN)).filter((it, i, a) => a.findIndex((x) => base(x.title) === base(it.title)) === i) : null;
     const pt = all && all.filter((it) => langOf(it) === "pt"), fora = all && pt.length ? all.filter((it) => langOf(it) !== "pt") : [];
-    const others = all ? (pt.length ? pt : all).slice(0, 24) : null;
+    const others = all ? (pt.length ? pt : all).slice(0, c.extra ? 400 : 24) : null;
+    const vm = c && c.items && !c.done ? `<button type="button" class="au-vm"${c.vmBusy ? ' disabled' : ''}>${c.vmBusy ? 'Buscando…' : 'Ver mais'}</button>` : '';
     const mineHTML = mine.map((e) => { const m = es4Mark(e); return `<div class="es4-bk${m.dim ? ' es4-dim' : ''}"><button type="button" class="es-bk" data-id="${esc(e.id)}" aria-label="${esc(e.title)}">${cvh(e.title, e.cover, 'es-cv')}${m.over}</button><small>${esc(m.label)}</small></div>`; }).join('');
     const cell = (it) => `<div class="es4-bk"><button type="button" class="es-bk" data-book="${esc(it.title)}" data-author="${esc(it.author || '')}" aria-label="${esc(it.title)}">${cvh(it.title, it.coverUrl, 'es-cv')}</button><small>${esc(it.title)}</small></div>`;
     const othHTML = (others || []).map(cell).join(''), foraHTML = fora.slice(0, 24).map(cell).join('');
@@ -35,10 +37,22 @@ function openAuthorPage(name) {
       ${mine.length ? `<div class="v3-sh"><b>Na sua biblioteca</b></div><div class="au-grid">${mineHTML}</div>` : ''}
       <div class="v3-sh" style="margin-top:1rem"><b>${mine.length ? 'Outros livros' : 'Livros'}</b></div>
       ${others === null ? '<p class="sl-empty">Buscando no catálogo…</p>' : others.length ? `<div class="au-grid">${othHTML}</div>` : `<p class="sl-empty">${S.searchLimited ? 'Busca limitada no momento. Tente de novo em alguns minutos.' : 'Não achei outros livros no catálogo.'}</p>`}
+      ${vm}
       ${foraHTML ? `<details class="au-fora"><summary>Em outros idiomas · ${fora.length > 24 ? 24 : fora.length}</summary><div class="au-grid">${foraHTML}</div></details>` : ''}`;
     paintCv(v);
     v.querySelector('.sl-back').addEventListener('click', () => { if (prev) { S.listRedraw = prev; S.navView = prevNav; prev(); } else { v.hidden = true; S.listRedraw = null; } });
     $$('.es-bk[data-id]', v).forEach((b) => b.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); bookMenuOpen(b, byId(b.dataset.id)); }, true));
+    // (Bia 28/11) "Ver mais": a próxima página de livros do autor em português vem da API (/v1/books/by-author, 80 por vez)
+    const vb = v.querySelector('.au-vm'); if (vb) vb.addEventListener('click', () => { const c2 = S.byAuthor[k]; if (!c2 || c2.vmBusy) return; c2.vmBusy = true; draw();
+      const pg = c2.vmPage || 0;
+      getJSON(`${catBase()}/v1/books/by-author?name=${encodeURIComponent(au.slice(0, 80))}&page=${pg}`, 20000).then((d) => {
+        const novos = d && Array.isArray(d.items) ? d.items.map(fromCatalogDTO).filter((it) => normT(it.author || '').includes(sur)) : [];
+        const ja = new Set([...c2.items, ...(c2.extra || [])].map((x) => normT(x.title))), inedito = novos.some((x) => !ja.has(normT(x.title)));
+        c2.extra = [...(c2.extra || []), ...novos]; if (d) c2.vmPage = pg + 1; c2.vmBusy = false;
+        if (d && (!d.more || pg >= 4)) c2.done = true;
+        if (S.listRedraw === draw && !v.hidden) draw();
+        if (!d) toast('Não deu para buscar agora. Tente de novo em alguns minutos.'); else if (!inedito) toast('Não achei outros livros em português.');
+      }); });
     syncTopTitle();
   };
   S.byAuthor = S.byAuthor || {};
