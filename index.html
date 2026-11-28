@@ -20010,27 +20010,27 @@ v2Ler = function () {
   v4Sheet('lerq', L[0]);
 };
 function v4Open(e, opt = {}) { // tela da leitura (antes de começar ou sessão)
-  const st = v4State(); st.view = 'ler'; st.e = e.id; st.sheet = null; st.ed = null; { const s0 = v4Ses(); if (!(st.reDur && s0 && s0.libId === e.id)) st.reDur = 0; } if (opt.slide) st.slide = opt.slide;
+  const st = v4State(); st.view = 'ler'; st.e = e.id; st.sheet = null; st.ed = null; if (opt.slide) st.slide = opt.slide;
   v4Root(); v4Draw(); const s = v4Ses(); v4EcoLoad(e, s && s.libId === e.id ? s.pg : v4Info(e).now).then(() => { if (V4 && v4State().e === e.id) v4Draw(); });
   if (s) v4Tick();
 }
 function v4PreHTML(e) {
   const st = v4State(), { now, total } = v4Info(e), L = v4Books(), far = L.filter((x) => x.id !== e.id), dur = st.dur != null ? st.dur : 25, due = v4Due(e), sl = st.slide; st.slide = null;
   return `<div class="ses pre">${v4SkyHTML(e)}
-    ${(st.reDur ? [] : far.slice(0, 3)).map((x, k) => `<button class="far${sl ? ' go' : ''}" style="--k:${k}" data-a="cur" data-id="${esc(x.id)}" aria-label="Trocar para ${esc(x.title)}">${v4cv(x)}</button>`).join('')}
-    <div class="top"><button data-a="x" aria-label="Fechar">${v4ic('x', 15)}</button>${st.reDur ? '<span></span>' : `<button class="swc" data-a="sheet" data-s="pick">${v4ic('swap', 14)}Trocar livro</button>`}<span style="width:38px"></span></div>
+    ${far.slice(0, 3).map((x, k) => `<button class="far${sl ? ' go' : ''}" style="--k:${k}" data-a="cur" data-id="${esc(x.id)}" aria-label="Trocar para ${esc(x.title)}">${v4cv(x)}</button>`).join('')}
+    <div class="top"><button data-a="x" aria-label="Fechar">${v4ic('x', 15)}</button><button class="swc" data-a="sheet" data-s="pick">${v4ic('swap', 14)}Trocar livro</button><span style="width:38px"></span></div>
     <div class="mid"><div class="sesw${L.length > 1 ? ' multi' : ''}${sl ? ' come' : ''}" data-swipe="1">${v4Orb(e, now)}
       ${due && !due.done ? `<div class="goal">Hoje, até a <b>pág. ${due.target}</b></div>` : `<div class="goal">pág. <b>${now}</b>${total ? ` de ${total}` : ''}</div>`}
       ${v4EcotHTML(e)}</div>
       <div class="dur">${(() => { const FX = [0, 15, 25, 45, 60], cm = Number((db.prefs || {}).focoMin) || 0, L0 = [[0, 'Livre'], [15, '15 min'], [25, '25 min'], [45, '45 min'], [60, '1 h']]; if (cm && !FX.includes(cm)) L0.push([cm, v4MinLbl(cm)]); if (dur && !FX.includes(dur) && dur !== cm) L0.push([dur, v4MinLbl(dur)]);
         return L0.map(([m, n]) => `<button class="${dur === m ? 'on' : ''}" data-a="dur" data-m="${m}">${n}</button>`).join('') + `<button class="${st.durx ? 'on' : ''}" data-a="durx" aria-expanded="${!!st.durx}">Personalizado</button>`; })()}</div>
       ${st.durx ? `<div class="durx" role="group" aria-label="Minutos do foco"><button data-a="durxs" data-k="-1" aria-label="Menos um minuto">−</button><label><input id="v4durx" type="number" inputmode="numeric" min="1" max="180" step="1" value="${st.durxv || (Number((db.prefs || {}).focoMin) || dur || 25)}" aria-label="Minutos (1 a 180)"><span>min</span></label><button data-a="durxs" data-k="1" aria-label="Mais um minuto">+</button><button class="ok" data-a="durxok">Usar</button></div>` : ''}
-      ${st.reDur ? '<p class="mut" style="margin:4px 0 0;text-align:center;font-size:13px">Mais quanto tempo? A sessão continua somando.</p>' : ''}<button class="flip" data-a="start">${v4ic('ler', 18)}${st.reDur ? 'Continuar' : 'Começar a ler'}</button>
-      ${st.reDur ? '' : '<button class="just" data-a="sheet" data-s="upd">Atualizar página</button>'}</div></div>`;
+      <button class="flip" data-a="start">${v4ic('ler', 18)}Começar a ler</button>
+      <button class="just" data-a="sheet" data-s="upd">Atualizar página</button></div></div>`;
 }
 const v4MinLbl = (m) => (m >= 60 && m % 60 === 0 ? m / 60 + ' h' : m > 60 ? Math.floor(m / 60) + ' h ' + (m % 60) : m + ' min');
-const v4Clock = (s) => { const now = s.pz || Date.now(), el = Math.max(0, Math.floor((now - s.start - (s.off || 0)) / 1000)), acc = Number(s.acc) || 0, v = s.dur ? Math.max(0, s.dur * 60 - el) : el + acc, h = Math.floor(v / 3600), m = Math.floor((v % 3600) / 60), x = v % 60, p = (n) => String(n).padStart(2, '0');
-  return { t: (h ? h + ':' + p(m) : p(m)) + ':' + p(x), done: !!(s.dur && v === 0), secs: el + acc }; };
+const v4Clock = (s) => { const now = s.pz || Date.now(), el = Math.max(0, Math.floor((now - s.start - (s.off || 0)) / 1000)), v = s.dur ? Math.max(0, s.dur * 60 - el) : el, h = Math.floor(v / 3600), m = Math.floor((v % 3600) / 60), x = v % 60, p = (n) => String(n).padStart(2, '0');
+  return { t: (h ? h + ':' + p(m) : p(m)) + ':' + p(x), done: !!(s.dur && v === 0), secs: el }; };
 // página estimada agora (Bia, 20/11): se a pessoa já atualizou na sessão, essa; senão início + minutos lidos × ritmo dela
 // (páginas/minuto das sessões anteriores); sem ritmo, a última página registrada.
 function v4EstPg(e, s) { if (!s) return 0; if (s.pgSet || s.pg !== s.pg0) return s.pg;
@@ -20081,7 +20081,7 @@ function v4NotaEdHTML(e, s) { const N = v4State().notaEd || (v4State().notaEd = 
 function v4Draw() {
   const st = v4State(), R = v4Root(), e = lib().find((x) => x.id === st.e), s = v4Ses();
   let main = '';
-  if (st.view === 'ler' && e) main = s && s.libId === e.id && !st.reDur ? v4SesHTML(e, s) : v4PreHTML(e);
+  if (st.view === 'ler' && e) main = s && s.libId === e.id ? v4SesHTML(e, s) : v4PreHTML(e);
   else if (st.view === 'fim') main = v4FimPage(lib().find((x) => x.id === st.fim));
   const sh = st.sheet ? `<div class="veil" data-a="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${v4SheetHTML(st.sheet)}</div>` : '';
   const fl = R.querySelector('.ecofl'); R.innerHTML = main + sh; const ses = R.querySelector('.ses'); if (fl && ses) ses.prepend(fl);
@@ -20091,7 +20091,7 @@ function v4Draw() {
 let v4T = 0; const v4Stop = () => { clearInterval(v4T); v4T = 0; };
 function v4Tick() { v4Stop(); v4T = setInterval(() => { const s = v4Ses(); if (!V4 || !V4.isConnected || !s) return v4Stop(); const c = v4Clock(s), t = V4.querySelector('#v4clk'), h = V4.querySelector('#v4clkh'); if (t && t.textContent !== c.t) t.textContent = c.t; if (h && s.dur && c.done && !s.pz && h.textContent !== 'tempo cumprido; continue se quiser') h.textContent = 'tempo cumprido; continue se quiser'; }, 1000); }
 function v4Swipe(R) { const w = R.querySelector('[data-swipe]'); if (!w) return; let x0 = null;
-  w.addEventListener('pointerdown', (ev) => { x0 = ev.clientX; }); w.addEventListener('pointerup', (ev) => { if (x0 == null) return; const dx = ev.clientX - x0; x0 = null; if (Math.abs(dx) < 40 || v4State().reDur) return; const L = v4Books(); if (L.length < 2) return; const i = L.findIndex((x) => x.id === v4State().e), nx = L[(i + (dx < 0 ? 1 : L.length - 1)) % L.length]; try { setCurrent(nx.id); } catch {} v4Open(nx, { slide: 1 }); }); }
+  w.addEventListener('pointerdown', (ev) => { x0 = ev.clientX; }); w.addEventListener('pointerup', (ev) => { if (x0 == null) return; const dx = ev.clientX - x0; x0 = null; if (Math.abs(dx) < 40) return; const L = v4Books(); if (L.length < 2) return; const i = L.findIndex((x) => x.id === v4State().e), nx = L[(i + (dx < 0 ? 1 : L.length - 1)) % L.length]; try { setCurrent(nx.id); } catch {} v4Open(nx, { slide: 1 }); }); }
 
 // ---------- folhas ----------
 function v4Sheet(k, e) { const st = v4State(); if (e) st.sheetE = e.id; st.sheet = k; if (k === 'upd' || k === 'end') v4UpdInit(); v4Root(); v4Draw(); }
@@ -20214,7 +20214,7 @@ function v4SpModal(U) {
 }
 function v4SpView(m, k) { m.querySelectorAll('.spview button').forEach((x) => x.classList.toggle('on', x.dataset.k === k)); m.querySelector('.spprev').classList.toggle('hid', k === 'com'); const t = m.querySelector('#v4sptip'); if (t) t.textContent = k === 'com' ? 'Assim, só vê quando chegar lá. Quem já passou vê normal.' : 'Assim, quem está antes descobre antes da hora.'; }
 async function v4UpdSave(k) {
-  const st = v4State(), U = st.upd, e = lib().find((x) => x.id === (st.sheetE || st.e)); if (!e || !U) return;
+  const st = v4State(), U = st.upd, e = lib().find((x) => x.id === (st.sheetE || st.e)); if (!e || !U) return; const cont = !!st.contAfter; st.contAfter = 0;
   const { now, total, g, gb } = v4Info(e), s = v4Ses(), inSes = k === 'end' && s && s.libId === e.id;
   // Posição/Capítulo: guarda o valor no livro; sem total, guarda só o valor e a página não muda
   const T6 = v6Tot(e, U.u), noTot = (U.u === 'pos' || U.u === 'cap') && !(T6 && total);
@@ -20248,6 +20248,7 @@ async function v4UpdSave(k) {
         ...(U.sp ? (ip > 0 && total && ip < total ? { spoiler: { kind: 'page', at: ip } } : total && ip >= total ? { spoiler: { kind: 'end' } } : { spoiler: { kind: 'yes' } }) : {}) })
         .then((x) => { if (x.status === 201) toast(U.vis === 'friends' ? 'Comentário postado para suas amizades' : 'Comentário postado na Comunidade'); else if (x.status >= 400) toast('Salvo no seu diário (não deu para postar agora)'); }).catch(() => {}); } }
   st.upd = null;
+  if (inSes && cont) { const n = Math.max(0, pg - s.pg0); st.sum = null; st.sheet = null; try { renderHome(todayISO()); } catch {} toast('Sessão salva: ' + (secs < 60 ? 'menos de 1 min' : min + ' min') + ' · ' + n + (n === 1 ? ' página' : ' páginas')); v4Open(e); if (hits.length) setTimeout(() => { try { v4Float(hits); } catch {} }, 400); return; }
   if (inSes) { st.sum = { min: secs < 60 ? 0 : min, pages: Math.max(0, pg - s.pg0), hits }; st.sheet = 'sum'; return v4Draw(); }
   st.sheet = null; if (st.view) v4Draw(); else v4Close();
   try { renderHome(todayISO()); } catch {}
@@ -20430,17 +20431,16 @@ function v4Click(ev) {
   if (a === 'sesdisc') { if (!st.discAsk) { st.discAsk = 1; clearTimeout(st.discT); st.discT = setTimeout(() => { st.discAsk = 0; if (V4 && st.sheet === 'end') v4Draw(); }, 4000); return redraw(); }
     st.discAsk = 0; clearTimeout(st.discT); v2SesPut(null); v4Stop(); try { v4AmbPlay(''); } catch {} st.upd = null; st.sheet = null; toast('Sessão descartada'); if (st.view) return redraw(); return v4Close(); }
   if (a === 'close') { if (st.sheet === 'sum') return v4SumOk();
-    // (Bia 27/11) Continuar lendo volta para a escolha do tempo; a sessão continua somando minutos e páginas
-    if (st.sheet === 'end' && s && e && s.libId === e.id) { st.sheet = null; st.reDur = 1; st.durx = false; try { if (typeof faStop === 'function') faStop(); } catch {} if (st.view !== 'ler') return v4Open(e); return redraw(); } st.sheet = null; if (!st.view) return v4Close(); return redraw(); }
+    // (Bia 27/11) Continuar lendo = salva a página e o tempo desta sessão e volta para escolher o tempo da próxima
+    if (st.sheet === 'end' && s && e && s.libId === e.id && st.upd) { st.contAfter = 1; if (v4SpAsk(st.upd)) return v4SpModal(st.upd); return v4UpdSave('end'); } st.sheet = null; if (!st.view) return v4Close(); return redraw(); }
   if (a === 'sheet') { if (d.s !== 'pick' && d.s !== 'ecohelp' && d.s !== 'amb') st.sheetE = st.e || st.sheetE; st.sheet = d.s; if (d.s === 'upd' || d.s === 'end') v4UpdInit(); return redraw(); }
   if (a === 'lerfoco') { const x = lib().find((y) => y.id === st.sheetE) || v4Books()[0]; st.sheet = null; return v4Open(x); }
-  if (a === 'cur' || a === 'setcur') { if (st.reDur && a === 'cur') return; const x = lib().find((y) => y.id === d.id); if (!x) return; if (x.status === 'QUERO') { setLibStatus(x, 'LENDO'); if (x.status !== 'LENDO') return; } try { setCurrent(x.id); } catch {} st.sheet = null; if (st.view === 'ler') return v4Open(x, { slide: a === 'cur' ? 1 : 0 }); st.sheetE = x.id; st.sheet = 'lerq'; return redraw(); }
+  if (a === 'cur' || a === 'setcur') { const x = lib().find((y) => y.id === d.id); if (!x) return; if (x.status === 'QUERO') { setLibStatus(x, 'LENDO'); if (x.status !== 'LENDO') return; } try { setCurrent(x.id); } catch {} st.sheet = null; if (st.view === 'ler') return v4Open(x, { slide: a === 'cur' ? 1 : 0 }); st.sheetE = x.id; st.sheet = 'lerq'; return redraw(); }
   if (a === 'dur') { st.dur = Number(d.m); st.durx = false; V4.querySelectorAll('.dur button').forEach((x) => x.classList.toggle('on', x === b)); const dx = V4.querySelector('.durx'); if (dx) dx.remove(); const px = V4.querySelector('[data-a=durx]'); if (px) { px.classList.remove('on'); px.setAttribute('aria-expanded', 'false'); } return; }
   // Personalizado (Bia 25/11): 1 a 180 min; o último usado fica em prefs.focoMin e vira um chip
   if (a === 'durx') { st.durx = !st.durx; redraw(); if (st.durx) setTimeout(() => { const i = V4.querySelector('#v4durx'); if (i) { i.focus(); i.select(); } }, 50); return; }
   if (a === 'durxs') { const i = V4.querySelector('#v4durx'); if (!i) return; const v = Math.max(1, Math.min(180, (Math.round(Number(i.value)) || 0) + Number(d.k))); i.value = v; st.durxv = v; return; }
   if (a === 'durxok') { const i = V4.querySelector('#v4durx'), v = Math.round(Number(i && i.value)); if (!(v >= 1 && v <= 180)) return toast('Escolha de 1 a 180 minutos'); st.dur = v; st.durx = false; st.durxv = null; db.prefs = { ...(db.prefs || {}), focoMin: v }; save(); toast('Foco de ' + v4MinLbl(v)); return redraw(); }
-  if (a === 'start' && st.reDur && s && s.libId === e.id) { s.acc = v4Clock(s).secs; s.start = Date.now(); s.off = 0; delete s.pz; delete s.faDone; s.dur = st.dur != null ? st.dur : 25; v2SesPut(s); st.reDur = 0; redraw(); return v4Tick(); }
   if (a === 'start') { const { now } = v4Info(e); v2SesPut({ libId: e.id, start: Date.now(), pg0: now, pg: now, dur: st.dur != null ? st.dur : 25, off: 0 }); redraw(); return v4Tick(); }
   if (a === 'pz') { if (!s) return; if (s.pz) { s.off = (s.off || 0) + (Date.now() - s.pz); delete s.pz; } else s.pz = Date.now(); v2SesPut(s); return redraw(); }
   if (a === 'pged') { st.ed = st.ed === 'pg' ? null : 'pg'; st.pgEd = st.ed ? { u: 'pg', v: s.pg } : null; return redraw(); }
@@ -20488,7 +20488,7 @@ function v4Click(ev) {
   if (a === 'uppub') { U.pub = b.checked; const x = V4.querySelector('#v4pubx'); if (x) x.hidden = !U.pub; const sm = V4.querySelector('#v4pubs'); if (sm) sm.textContent = U.pub ? (U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê') : 'fica só no seu diário'; return; }
   if (a === 'upvis') { U.vis = d.k; try { localStorage.setItem('lv.upVis', U.vis); } catch {} V4.querySelectorAll('#v4pubx .seg button').forEach((x) => x.classList.toggle('on', x === b)); const sm = V4.querySelector('#v4pubs'); if (sm) sm.textContent = U.vis === 'friends' ? 'só suas amizades veem' : 'todo mundo vê'; return; }
   if (a === 'upsp') { U.sp = b.checked; return v4UpdSync(e); }
-  if (a === 'savepg') { if (v4SpAsk(U)) return v4SpModal(U); return v4UpdSave(st.sheet); }
+  if (a === 'savepg') { st.contAfter = 0; if (v4SpAsk(U)) return v4SpModal(U); return v4UpdSave(st.sheet); }
   if (a === 'spv') return v4SpView(V4.querySelector('.spmod'), d.k);
   if (a === 'spyes') { U.sp = true; V4.querySelector('.spmod')?.remove(); return v4UpdSave(st.sheet); }
   if (a === 'spno') { U.spOk = true; V4.querySelector('.spmod')?.remove(); return v4UpdSave(st.sheet); }
