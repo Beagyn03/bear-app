@@ -22,7 +22,7 @@
       const seen = new Set(L.filter((x) => x.f === 'aval').map((x) => normT(x.t || '')));
       (d.reviews || []).forEach((r) => { const t = (r.book && r.book.title) || r.title || ''; if (seen.has(normT(t))) return; L.push(map({ type: 'review', ...r, book: r.book || { title: t, cover: r.cover } })); });
       const rd = new Set(L.filter((x) => x.f === 'prog').map((x) => normT(x.t || '')));
-      (d.reading || []).forEach((b) => { if (rd.has(normT(b.title || ''))) return; L.push({ f: 'prog', c: 'le', a: 'Lendo · ' + Math.round(Number(b.pct) || 0) + '%', t: b.title, cv: b.cover, tx: '', at: '' }); });
+      (d.reading || []).forEach((b) => { if (rd.has(normT(b.title || ''))) return; L.push({ f: 'prog', c: 'le', a: 'Lendo · ' + Math.round(Number(b.pct) || 0) + '%', t: b.title, cv: b.cover, tx: '', at: b.at || '' }); });
       L.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
       const V = L.filter((x) => f === 'tudo' || x.f === f).slice(0, 40);
       const html = '<div class="v8atc">' + F.map(([k, n]) => '<button type="button" data-af="' + k + '" class="' + (f === k ? 'on' : '') + '">' + n + '</button>').join('') + '</div>'
